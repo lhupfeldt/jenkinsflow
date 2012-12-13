@@ -28,10 +28,9 @@ jenkinsurl = "http://localhost:8080"
 def main():
     logging.basicConfig()
     logging.getLogger("").setLevel(logging.WARNING)
-
     api = jenkins.Jenkins(jenkinsurl)
 
-    with serial(api, timeout=15, report_interval=3) as ctrl:
+    with serial(api, timeout=30, report_interval=3) as ctrl:
         ctrl.invoke('quick', password='X', s1='HELLO', c1='true')
         ctrl.invoke('wait10')
         ctrl.invoke('wait5')
