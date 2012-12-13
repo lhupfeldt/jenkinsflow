@@ -3,52 +3,55 @@
 import time
 
 
+class FlowTimeoutException(Exception):
+    pass
+
+
+class FailedJobsException(Exception):
+    pass
+
+
+def _print_status_message(job, build):
+    print "Status:", repr(job.name), " - running:", job.is_running(), ", queued:", job.is_queued(), "- latest build: ", build
+
+
 def _wait_for_jobs(jobs, old_builds, timeout=None, report_interval=5):
-    print 'Waiting for jobs:', repr(jobs)
+    print 'Waiting for:', [job.name for job, _params in jobs]
     last_report_time = start_time = now = time.time()
 
-    new_builds = {}
-    while len(new_builds) < len(old_builds):
-        for job, _params in jobs:
-            build = job.get_last_build()
-            print "Job:", job, " status - running:", job.is_running(), ", queued:", job.is_queued(), "- latest build: ", build
-            if build.buildno != old_builds[job.name].buildno:
-                assert build.buildno == old_builds[job.name].buildno + 1, "Oops buildno jumped!"
-                # TODO: just get old_no + 1?
-                new_builds[job.name] = build
-        time.sleep(1)
-
-
-    finished_builds = {}
+    num_builds = len(old_builds)
+    num_finished_builds = 0
     failed = []
 
-    while len(finished_builds) < len(old_builds):
-        for job, _params in jobs:
-            build = new_builds[job.name]
+    while num_finished_builds < num_builds:
+        index = 0
+        for job, _params in jobs[:]:
+            old_build = old_builds[job.name]
+            build = job.get_last_build()
             
-            is_running = build.is_running()
-            if is_running:
+            if build.buildno == old_build.buildno or build.is_running():
                 if now - last_report_time >= report_interval:
-                    print "Job:", job, " status - running:", is_running, "- latest build: ", build
+                    _print_status_message(job, build)
                     last_report_time = now
                 continue
 
-            if not finished_builds.get(job.name):
-                status = build.get_status()
-                if status != 'SUCCESS':
-                    failed.append(job)
-                print status, ":", repr(job.name), "- build: ", build.get_result_url()
-                finished_builds[job.name] = build
+            _print_status_message(job, build)
+            if not build.is_good():
+                failed.append(job)
+            print build.get_status(), ":", repr(job.name), "- build: ", build.get_result_url()            
+            del jobs[index]
+            index += 1
+            num_finished_builds += 1
 
         time.sleep(1)
 
         now = time.time()
-        elapsed_since_start = now - start_time
-        if timeout and elapsed_since_start > timeout:
-            raise Exception("Timeout after:" + repr(elapsed_since_start) + " seconds")
+        if timeout and now - start_time > timeout:
+            raise FlowTimeoutException("Timeout after:" + repr(now - start_time) + " seconds")
 
     if failed:
-        raise Exception("Failed builds: " + repr(failed))
+        raise FailedJobsException("Failed builds: " + repr([(job.name, params) for job, params in failed]))
+
 
 class _flow(object):
     def __init__(self, jenkins_api, timeout, report_interval=5):
@@ -65,7 +68,7 @@ class _flow(object):
 
         build = job.get_last_build()
         self.old_builds[job.name] = build
-        print "Job:", repr(job.name), " status - running:", job.is_running(), ", queued:", job.is_queued(), "- latest build: ", build
+        _print_status_message(job, build)
         return job
 
     def __enter__(self):
@@ -75,15 +78,14 @@ class _flow(object):
 class parallel(_flow):
     def invoke(self, job, **params):
         job = super(parallel, self).invoke(job, **params)
-        print "Invoking job:", job
+        print "Invoking:", repr(job.name)
         job.invoke(invoke_pre_check_delay=0, block=False, params=params)
 
     def __enter__(self):
-        print ""
+        print "--- starting parallel run ---"
         return self
 
     def __exit__(self, exc_type, exc_value, traceback):
-        print "Invoked all"
         if exc_type:
             return None
         _wait_for_jobs(self.jobs, self.old_builds, self.timeout)
@@ -96,14 +98,14 @@ class serial(_flow):
         print "Queuing job:", job
 
     def __enter__(self):
-        print ""
+        print "--- starting serial run ---"
         return self
 
     def __exit__(self, exc_type, exc_value, traceback):
         if exc_type:
             return None
         for job, params in self.jobs:
-            print "Invoking job:", job
+            print "Invoking:", repr(job.name)
             job.invoke(invoke_pre_check_delay=0, block=False, params=params)
             _wait_for_jobs([(job, params)], {job.name:self.old_builds[job.name]}, self.timeout)
         print ""

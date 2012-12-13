@@ -27,7 +27,7 @@ jenkinsurl = "http://localhost:8080"
 
 def main():
     logging.basicConfig()
-    logging.getLogger("").setLevel(logging.INFO)
+    logging.getLogger("").setLevel(logging.WARNING)
 
     api = jenkins.Jenkins(jenkinsurl)
 
@@ -35,13 +35,23 @@ def main():
         ctrl.invoke('quick', password='X', s1='HELLO', c1='true')
         ctrl.invoke('wait10')
         ctrl.invoke('wait5')
-    
+
     with parallel(api, timeout=20, report_interval=3) as ctrl:
         ctrl.invoke('quick', password='Y', s1='WORLD', c1='maybe')
-        ctrl.invoke('quick_fail')
         ctrl.invoke('wait10')
-        ctrl.invoke('wait10_fail')
         ctrl.invoke('wait5')
-        ctrl.invoke('wait5_fail')
+    
+    try:
+        with parallel(api, timeout=20, report_interval=3) as ctrl:
+            ctrl.invoke('quick', password='Yes', s1='', c1='false')
+            ctrl.invoke('quick_fail')
+            ctrl.invoke('wait10')
+            ctrl.invoke('wait10_fail')
+            ctrl.invoke('wait5')
+            ctrl.invoke('wait5_fail')
+        raise Exception("Should have failed!")
+    except Exception as ex:
+        print "Ok, got exception:", ex
+
 
 main()
