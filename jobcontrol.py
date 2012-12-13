@@ -1,6 +1,7 @@
 #!/usr/bin/python
 
 import time
+import abc
 
 
 class FlowTimeoutException(Exception):
@@ -12,10 +13,10 @@ class FailedJobsException(Exception):
 
 
 def _print_status_message(job, build):
-    print "Status:", repr(job.name), " - running:", job.is_running(), ", queued:", job.is_queued(), "- latest build: ", build
+    print "Status", repr(job.name), "- running:", repr(job.is_running()) + ", queued:", job.is_queued(), "- latest build: ", build
 
 
-def _wait_for_jobs(jobs, old_builds, timeout=None, report_interval=5):
+def _wait_for_jobs(jobs, old_builds, timeout, report_interval):
     print 'Waiting for:', [job.name for job, _params in jobs]
     last_report_time = start_time = now = time.time()
 
@@ -28,7 +29,7 @@ def _wait_for_jobs(jobs, old_builds, timeout=None, report_interval=5):
         for job, _params in jobs[:]:
             old_build = old_builds[job.name]
             build = job.get_last_build()
-            
+
             if build.buildno == old_build.buildno or build.is_running():
                 if now - last_report_time >= report_interval:
                     _print_status_message(job, build)
@@ -38,7 +39,7 @@ def _wait_for_jobs(jobs, old_builds, timeout=None, report_interval=5):
             _print_status_message(job, build)
             if not build.is_good():
                 failed.append(job)
-            print build.get_status(), ":", repr(job.name), "- build: ", build.get_result_url()            
+            print build.get_status(), ":", repr(job.name), "- build: ", build.get_result_url()
             del jobs[index]
             index += 1
             num_finished_builds += 1
@@ -47,13 +48,16 @@ def _wait_for_jobs(jobs, old_builds, timeout=None, report_interval=5):
 
         now = time.time()
         if timeout and now - start_time > timeout:
-            raise FlowTimeoutException("Timeout after:" + repr(now - start_time) + " seconds")
+            raise FlowTimeoutException("Timeout after:" + repr(now - start_time) + " seconds. Unfinished jobs:"
+                                       + repr([(job.name, params) for job, params in failed]))
 
     if failed:
         raise FailedJobsException("Failed builds: " + repr([(job.name, params) for job, params in failed]))
 
 
-class _flow(object):
+class _Flow(object):
+    __metaclass__ = abc.ABCMeta
+
     def __init__(self, jenkins_api, timeout, report_interval=5):
         self.api = jenkins_api
         self.timeout = timeout
@@ -61,6 +65,7 @@ class _flow(object):
         self.jobs = []
         self.old_builds = {}
 
+    @abc.abstractmethod
     def invoke(self, job, **params):
         if isinstance(job, str):
             job = self.api.get_job(job)
@@ -71,11 +76,8 @@ class _flow(object):
         _print_status_message(job, build)
         return job
 
-    def __enter__(self):
-        return self
 
-
-class parallel(_flow):
+class parallel(_Flow):
     def invoke(self, job, **params):
         job = super(parallel, self).invoke(job, **params)
         print "Invoking:", repr(job.name)
@@ -88,11 +90,11 @@ class parallel(_flow):
     def __exit__(self, exc_type, exc_value, traceback):
         if exc_type:
             return None
-        _wait_for_jobs(self.jobs, self.old_builds, self.timeout)
+        _wait_for_jobs(self.jobs, self.old_builds, self.timeout, self.report_interval)
         print ""
 
 
-class serial(_flow):
+class serial(_Flow):
     def invoke(self, job, **params):
         job = super(serial, self).invoke(job, **params)
         print "Queuing job:", job
@@ -107,5 +109,5 @@ class serial(_flow):
         for job, params in self.jobs:
             print "Invoking:", repr(job.name)
             job.invoke(invoke_pre_check_delay=0, block=False, params=params)
-            _wait_for_jobs([(job, params)], {job.name:self.old_builds[job.name]}, self.timeout)
+            _wait_for_jobs([(job, params)], {job.name:self.old_builds[job.name]}, self.timeout, self.report_interval)
         print ""
