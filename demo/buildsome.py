@@ -1,7 +1,7 @@
 #!/usr/bin/python
 
 # NOTE: To run the demo you must have the following jobs defined in jenkins/hudson
-# quick
+# quick(password, s1, c1) # Requires parameters
 # quick_fail
 # wait10
 # wait10_fail
@@ -32,12 +32,12 @@ def main():
     api = jenkins.Jenkins(jenkinsurl)
 
     with serial(api, timeout=15, report_interval=3) as ctrl:
-        ctrl.invoke('quick')
+        ctrl.invoke('quick', password='X', s1='HELLO', c1='true')
         ctrl.invoke('wait10')
         ctrl.invoke('wait5')
     
     with parallel(api, timeout=20, report_interval=3) as ctrl:
-        ctrl.invoke('quick')
+        ctrl.invoke('quick', password='Y', s1='WORLD', c1='maybe')
         ctrl.invoke('quick_fail')
         ctrl.invoke('wait10')
         ctrl.invoke('wait10_fail')

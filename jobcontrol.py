@@ -2,13 +2,14 @@
 
 import time
 
+
 def _wait_for_jobs(jobs, old_builds, timeout=None, report_interval=5):
     print 'Waiting for jobs:', repr(jobs)
     last_report_time = start_time = now = time.time()
 
     new_builds = {}
     while len(new_builds) < len(old_builds):
-        for job in jobs:
+        for job, _params in jobs:
             build = job.get_last_build()
             print "Job:", job, " status - running:", job.is_running(), ", queued:", job.is_queued(), "- latest build: ", build
             if build.buildno != old_builds[job.name].buildno:
@@ -22,7 +23,7 @@ def _wait_for_jobs(jobs, old_builds, timeout=None, report_interval=5):
     failed = []
 
     while len(finished_builds) < len(old_builds):
-        for job in jobs:
+        for job, _params in jobs:
             build = new_builds[job.name]
             
             is_running = build.is_running()
@@ -57,10 +58,10 @@ class _flow(object):
         self.jobs = []
         self.old_builds = {}
 
-    def invoke(self, job):
+    def invoke(self, job, **params):
         if isinstance(job, str):
             job = self.api.get_job(job)
-        self.jobs.append(job)
+        self.jobs.append((job, params))
 
         build = job.get_last_build()
         self.old_builds[job.name] = build
@@ -72,10 +73,10 @@ class _flow(object):
 
 
 class parallel(_flow):
-    def invoke(self, job):
-        job = super(parallel, self).invoke(job)
+    def invoke(self, job, **params):
+        job = super(parallel, self).invoke(job, **params)
         print "Invoking job:", job
-        job.invoke(invoke_pre_check_delay=0, block=False)
+        job.invoke(invoke_pre_check_delay=0, block=False, params=params)
 
     def __enter__(self):
         print ""
@@ -90,8 +91,8 @@ class parallel(_flow):
 
 
 class serial(_flow):
-    def invoke(self, job):
-        job = super(serial, self).invoke(job)
+    def invoke(self, job, **params):
+        job = super(serial, self).invoke(job, **params)
         print "Queuing job:", job
 
     def __enter__(self):
@@ -101,8 +102,8 @@ class serial(_flow):
     def __exit__(self, exc_type, exc_value, traceback):
         if exc_type:
             return None
-        for job in self.jobs:
+        for job, params in self.jobs:
             print "Invoking job:", job
-            job.invoke(invoke_pre_check_delay=0, block=False)
-            _wait_for_jobs([job], {job.name:self.old_builds[job.name]}, self.timeout)
+            job.invoke(invoke_pre_check_delay=0, block=False, params=params)
+            _wait_for_jobs([(job, params)], {job.name:self.old_builds[job.name]}, self.timeout)
         print ""
