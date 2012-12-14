@@ -16,21 +16,24 @@ def _print_status_message(job, build):
     print "Status", repr(job.name), "- running:", repr(job.is_running()) + ", queued:", job.is_queued(), "- latest build: ", build
 
 
-def _wait_for_jobs(jobs, old_builds, timeout, report_interval):
-    print 'Waiting for:', [job.name for job, _params in jobs]
+def _wait_for_jobs(jobs, timeout, report_interval):
+    print 'Waiting for:', [job.name for job, _params, _old_build in jobs]
     last_report_time = start_time = now = time.time()
 
-    num_builds = len(old_builds)
+    num_builds = len(jobs)
     num_finished_builds = 0
     failed = []
 
     while num_finished_builds < num_builds:
         index = 0
-        for job, _params in jobs[:]:
-            old_build = old_builds[job.name]
-            build = job.get_last_build()
+        for job, _params, old_build in jobs[:]:
+            job.poll()
+            build = job.get_last_build_or_none()
+            if build == None:
+                continue
 
-            if build.buildno == old_build.buildno or build.is_running():
+            old_buildno = (old_build.buildno if old_build else None)
+            if build.buildno == old_buildno or build.is_running():
                 if now - last_report_time >= report_interval:
                     _print_status_message(job, build)
                     last_report_time = now
@@ -63,17 +66,14 @@ class _Flow(object):
         self.timeout = timeout
         self.report_interval = report_interval
         self.jobs = []
-        self.old_builds = {}
 
     @abc.abstractmethod
     def invoke(self, job, **params):
         if isinstance(job, str):
             job = self.api.get_job(job)
-        self.jobs.append((job, params))
-
-        build = job.get_last_build()
-        self.old_builds[job.name] = build
-        _print_status_message(job, build)
+        old_build = job.get_last_build_or_none()
+        self.jobs.append((job, params, old_build))
+        _print_status_message(job, old_build)
         return job
 
 
@@ -90,7 +90,7 @@ class parallel(_Flow):
     def __exit__(self, exc_type, exc_value, traceback):
         if exc_type:
             return None
-        _wait_for_jobs(self.jobs, self.old_builds, self.timeout, self.report_interval)
+        _wait_for_jobs(self.jobs, self.timeout, self.report_interval)
         print ""
 
 
@@ -106,8 +106,8 @@ class serial(_Flow):
     def __exit__(self, exc_type, exc_value, traceback):
         if exc_type:
             return None
-        for job, params in self.jobs:
+        for job, params, old_build in self.jobs:
             print "Invoking:", repr(job.name)
             job.invoke(invoke_pre_check_delay=0, block=False, params=params)
-            _wait_for_jobs([(job, params)], {job.name:self.old_builds[job.name]}, self.timeout, self.report_interval)
+            _wait_for_jobs([(job, params, old_build)], self.timeout, self.report_interval)
         print ""
