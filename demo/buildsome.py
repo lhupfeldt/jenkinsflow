@@ -21,7 +21,7 @@ from jenkinsapi import jenkins
 from unbuffered import UnBuffered
 sys.stdout = UnBuffered(sys.stdout)
 
-from jenkinsflow.jobcontrol import parallel, serial
+from jenkinsflow.jobcontrol import parallel, serial, FailedJobsException, FlowTimeoutException
 
 jenkinsurl = "http://localhost:8080"
 
@@ -49,7 +49,15 @@ def main():
             ctrl.invoke('wait5')
             ctrl.invoke('wait5_fail')
         raise Exception("Should have failed!")
-    except Exception as ex:
+    except FailedJobsException as ex:
+        print "Ok, got exception:", ex
+
+    try:
+        with parallel(api, timeout=1, report_interval=3) as ctrl:
+            ctrl.invoke('quick', password='Yes', s1='', c1='false')
+            ctrl.invoke('wait5')
+        raise Exception("Should have failed!")
+    except FlowTimeoutException as ex:
         print "Ok, got exception:", ex
 
 

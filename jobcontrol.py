@@ -26,7 +26,7 @@ def _wait_for_jobs(jobs, timeout, report_interval):
 
     while num_finished_builds < num_builds:
         index = 0
-        for job, _params, old_build in jobs[:]:
+        for job, params, old_build in jobs[:]:
             job.poll()
             build = job.get_last_build_or_none()
             if build == None:
@@ -41,7 +41,7 @@ def _wait_for_jobs(jobs, timeout, report_interval):
 
             _print_status_message(job, build)
             if not build.is_good():
-                failed.append(job)
+                failed.append((job, params))
             print build.get_status(), ":", repr(job.name), "- build: ", build.get_result_url()
             del jobs[index]
             index += 1
@@ -52,7 +52,7 @@ def _wait_for_jobs(jobs, timeout, report_interval):
         now = time.time()
         if timeout and now - start_time > timeout:
             raise FlowTimeoutException("Timeout after:" + repr(now - start_time) + " seconds. Unfinished jobs:"
-                                       + repr([(job.name, params) for job, params in failed]))
+                                       + repr([(job.name, params) for job, params, _builds in jobs]))
 
     if failed:
         raise FailedJobsException("Failed builds: " + repr([(job.name, params) for job, params in failed]))
