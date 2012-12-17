@@ -1,4 +1,10 @@
+# Copyright (c) 2012 Lars Hupfeldt Nielsen, Hupfeldt IT
+# All rights reserved. This work is under a BSD license, see LICENSE.TXT.
+
 class UnBuffered:
+    """
+    Implements unbuffered output.
+    """
     def __init__ (self, stream):
         self.stream = stream
 

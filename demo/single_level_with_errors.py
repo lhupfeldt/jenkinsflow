@@ -1,5 +1,8 @@
 #!/usr/bin/python
 
+# Copyright (c) 2012 Lars Hupfeldt Nielsen, Hupfeldt IT
+# All rights reserved. This work is under a BSD license, see LICENSE.TXT.
+
 # NOTE: To run the demo you must have the following jobs defined in jenkins/hudson
 # quick(password, s1, c1) # Requires parameters
 # quick_fail
@@ -18,10 +21,9 @@ import logging
 
 from jenkinsapi import jenkins
 
-from unbuffered import UnBuffered
-sys.stdout = UnBuffered(sys.stdout)
-
 from jenkinsflow.jobcontrol import parallel, serial, FailedJobsException, FlowTimeoutException
+from jenkinsflow.unbuffered import UnBuffered
+sys.stdout = UnBuffered(sys.stdout)
 
 jenkinsurl = "http://localhost:8080"
 

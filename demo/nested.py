@@ -1,12 +1,17 @@
 #!/usr/bin/python
 
+# Copyright (c) 2012 Lars Hupfeldt Nielsen, Hupfeldt IT
+# All rights reserved. This work is under a BSD license, see LICENSE.TXT.
+
 # NOTE: To run the demo you must have the following jobs defined in jenkins/hudson
 # quick(password, s1, c1) # Requires parameters
-# quick_fail
-# wait10
-# wait10_fail
-# wait5
-# wait5_fail
+# wait4-1
+# wait5-1
+# wait4-2
+# wait10-1
+# wait5-2a
+# wait5-2b
+# wait5-2c
 
 import sys
 import os.path
@@ -18,10 +23,12 @@ import logging
 
 from jenkinsapi import jenkins
 
-from unbuffered import UnBuffered
+from jenkinsflow.jobcontrol import serial
+from jenkinsflow.unbuffered import UnBuffered
+# Unbuffered output does not work well in Jenkins, so in case
+# this is run from a hudson job, we want unbuffered output
 sys.stdout = UnBuffered(sys.stdout)
 
-from jenkinsflow.jobcontrol import serial, _Serial
 
 jenkinsurl = "http://localhost:8080"
 
