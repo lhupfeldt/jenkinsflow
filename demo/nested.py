@@ -4,14 +4,14 @@
 # All rights reserved. This work is under a BSD license, see LICENSE.TXT.
 
 # NOTE: To run the demo you must have the following jobs defined in jenkins/hudson
-# quick(password, s1, c1) # Requires parameters
-# wait4-1
-# wait5-1
-# wait4-2
-# wait10-1
-# wait5-2a
-# wait5-2b
-# wait5-2c
+# tst_quick(password, s1, c1) # Requires parameters
+# tst_wait4-1
+# tst_wait5-1
+# tst_wait4-2
+# tst_wait10-1
+# tst_wait5-2a
+# tst_wait5-2b
+# tst_wait5-2c
 
 import sys
 import os.path
@@ -37,7 +37,7 @@ def main():
     logging.getLogger("").setLevel(logging.WARNING)
     api = jenkins.Jenkins(jenkinsurl)
 
-    with serial(api, timeout=70, report_interval=3) as ctrl1:
+    with serial(api, timeout=70, report_interval=3, job_name_prefix='tst_') as ctrl1:
         ctrl1.invoke('wait4-1')
 
         with ctrl1.parallel(timeout=20, report_interval=3) as ctrl2:

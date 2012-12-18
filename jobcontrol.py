@@ -65,27 +65,28 @@ def _check_job(job_details, report_interval, last_report_time):
 class _Flow(object):
     __metaclass__ = abc.ABCMeta
 
-    def __init__(self, jenkins_api, timeout, report_interval=5):
+    def __init__(self, jenkins_api, timeout, report_interval=5, job_name_prefix=''):
         self.api = jenkins_api
         self.timeout = timeout
         self.report_interval = report_interval
+        self.job_name_prefix = job_name_prefix
         self.jobs = []
 
     def _get_job(self, job, params):
         if isinstance(job, str):
-            job = self.api.get_job(job)
+            job = self.api.get_job(self.job_name_prefix + job)
         old_build = job.get_last_build_or_none()
         self.jobs.append([job, False, params, old_build])
         _print_status_message(job, old_build)
         return job
 
-    def parallel(self, timeout, report_interval=5):
-        pll = _Parallel(self.api, timeout, report_interval)
+    def parallel(self, timeout, report_interval=5, job_name_prefix=''):
+        pll = _Parallel(self.api, timeout, report_interval, job_name_prefix=self.job_name_prefix+job_name_prefix)
         self.jobs.append([pll, False, None, None])
         return pll
 
-    def serial(self, timeout, report_interval=5):
-        ser = _Serial(self.api, timeout, report_interval)
+    def serial(self, timeout, report_interval=5, job_name_prefix=''):
+        ser = _Serial(self.api, timeout, report_interval, job_name_prefix=self.job_name_prefix+job_name_prefix)
         self.jobs.append([ser, False, None, None])
         return ser
 
