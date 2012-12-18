@@ -112,7 +112,7 @@ class _Flow(object):
             done, last_report_time, _failed = self._check_jobs(start_time, last_report_time)
             if done:
                 return
-            time.sleep(1)
+            time.sleep(0.2)
 
     def __exit__(self, exc_type, exc_value, traceback):
         pass
