@@ -37,7 +37,7 @@ def main():
     logging.getLogger("").setLevel(logging.WARNING)
     api = jenkins.Jenkins(jenkinsurl)
 
-    with serial(api, timeout=70, report_interval=3, job_name_prefix='tst_') as ctrl1:
+    with serial(api, timeout=70, job_name_prefix='tst_', report_interval=3) as ctrl1:
         ctrl1.invoke('wait4-1')
 
         with ctrl1.parallel(timeout=20, report_interval=3) as ctrl2:
