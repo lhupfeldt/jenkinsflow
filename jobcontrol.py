@@ -1,10 +1,10 @@
 # Copyright (c) 2012 Lars Hupfeldt Nielsen, Hupfeldt IT
 # All rights reserved. This work is under a BSD license, see LICENSE.TXT.
 
-import time
-import abc
+import time, re, abc
 
 _default_report_interval = 5
+_default_secret_params = '.*passw.*'
 
 def _print_status_message(jenkins_job, build):
     print "Status", repr(jenkins_job.name), "- running:", repr(jenkins_job.is_running()) + ", queued:", jenkins_job.is_queued(), "- latest build: ", build
@@ -21,15 +21,19 @@ class FailedJobsException(Exception):
 class _JobControl(object):
     __metaclass__ = abc.ABCMeta
 
-    def __init__(self, report_interval):
+    def __init__(self, report_interval, secret_params_re):
         self.report_interval = report_interval
         self.invoked = 0
         self.finished = False
         self.successful = False
+        self.secret_params_re = secret_params_re
 
     @abc.abstractmethod
     def _check(self, start_time, last_report_time):
         pass
+
+    def _hide(self, params):
+        return dict([(key, (value if not self.secret_params_re.search(key) else '******')) for key, value in params.iteritems()])
 
     @abc.abstractmethod
     def sequence(self):
@@ -40,8 +44,8 @@ class _JobControl(object):
 
 
 class _SingleJob(_JobControl):
-    def __init__(self, jenkins_api, job_name_prefix, job_name, params, report_interval):
-        super(_SingleJob, self).__init__(report_interval)
+    def __init__(self, jenkins_api, job_name_prefix, job_name, params, report_interval, secret_params_re):
+        super(_SingleJob, self).__init__(report_interval, secret_params_re)
 
         job = jenkins_api.get_job(job_name_prefix + job_name)
         self.old_build = job.get_last_build_or_none()
@@ -75,7 +79,7 @@ class _SingleJob(_JobControl):
         _print_status_message(self.job, build)
         print build.get_status(), ":", repr(self.job.name), "- build: ", build.get_result_url()
     
-        return last_report_time, None if self.successful else (self.job, self.params)
+        return last_report_time, None if self.successful else (self.job, self._hide(self.params))
 
     def sequence(self):
         return self.job.name
@@ -84,23 +88,26 @@ class _SingleJob(_JobControl):
 class _Flow(_JobControl):
     __metaclass__ = abc.ABCMeta
 
-    def __init__(self, jenkins_api, timeout, job_name_prefix='', retries=0, report_interval=_default_report_interval):
-        super(_Flow, self).__init__(report_interval)
+    def __init__(self, jenkins_api, timeout, job_name_prefix, retries, report_interval, secret_params):
+        secret_params_re = re.compile(secret_params) if isinstance(secret_params, str) else secret_params
+        super(_Flow, self).__init__(report_interval, secret_params_re)
 
         self.api = jenkins_api
         self.timeout = timeout
         self.job_name_prefix = job_name_prefix
         self.retries = retries
-        self.report_interval = report_interval
+        self.report_interval = report_interval        
         self.jobs = []
 
-    def parallel(self, timeout, job_name_prefix='', retries=0, report_interval=_default_report_interval):
-        pll = _Parallel(self.api, timeout, job_name_prefix=self.job_name_prefix+job_name_prefix, retries=retries, report_interval=report_interval)
+    def parallel(self, timeout, job_name_prefix='', retries=0, report_interval=_default_report_interval, secret_params=None):
+        secret_params = secret_params or self.secret_params_re
+        pll = _Parallel(self.api, timeout, self.job_name_prefix+job_name_prefix, retries, report_interval, secret_params)
         self.jobs.append(pll)
         return pll
 
-    def serial(self, timeout, job_name_prefix='', retries=0, report_interval=_default_report_interval):
-        ser = _Serial(self.api, timeout, job_name_prefix=self.job_name_prefix+job_name_prefix, retries=retries, report_interval=report_interval)
+    def serial(self, timeout, job_name_prefix='', retries=0, report_interval=_default_report_interval, secret_params=None):
+        secret_params = secret_params or self.secret_params_re
+        ser = _Serial(self.api, timeout, self.job_name_prefix+job_name_prefix, retries, report_interval, secret_params)
         self.jobs.append(ser)
         return ser
 
@@ -112,6 +119,13 @@ class _Flow(_JobControl):
         if self.timeout and now - start_time > self.timeout:
             unfinished_msg = "Unfinished jobs:" + str(self)
             raise FlowTimeoutException("Timeout after:" + repr(now - start_time) + " seconds. " + unfinished_msg)
+
+    def secret_params(self):
+        """
+        If the last 'invoke' in a flow has secret params, they will be displayed in the python stacktrace since the
+        last statement under a with_statement will be the origin of the stacktrace of an exception raised in __exit__
+        """
+        pass
 
     def __exit__(self, exc_type, exc_value, traceback):
         if exc_type:
@@ -134,12 +148,15 @@ class _TopLevelController(_Flow):
 
 
 class _Parallel(_Flow):
+    def __init__(self, jenkins_api, timeout, job_name_prefix='', retries=0, report_interval=_default_report_interval, secret_params=_default_secret_params):
+        super(_Parallel, self).__init__(jenkins_api, timeout, job_name_prefix, retries, report_interval, secret_params)
+
     def __enter__(self):
         print "--- quing jobs for parallel run ---"
         return self
 
     def invoke(self, job_name, **params):
-        job = _SingleJob(self.api, self.job_name_prefix, job_name, params, self.report_interval)
+        job = _SingleJob(self.api, self.job_name_prefix, job_name, params, self.report_interval, self.secret_params_re)
         self.jobs.append(job)
         print "Queuing job:", job.job, "for parallel run"
 
@@ -157,7 +174,7 @@ class _Parallel(_Flow):
 
         self._check_timeout(start_time)
         if failed_children:
-            raise FailedJobsException("Failed jobs: " + repr([(job.name, params) for job, params in failed_children]))
+            raise FailedJobsException("Failed jobs: " + repr([(job.name, self._hide(params)) for job, params in failed_children]))
 
         self.finished = all_finished
         return last_report_time, None
@@ -167,8 +184,8 @@ class _Parallel(_Flow):
 
 
 class _Serial(_Flow):
-    def __init__(self, jenkins_api, timeout, job_name_prefix='', retries=0, report_interval=_default_report_interval):
-        super(_Serial, self).__init__(jenkins_api, timeout, job_name_prefix, retries, report_interval)
+    def __init__(self, jenkins_api, timeout, job_name_prefix='', retries=0, report_interval=_default_report_interval, secret_params=_default_secret_params):
+        super(_Serial, self).__init__(jenkins_api, timeout, job_name_prefix, retries, report_interval, secret_params)
         self.next_index = 0
 
     def __enter__(self):
@@ -176,7 +193,7 @@ class _Serial(_Flow):
         return self
 
     def invoke(self, job_name, **params):
-        job = _SingleJob(self.api, self.job_name_prefix, job_name, params, self.report_interval)
+        job = _SingleJob(self.api, self.job_name_prefix, job_name, params, self.report_interval, self.secret_params_re)
         self.jobs.append(job)
         print "Queuing job:", job.job, "for serial run"
 
