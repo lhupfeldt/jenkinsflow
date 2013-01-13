@@ -78,12 +78,12 @@ class _SingleJob(_JobControl):
             print "Invoking:", repr(self.job.name), self.job.get_build_triggerurl(None, params=self.params)
             self.invoked = time.time()
             self.job.invoke(invoke_pre_check_delay=0, block=False, params=self.params)
-    
+
         self.job.poll()
         build = self.job.get_last_build_or_none()
         if build == None:
             return last_report_time
-    
+
         old_buildno = (self.old_build.buildno if self.old_build else None)
         if build.buildno == old_buildno or build.is_running():
             now = time.time()
@@ -91,7 +91,7 @@ class _SingleJob(_JobControl):
                 _print_status_message(self.job, build)
                 last_report_time = now
             return last_report_time
-    
+
         # The job has stopped running
         self.finished = True
         self.successful = build.is_good()
@@ -99,7 +99,7 @@ class _SingleJob(_JobControl):
         print build.get_status(), ":", repr(self.job.name), "- build: ", build.get_result_url()
 
         if not self.successful:
-            raise FailedJobException(self.job, self._hide(self.params))    
+            raise FailedJobException(self.job, self._hide(self.params))
         return last_report_time
 
     def sequence(self):
@@ -117,7 +117,7 @@ class _Flow(_JobControl):
         self.timeout = timeout
         self.job_name_prefix = job_name_prefix
         self.retries = retries
-        self.report_interval = report_interval        
+        self.report_interval = report_interval
         self.jobs = []
 
     def parallel(self, timeout, job_name_prefix='', retries=0, report_interval=_default_report_interval, secret_params=None):
@@ -166,7 +166,6 @@ class _Parallel(_Flow):
         super(_Parallel, self).__init__(jenkins_api, timeout, job_name_prefix, retries, report_interval, secret_params)
         self._failed_child_jobs = []
 
-
     def __enter__(self):
         print "--- quing jobs for parallel run ---"
         return self
@@ -181,7 +180,7 @@ class _Parallel(_Flow):
         for job in self.jobs:
             if job.finished:
                 continue
-            
+
             all_finished = False
             try:
                 last_report_time = job._check(start_time, last_report_time)
