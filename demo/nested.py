@@ -57,4 +57,5 @@ def main():
             ctrl2.invoke('wait5-2c')
 
 
-main()
+if __name__ == '__main__':
+    main()

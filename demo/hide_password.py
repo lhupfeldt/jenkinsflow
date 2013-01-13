@@ -30,7 +30,9 @@ def main():
     api = jenkins.Jenkins(jenkinsurl)
 
     with serial(api, timeout=70, report_interval=3, secret_params='.*PASS.*|.*pass.*') as ctrl:
-        ctrl.invoke('passwd_args', password='SECRET', s1='no-secret', passwd='sec', PASS='not_security')
-        ctrl.secret_params()
+        p1, p2, p3 = 'SECRET', 'sec', 'not_security'
+        ctrl.invoke('passwd_args', password=p1, s1='no-secret', passwd=p2, PASS=p3)
 
-main()
+
+if __name__ == '__main__':
+    main()

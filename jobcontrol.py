@@ -4,7 +4,8 @@
 import time, re, abc
 
 _default_report_interval = 5
-_default_secret_params = '.*passw.*'
+_default_secret_params = '.*passw.*|.*PASSWD.*'
+_default_secret_params_re = re.compile(_default_secret_params)
 
 def _print_status_message(jenkins_job, build):
     print "Status", repr(jenkins_job.name), "- running:", repr(jenkins_job.is_running()) + ", queued:", jenkins_job.is_queued(), "- latest build: ", build
@@ -120,13 +121,6 @@ class _Flow(_JobControl):
             unfinished_msg = "Unfinished jobs:" + str(self)
             raise FlowTimeoutException("Timeout after:" + repr(now - start_time) + " seconds. " + unfinished_msg)
 
-    def secret_params(self):
-        """
-        If the last 'invoke' in a flow has secret params, they will be displayed in the python stacktrace since the
-        last statement under a with_statement will be the origin of the stacktrace of an exception raised in __exit__
-        """
-        pass
-
     def __exit__(self, exc_type, exc_value, traceback):
         if exc_type:
             return None
@@ -148,7 +142,7 @@ class _TopLevelController(_Flow):
 
 
 class _Parallel(_Flow):
-    def __init__(self, jenkins_api, timeout, job_name_prefix='', retries=0, report_interval=_default_report_interval, secret_params=_default_secret_params):
+    def __init__(self, jenkins_api, timeout, job_name_prefix='', retries=0, report_interval=_default_report_interval, secret_params=_default_secret_params_re):
         super(_Parallel, self).__init__(jenkins_api, timeout, job_name_prefix, retries, report_interval, secret_params)
 
     def __enter__(self):
@@ -184,7 +178,7 @@ class _Parallel(_Flow):
 
 
 class _Serial(_Flow):
-    def __init__(self, jenkins_api, timeout, job_name_prefix='', retries=0, report_interval=_default_report_interval, secret_params=_default_secret_params):
+    def __init__(self, jenkins_api, timeout, job_name_prefix='', retries=0, report_interval=_default_report_interval, secret_params=_default_secret_params_re):
         super(_Serial, self).__init__(jenkins_api, timeout, job_name_prefix, retries, report_interval, secret_params)
         self.next_index = 0
 

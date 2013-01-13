@@ -63,4 +63,5 @@ def main():
         print "Ok, got exception:", ex
 
 
-main()
+if __name__ == '__main__':
+    main()
