@@ -42,7 +42,7 @@ class _JobControl(object):
 
     def __init__(self, report_interval, secret_params_re):
         self.report_interval = report_interval
-        self.invoked = 0
+        self.invocation_time = 0
         self.finished = False
         self.successful = False
         self.secret_params_re = secret_params_re
@@ -74,9 +74,9 @@ class _SingleJob(_JobControl):
         self.params = params
 
     def _check(self, start_time, last_report_time):
-        if not self.invoked:
+        if not self.invocation_time:
             print "Invoking:", repr(self.job.name), self.job.get_build_triggerurl(None, params=self.params)
-            self.invoked = time.time()
+            self.invocation_time = time.time()
             self.job.invoke(invoke_pre_check_delay=0, block=False, params=self.params)
 
         self.job.poll()
