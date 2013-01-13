@@ -146,21 +146,6 @@ class _Flow(_JobControl):
             return None
 
 
-class _TopLevelController(_Flow):
-    def __exit__(self, exc_type, exc_value, traceback):
-        if exc_type:
-            return None
-
-        # Wait for jobs to finish
-        print
-        print 'Will run:', self
-        last_report_time = start_time = time.time()
-
-        while not self.finished:
-            last_report_time = self._check(start_time, last_report_time)
-            time.sleep(0.2)
-
-
 class _Parallel(_Flow):
     def __init__(self, jenkins_api, timeout, job_name_prefix='', retries=0, report_interval=_default_report_interval, secret_params=_default_secret_params_re):
         super(_Parallel, self).__init__(jenkins_api, timeout, job_name_prefix, retries, report_interval, secret_params)
@@ -225,6 +210,21 @@ class _Serial(_Flow):
 
     def sequence(self):
         return [job.sequence() for job in self.jobs]
+
+
+class _TopLevelController(_Flow):
+    def __exit__(self, exc_type, exc_value, traceback):
+        if exc_type:
+            return None
+
+        # Wait for jobs to finish
+        print
+        print 'Will run:', self
+        last_report_time = start_time = time.time()
+
+        while not self.finished:
+            last_report_time = self._check(start_time, last_report_time)
+            time.sleep(0.2)
 
 
 class parallel(_Parallel, _TopLevelController):
