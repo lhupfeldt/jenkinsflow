@@ -31,16 +31,6 @@ def main():
     logging.basicConfig()
     logging.getLogger("").setLevel(logging.WARNING)
     api = jenkins.Jenkins(jenkinsurl)
-
-    with serial(api, timeout=30, report_interval=3) as ctrl:
-        ctrl.invoke('quick', password='X', s1='HELLO', c1='true')
-        ctrl.invoke('wait10')
-        ctrl.invoke('wait5')
-
-    with parallel(api, timeout=20, report_interval=3) as ctrl:
-        ctrl.invoke('quick', password='Y', s1='WORLD', c1='maybe')
-        ctrl.invoke('wait10')
-        ctrl.invoke('wait5')
     
     try:
         with parallel(api, timeout=20, report_interval=3) as ctrl:
@@ -62,6 +52,14 @@ def main():
     except FlowTimeoutException as ex:
         print "Ok, got exception:", ex
 
+    try:
+        with serial(api, timeout=20, report_interval=3) as ctrl:
+            ctrl.invoke('quick', password='Yes', s1='', c1='false')
+            ctrl.invoke('quick_fail')
+            ctrl.invoke('wait5')
+        raise Exception("Should have failed!")
+    except FailedJobsException as ex:
+        print "Ok, got exception:", ex
 
 if __name__ == '__main__':
     main()

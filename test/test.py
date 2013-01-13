@@ -5,12 +5,12 @@ from os.path import join as jp
 here = os.path.abspath(os.path.dirname(__file__))
 
 sys.path.append(jp(here, '../demo'))
-import nested, single_level_with_errors, prefix, hide_password
+import nested, single_level, single_level_errors, prefix, hide_password
 
 os.chdir(here)
 
 print "Validating demos"
-for demo in nested, single_level_with_errors, prefix:
+for demo in nested, single_level, single_level_errors, prefix:
     print ""
     demo.main()
 

@@ -57,7 +57,7 @@ class _SingleJob(_JobControl):
 
     def _check(self, start_time, last_report_time):
         if not self.invoked:
-            print "Invoking:", repr(self.job.name)
+            print "Invoking:", repr(self.job.name), self.job.get_build_triggerurl(None, params=self.params)
             self.invoked = time.time()
             self.job.invoke(invoke_pre_check_delay=0, block=False, params=self.params)
     
@@ -144,6 +144,8 @@ class _TopLevelController(_Flow):
 class _Parallel(_Flow):
     def __init__(self, jenkins_api, timeout, job_name_prefix='', retries=0, report_interval=_default_report_interval, secret_params=_default_secret_params_re):
         super(_Parallel, self).__init__(jenkins_api, timeout, job_name_prefix, retries, report_interval, secret_params)
+        self._failed_children = []
+
 
     def __enter__(self):
         print "--- quing jobs for parallel run ---"
@@ -155,7 +157,6 @@ class _Parallel(_Flow):
         print "Queuing job:", job.job, "for parallel run"
 
     def _check(self, start_time, last_report_time):
-        failed_children = []
         all_finished = True
         for job in self.jobs:
             if job.finished:
@@ -164,13 +165,13 @@ class _Parallel(_Flow):
             all_finished = False
             last_report_time, failed_child = job._check(start_time, last_report_time)
             if failed_child:
-                failed_children.append(failed_child)
+                self._failed_children.append(failed_child)
 
         self._check_timeout(start_time)
-        if failed_children:
-            raise FailedJobsException("Failed jobs: " + repr([(job.name, self._hide(params)) for job, params in failed_children]))
-
         self.finished = all_finished
+        if self.finished and self._failed_children:
+            raise FailedJobsException("Failed jobs: " + repr([(job.name, self._hide(params)) for job, params in self._failed_children]))
+
         return last_report_time, None
 
     def sequence(self):
