@@ -4,9 +4,9 @@
 # All rights reserved. This work is under a BSD license, see LICENSE.TXT.
 
 # NOTE: To run the demo you must have the following jobs defined in jenkins/hudson
-# quick(password, s1, c1) # Requires parameters
-# wait10
-# wait5
+# tst_wait4-1
+# tst_wait5-1
+# tst_quick_fail
 
 import sys
 import os.path
@@ -18,9 +18,12 @@ import logging
 
 from jenkinsapi import jenkins
 
-from jenkinsflow.jobcontrol import parallel, serial
+from jenkinsflow.jobcontrol import serial
 from jenkinsflow.unbuffered import UnBuffered
+# Unbuffered output does not work well in Jenkins, so in case
+# this is run from a hudson job, we want unbuffered output
 sys.stdout = UnBuffered(sys.stdout)
+
 
 jenkinsurl = "http://localhost:8080"
 
@@ -29,15 +32,15 @@ def main():
     logging.getLogger("").setLevel(logging.WARNING)
     api = jenkins.Jenkins(jenkinsurl)
 
-    with serial(api, timeout=30, report_interval=3) as ctrl:
-        ctrl.invoke('quick', password='X', s1='HELLO', c1='true')
-        ctrl.invoke('wait10')
-        ctrl.invoke('wait5')
+    with serial(api, timeout=70, job_name_prefix='tst_', report_interval=3) as ctrl1:
+        ctrl1.invoke('wait4-1')
 
-    with parallel(api, timeout=20, report_interval=3) as ctrl:
-        ctrl.invoke('quick', password='Y', s1='WORLD', c1='maybe')
-        ctrl.invoke('wait10')
-        ctrl.invoke('wait5')
+        with ctrl1.parallel(timeout=20, report_interval=3) as ctrl2:
+            ctrl2.invoke('wait5-1')
+            ctrl2.invoke('quick_fail', password='Y', s1='WORLD', c1='maybe')
+
+        # Never invoked because of failure in preceding 'parallel' 
+        ctrl1.invoke('wait4-2')
 
 if __name__ == '__main__':
     main()

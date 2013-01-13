@@ -11,12 +11,30 @@ def _print_status_message(jenkins_job, build):
     print "Status", repr(jenkins_job.name), "- running:", repr(jenkins_job.is_running()) + ", queued:", jenkins_job.is_queued(), "- latest build: ", build
 
 
-class FlowTimeoutException(Exception):
+class FlowException(Exception):
+    __metaclass__ = abc.ABCMeta
+
+
+class FlowFailException(FlowException):
+    __metaclass__ = abc.ABCMeta
+
+
+class FlowTimeoutException(FlowException):
     pass
 
 
-class FailedJobsException(Exception):
-    pass
+class FailedJobException(FlowFailException):
+    def __init__(self, job, secret_filtered_params):
+        msg = "Failed job: " + repr((job.name, secret_filtered_params))
+        super(FailedJobException, self).__init__(msg)
+        self.failed_jobs = [(job, secret_filtered_params)]
+
+
+class FailedChildJobsException(FlowFailException):
+    def __init__(self, failed_child_jobs):
+        msg = "Failed jobs" + repr([(child_job.name, params) for child_job, params in failed_child_jobs])
+        super(FailedChildJobsException, self).__init__(msg)
+        self.failed_jobs = failed_child_jobs
 
 
 class _JobControl(object):
@@ -64,7 +82,7 @@ class _SingleJob(_JobControl):
         self.job.poll()
         build = self.job.get_last_build_or_none()
         if build == None:
-            return last_report_time, None
+            return last_report_time
     
         old_buildno = (self.old_build.buildno if self.old_build else None)
         if build.buildno == old_buildno or build.is_running():
@@ -72,15 +90,17 @@ class _SingleJob(_JobControl):
             if now - last_report_time >= self.report_interval:
                 _print_status_message(self.job, build)
                 last_report_time = now
-            return last_report_time, None
+            return last_report_time
     
         # The job has stopped running
         self.finished = True
         self.successful = build.is_good()
         _print_status_message(self.job, build)
         print build.get_status(), ":", repr(self.job.name), "- build: ", build.get_result_url()
-    
-        return last_report_time, None if self.successful else (self.job, self._hide(self.params))
+
+        if not self.successful:
+            raise FailedJobException(self.job, self._hide(self.params))    
+        return last_report_time
 
     def sequence(self):
         return self.job.name
@@ -137,14 +157,14 @@ class _TopLevelController(_Flow):
         last_report_time = start_time = time.time()
 
         while not self.finished:
-            last_report_time, _failed = self._check(start_time, last_report_time)
+            last_report_time = self._check(start_time, last_report_time)
             time.sleep(0.2)
 
 
 class _Parallel(_Flow):
     def __init__(self, jenkins_api, timeout, job_name_prefix='', retries=0, report_interval=_default_report_interval, secret_params=_default_secret_params_re):
         super(_Parallel, self).__init__(jenkins_api, timeout, job_name_prefix, retries, report_interval, secret_params)
-        self._failed_children = []
+        self._failed_child_jobs = []
 
 
     def __enter__(self):
@@ -163,16 +183,17 @@ class _Parallel(_Flow):
                 continue
             
             all_finished = False
-            last_report_time, failed_child = job._check(start_time, last_report_time)
-            if failed_child:
-                self._failed_children.append(failed_child)
+            try:
+                last_report_time = job._check(start_time, last_report_time)
+            except FlowFailException as ex:
+                self._failed_child_jobs.extend(ex.failed_jobs)
 
         self._check_timeout(start_time)
         self.finished = all_finished
-        if self.finished and self._failed_children:
-            raise FailedJobsException("Failed jobs: " + repr([(job.name, self._hide(params)) for job, params in self._failed_children]))
+        if self.finished and self._failed_child_jobs:
+            raise FailedChildJobsException(self._failed_child_jobs)
 
-        return last_report_time, None
+        return last_report_time
 
     def sequence(self):
         return tuple([job.sequence() for job in self.jobs])
@@ -197,15 +218,11 @@ class _Serial(_Flow):
             self.next_index += 1
             if self.next_index == len(self.jobs):
                 self.finished = True
-            return last_report_time, None
+            return last_report_time
 
-        last_report_time, failed_child = self.jobs[self.next_index]._check(start_time, last_report_time)
-
+        last_report_time = self.jobs[self.next_index]._check(start_time, last_report_time)
         self._check_timeout(start_time)
-        if failed_child:
-            raise FailedJobsException("Failed job: " + repr(failed_child))
-
-        return last_report_time, None
+        return last_report_time
 
     def sequence(self):
         return [job.sequence() for job in self.jobs]

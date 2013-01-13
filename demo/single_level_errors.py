@@ -21,7 +21,7 @@ import logging
 
 from jenkinsapi import jenkins
 
-from jenkinsflow.jobcontrol import parallel, serial, FailedJobsException, FlowTimeoutException
+from jenkinsflow.jobcontrol import parallel, serial, FailedJobException, FailedChildJobsException, FlowTimeoutException
 from jenkinsflow.unbuffered import UnBuffered
 sys.stdout = UnBuffered(sys.stdout)
 
@@ -41,7 +41,7 @@ def main():
             ctrl.invoke('wait5')
             ctrl.invoke('wait5_fail')
         raise Exception("Should have failed!")
-    except FailedJobsException as ex:
+    except FailedChildJobsException as ex:
         print "Ok, got exception:", ex
 
     try:
@@ -58,7 +58,7 @@ def main():
             ctrl.invoke('quick_fail')
             ctrl.invoke('wait5')
         raise Exception("Should have failed!")
-    except FailedJobsException as ex:
+    except FailedJobException as ex:
         print "Ok, got exception:", ex
 
 if __name__ == '__main__':
