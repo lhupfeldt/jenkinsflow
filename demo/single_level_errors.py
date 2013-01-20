@@ -11,7 +11,7 @@
 # wait5
 # wait5_fail
 
-import sys
+import sys, time
 import os.path
 from os.path import join as jp
 here = os.path.dirname(__file__)
@@ -21,7 +21,7 @@ import logging
 
 from jenkinsapi import jenkins
 
-from jenkinsflow.jobcontrol import parallel, serial, FailedJobException, FailedChildJobsException, FlowTimeoutException
+from jenkinsflow.jobcontrol import parallel, serial, FailedChildJobException, FailedChildJobsException, FlowTimeoutException
 from jenkinsflow.unbuffered import UnBuffered
 sys.stdout = UnBuffered(sys.stdout)
 
@@ -45,21 +45,22 @@ def main():
         print "Ok, got exception:", ex
 
     try:
+        with serial(api, timeout=20, report_interval=3) as ctrl:
+            ctrl.invoke('quick', password='Yes', s1='', c1='false')
+            ctrl.invoke('quick_fail')
+            ctrl.invoke('wait5')
+        raise Exception("Should have failed!")
+    except FailedChildJobException as ex:
+        print "Ok, got exception:", ex
+
+    try:
         with parallel(api, timeout=1, report_interval=3) as ctrl:
             ctrl.invoke('quick', password='Yes', s1='', c1='false')
             ctrl.invoke('wait5')
         raise Exception("Should have failed!")
     except FlowTimeoutException as ex:
         print "Ok, got exception:", ex
-
-    try:
-        with serial(api, timeout=20, report_interval=3) as ctrl:
-            ctrl.invoke('quick', password='Yes', s1='', c1='false')
-            ctrl.invoke('quick_fail')
-            ctrl.invoke('wait5')
-        raise Exception("Should have failed!")
-    except FailedJobException as ex:
-        print "Ok, got exception:", ex
+        time.sleep(5)
 
 if __name__ == '__main__':
     main()
