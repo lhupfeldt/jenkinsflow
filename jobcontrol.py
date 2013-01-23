@@ -4,7 +4,7 @@
 import time, re, abc, urlparse
 
 _default_report_interval = 5
-_default_secret_params = '.*passw.*|.*PASSWD.*'
+_default_secret_params = '.*passw.*|.*PASSW.*'
 _default_secret_params_re = re.compile(_default_secret_params)
 
 _debug = False
