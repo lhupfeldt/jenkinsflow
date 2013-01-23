@@ -58,19 +58,18 @@ class _JobControl(object):
         """Must be called before each invocation of a job, as opposed to __init__, which is called once in entire run"""
         self.invocation_time = 0
 
+    def _invoke_if_not_invoked(self):        
+        if self.invocation_time:
+            return True
+        
+        self.invocation_time = time.time()
+        print "\nInvoking (%d/%d,%d/%d):" % (self.tried_times + 1, self.max_tries, self.total_tried_times + 1, self.total_max_tries), self
+        return False
+
     @abc.abstractmethod
     def _check(self, start_time, last_report_time):
         """Polled by flow controller until the job reaches state 'successful' or tried_times == parent_max_tries * self.max_tries"""
         pass
-
-    def _start_check(self):
-        """return: True if job is started now"""
-        if not self.invocation_time:
-            self.invocation_time = time.time()
-            self.tried_times += 1
-            self.total_tried_times += 1
-            print "\nInvoking (%d/%d,%d/%d):" % (self.tried_times, self.max_tries, self.total_tried_times, self.total_max_tries), self
-            return True
 
     def _time_msg(self, start_time):
         now = time.time()
@@ -86,7 +85,7 @@ class _JobControl(object):
     def debug_str(self):
         debug_dict = {}
         for key, value in self.__dict__.iteritems():
-            if key in ('secret_params_re', 'api', 'report_interval', 'params', 'jobs'):
+            if key in ('secret_params_re', 'api', 'report_interval', 'params', 'jobs', 'repr_str'):
                 continue
             if key == 'tried_times':
                 debug_dict['tries'] = value
@@ -110,7 +109,7 @@ class _JobControl(object):
     def debug(self, *args):
         if not _debug:
             return
-        print 'DEBUG in ' + self.__class__.__name__ + ':', ' '.join([repr(arg) for arg in args])
+        print 'DEBUG in ' + self.__class__.__name__ + ':', ' '.join([str(arg) for arg in args])
 
 
 class _SingleJob(_JobControl):
@@ -147,7 +146,7 @@ class _SingleJob(_JobControl):
         self._print_status_message(self.old_build)
 
     def _check(self, start_time, last_report_time):
-        if self._start_check():
+        if not self._invoke_if_not_invoked():
             self.job.invoke(invoke_pre_check_delay=0, block=False, params=self.params)
 
         self.job.poll()
@@ -234,15 +233,12 @@ class _Parallel(_Flow):
         print "Queuing job:", job.job
 
     def _check(self, start_time, last_report_time):
-        if self.successful:
-            return last_report_time
-
-        self._start_check()
+        self._invoke_if_not_invoked()
         self._check_timeout(start_time)
 
         finished = True
         for job in self.jobs:
-            if job.successful or job.total_tried_times > job.total_max_tries:
+            if job.successful or job.total_tried_times == job.total_max_tries:
                 continue
 
             try:
@@ -254,17 +250,21 @@ class _Parallel(_Flow):
                     del self._failed_child_jobs[id(job)]
             except JobControlFailException:
                 self._failed_child_jobs[id(job)] = job
+                job.tried_times += 1
+                job.total_tried_times += 1
 
                 if job.tried_times < job.max_tries:
-                    print "RETRY:", job, "failed but will be retried. Up to", job.max_tries - job.tried_times, "more times"
+                    print "RETRY:", job, "failed but will be retried. Up to", job.max_tries - job.tried_times, "more times in current flow"
                     job._prepare_to_invoke()
                     continue
 
                 if job.total_tried_times < job.total_max_tries:
+                    print "RETRY:", job, "failed but will be retried. Up to", job.total_max_tries - job.total_tried_times, "more times through outermost flow"
                     job._prepare_to_invoke()
                     job.tried_times = 0
 
         if finished:
+            # All jobs have stopped running
             if self._failed_child_jobs:
                 print "FAILURE:", self, self._time_msg(start_time)
                 raise FailedChildJobsException(self, self._failed_child_jobs.values())
@@ -296,10 +296,7 @@ class _Serial(_Flow):
         print "Queuing job:", job.job
 
     def _check(self, start_time, last_report_time):
-        if self.successful:
-            return last_report_time
-
-        self._start_check()
+        self._invoke_if_not_invoked()
         self._check_timeout(start_time)
 
         job = self.jobs[self.job_index]
@@ -308,19 +305,27 @@ class _Serial(_Flow):
             if not job.successful:
                 return last_report_time
         except JobControlFailException:
-            num_fail = self.job_index + 1
+            # The job has stopped running
+            num_fail = self.job_index
             self.job_index = 0
+            job.tried_times += 1
+            job.total_tried_times += 1
 
             if job.tried_times < job.max_tries:
-                print "RETRY:", job, "failed, retrying child jobs from beginning. Up to", job.max_tries - job.tried_times, "more times"
+                print "RETRY:", job, "failed, retrying child jobs from beginning. Up to", job.max_tries - job.tried_times, "more times in current flow"
                 for pre_job in self.jobs[0:num_fail]:
                     pre_job._prepare_to_invoke()
+                    pre_job.tried_times += 1
+                    pre_job.total_tried_times += 1
                 return last_report_time
 
             if job.total_tried_times < job.total_max_tries:
+                print "RETRY:", job, "failed, retrying child jobs from beginning. Up to", job.total_max_tries - job.total_tried_times, "more times through outermost flow"
+                job.tried_times = 0
                 for pre_job in self.jobs[0:num_fail]:
                     pre_job._prepare_to_invoke()
                     pre_job.tried_times = 0
+                    pre_job.total_tried_times += 1
 
             print "FAILURE:", self, self._time_msg(start_time)
             raise FailedChildJobException(self, job)
