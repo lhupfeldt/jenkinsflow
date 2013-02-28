@@ -184,7 +184,7 @@ class _SingleJob(_JobControl):
 
 class _IgnoredSingleJob(_SingleJob):
     def __init__(self, jenkins_api, job_name_prefix, job_name, params, report_interval, secret_params_re, nesting_level):
-        super(_IgnoredSingleJob, self).__init__(1, 1, report_interval, secret_params_re, nesting_level)
+        super(_IgnoredSingleJob, self).__init__(jenkins_api, job_name_prefix, 1, 1, job_name, params, report_interval, secret_params_re, nesting_level)
 
     def _prepare_to_invoke(self, queuing=False):
         if self.tried_times < self.max_tries:

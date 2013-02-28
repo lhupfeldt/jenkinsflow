@@ -7,6 +7,7 @@ _current_order = 1
 
 class Job(object):
     def __init__(self, name, exec_time, max_fails, expect_invocations, expect_order, initial_buildno=0, invocation_delay=0.01):
+        """Set max_fails to -1 for an unchecked invocation"""
         assert exec_time > 0
         assert invocation_delay > 0
         self.name = name
@@ -138,6 +139,10 @@ class MockApi(object):
 
             last_expected_order = job.expect_order
             max_actual_order = max(job.actual_order, max_actual_order)
+
+            if job.max_fails == -1:
+                # Unchecked job
+                continue
 
             # Check expected number of job invocations
             assert job.expect_invocations == job.invocation, "Job: " + job.name + " invoked " + job.invocation + " times, expected " + job.expect_invocations + " invocations"
