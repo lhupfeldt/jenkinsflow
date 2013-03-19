@@ -59,10 +59,10 @@ class _JobControl(object):
         """Must be called before each invocation of a job, as opposed to __init__, which is called once in entire run"""
         self.invocation_time = 0
 
-    def _invoke_if_not_invoked(self):        
+    def _invoke_if_not_invoked(self):
         if self.invocation_time:
             return True
-        
+
         self.invocation_time = time.time()
         print "\nInvoking (%d/%d,%d/%d):" % (self.tried_times + 1, self.max_tries, self.total_tried_times + 1, self.total_max_tries), self
         return False
@@ -215,14 +215,14 @@ class _Flow(_JobControl):
         self.job_name_prefix = job_name_prefix
         self.jobs = []
 
-    def parallel(self, timeout, job_name_prefix='', max_tries=1, report_interval=None, secret_params=None):
+    def parallel(self, timeout=0, job_name_prefix='', max_tries=1, report_interval=None, secret_params=None):
         secret_params = secret_params or self.secret_params_re
         report_interval = report_interval or self.report_interval
         pll = _Parallel(self.api, timeout, self.job_name_prefix+job_name_prefix, max_tries, self.total_max_tries, report_interval, secret_params, self.nesting_level)
         self.jobs.append(pll)
         return pll
 
-    def serial(self, timeout, job_name_prefix='', max_tries=1, report_interval=None, secret_params=None):
+    def serial(self, timeout=0, job_name_prefix='', max_tries=1, report_interval=None, secret_params=None):
         secret_params = secret_params or self.secret_params_re
         report_interval = report_interval or self.report_interval
         ser = _Serial(self.api, timeout, self.job_name_prefix+job_name_prefix, max_tries, self.total_max_tries, report_interval, secret_params, self.nesting_level)
@@ -246,8 +246,16 @@ class _Flow(_JobControl):
     def __exit__(self, exc_type, exc_value, traceback):
         if exc_type:
             return None
-        if not self.jobs:
-            raise JobControlException("You can't define a flow with no job invocations")
+
+        # Check for and remove empty flows
+        new_job_list = []
+        for job in self.jobs:
+            if isinstance(job, _Flow):
+                if not job.jobs:
+                    print self.indentation + "INFO: Removing empty flow", job, "from: ", self
+                    continue
+            new_job_list.append(job)
+        self.jobs = new_job_list
 
 
 class _Parallel(_Flow):
@@ -261,9 +269,9 @@ class _Parallel(_Flow):
         return self
 
     def __exit__(self, exc_type, exc_value, traceback):
+        super(_Parallel, self).__exit__(exc_type, exc_value, traceback)
         self.nesting_level -= 1
         print self.indentation + ")\n"
-        super(_Parallel, self).__exit__(exc_type, exc_value, traceback)
 
     def _check(self, start_time, last_report_time):
         self._invoke_if_not_invoked()
@@ -325,9 +333,9 @@ class _Serial(_Flow):
         return self
 
     def __exit__(self, exc_type, exc_value, traceback):
+        super(_Serial, self).__exit__(exc_type, exc_value, traceback)
         self.nesting_level -= 1
         print self.indentation + "]\n"
-        super(_Serial, self).__exit__(exc_type, exc_value, traceback)
 
     def _check(self, start_time, last_report_time):
         self._invoke_if_not_invoked()
@@ -376,12 +384,14 @@ class _Serial(_Flow):
 
 
 class _TopLevelController(_Flow):
-    def __exit__(self, exc_type, exc_value, traceback):
-        if exc_type:
-            return None
+    def wait_for_jobs(self):
+        if not self.jobs:
+            print "WARNING: Empty toplevel flow", self, "nothing to do."
+            return
 
         # Wait for jobs to finish
         print
+
         last_report_time = start_time = time.time()
 
         while not self.successful:
@@ -403,8 +413,16 @@ class parallel(_Parallel, _TopLevelController):
         _start_msg()
         super(parallel, self).__init__(jenkins_api, timeout, job_name_prefix, max_tries, 1, report_interval, secret_params, 0)
 
+    def __exit__(self, exc_type, exc_value, traceback):
+        super(parallel, self).__exit__(exc_type, exc_value, traceback)
+        self.wait_for_jobs()
+
 
 class serial(_Serial, _TopLevelController):
     def __init__(self, jenkins_api, timeout, job_name_prefix='', max_tries=1, report_interval=_default_report_interval, secret_params=_default_secret_params_re):
         _start_msg()
         super(serial, self).__init__(jenkins_api, timeout, job_name_prefix, max_tries, 1, report_interval, secret_params, 0)
+
+    def __exit__(self, exc_type, exc_value, traceback):
+        super(serial, self).__exit__(exc_type, exc_value, traceback)
+        self.wait_for_jobs()
