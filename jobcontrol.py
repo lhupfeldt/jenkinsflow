@@ -239,7 +239,7 @@ class _Flow(_JobControl):
 
     def _check_timeout(self, start_time):
         now = time.time()
-        if self.timeout and now - start_time > self.timeout:
+        if self.timeout and now - self.invocation_time > self.timeout:
             unfinished_msg = "Unfinished jobs:" + str(self)
             raise FlowTimeoutException("Timeout after:" + self._time_msg(start_time) + unfinished_msg)
 
