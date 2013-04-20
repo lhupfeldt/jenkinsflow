@@ -87,30 +87,6 @@ class _JobControl(object):
     def __repr__(self):
         return str(self.sequence())
 
-    def debug_str(self):
-        debug_dict = {}
-        for key, value in self.__dict__.iteritems():
-            if key in ('secret_params_re', 'api', 'report_interval', 'params', 'jobs', 'repr_str'):
-                continue
-            if key == 'tried_times':
-                debug_dict['tries'] = value
-                continue
-            if key == 'invocation_time':
-                debug_dict['itime'] = "%.3f" % value
-                continue
-            if key == 'old_build':
-                debug_dict[key] = value.buildno
-                continue
-            if key == 'old_build':
-                debug_dict[key] = value.buildno
-                continue
-            if key == 'job':
-                debug_dict[key] = value.name
-                continue
-            debug_dict[key] = value
-
-        return self.__class__.__name__ + ': ' + repr(debug_dict)
-
     def debug(self, *args):
         if not _debug:
             return
