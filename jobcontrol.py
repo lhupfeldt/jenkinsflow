@@ -1,7 +1,7 @@
 # Copyright (c) 2012 Lars Hupfeldt Nielsen, Hupfeldt IT
 # All rights reserved. This work is under a BSD license, see LICENSE.TXT.
 
-import time, re, abc, urlparse
+import time, re, abc
 
 _default_report_interval = 5
 _default_secret_params = '.*passw.*|.*PASSW.*'
@@ -101,17 +101,26 @@ class _SingleJob(_JobControl):
         self.total_max_tries = parent_max_tries
 
         # Build repr string with build-url with secret params replaced by '***'
+        def build_query():
+            query = [key + '=' + (value if not self.secret_params_re.search(key) else '******') for key, value in self.params.iteritems()]
+            return '?' + '&'.join(query) if query else ''
+
         # TODO: token instead of None?
-        up = urlparse.urlparse(self.job.get_build_triggerurl(None, params=self.params))
-        query = ''
-        if up.query:
-            query = [key + '=' + (value if not self.secret_params_re.search(key) else '******') for key, value in urlparse.parse_qsl(up.query)]
-            query = '?' + '&'.join(query)
-        # Insert ' - ' so that the build URL is not directly clickable, but will instead point to the job
-        path = up.path.replace(self.job.name, self.job.name + ' - ')
-        params = ';' + up.params if up.params else ''
-        fragment = '#' + up.fragment if up.fragment else ''
-        self.repr_str = repr(self.job.name) + ' ' + up.scheme + '://' + up.netloc + path + params + query + fragment
+        url = self.job.get_build_triggerurl(None, params=self.params)
+        if isinstance(url, tuple):
+            # Newer versions of jenkinsapi returns tuple (path, {args})
+            # Insert ' - ' so that the build URL is not directly clickable, but will instead point to the job
+            part1 = url[0].replace(self.job.name, self.job.name + ' - ')
+            self.repr_str = part1 + build_query()
+        else:
+            # Older versions of jenkinsapi return real URL
+            import urlparse
+            up = urlparse.urlparse(self.job.get_build_triggerurl(None, params=self.params))
+            # Insert ' - ' so that the build URL is not directly clickable, but will instead point to the job
+            path = up.path.replace(self.job.name, self.job.name + ' - ')
+            params = ';' + up.params if up.params else ''
+            fragment = '#' + up.fragment if up.fragment else ''
+            self.repr_str = repr(self.job.name) + ' ' + up.scheme + '://' + up.netloc + path + params + build_query() + fragment
 
     def __repr__(self):
         return self.repr_str
