@@ -17,7 +17,7 @@ import sys
 import os.path
 from os.path import join as jp
 here = os.path.dirname(__file__)
-sys.path.append(jp(here, '../..'))
+sys.path.extend([jp(here, '../..'), jp(here, '../../jenkinsapi')])
 
 import logging
 

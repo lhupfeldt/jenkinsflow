@@ -1,11 +1,12 @@
-import os, abc
-from os.path import join as jp
-here = os.path.abspath(os.path.dirname(__file__))
-
+import os, sys, abc
 from collections import OrderedDict
 import time
-from jenkinsflow.jobload import update_job
+from os.path import join as jp
 
+here = os.path.abspath(os.path.dirname(__file__))
+sys.path.append(jp(here, '../..'))
+
+from jenkinsflow.jobload import update_job
 from jenkinsapi import jenkins
 
 
@@ -176,8 +177,14 @@ class JenkinsWrapper(jenkins.Jenkins, _JobsMixin):
         super(JenkinsWrapper, self).__init__(jenkinsurl)
         self.job_name_prefix = job_name_prefix
         self.jobs = OrderedDict()
-        with open(jp(here, 'job.xml')) as ff:
-            self.config_xml = ff.read()
+        try:
+            file_name = jp(here, self.job_name_prefix + 'job.xml')
+            with open(file_name) as ff:
+                print "Using specialized job xml:", file_name
+                self.config_xml = ff.read()
+        except IOError:
+            with open(jp(here, 'job.xml')) as ff:
+                self.config_xml = ff.read()            
 
 
 def is_mocked():

@@ -106,7 +106,7 @@ class _SingleJob(_JobControl):
             return '?' + '&'.join(query) if query else ''
 
         # TODO: token instead of None?
-        url = self.job.get_build_triggerurl(None, params=self.params)
+        url = self.job.get_build_triggerurl(None, params=self.params if params else None)
         if isinstance(url, tuple):
             # Newer versions of jenkinsapi returns tuple (path, {args})
             # Insert ' - ' so that the build URL is not directly clickable, but will instead point to the job
@@ -139,7 +139,7 @@ class _SingleJob(_JobControl):
 
     def _check(self, start_time, last_report_time):
         if not self._invoke_if_not_invoked():
-            self.job.invoke(invoke_pre_check_delay=0, block=False, params=self.params)
+            self.job.invoke(invoke_pre_check_delay=0, block=False, params=self.params if self.params else None)
 
         self.job.poll()
         build = self.job.get_last_build_or_none()
