@@ -4,14 +4,15 @@
 # All rights reserved. This work is under a BSD license, see LICENSE.TXT.
 
 # NOTE: To run the demo you must have the following jobs defined in jenkins/hudson
-# tst_quick(password, s1, c1) # Requires parameters
-# tst_wait4-1
-# tst_wait5-1
-# tst_wait4-2
-# tst_wait10-1
-# tst_wait5-2a
-# tst_wait5-2b
-# tst_wait5-2c
+# tst_report(password, s1, c1) # Requires parameters
+# tst_prepare
+# tst_deploy_component1
+# tst_deploy_component2
+# tst_prepare_tests
+# tst_test_ui
+# tst_server_component1
+# tst_server_component2
+# tst_promote
 
 import sys
 import os.path
@@ -38,23 +39,24 @@ def main():
     api = jenkins.Jenkins(jenkinsurl)
 
     with serial(api, timeout=70, job_name_prefix='tst_', report_interval=3) as ctrl1:
-        ctrl1.invoke('wait4-1')
+        ctrl1.invoke('prepare')
 
         with ctrl1.parallel(timeout=20, report_interval=3) as ctrl2:
-            ctrl2.invoke('wait5-1')
-            ctrl2.invoke('quick', password='Y', s1='WORLD', c1='maybe')
+            ctrl2.invoke('deploy_component1')
+            ctrl2.invoke('deploy_component2')
 
-        ctrl1.invoke('wait4-2')
+        ctrl1.invoke('report', password='Y', s1='deploy', c1='complete')
+        ctrl1.invoke('prepare_tests')
 
         with ctrl1.parallel(timeout=40, report_interval=3) as ctrl2:
             with ctrl2.serial(timeout=40, report_interval=3) as ctrl3:
-                ctrl3.invoke('wait10-1')
+                ctrl3.invoke('test_ui')
                 with ctrl3.parallel(timeout=40, report_interval=3) as ctrl4:
-                    ctrl4.invoke('wait5-2a')
-                    ctrl4.invoke('wait5-2b')
+                    ctrl4.invoke('test_server_component1')
+                    ctrl4.invoke('test_server_component2')
 
-            ctrl2.invoke('quick', password='Y', s1='WORLD', c1='maybe')
-            ctrl2.invoke('wait5-2c')
+            ctrl2.invoke('report', password='Y', s1='tst_regression', c1='complete')
+            ctrl2.invoke('promote')
 
 
 if __name__ == '__main__':
