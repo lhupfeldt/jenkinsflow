@@ -42,7 +42,8 @@ class FailedChildJobsException(JobControlFailException):
 class _JobControl(object):
     __metaclass__ = abc.ABCMeta
 
-    def __init__(self, max_tries, parent_max_tries, report_interval, secret_params_re, nesting_level):
+    def __init__(self, securitytoken, max_tries, parent_max_tries, report_interval, secret_params_re, nesting_level):
+        self.securitytoken = securitytoken
         self.max_tries = max_tries
         self.total_max_tries = self.max_tries * parent_max_tries
         self.report_interval = report_interval
@@ -94,10 +95,10 @@ class _JobControl(object):
 
 
 class _SingleJob(_JobControl):
-    def __init__(self, jenkins_api, job_name_prefix, max_tries, parent_max_tries, job_name, params, report_interval, secret_params_re, nesting_level):
+    def __init__(self, jenkins_api, securitytoken, job_name_prefix, max_tries, parent_max_tries, job_name, params, report_interval, secret_params_re, nesting_level):
         self.job = jenkins_api.get_job(job_name_prefix + job_name)
         self.params = params
-        super(_SingleJob, self).__init__(max_tries, parent_max_tries, report_interval, secret_params_re, nesting_level)
+        super(_SingleJob, self).__init__(securitytoken, max_tries, parent_max_tries, report_interval, secret_params_re, nesting_level)
         self.total_max_tries = parent_max_tries
 
         # Build repr string with build-url with secret params replaced by '***'
@@ -139,7 +140,7 @@ class _SingleJob(_JobControl):
 
     def _check(self, start_time, last_report_time):
         if not self._invoke_if_not_invoked():
-            self.job.invoke(invoke_pre_check_delay=0, block=False, params=self.params if self.params else None)
+            self.job.invoke(securitytoken=self.securitytoken, invoke_pre_check_delay=0, block=False, params=self.params if self.params else None)
 
         self.job.poll()
         build = self.job.get_last_build_or_none()
@@ -168,8 +169,8 @@ class _SingleJob(_JobControl):
 
 
 class _IgnoredSingleJob(_SingleJob):
-    def __init__(self, jenkins_api, job_name_prefix, job_name, params, report_interval, secret_params_re, nesting_level):
-        super(_IgnoredSingleJob, self).__init__(jenkins_api, job_name_prefix, 1, 1, job_name, params, report_interval, secret_params_re, nesting_level)
+    def __init__(self, jenkins_api, securitytoken, job_name_prefix, job_name, params, report_interval, secret_params_re, nesting_level):
+        super(_IgnoredSingleJob, self).__init__(jenkins_api, securitytoken, job_name_prefix, 1, 1, job_name, params, report_interval, secret_params_re, nesting_level)
 
     def _prepare_to_invoke(self, queuing=False):
         if self.tried_times < self.max_tries:
@@ -191,31 +192,32 @@ class _IgnoredSingleJob(_SingleJob):
 class _Flow(_JobControl):
     __metaclass__ = abc.ABCMeta
 
-    def __init__(self, jenkins_api, timeout, job_name_prefix, max_tries, parent_max_tries, report_interval, secret_params, nesting_level):
+    def __init__(self, jenkins_api, timeout, securitytoken, job_name_prefix, max_tries, parent_max_tries, report_interval, secret_params, nesting_level):
         secret_params_re = re.compile(secret_params) if isinstance(secret_params, str) else secret_params
-        super(_Flow, self).__init__(max_tries, parent_max_tries, report_interval, secret_params_re, nesting_level)
+        super(_Flow, self).__init__(securitytoken, max_tries, parent_max_tries, report_interval, secret_params_re, nesting_level)
 
         self.api = jenkins_api
         self.timeout = timeout
         self.job_name_prefix = job_name_prefix
         self.jobs = []
 
-    def parallel(self, timeout=0, job_name_prefix='', max_tries=1, report_interval=None, secret_params=None):
+    def _create(self, flow_cls, timeout=0, securitytoken=None, job_name_prefix='', max_tries=1, report_interval=None, secret_params=None):
+        securitytoken = securitytoken or self.securitytoken
         secret_params = secret_params or self.secret_params_re
         report_interval = report_interval or self.report_interval
-        pll = _Parallel(self.api, timeout, self.job_name_prefix+job_name_prefix, max_tries, self.total_max_tries, report_interval, secret_params, self.nesting_level)
-        self.jobs.append(pll)
-        return pll
+        flw = flow_cls(self.api, timeout, securitytoken, self.job_name_prefix+job_name_prefix, max_tries, self.total_max_tries, report_interval, secret_params, self.nesting_level)
+        self.jobs.append(flw)
+        return flw
 
-    def serial(self, timeout=0, job_name_prefix='', max_tries=1, report_interval=None, secret_params=None):
-        secret_params = secret_params or self.secret_params_re
-        report_interval = report_interval or self.report_interval
-        ser = _Serial(self.api, timeout, self.job_name_prefix+job_name_prefix, max_tries, self.total_max_tries, report_interval, secret_params, self.nesting_level)
-        self.jobs.append(ser)
-        return ser
+    def parallel(self, timeout=0, securitytoken=None, job_name_prefix='', max_tries=1, report_interval=None, secret_params=None):
+        return self._create(_Parallel, timeout, securitytoken, job_name_prefix, max_tries, report_interval, secret_params)
+
+    def serial(self, timeout=0, securitytoken=None, job_name_prefix='', max_tries=1, report_interval=None, secret_params=None):
+        return self._create(_Serial, timeout, securitytoken, job_name_prefix, max_tries, report_interval, secret_params)
 
     def invoke(self, job_name, **params):
-        job = _SingleJob(self.api, self.job_name_prefix, self.max_tries, self.total_max_tries, job_name, params, self.report_interval, self.secret_params_re, self.nesting_level)
+        job = _SingleJob(self.api, self.securitytoken, self.job_name_prefix, self.max_tries, self.total_max_tries, job_name, params,
+                         self.report_interval, self.secret_params_re, self.nesting_level)
         self.jobs.append(job)
 
     def invoke_unchecked(self, job_name, **params):
@@ -244,8 +246,9 @@ class _Flow(_JobControl):
 
 
 class _Parallel(_Flow):
-    def __init__(self, jenkins_api, timeout, job_name_prefix='', max_tries=1, parent_max_tries=1, report_interval=None, secret_params=_default_secret_params_re, nesting_level=0):
-        super(_Parallel, self).__init__(jenkins_api, timeout, job_name_prefix, max_tries, parent_max_tries, report_interval, secret_params, nesting_level)
+    def __init__(self, jenkins_api, timeout, securitytoken, job_name_prefix='', max_tries=1, parent_max_tries=1, report_interval=None,
+                 secret_params=_default_secret_params_re, nesting_level=0):
+        super(_Parallel, self).__init__(jenkins_api, timeout, securitytoken, job_name_prefix, max_tries, parent_max_tries, report_interval, secret_params, nesting_level)
         self._failed_child_jobs = {}
 
     def __enter__(self):
@@ -304,8 +307,9 @@ class _Parallel(_Flow):
 
 
 class _Serial(_Flow):
-    def __init__(self, jenkins_api, timeout, job_name_prefix='', max_tries=1, parent_max_tries=1, report_interval=None, secret_params=_default_secret_params_re, nesting_level=0):
-        super(_Serial, self).__init__(jenkins_api, timeout, job_name_prefix, max_tries, parent_max_tries, report_interval, secret_params, nesting_level)
+    def __init__(self, jenkins_api, securitytoken, timeout, job_name_prefix='', max_tries=1, parent_max_tries=1, report_interval=None,
+                 secret_params=_default_secret_params_re, nesting_level=0):
+        super(_Serial, self).__init__(jenkins_api, securitytoken, timeout, job_name_prefix, max_tries, parent_max_tries, report_interval, secret_params, nesting_level)
         self.job_index = 0
 
     def _prepare_to_invoke(self, queuing=False):
@@ -394,9 +398,9 @@ def _start_msg():
 
 
 class parallel(_Parallel, _TopLevelController):
-    def __init__(self, jenkins_api, timeout, job_name_prefix='', max_tries=1, report_interval=_default_report_interval, secret_params=_default_secret_params_re):
+    def __init__(self, jenkins_api, timeout, securitytoken=None, job_name_prefix='', max_tries=1, report_interval=_default_report_interval, secret_params=_default_secret_params_re):
         _start_msg()
-        super(parallel, self).__init__(jenkins_api, timeout, job_name_prefix, max_tries, 1, report_interval, secret_params, 0)
+        super(parallel, self).__init__(jenkins_api, timeout, securitytoken, job_name_prefix, max_tries, 1, report_interval, secret_params, 0)
 
     def __exit__(self, exc_type, exc_value, traceback):
         super(parallel, self).__exit__(exc_type, exc_value, traceback)
@@ -404,9 +408,9 @@ class parallel(_Parallel, _TopLevelController):
 
 
 class serial(_Serial, _TopLevelController):
-    def __init__(self, jenkins_api, timeout, job_name_prefix='', max_tries=1, report_interval=_default_report_interval, secret_params=_default_secret_params_re):
+    def __init__(self, jenkins_api, timeout, securitytoken=None, job_name_prefix='', max_tries=1, report_interval=_default_report_interval, secret_params=_default_secret_params_re):
         _start_msg()
-        super(serial, self).__init__(jenkins_api, timeout, job_name_prefix, max_tries, 1, report_interval, secret_params, 0)
+        super(serial, self).__init__(jenkins_api, timeout, securitytoken, job_name_prefix, max_tries, 1, report_interval, secret_params, 0)
 
     def __exit__(self, exc_type, exc_value, traceback):
         super(serial, self).__exit__(exc_type, exc_value, traceback)

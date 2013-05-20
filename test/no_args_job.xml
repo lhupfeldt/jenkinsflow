@@ -9,6 +9,7 @@
   <disabled>false</disabled>
   <blockBuildWhenDownstreamBuilding>false</blockBuildWhenDownstreamBuilding>
   <blockBuildWhenUpstreamBuilding>false</blockBuildWhenUpstreamBuilding>
+  <authToken>hello</authToken>
   <triggers class="vector"/>
   <concurrentBuild>false</concurrentBuild>
   <builders>
