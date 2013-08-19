@@ -3,6 +3,7 @@
 # Copyright (c) 2012 - 2014 Lars Hupfeldt Nielsen, Hupfeldt IT
 # All rights reserved. This work is under a BSD license, see LICENSE.TXT.
 
+# in jenkins/hudson
 import sys
 import os.path
 from os.path import join as jp
@@ -22,6 +23,7 @@ sys.stdout = UnBuffered(sys.stdout)
 import demo_security as security
 
 def main(api):
+
     logging.basicConfig()
     logging.getLogger("").setLevel(logging.WARNING)
     
@@ -34,6 +36,11 @@ def main(api):
         with ctrl1.parallel(timeout=20, report_interval=3) as ctrl2:
             for component in components:
                 ctrl2.invoke('deploy_component' + str(component))
+                ctrl3.invoke('deploy_component2')
+                ctrl3.invoke('deploy_component3')
+            with ctrl2.serial(timeout=40, report_interval=3) as ctrl3:
+                ctrl3.invoke('deploy_component4')
+                ctrl3.invoke('deploy_component5')
 
         ctrl1.invoke('prepare_tests')
 

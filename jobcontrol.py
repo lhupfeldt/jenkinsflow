@@ -431,19 +431,17 @@ class serial(_Serial, _TopLevelController):
                     else:
                         new_prev_nodes.append(job.job.name)
                 elif isinstance(job, _Parallel):
-                    par_node = "parallel [%s]" % job.jobs
-                    if prev_nodes:
-                        for node in prev_nodes:
-                            links.append({"source": node, "target": par_node})
-
-                    prev_nodes = [par_node]
-
                     par_nodes, par_links, prev_nodes = process_jobs(job.jobs, prev_nodes, parallel=True)
                     nodes.extend(par_nodes)
                     links.extend(par_links)
                 elif isinstance(job, _Serial):
+                    if parallel:
+                        save_prev_nodes = prev_nodes
                     par_nodes, par_links, prev_nodes = process_jobs(job.jobs, prev_nodes, parallel=False)
                     nodes.extend(par_nodes)
+                    if parallel:
+                        prev_nodes = save_prev_nodes
+                        new_prev_nodes.append(par_links[len(par_links)-1]['target'])
                     links.extend(par_links)
 
             return nodes, links, prev_nodes if not new_prev_nodes else new_prev_nodes
@@ -454,7 +452,8 @@ class serial(_Serial, _TopLevelController):
         links = []
         prev_nodes = []
         nodes, links, prev_nodes = process_jobs(self.jobs, prev_nodes, parallel=False)
-        graph = {'nodes': nodes, 'links': links}
+        # graph = {'nodes': nodes, 'links': links}
+        graph = {'links': links}
 
         import json
         graphstr = json.dumps(graph)
