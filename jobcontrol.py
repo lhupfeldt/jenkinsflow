@@ -246,6 +246,52 @@ class _Flow(_JobControl):
             new_job_list.append(job)
         self.jobs = new_job_list
 
+    def json(self, file_path=None):
+        def process_jobs(jobs, prev_nodes, parallel=False):
+            nodes = []
+            links = []
+            new_prev_nodes = []
+            assert isinstance(prev_nodes, list)
+            for job in jobs:
+                if isinstance(job, _SingleJob):
+                    nodes.append({"id": job.job.name,
+                                 "name": job.job.name,
+                                 "url": job.job.baseurl})
+                    if prev_nodes:
+                        for node in prev_nodes:
+                            links.append({"source": node, "target": job.job.name})
+                    if not parallel:
+                        prev_nodes = [job.job.name]
+                    else:
+                        new_prev_nodes.append(job.job.name)
+                elif isinstance(job, _Parallel):
+                    par_nodes, par_links, prev_nodes = process_jobs(job.jobs, prev_nodes, parallel=True)
+                    nodes.extend(par_nodes)
+                    links.extend(par_links)
+                elif isinstance(job, _Serial):
+                    if parallel:
+                        save_prev_nodes = prev_nodes
+                    par_nodes, par_links, prev_nodes = process_jobs(job.jobs, prev_nodes, parallel=False)
+                    nodes.extend(par_nodes)
+                    if parallel:
+                        prev_nodes = save_prev_nodes
+                        new_prev_nodes.append(par_links[len(par_links)-1]['target'])
+                    links.extend(par_links)
+
+            return nodes, links, prev_nodes if not new_prev_nodes else new_prev_nodes
+
+        nodes = []
+        links = []
+        prev_nodes = []
+        nodes, links, __ = process_jobs(self.jobs, prev_nodes, parallel=False)
+        graph = {'nodes': nodes, 'links': links}
+
+        import json
+        if file_path is not None:
+            with open(file_path, 'w+') as out_file:
+                json.dump(graph, out_file)
+
+        return json.dumps(graph)
 
 class _Parallel(_Flow):
     def __init__(self, jenkins_api, timeout, securitytoken, job_name_prefix='', max_tries=1, parent_max_tries=1, report_interval=None,
@@ -375,7 +421,7 @@ class _Serial(_Flow):
 
 
 class _TopLevelController(_Flow):
-    def wait_for_jobs(self):
+    def start(self):
         if not self.jobs:
             print "WARNING: Empty toplevel flow", self, "nothing to do."
             return
@@ -385,9 +431,9 @@ class _TopLevelController(_Flow):
 
         last_report_time = start_time = time.time()
 
-        # while not self.successful:
-            # last_report_time = self._check(start_time, last_report_time)
-            # time.sleep(min(0.5, self.report_interval))
+        while not self.successful:
+            last_report_time = self._check(start_time, last_report_time)
+            time.sleep(min(0.5, self.report_interval))
 
 
 def _start_msg():
@@ -406,7 +452,6 @@ class parallel(_Parallel, _TopLevelController):
 
     def __exit__(self, exc_type, exc_value, traceback):
         super(parallel, self).__exit__(exc_type, exc_value, traceback)
-        self.wait_for_jobs()
 
 
 class serial(_Serial, _TopLevelController):
@@ -415,48 +460,4 @@ class serial(_Serial, _TopLevelController):
         super(serial, self).__init__(jenkins_api, timeout, securitytoken, job_name_prefix, max_tries, 1, report_interval, secret_params, 0)
 
     def __exit__(self, exc_type, exc_value, traceback):
-        def process_jobs(jobs, prev_nodes, parallel=False):
-            nodes = []
-            links = []
-            new_prev_nodes = []
-            assert isinstance(prev_nodes, list)
-            for job in jobs:
-                if isinstance(job, _SingleJob):
-                    nodes.append({"id": job.job.name, "name": job.job.name})
-                    if prev_nodes:
-                        for node in prev_nodes:
-                            links.append({"source": node, "target": job.job.name})
-                    if not parallel:
-                        prev_nodes = [job.job.name]
-                    else:
-                        new_prev_nodes.append(job.job.name)
-                elif isinstance(job, _Parallel):
-                    par_nodes, par_links, prev_nodes = process_jobs(job.jobs, prev_nodes, parallel=True)
-                    nodes.extend(par_nodes)
-                    links.extend(par_links)
-                elif isinstance(job, _Serial):
-                    if parallel:
-                        save_prev_nodes = prev_nodes
-                    par_nodes, par_links, prev_nodes = process_jobs(job.jobs, prev_nodes, parallel=False)
-                    nodes.extend(par_nodes)
-                    if parallel:
-                        prev_nodes = save_prev_nodes
-                        new_prev_nodes.append(par_links[len(par_links)-1]['target'])
-                    links.extend(par_links)
-
-            return nodes, links, prev_nodes if not new_prev_nodes else new_prev_nodes
-
         super(serial, self).__exit__(exc_type, exc_value, traceback)
-        print 'DEBUG: serial.exit.jobs = ', self.jobs
-        nodes = []
-        links = []
-        prev_nodes = []
-        nodes, links, prev_nodes = process_jobs(self.jobs, prev_nodes, parallel=False)
-        # graph = {'nodes': nodes, 'links': links}
-        graph = {'links': links}
-
-        import json
-        graphstr = json.dumps(graph)
-        print 'DEBUG: %s' % graphstr
-
-        self.wait_for_jobs()

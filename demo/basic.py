@@ -33,21 +33,21 @@ def main(api):
     with serial(api, timeout=70, securitytoken=security.securitytoken, job_name_prefix='jenkinsflow_demo__basic__', report_interval=3) as ctrl1:
         ctrl1.invoke('prepare')
 
-        with ctrl1.parallel(timeout=20, report_interval=3) as ctrl2:
+        with ctrl1.parallel(timeout=0, report_interval=3) as ctrl2:
             for component in components:
                 ctrl2.invoke('deploy_component' + str(component))
                 ctrl3.invoke('deploy_component2')
                 ctrl3.invoke('deploy_component3')
-            with ctrl2.serial(timeout=40, report_interval=3) as ctrl3:
+            with ctrl2.serial(timeout=0, report_interval=3) as ctrl3:
                 ctrl3.invoke('deploy_component4')
                 ctrl3.invoke('deploy_component5')
 
         ctrl1.invoke('prepare_tests')
 
-        with ctrl1.parallel(timeout=40, report_interval=3) as ctrl2:
-            with ctrl2.serial(timeout=40, report_interval=3) as ctrl3:
+        with ctrl1.parallel(timeout=0, report_interval=3) as ctrl2:
+            with ctrl2.serial(timeout=0, report_interval=3) as ctrl3:
                 ctrl3.invoke('test_ui')
-                with ctrl3.parallel(timeout=40, report_interval=3) as ctrl4:
+                with ctrl3.parallel(timeout=0, report_interval=3) as ctrl4:
                     for component in components:
                         ctrl4.invoke('test_server_component' + str(component))
             ctrl2.invoke('test_x')
@@ -57,6 +57,8 @@ def main(api):
 
     print("Doing stuff after flow ...")
 
+    print ctrl1.json(file_path='/var/www/jenkinsflow/flow_graph.json')
+    ctrl1.start()
 
 if __name__ == '__main__':
     main(jenkins.Jenkins(os.environ.get('JENKINS_URL') or "http://localhost:8080", security.username, security.password))
