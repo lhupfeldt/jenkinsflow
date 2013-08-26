@@ -42,3 +42,9 @@ TAGS
 .cache
 
 __pycache__
+
+# Vim swap
+*.sw?
+
+# PyChrm files
+.idea
