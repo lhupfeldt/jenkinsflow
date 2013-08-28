@@ -8,15 +8,15 @@ window.onload=function(){
     */
   var nodePadding = 10;
 
-  // var links;
-  // var nodes;
+  var links;
+  var nodes;
 
   d3.json("http://localhost:9090/jenkinsflow/flow_graph.json", function(error, json) {
         if (error) {
             console.error(error);
         } else {
-            var links = json["links"];
-            var nodes = json["nodes"]
+            links = json["links"];
+            nodes = json["nodes"]
             update(links, nodes);
         }
     }
@@ -26,10 +26,19 @@ function refreshBuilds(url) {
     var f = function() {
         new Ajax.Request(url, {
             onSuccess: function(rsp) {
-                console.debug(rsp.responseText)
-                refreshBuilds(url);
+                console.debug(rsp.responseJSON);
+                jsn = rsp.responseJSON;
+                jsn.forEach(function (n) {
+                    console.debug(n)
+                    changed_node = nodes.filter(function(node){return node.id == n.job;})[0];
+                    console.debug(changed_node)
+                    changed_node['changed'] = true;
+                })
+                console.debug("Before update in json")
+                update(links, nodes);
+                // refreshBuilds(url);
             }
-        });    
+        });
     };
     window.setTimeout(f, 2000);
 }
@@ -61,23 +70,27 @@ function update(links, b_nodes) {
   }
 
   // Get the data in the right form
-  var stateKeys = {};
+  console.debug('before links')
   links.forEach(function (d) {
-      var source = b_nodes.filter(function(node){return node.id == d.source;})[0],
-          target = b_nodes.filter(function(node){return node.id == d.target;})[0]
-      if (source.edges == undefined) {
-          source['label'] = d.source,
-          source['edges'] = []
-      };
-      if (target.edges == undefined) {
-          target['label'] = d.target,
-          target['edges'] = []
-      };
-
-      source.edges.push(d);
-      target.edges.push(d);
+      console.debug('links d')
+      console.debug(d)
+      if (d.dagre == undefined) {
+          // If we are being called first time
+          var source = b_nodes.filter(function(node){return node.id == d.source;})[0],
+              target = b_nodes.filter(function(node){return node.id == d.target;})[0]
+          if (source.edges == undefined) {
+              source['label'] = d.source,
+              source['edges'] = []
+              source.edges.push(d);
+          };
+          if (target.edges == undefined) {
+              target['label'] = d.target,
+              target['edges'] = []
+              target.edges.push(d);
+          };
+      }
   });
-  // var states = d3.values(b_nodes);
+  console.debug('after links')
   var states = b_nodes
 
   links.forEach(function (d) {
@@ -90,14 +103,21 @@ function update(links, b_nodes) {
   var svgGroup = svg.append("g").attr("transform", "translate(5, 5)");
 
   // `nodes` is center positioned for easy layout later
+  console.debug('before nodes')
   var nodes = svgGroup.selectAll("g .node")
       .data(states)
       .enter()
       .append("g")
-      .attr("class", "node")
+      .attr("class", function (d) { 
+          if (d.changed) {
+            return "node-changed";
+          } else {
+            return "node";
+          }
+      })
       .attr("id", function (d) {
-      return "node-" + d.label
-  });
+        return "node-" + d.label;
+      });
 
   var edges = svgGroup.selectAll("path .edge")
       .data(links)

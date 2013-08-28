@@ -1,5 +1,8 @@
 from bottle import route, run, static_file, post, response
-import requests
+from jenkinsapi.jenkins import Jenkins
+import json
+
+jenkins_url = 'http://localhost:8080/'
 
 
 @route('/jenkinsflow/graph')
@@ -16,7 +19,22 @@ def js(filename):
 def builds():
     # TODO: change this to jenkinsapi call because this url
     # returns html table, and we only need job names and state of the build
-    return requests.get('http://localhost:8080/ajaxBuildQueue')
+    api = Jenkins(jenkins_url)
+    simple_queue = []
+    if len(api.get_queue()):
+        for item in api.get_queue().values():
+            print 'queue item: %s %s' % (type(item), item)
+            job = api[item.task['name']]
+            print 'job: %s %s' % (type(job), job)
+            build = job.get_last_build_or_none()
+            simple_queue.append({'job': job.name,
+                                 'running': job.is_running(),
+                                 'job_id': build.get_number()
+                                 if build is not None else '???'})
+
+    print 'DEBUG: simple_queue=', simple_queue
+    response.content_type = 'application/json'
+    return json.dumps(simple_queue)
 
 
 @route('/jenkinsflow/flow_graph.json')
