@@ -10,6 +10,7 @@ window.onload=function(){
 
   var links;
   var nodes;
+  var job_urls = []
 
   d3.json("http://localhost:9090/jenkinsflow/flow_graph.json", function(error, json) {
         if (error) {
@@ -22,7 +23,126 @@ window.onload=function(){
     }
   );
 
-function refreshBuilds(url) {
+function refreshBuilds() {
+    var f = function() {
+        for(var i = job_urls.length - 1; i >= 0; i--) {
+            console.debug('refresh job=' + job_urls[i])
+            var url = '/jenkinsflow/build/' + job_urls[i]
+            new Ajax.Request(url, {
+                onSuccess: function (rsp) {
+                    window.setTimeout(f, 2000);
+                }
+            })
+            console.debug('after ajax')
+        }
+    }
+    console.debug('Before timeout')
+    window.setTimeout(f, 2000);
+}
+
+Queue = {
+    _1: [],
+    _2: 0,
+
+    getLength: function() {
+        return (this._1.length - this._2);
+    },
+
+    isEmpty: function() {
+        return (this._1.length==0);
+    },
+
+    push: function(_3) {
+        this._1.push(_3);
+    },
+
+    pop: function() {
+        if (this._1.length == 0) {
+            return undefined;
+        }
+        var _4 = this._1[this._2];
+        if (++this._2*2 >= this._1.length) {
+            this._1 = this._1.slice(this._2);
+            this._2=0;
+        }
+        return _4;
+    },
+
+    peek: function() {
+        return (this._1.length>0?this._1[this._2]:undefined);
+    }
+};
+
+AjaxQueue = {
+    urls: Queue,
+
+    add: function(url) {
+        console.debug('Queue.add called')
+        this.urls.push(url);
+        this.poll();
+    },
+
+    resetBoxes: function() {
+        nodes.forEach(function (n) {
+            d3.select("#node-" + n.label + ">rect").style("fill", "#fff");
+        })
+    },
+
+    updateAjaxQueue: function(items) {
+        items.forEach(function (j) {
+            var selected = d3.select("#node-" + j.task.name + ">rect");
+            selected.style("fill", "#CADFE7");
+            window.setTimeout(function f() {
+                AjaxQueue.add('/jenkinsflow/build/' + j.task.name)
+            }, 1000);
+        })
+    },
+
+    updateBuild: function(buildJson) {
+        console.debug('updateBuild')
+        var selected = d3.select("#node-" + buildJson.name + ">rect");
+        if (buildJson.lastBuild.number != buildJson.lastCompletedBuild.number) {
+            console.debug('lbn != lcbn')
+            selected.style("fill", "green");
+            console.debug('after fill')
+            window.setTimeout(function f() {
+                AjaxQueue.add('/jenkinsflow/build/' + buildJson.name)
+            }, 1000);
+        } else {
+            console.debug('lbn == lcbn')
+            selected.style("fill", "#fff");
+        }
+    },
+
+    poll: function() {
+        console.debug('AjaxQueue.poll called')
+        if (!this.urls.isEmpty()) {
+            url = this.urls.pop();
+            console.debug('AjaxQueue.poll url=' + url)
+            new Ajax.Request(url, {
+                onSuccess: function(rsp) {
+                    console.debug('Ajax success')
+                    json = rsp.responseJSON;
+
+                    AjaxQueue.resetBoxes();
+                    console.debug('Ajax after resetBoxes')
+                    if (json.items == undefined) {
+                        AjaxQueue.updateBuild(json);
+                    } else {
+                        AjaxQueue.updateAjaxQueue(json.items);
+                    }
+                    window.setTimeout(function f() {
+                        AjaxQueue.add('/jenkinsflow/builds');
+                    }, 1000);
+                }
+            });
+        } else {
+            console.debug('AjaxQueue is empty')
+        }
+    }
+}
+
+function refreshQueue(url) {
     var f = function() {
         new Ajax.Request(url, {
             onSuccess: function(rsp) {
@@ -32,13 +152,8 @@ function refreshBuilds(url) {
                 nodes.forEach(function (n) {
                     d3.select("#node-" + n.label + ">rect").style("fill", "#fff");
                 })
-                jsn.forEach(function (j) {
-                    var selected = d3.select("#node-" + j.job + ">rect");
-                    console.debug(selected);
-                    selected.style("fill", "blue");
-                })
                 console.debug("Before update in json");
-                refreshBuilds(url);
+                refreshBuilds();
             }
         });
     };
@@ -251,6 +366,8 @@ function update(links, b_nodes) {
   nodes.call(nodeDrag);
   edges.call(edgeDrag);
 
-  refreshBuilds('/jenkinsflow/builds')
+  AjaxQueue.add('/jenkinsflow/builds');
+  // refreshQueue('/jenkinsflow/builds');
+  // refreshBuilds();
 }}
 
