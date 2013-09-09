@@ -44,6 +44,10 @@ Queue = {
     _1: [],
     _2: 0,
 
+    indexOf: function(needle) {
+        return this._1.indexOf(needle);
+    },
+
     getLength: function() {
         return (this._1.length - this._2);
     },
@@ -78,8 +82,34 @@ AjaxQueue = {
 
     add: function(url) {
         console.debug('Queue.add called')
-        this.urls.push(url);
-        this.poll();
+        if (!this.urls.indexOf(url) > -1) {
+            this.urls.push(url);
+            this.poll();
+        } else {
+            console.debug('Url '+ url +' exists, skipping')
+        }
+    },
+
+    exists: function(needle) {
+        if (typeof Array.prototype.indexOf === 'function') {
+            indexOf = Array.prototype.indexOf;
+        } else {
+            indexOf = function(needle) {
+                var i = -1, index = -1;
+
+                for(i = 0; i < this.urls.length; i++) {
+                    if(this.urls[i] === needle) {
+                        index = i;
+                        break;
+                    }
+                }
+
+                return index;
+            };
+        }
+
+        console.debug('In exists, needle pos is '+indexOf.call(this.urls, needle))
+        return (indexOf.call(this.urls, needle) > -1);
     },
 
     resetBoxes: function() {
@@ -94,7 +124,7 @@ AjaxQueue = {
             selected.style("fill", "#CADFE7");
             window.setTimeout(function f() {
                 AjaxQueue.add('/jenkinsflow/build/' + j.task.name)
-            }, 1000);
+            }, 2000);
         })
     },
 
@@ -104,10 +134,9 @@ AjaxQueue = {
         if (buildJson.lastBuild.number != buildJson.lastCompletedBuild.number) {
             console.debug('lbn != lcbn')
             selected.style("fill", "green");
-            console.debug('after fill')
             window.setTimeout(function f() {
                 AjaxQueue.add('/jenkinsflow/build/' + buildJson.name)
-            }, 1000);
+            }, 2000);
         } else {
             console.debug('lbn == lcbn')
             selected.style("fill", "#fff");
@@ -121,11 +150,8 @@ AjaxQueue = {
             console.debug('AjaxQueue.poll url=' + url)
             new Ajax.Request(url, {
                 onSuccess: function(rsp) {
-                    console.debug('Ajax success')
                     json = rsp.responseJSON;
 
-                    AjaxQueue.resetBoxes();
-                    console.debug('Ajax after resetBoxes')
                     if (json.items == undefined) {
                         AjaxQueue.updateBuild(json);
                     } else {
@@ -133,7 +159,7 @@ AjaxQueue = {
                     }
                     window.setTimeout(function f() {
                         AjaxQueue.add('/jenkinsflow/builds');
-                    }, 1000);
+                    }, 2000);
                 }
             });
         } else {
