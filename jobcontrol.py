@@ -106,8 +106,19 @@ class _SingleJob(_JobControl):
             query = [key + '=' + (value if not self.secret_params_re.search(key) else '******') for key, value in self.params.iteritems()]
             return '?' + '&'.join(query) if query else ''
 
-        # TODO: token instead of None?
-        url = self.job.get_build_triggerurl(None, params=self.params if params else None)
+        try:
+            # TODO: token instead of None?        
+            url = self.job.get_build_triggerurl(None, params=self.params if params else None)
+        except TypeError as ex:
+            # print ex
+            # Newer version take no args for get_build_triggerurl
+            url = self.job.get_build_triggerurl()
+            # Even Newer versions of jenkinsapi returns basic path without any args
+            # Insert ' - ' so that the build URL is not directly clickable, but will instead point to the job
+            part1 = url.replace(self.job.name, self.job.name + ' - ')
+            self.repr_str = part1 + build_query()
+            return
+
         if isinstance(url, tuple):
             # Newer versions of jenkinsapi returns tuple (path, {args})
             # Insert ' - ' so that the build URL is not directly clickable, but will instead point to the job
@@ -140,7 +151,11 @@ class _SingleJob(_JobControl):
 
     def _check(self, start_time, last_report_time):
         if not self._invoke_if_not_invoked():
-            self.job.invoke(securitytoken=self.securitytoken, invoke_pre_check_delay=0, block=False, params=self.params if self.params else None)
+            try:
+                self.job.invoke(securitytoken=self.securitytoken, invoke_pre_check_delay=0, block=False, build_params=self.params if self.params else None)
+            except TypeError as ex:
+                # Older version of jenkinsapi
+                self.job.invoke(securitytoken=self.securitytoken, invoke_pre_check_delay=0, block=False, params=self.params if self.params else None)                
 
         self.job.poll()
         build = self.job.get_last_build_or_none()

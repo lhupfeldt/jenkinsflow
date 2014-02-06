@@ -114,9 +114,9 @@ class _JobsMixin(object):
 
     def mock_job(self, name, exec_time, max_fails, expect_invocations, expect_order, initial_buildno=0, invocation_delay=0.1):
         name = self.job_name_prefix + name
-        assert not self.jobs.get(name)
+        assert not self._jf_jobs.get(name)
         if is_mocked():
-            self.jobs[name] = Job(name, exec_time, max_fails, expect_invocations, expect_order, initial_buildno, invocation_delay)
+            self._jf_jobs[name] = Job(name, exec_time, max_fails, expect_invocations, expect_order, initial_buildno, invocation_delay)
         else:
             update_job(self, name, self.config_xml, pre_delete=True)
         
@@ -134,12 +134,12 @@ class _JobsMixin(object):
 class MockApi(_JobsMixin):
     def __init__(self, job_name_prefix):
         self.job_name_prefix = job_name_prefix
-        self.jobs = OrderedDict()
+        self._jf_jobs = OrderedDict()
 
     # --- Mock Api ---
 
     def get_job(self, name):
-        return self.jobs[name]
+        return self._jf_jobs[name]
 
     def test_results(self):
         print "Checking results"
@@ -147,7 +147,7 @@ class MockApi(_JobsMixin):
         max_actual_order = 0
         last_expected_order = 0
 
-        for job in self.jobs.values():
+        for job in self._jf_jobs.values():
             # Check job invocation order
             assert last_expected_order <= job.expect_order, "Mock job list must be sorted by expected order, error in test setup."
 
@@ -176,7 +176,7 @@ class JenkinsWrapper(jenkins.Jenkins, _JobsMixin):
     def __init__(self, job_name_prefix, jenkinsurl):
         super(JenkinsWrapper, self).__init__(jenkinsurl)
         self.job_name_prefix = job_name_prefix
-        self.jobs = OrderedDict()
+        self._jf_jobs = OrderedDict()
         try:
             file_name = jp(here, self.job_name_prefix + 'job.xml')
             with open(file_name) as ff:

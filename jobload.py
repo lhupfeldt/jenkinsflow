@@ -1,7 +1,7 @@
 # Copyright (c) 2012 Lars Hupfeldt Nielsen, Hupfeldt IT
 # All rights reserved. This work is under a BSD license, see LICENSE.TXT.
 
-from jenkinsapi.exceptions import UnknownJob
+from jenkinsapi.custom_exceptions import UnknownJob
 
 
 def update_job(jenkins, job_name, config_xml, pre_delete=False):
