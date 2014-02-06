@@ -19,4 +19,4 @@ Test
    JENKINSFLOW_MOCK_API=true ./test.py
 
    # Load test jobs into Jenkins and execute them
-   python ./test/tests.py
+   JENKINSFLOW_JENKINSURL=<your jenkins> python ./test/tests.py
