@@ -9,6 +9,7 @@ sys.path.append(jp(here, '../..'))
 from jenkinsflow.jobload import update_job
 from jenkinsapi import jenkins
 
+from clean_jobs_state import clean_jobs_state
 from jobloadtemplate import update_job_from_template
 
 _current_order = 1
@@ -199,6 +200,7 @@ def is_mocked():
 def api(job_name_prefix, jenkinsurl=os.environ.get('JENKINSFLOW_JENKINSURL') or "http://localhost:8080"):
     if is_mocked():
         print 'Using Mocked API'
+        clean_jobs_state()
         return MockApi(job_name_prefix)
     else:
         print 'Using Real Jenkins API'

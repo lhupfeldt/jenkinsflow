@@ -7,7 +7,7 @@ here = os.path.abspath(os.path.dirname(__file__))
 sys.path.extend([jp(here, '../..'), jp(here, '../demo'), jp(here, '../../jenkinsapi')])
 from jenkinsflow.jobcontrol import JobControlFailException
 
-from mock_api import is_mocked
+from framework.mock_api import is_mocked
 
 import nested, single_level, prefix, hide_password
 import multi_level_errors1, multi_level_errors2

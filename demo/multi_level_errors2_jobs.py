@@ -9,16 +9,13 @@ from os.path import join as jp
 here = os.path.dirname(__file__)
 sys.path.append(jp(here, '../test'))
 
-from clean_jobs_state import clean_jobs_state
-import mock_api
+from framework import mock_api
 
 
 def main():
-    clean_jobs_state()
-
     with mock_api.api(__file__) as api:
         def job(name, params=None):
-            api.mock_job(name, exec_time=0.5, max_fails=0, expect_invocations=1, expect_order=1, job_xml_template=jp(here, '../test/job.xml.tenjin'), params=params)
+            api.mock_job(name, exec_time=0.5, max_fails=0, expect_invocations=1, expect_order=1, job_xml_template=jp(here, '../test/framework/job.xml.tenjin'), params=params)
 
         job('wait4-1')
         job('wait2')

@@ -14,8 +14,7 @@ import logging
 from jenkinsflow.jobcontrol import serial, parallel
 from jenkinsflow.unbuffered import UnBuffered
 
-from clean_jobs_state import clean_jobs_state
-import mock_api
+from framework import mock_api
 
 # Unbuffered output does not work well in Jenkins, so in case
 # this is run from a hudson job, we want unbuffered output
@@ -23,8 +22,6 @@ sys.stdout = UnBuffered(sys.stdout)
 
 
 def main():
-    clean_jobs_state()
-
     logging.basicConfig()
     logging.getLogger("").setLevel(logging.WARNING)    
 

@@ -16,8 +16,7 @@ from jenkinsapi import jenkins
 from jenkinsflow.jobcontrol import parallel, serial, FailedChildJobException, FailedChildJobsException, FlowTimeoutException
 from jenkinsflow.unbuffered import UnBuffered
 
-from clean_jobs_state import clean_jobs_state
-import mock_api
+from framework import mock_api
 
 sys.stdout = UnBuffered(sys.stdout)
 
@@ -26,7 +25,6 @@ def main():
     logging.getLogger("").setLevel(logging.WARNING)
 
     with mock_api.api(job_name_prefix='sle_') as api:
-        clean_jobs_state()
         api.mock_job('quick', exec_time=0.5, max_fails=0, expect_invocations=1, expect_order=1, params=(('s1', '', 'desc'), ('c1', 'false', 'desc')))
         api.mock_job('quick_fail', exec_time=0.5, max_fails=1, expect_invocations=1, expect_order=1, params=(('fail', 'true', 'Force job to fail'),))
         api.mock_job('wait10', exec_time=10, max_fails=0, expect_invocations=1, expect_order=1)
@@ -47,7 +45,6 @@ def main():
             print "Ok, got exception:", ex
     
     with mock_api.api(job_name_prefix='sle_') as api:
-        clean_jobs_state()
         api.mock_job('quick', exec_time=0.5, max_fails=0, expect_invocations=1, expect_order=1, params=(('s1', '', 'desc'), ('c1', 'false', 'desc')))
         api.mock_job('quick_fail', exec_time=0.5, max_fails=1, expect_invocations=1, expect_order=2, params=(('fail', 'true', 'Force job to fail'),))
         api.mock_job('wait5', exec_time=5, max_fails=0, expect_invocations=0, expect_order=None)
@@ -62,7 +59,6 @@ def main():
             print "Ok, got exception:", ex
     
     with mock_api.api(job_name_prefix='sle_') as api:
-        clean_jobs_state()
         api.mock_job('quick', exec_time=0.5, max_fails=0, expect_invocations=1, expect_order=1, params=(('s1', '', 'desc'), ('c1', 'false', 'desc')))
         api.mock_job('wait5', exec_time=5, max_fails=0, expect_invocations=1, expect_order=1)
 
