@@ -3,16 +3,6 @@
 # Copyright (c) 2012 Lars Hupfeldt Nielsen, Hupfeldt IT
 # All rights reserved. This work is under a BSD license, see LICENSE.TXT.
 
-# NOTE: To run the demo you must have the following jobs defined in jenkins/hudson
-# tst_quick(password, s1, c1) # Requires parameters
-# tst_wait2
-# tst_wait4-1
-# tst_wait5-2a
-# tst_wait5-2b
-# tst_wait5-2c
-# tst_quick_fail_n_times-1(MAX_FAILS=2) # Requires parameters
-# tst_quick_fail_n_times-2(MAX_FAILS=3) # Requires parameters
-
 import sys
 import os.path
 from os.path import join as jp

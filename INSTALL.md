@@ -1,13 +1,22 @@
 Installation
 ------------
 
-1. Install jenkinsapi python library.
+1. Install jenkinsapi python library:
+   pip install jenkinsapi
 
-git clone https://github.com/salimfadhley/jenkinsapi.git
-sudo python ./setup.py install
+2. Make jenkinsflow files (jobcontrol.py and possibly unbuffered.py) available on to your jenkins/hudson installation.
 
-# NOTE: As of 2013-05-15 jenkinsapi available via pip/easyinstall does not work with newer versions of jenkins!
+3. All set! You can now create jobs with a shell execution step, which will a use this library. See demo/... for example flows.
 
-2. Copy jenkinsflow files to your jenkins/hudson installation
 
-3. All set! You can now create jobs with python execution step, which will use this library.
+Test
+----
+1. Install tenjin template engine:
+   pip install tenjin
+
+2. Run the tests:
+   # Mocked tests do not require Jenkins
+   JENKINSFLOW_MOCK_API=true ./test.py
+
+   # Load test jobs into Jenkins and execute them
+   python ./test/tests.py

@@ -9,6 +9,7 @@ sys.path.append(jp(here, '../..'))
 from jenkinsflow.jobload import update_job
 from jenkinsapi import jenkins
 
+from jobloadtemplate import update_job_from_template
 
 _current_order = 1
 
@@ -63,7 +64,7 @@ class Job(object):
         self.debug('get_last_build_or_none')
         return self.build if self.build.buildno else None
 
-    def invoke(self, invoke_pre_check_delay, block, params):
+    def invoke(self, securitytoken, invoke_pre_check_delay, block, params):        
         global _current_order
         self.just_invoked = True
         self.actual_order = _current_order
@@ -112,20 +113,22 @@ class Build(object):
 class _JobsMixin(object):
     __metaclass__ = abc.ABCMeta
 
-    def mock_job(self, name, exec_time, max_fails, expect_invocations, expect_order, initial_buildno=0, invocation_delay=0.1):
+    def mock_job(self, name, exec_time, max_fails, expect_invocations, expect_order, initial_buildno=0, invocation_delay=0.1, job_xml_template=None, params=None):
         name = self.job_name_prefix + name
         assert not self._jf_jobs.get(name)
         if is_mocked():
             self._jf_jobs[name] = Job(name, exec_time, max_fails, expect_invocations, expect_order, initial_buildno, invocation_delay)
+        elif job_xml_template:
+            update_job_from_template(self, name, job_xml_template, pre_delete=True, params=params, exec_time=exec_time)
         else:
             update_job(self, name, self.config_xml, pre_delete=True)
-        
 
     def __enter__(self):
         return self
 
     def __exit__(self, exc_type, exc_value, traceback):
-        self.test_results()
+        if not exc_type:
+            self.test_results()
 
     def test_results(self):
         pass
@@ -133,10 +136,10 @@ class _JobsMixin(object):
 
 class MockApi(_JobsMixin):
     def __init__(self, job_name_prefix):
-        self.job_name_prefix = job_name_prefix
+        self.job_name_prefix = os.path.basename(job_name_prefix).replace('_jobs.pyc', '_').replace('_jobs.py', '_')
         self._jf_jobs = OrderedDict()
 
-    # --- Mock Api ---
+    # --- Mock API ---
 
     def get_job(self, name):
         return self._jf_jobs[name]
@@ -148,17 +151,18 @@ class MockApi(_JobsMixin):
         last_expected_order = 0
 
         for job in self._jf_jobs.values():
-            # Check job invocation order
-            assert last_expected_order <= job.expect_order, "Mock job list must be sorted by expected order, error in test setup."
+            if job.expect_order is not None:
+                # Check job invocation order
+                assert last_expected_order <= job.expect_order, "Mock job list must be sorted by expected order, error in test setup."
 
-            assert job.actual_order >= job.expect_order, "Job: " + job.name + " was started out of order, " + \
-                "job.actual_order: " + repr(job.actual_order) + ", job.expect_order: " + repr(job.expect_order)
+                assert job.actual_order >= job.expect_order, "Job: " + job.name + " was started out of order, " + \
+                    "job.actual_order: " + repr(job.actual_order) + ", job.expect_order: " + repr(job.expect_order)
 
-            if job.expect_order > last_expected_order:
-                assert job.actual_order > max_actual_order
+                if job.expect_order > last_expected_order:
+                    assert job.actual_order > max_actual_order
 
-            last_expected_order = job.expect_order
-            max_actual_order = max(job.actual_order, max_actual_order)
+                last_expected_order = job.expect_order
+                max_actual_order = max(job.actual_order, max_actual_order)
 
             if job.max_fails == -1:
                 # Unchecked job
@@ -168,14 +172,14 @@ class MockApi(_JobsMixin):
             assert job.expect_invocations == job.invocation, "Job: " + job.name + " invoked " + job.invocation + " times, expected " + job.expect_invocations + " invocations"
             if job.invocation > job.max_fails:
                 assert job.get_last_build_or_none().is_good(), "Job: " + job.name + " should have been in state good, but it is not"
-            else:
+            elif job.expect_invocations != 0:
                 assert not job.get_last_build_or_none().is_good(), "Job: " + job.name + " should have been in failed state, but it is not"
 
 
 class JenkinsWrapper(jenkins.Jenkins, _JobsMixin):
     def __init__(self, job_name_prefix, jenkinsurl):
         super(JenkinsWrapper, self).__init__(jenkinsurl)
-        self.job_name_prefix = job_name_prefix
+        self.job_name_prefix = os.path.basename(job_name_prefix).replace('_jobs.pyc', '_').replace('_jobs.py', '_')
         self._jf_jobs = OrderedDict()
         try:
             file_name = jp(here, self.job_name_prefix + 'job.xml')
@@ -184,19 +188,18 @@ class JenkinsWrapper(jenkins.Jenkins, _JobsMixin):
                 self.config_xml = ff.read()
         except IOError:
             with open(jp(here, 'job.xml')) as ff:
-                self.config_xml = ff.read()            
+                self.config_xml = ff.read()
 
 
 def is_mocked():
-    mocked = os.environ.get('FLOW_MOCK_API')
+    mocked = os.environ.get('JENKINSFLOW_MOCK_API')
     return mocked and mocked.lower() == 'true'
 
 
-def api(job_name_prefix, jenkinsurl="http://localhost:8080"):
+def api(job_name_prefix, jenkinsurl=os.environ.get('JENKINSFLOW_JENKINSURL') or "http://localhost:8080"):
     if is_mocked():
-        print 'Using Mocked Api'
+        print 'Using Mocked API'
         return MockApi(job_name_prefix)
     else:
-        print 'Using Real Jenkins Api'
+        print 'Using Real Jenkins API'
         return JenkinsWrapper(job_name_prefix, jenkinsurl)
-

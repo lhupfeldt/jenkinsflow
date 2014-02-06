@@ -3,9 +3,6 @@
 # Copyright (c) 2012 Lars Hupfeldt Nielsen, Hupfeldt IT
 # All rights reserved. This work is under a BSD license, see LICENSE.TXT.
 
-# NOTE: To run the demo you must have the following jobs defined in jenkins/hudson
-# tst2_quick1, tst2_x_quick2-1, tst2_x_quick2-2, tst2_x_quick2-3, tst2_quick3, tst2_y_z_quick4, tst2_y_quick5
-
 import sys
 import os.path
 from os.path import join as jp
@@ -30,7 +27,7 @@ def main():
     logging.getLogger("").setLevel(logging.WARNING)
     api = jenkins.Jenkins(jenkinsurl)
 
-    with serial(api, timeout=70, report_interval=3, job_name_prefix='tst2_') as ctrl1:
+    with serial(api, timeout=70, report_interval=3, job_name_prefix='prefix_') as ctrl1:
         ctrl1.invoke('quick1')
 
         for index in 1, 2, 3:

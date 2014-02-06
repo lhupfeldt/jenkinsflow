@@ -3,16 +3,6 @@
 # Copyright (c) 2012 Lars Hupfeldt Nielsen, Hupfeldt IT
 # All rights reserved. This work is under a BSD license, see LICENSE.TXT.
 
-# NOTE: To run the demo you must have the following jobs defined in jenkins/hudson
-# tst_quick(password, s1, c1) # Requires parameters
-# tst_wait2
-# tst_wait4-1
-# tst_wait5-2a
-# tst_wait5-2b
-# tst_wait5-2c
-# tst_quick_fail-1(password, s1, c1) # Requires parameters
-# tst_quick_fail-2(password, s1, c1) # Requires parameters
-
 import sys
 import os.path
 from os.path import join as jp
@@ -37,13 +27,13 @@ def main():
     logging.getLogger("").setLevel(logging.WARNING)
     api = jenkins.Jenkins(jenkinsurl)
 
-    with serial(api, timeout=70, job_name_prefix='tst_', report_interval=3) as ctrl1:
+    with serial(api, timeout=70, job_name_prefix='multi_level_errors2_', report_interval=3) as ctrl1:
         ctrl1.invoke('wait4-1')
 
         with ctrl1.parallel(timeout=40, report_interval=3) as ctrl2:
             with ctrl2.serial(timeout=40, report_interval=3) as ctrl3a:
                 ctrl3a.invoke('wait2')
-                ctrl3a.invoke('quick_fail-1', password='HELLO', s1='WORLD', c1='maybe')
+                ctrl3a.invoke('quick_fail-1', password='HELLO', fail='yes', s1='WORLD', c1='be')
 
                 # Never invoked
                 ctrl3a.invoke('quick', password='HELLO', s1='WORLD', c1='maybe')
@@ -52,7 +42,7 @@ def main():
                 ctrl3b.invoke('wait5-2a')
                 ctrl3b.invoke('wait5-2b')
                 ctrl3b.invoke('wait5-2c')
-                ctrl3b.invoke('quick_fail-2', password='HELLO', s1='WORLD', c1='maybe')
+                ctrl3b.invoke('quick_fail-2', password='HELLO', fail='yes', s1='WORLD', c1='maybe')
 
 
 if __name__ == '__main__':

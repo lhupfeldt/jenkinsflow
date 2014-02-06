@@ -3,17 +3,6 @@
 # Copyright (c) 2012 Lars Hupfeldt Nielsen, Hupfeldt IT
 # All rights reserved. This work is under a BSD license, see LICENSE.TXT.
 
-# NOTE: To run the demo you must have the following jobs defined in jenkins/hudson
-# tst_report(password, s1, c1) # Requires parameters
-# tst_prepare
-# tst_deploy_component1
-# tst_deploy_component2
-# tst_prepare_tests
-# tst_test_ui
-# tst_server_component1
-# tst_server_component2
-# tst_promote
-
 import sys
 import os.path
 from os.path import join as jp
@@ -38,7 +27,7 @@ def main():
     logging.getLogger("").setLevel(logging.WARNING)
     api = jenkins.Jenkins(jenkinsurl)
 
-    with serial(api, timeout=70, job_name_prefix='tst_', report_interval=3) as ctrl1:
+    with serial(api, timeout=70, job_name_prefix='nested_', report_interval=3) as ctrl1:
         ctrl1.invoke('prepare')
 
         with ctrl1.parallel(timeout=20, report_interval=3) as ctrl2:

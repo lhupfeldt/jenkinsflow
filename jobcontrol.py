@@ -107,7 +107,7 @@ class _SingleJob(_JobControl):
             return '?' + '&'.join(query) if query else ''
 
         try:
-            # TODO: token instead of None?        
+            # TODO: token instead of None?
             url = self.job.get_build_triggerurl(None, params=self.params if params else None)
         except TypeError as ex:
             # print ex
@@ -155,10 +155,17 @@ class _SingleJob(_JobControl):
                 self.job.invoke(securitytoken=self.securitytoken, invoke_pre_check_delay=0, block=False, build_params=self.params if self.params else None)
             except TypeError as ex:
                 # Older version of jenkinsapi
-                self.job.invoke(securitytoken=self.securitytoken, invoke_pre_check_delay=0, block=False, params=self.params if self.params else None)                
+                self.job.invoke(securitytoken=self.securitytoken, invoke_pre_check_delay=0, block=False, params=self.params if self.params else None)
 
         self.job.poll()
-        build = self.job.get_last_build_or_none()
+        for attempt in range(1, 20):
+            try:
+                build = self.job.get_last_build_or_none()
+            except KeyError as ex:
+                # Workaround for jenkinsapi timing dependency
+                print "'get_last_build_or_none' failed: " + str(ex) + ", retrying."
+                time.sleep(0.1)
+
         if build == None:
             return last_report_time
 
@@ -236,7 +243,7 @@ class _Flow(_JobControl):
         self.jobs.append(job)
 
     def invoke_unchecked(self, job_name, **params):
-        job = _IgnoredSingleJob(self.api, self.job_name_prefix, job_name, params, self.report_interval, self.secret_params_re, self.nesting_level)
+        job = _IgnoredSingleJob(self.api, self.securitytoken, self.job_name_prefix, job_name, params, self.report_interval, self.secret_params_re, self.nesting_level)
         self.jobs.append(job)
 
     def _check_timeout(self, start_time):
