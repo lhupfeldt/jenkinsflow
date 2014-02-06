@@ -119,7 +119,9 @@ class _JobsMixin(object):
         assert not self._jf_jobs.get(name)
         if is_mocked():
             self._jf_jobs[name] = Job(name, exec_time, max_fails, expect_invocations, expect_order, initial_buildno, invocation_delay)
-        elif job_xml_template:
+        elif job_xml_template or params:
+            if params:
+                assert job_xml_template, "Default job.xml does not support special 'params', you must specify a template"
             update_job_from_template(self, name, job_xml_template, pre_delete=True, params=params, exec_time=exec_time)
         else:
             update_job(self, name, self.config_xml, pre_delete=True)
