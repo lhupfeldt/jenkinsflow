@@ -38,9 +38,8 @@ class Job(object):
         # print "Mock job: ", what, self, "time:", time.time()
         pass
 
-    def get_build_triggerurl(self, something, **params):
-        _dont_complain = something
-        return self.base_url + '/hello/build' + repr(params)
+    def get_build_triggerurl(self):
+        return self.base_url + '/hello/build'
 
     def is_running(self):
         running = self.start_time < time.time() < self.end_time
@@ -65,7 +64,7 @@ class Job(object):
         self.debug('get_last_build_or_none')
         return self.build if self.build.buildno else None
 
-    def invoke(self, securitytoken, invoke_pre_check_delay, block, params):        
+    def invoke(self, securitytoken, invoke_pre_check_delay, block, build_params):
         global _current_order
         self.just_invoked = True
         self.actual_order = _current_order
