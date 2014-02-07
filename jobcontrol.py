@@ -97,6 +97,10 @@ class _JobControl(object):
 class _SingleJob(_JobControl):
     def __init__(self, jenkins_api, securitytoken, job_name_prefix, max_tries, parent_max_tries, job_name, params, report_interval, secret_params_re, nesting_level):
         self.job = jenkins_api.get_job(job_name_prefix + job_name)
+        for key, value in params.iteritems():
+            # Handle parameters passed as int or bool. Booleans will be lowercased!
+            if isinstance(value, (bool, int)):
+                params[key] = str(value).lower()
         self.params = params
         super(_SingleJob, self).__init__(securitytoken, max_tries, parent_max_tries, report_interval, secret_params_re, nesting_level)
         self.total_max_tries = parent_max_tries

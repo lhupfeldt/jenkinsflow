@@ -35,7 +35,7 @@ def main():
     
         try:
             with parallel(api, timeout=20, job_name_prefix='sle_', report_interval=3) as ctrl:
-                ctrl.invoke('quick', password='Yes', s1='', c1='false')
+                ctrl.invoke('quick', password='Yes', s1='', c1=False)
                 ctrl.invoke('quick_fail')
                 ctrl.invoke('wait10')
                 ctrl.invoke('wait10_fail', fail='yes')
@@ -52,7 +52,7 @@ def main():
 
         try:
             with serial(api, timeout=20, job_name_prefix='sle_', report_interval=3) as ctrl:
-                ctrl.invoke('quick', password='Yes', s1='', c1='false')
+                ctrl.invoke('quick', password='Yes', s1='', c1=False)
                 ctrl.invoke('quick_fail', fail='yes')
                 ctrl.invoke('wait5')
             raise Exception("Should have failed!")
@@ -65,7 +65,7 @@ def main():
 
         try:
             with parallel(api, timeout=1, job_name_prefix='sle_', report_interval=3) as ctrl:
-                ctrl.invoke('quick', password='Yes', s1='', c1='false')
+                ctrl.invoke('quick', password='Yes', s1='', c1=False)
                 ctrl.invoke('wait5', sleep="5")
             raise Exception("Should have failed!")
         except FlowTimeoutException as ex:

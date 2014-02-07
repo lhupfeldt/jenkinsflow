@@ -26,7 +26,7 @@ def main():
     api = jenkins.Jenkins(jenkinsurl)
 
     with serial(api, timeout=30, job_name_prefix='single_level_', report_interval=3) as ctrl:
-        ctrl.invoke('quick', password='X', s1='HELLO', c1='true')
+        ctrl.invoke('quick', password='X', s1='HELLO', c1=True)
         ctrl.invoke('wait10')
         ctrl.invoke('wait5')
 

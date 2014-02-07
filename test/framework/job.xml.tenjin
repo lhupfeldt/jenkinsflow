@@ -27,28 +27,39 @@
             </a>
           </choices>
         </hudson.model.ChoiceParameterDefinition>
+        <?py seen = set() ?>
         <?py for param in params: ?>
-        <?py if isinstance(param[1], str): ?>
-        <?py # assume string param ?>
+        <?py     if param[0] in seen: ?>
+        <?py         raise Exception("Respecified param: " + param[0]) ?>
+        <?py         #endif ?>
+        <?py     seen.add(param[0]) ?>
+        <?py     if isinstance(param[1], (str, int)): ?>
+        <?py         # assume string param ?>
         <hudson.model.StringParameterDefinition>
           <name>{==param[0]==}</name>
           <description>{==param[2]==}</description>
-          <defaultValue>{==param[1]==}</defaultValue>
+          <defaultValue>{==str(param[1])==}</defaultValue>
         </hudson.model.StringParameterDefinition>
-        <?py else: ?>
-        <?py # assume choice param ?>
+        <?py     elif isinstance(param[1], bool): ?>
+        <hudson.model.BooleanParameterDefinition>
+          <name>{==param[0]==}</name>
+          <description>{==param[2]==}</description>
+          <defaultValue>{==str(param[1]).lower()==}</defaultValue>
+        </hudson.model.BooleanParameterDefinition>
+        <?py     else: ?>
+        <?py         # assume choice param ?>
         <hudson.model.ChoiceParameterDefinition>
           <name>{==param[0]==}</name>
           <description>{==param[2]==}</description>
           <choices class="java.util.Arrays$ArrayList">
             <a class="string-array">
-              <?py for choice in param[1]: ?>              
+              <?py for choice in param[1]: ?>
               <string>{==choice==}</string>
               <?py #endfor ?>
             </a>
           </choices>
         </hudson.model.ChoiceParameterDefinition>
-        <?py #endif ?>
+        <?py     #endif ?>
         <?py #endfor ?>
       </parameterDefinitions>
     </hudson.model.ParametersDefinitionProperty>
