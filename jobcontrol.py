@@ -1,6 +1,7 @@
 # Copyright (c) 2012 - 2014 Lars Hupfeldt Nielsen, Hupfeldt IT
 # All rights reserved. This work is under a BSD license, see LICENSE.TXT.
 
+from __future__ import print_function
 import time, re, abc
 
 _default_report_interval = 5
@@ -65,7 +66,7 @@ class _JobControl(object):
             return True
 
         self.invocation_time = time.time()
-        print "\nInvoking (%d/%d,%d/%d):" % (self.tried_times + 1, self.max_tries, self.total_tried_times + 1, self.total_max_tries), self
+        print("\nInvoking (%d/%d,%d/%d):" % (self.tried_times + 1, self.max_tries, self.total_tried_times + 1, self.total_max_tries), self)
         return False
 
     @abc.abstractmethod
@@ -91,7 +92,7 @@ class _JobControl(object):
     def debug(self, *args):
         if not _debug:
             return
-        print 'DEBUG in ' + self.__class__.__name__ + ':', ' '.join([str(arg) for arg in args])
+        print('DEBUG in ' + self.__class__.__name__ + ':', ' '.join([str(arg) for arg in args]))
 
 
 class _SingleJob(_JobControl):
@@ -143,14 +144,14 @@ class _SingleJob(_JobControl):
 
     def _print_status_message(self, build):
         state = "RUNNING" if self.job.is_running() else ("QUEUED" if self.job.is_queued() else "IDLE")
-        print repr(self.job.name), "Status", state, "- latest build:", build
+        print(repr(self.job.name), "Status", state, "- latest build:", build)
 
     def _prepare_to_invoke(self, queuing=False):
         super(_SingleJob, self)._prepare_to_invoke(queuing)
         self.job.poll()
         self.old_build = self.job.get_last_build_or_none()
         if queuing:
-            print self.indentation + "Queuing job:", self.job,
+            print(self.indentation + "Queuing job:", self.job, end='')
         self._print_status_message(self.old_build)
 
     def _check(self, start_time, last_report_time):
@@ -167,7 +168,7 @@ class _SingleJob(_JobControl):
                 build = self.job.get_last_build_or_none()
             except KeyError as ex:
                 # Workaround for jenkinsapi timing dependency
-                print "'get_last_build_or_none' failed: " + str(ex) + ", retrying."
+                print("'get_last_build_or_none' failed: " + str(ex) + ", retrying.")
                 time.sleep(0.1)
 
         if build == None:
@@ -183,7 +184,7 @@ class _SingleJob(_JobControl):
 
         # The job has stopped running
         self._print_status_message(build)
-        print str(build.get_status()) + ":", repr(self.job.name), "- build: ", build.get_result_url(), self._time_msg(start_time)
+        print(str(build.get_status()) + ":", repr(self.job.name), "- build: ", build.get_result_url(), self._time_msg(start_time))
 
         if build.is_good():
             self.successful = True
@@ -265,7 +266,7 @@ class _Flow(_JobControl):
         for job in self.jobs:
             if isinstance(job, _Flow):
                 if not job.jobs:
-                    print self.indentation + "INFO: Removing empty flow", job, "from: ", self
+                    print(self.indentation + "INFO: Removing empty flow", job, "from: ", self)
                     continue
             new_job_list.append(job)
         self.jobs = new_job_list
@@ -278,14 +279,14 @@ class _Parallel(_Flow):
         self._failed_child_jobs = {}
 
     def __enter__(self):
-        print self.indentation + "Queuing jobs for parallel run: ("
+        print(self.indentation + "Queuing jobs for parallel run: (")
         self.nesting_level += 1
         return self
 
     def __exit__(self, exc_type, exc_value, traceback):
         super(_Parallel, self).__exit__(exc_type, exc_value, traceback)
         self.nesting_level -= 1
-        print self.indentation + ")\n"
+        print(self.indentation + ")\n")
 
     def _check(self, start_time, last_report_time):
         self._invoke_if_not_invoked()
@@ -309,21 +310,21 @@ class _Parallel(_Flow):
                 job.total_tried_times += 1
 
                 if job.tried_times < job.max_tries:
-                    print "RETRY:", job, "failed but will be retried. Up to", job.max_tries - job.tried_times, "more times in current flow"
+                    print("RETRY:", job, "failed but will be retried. Up to", job.max_tries - job.tried_times, "more times in current flow")
                     job._prepare_to_invoke()
                     continue
 
                 if job.total_tried_times < job.total_max_tries:
-                    print "RETRY:", job, "failed but will be retried. Up to", job.total_max_tries - job.total_tried_times, "more times through outermost flow"
+                    print("RETRY:", job, "failed but will be retried. Up to", job.total_max_tries - job.total_tried_times, "more times through outermost flow")
                     job._prepare_to_invoke()
                     job.tried_times = 0
 
         if finished:
             # All jobs have stopped running
             if self._failed_child_jobs:
-                print "FAILURE:", self, self._time_msg(start_time)
+                print("FAILURE:", self, self._time_msg(start_time))
                 raise FailedChildJobsException(self, self._failed_child_jobs.values())
-            print "SUCCESS:", self, self._time_msg(start_time)
+            print("SUCCESS:", self, self._time_msg(start_time))
             self.successful = True
 
         return last_report_time
@@ -343,14 +344,14 @@ class _Serial(_Flow):
         self.job_index = 0
 
     def __enter__(self):
-        print self.indentation + "Queuing jobs for serial run: ["
+        print(self.indentation + "Queuing jobs for serial run: [")
         self.nesting_level += 1
         return self
 
     def __exit__(self, exc_type, exc_value, traceback):
         super(_Serial, self).__exit__(exc_type, exc_value, traceback)
         self.nesting_level -= 1
-        print self.indentation + "]\n"
+        print(self.indentation + "]\n")
 
     def _check(self, start_time, last_report_time):
         self._invoke_if_not_invoked()
@@ -369,7 +370,7 @@ class _Serial(_Flow):
             job.total_tried_times += 1
 
             if job.tried_times < job.max_tries:
-                print "RETRY:", job, "failed, retrying child jobs from beginning. Up to", job.max_tries - job.tried_times, "more times in current flow"
+                print("RETRY:", job, "failed, retrying child jobs from beginning. Up to", job.max_tries - job.tried_times, "more times in current flow")
                 for pre_job in self.jobs[0:num_fail]:
                     pre_job._prepare_to_invoke()
                     pre_job.tried_times += 1
@@ -377,19 +378,19 @@ class _Serial(_Flow):
                 return last_report_time
 
             if job.total_tried_times < job.total_max_tries:
-                print "RETRY:", job, "failed, retrying child jobs from beginning. Up to", job.total_max_tries - job.total_tried_times, "more times through outermost flow"
+                print("RETRY:", job, "failed, retrying child jobs from beginning. Up to", job.total_max_tries - job.total_tried_times, "more times through outermost flow")
                 job.tried_times = 0
                 for pre_job in self.jobs[0:num_fail]:
                     pre_job._prepare_to_invoke()
                     pre_job.tried_times = 0
                     pre_job.total_tried_times += 1
 
-            print "FAILURE:", self, self._time_msg(start_time)
+            print("FAILURE:", self, self._time_msg(start_time))
             raise FailedChildJobException(self, job)
 
         self.job_index += 1
         if self.job_index == len(self.jobs):
-            print "SUCCESS:", self, self._time_msg(start_time)
+            print("SUCCESS:", self, self._time_msg(start_time))
             self.successful = True
 
         return last_report_time
@@ -401,11 +402,11 @@ class _Serial(_Flow):
 class _TopLevelController(_Flow):
     def wait_for_jobs(self):
         if not self.jobs:
-            print "WARNING: Empty toplevel flow", self, "nothing to do."
+            print("WARNING: Empty toplevel flow", self, "nothing to do.")
             return
 
         # Wait for jobs to finish
-        print
+        print()
 
         last_report_time = start_time = time.time()
 
@@ -415,12 +416,12 @@ class _TopLevelController(_Flow):
 
 
 def _start_msg():
-    print "== Legend =="
-    print "Serial builds: []"
-    print "Parallel builds: ()"
-    print "Invoking (w/x,y/z): w=current invocation in current flow scope, x=max in scope, y=total number of invocations, z=total max invocations"
-    print "Elapsed time: 'after: x/y': x=time spent during current run of job, y=time elapsed since start of outermost flow"
-    print ""
+    print("== Legend ==")
+    print("Serial builds: []")
+    print("Parallel builds: ()")
+    print("Invoking (w/x,y/z): w=current invocation in current flow scope, x=max in scope, y=total number of invocations, z=total max invocations")
+    print("Elapsed time: 'after: x/y': x=time spent during current run of job, y=time elapsed since start of outermost flow")
+    print()
 
 
 class parallel(_Parallel, _TopLevelController):
