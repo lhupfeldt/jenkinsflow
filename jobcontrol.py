@@ -54,10 +54,11 @@ class _JobControl(object):
         self.successful = False
         self.tried_times = 0
         self.total_tried_times = 0
+        self.invocation_time = None
 
         self._prepare_to_invoke(queuing=True)
 
-    def _prepare_to_invoke(self, queuing=False):
+    def _prepare_to_invoke(self, queuing=False):  # pylint: disable=unused-argument
         """Must be called before each invocation of a job, as opposed to __init__, which is called once in entire run"""
         self.invocation_time = 0
 
@@ -114,7 +115,7 @@ class _SingleJob(_JobControl):
         try:
             # TODO: token instead of None?
             url = self.job.get_build_triggerurl(None, params=self.params if params else None)
-        except TypeError as ex:
+        except TypeError:
             # print ex
             # Newer version take no args for get_build_triggerurl
             url = self.job.get_build_triggerurl()
@@ -138,6 +139,8 @@ class _SingleJob(_JobControl):
             params = ';' + up.params if up.params else ''
             fragment = '#' + up.fragment if up.fragment else ''
             self.repr_str = repr(self.job.name) + ' ' + up.scheme + '://' + up.netloc + path + params + build_query() + fragment
+
+        self.old_build = None
 
     def __repr__(self):
         return self.repr_str
@@ -163,7 +166,7 @@ class _SingleJob(_JobControl):
                 self.job.invoke(securitytoken=self.securitytoken, invoke_pre_check_delay=0, block=False, params=self.params if self.params else None)
 
         self.job.poll()
-        for attempt in range(1, 20):
+        for _ in range(1, 20):
             try:
                 build = self.job.get_last_build_or_none()
             except KeyError as ex:
