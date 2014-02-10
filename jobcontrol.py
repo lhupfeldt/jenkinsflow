@@ -2,7 +2,7 @@
 # All rights reserved. This work is under a BSD license, see LICENSE.TXT.
 
 from __future__ import print_function
-import time, re, abc
+import os, time, re, abc
 
 _default_report_interval = 5
 _default_secret_params = '.*passw.*|.*PASSW.*'
@@ -11,8 +11,9 @@ _default_secret_params_re = re.compile(_default_secret_params)
 _debug = False
 
 class JobControlException(Exception):
-    pass
-
+    def __init__(self, message, warn_only=False):
+        super(JobControlException, self).__init__(message)
+        self.warn_only = warn_only
 
 class FlowTimeoutException(JobControlException):
     pass
@@ -23,30 +24,31 @@ class JobControlFailException(JobControlException):
 
 
 class FailedSingleJobException(JobControlFailException):
-    def __init__(self, job):
-        msg = "Failed job: " + repr(job)
-        super(FailedSingleJobException, self).__init__(msg)
+    def __init__(self, job, warn_only):
+        msg = "Failed job: " + repr(job) + ", warn_only:" + str(warn_only)
+        super(FailedSingleJobException, self).__init__(msg, warn_only)
 
 
 class FailedChildJobException(JobControlFailException):
-    def __init__(self, flow_job, failed_child_job):
-        msg = "Failed child job in: " + repr(flow_job) + ", child job:" + repr(failed_child_job)
-        super(FailedChildJobException, self).__init__(msg)
+    def __init__(self, flow_job, failed_child_job, warn_only):
+        msg = "Failed child job in: " + repr(flow_job) + ", child job:" + repr(failed_child_job) + ", warn_only:" + str(warn_only)
+        super(FailedChildJobException, self).__init__(msg, warn_only)
 
 
 class FailedChildJobsException(JobControlFailException):
-    def __init__(self, flow_job, failed_child_jobs):
-        msg = "Failed child jobs in: " + repr(flow_job) + ", child jobs:" + repr(failed_child_jobs)
-        super(FailedChildJobsException, self).__init__(msg)
+    def __init__(self, flow_job, failed_child_jobs, warn_only):
+        msg = "Failed child jobs in: " + repr(flow_job) + ", child jobs:" + repr(failed_child_jobs) + ", warn_only:" + str(warn_only)
+        super(FailedChildJobsException, self).__init__(msg, warn_only)
 
 
 class _JobControl(object):
     __metaclass__ = abc.ABCMeta
 
-    def __init__(self, securitytoken, max_tries, parent_max_tries, report_interval, secret_params_re, nesting_level):
+    def __init__(self, securitytoken, max_tries, parent_max_tries, warn_only, report_interval, secret_params_re, nesting_level):
         self.securitytoken = securitytoken
         self.max_tries = max_tries
         self.total_max_tries = self.max_tries * parent_max_tries
+        self.warn_only = warn_only
         self.report_interval = report_interval
         self.secret_params_re = secret_params_re
         self.nesting_level = nesting_level
@@ -97,14 +99,14 @@ class _JobControl(object):
 
 
 class _SingleJob(_JobControl):
-    def __init__(self, jenkins_api, securitytoken, job_name_prefix, max_tries, parent_max_tries, job_name, params, report_interval, secret_params_re, nesting_level):
+    def __init__(self, jenkins_api, securitytoken, job_name_prefix, max_tries, parent_max_tries, job_name, params, warn_only, report_interval, secret_params_re, nesting_level):
         self.job = jenkins_api.get_job(job_name_prefix + job_name)
         for key, value in params.iteritems():
             # Handle parameters passed as int or bool. Booleans will be lowercased!
             if isinstance(value, (bool, int)):
                 params[key] = str(value).lower()
         self.params = params
-        super(_SingleJob, self).__init__(securitytoken, max_tries, parent_max_tries, report_interval, secret_params_re, nesting_level)
+        super(_SingleJob, self).__init__(securitytoken, max_tries, parent_max_tries, warn_only, report_interval, secret_params_re, nesting_level)
         self.total_max_tries = parent_max_tries
 
         # Build repr string with build-url with secret params replaced by '***'
@@ -192,15 +194,19 @@ class _SingleJob(_JobControl):
         if build.is_good():
             self.successful = True
             return last_report_time
-        raise FailedSingleJobException(self.job)
+        raise FailedSingleJobException(self.job, self.warn_only)
+
+    @property
+    def name(self):
+        return self.job.name
 
     def sequence(self):
-        return self.job.name
+        return self.name
 
 
 class _IgnoredSingleJob(_SingleJob):
     def __init__(self, jenkins_api, securitytoken, job_name_prefix, job_name, params, report_interval, secret_params_re, nesting_level):
-        super(_IgnoredSingleJob, self).__init__(jenkins_api, securitytoken, job_name_prefix, 1, 1, job_name, params, report_interval, secret_params_re, nesting_level)
+        super(_IgnoredSingleJob, self).__init__(jenkins_api, securitytoken, job_name_prefix, 1, 1, job_name, params, True, report_interval, secret_params_re, nesting_level)
 
     def _prepare_to_invoke(self, queuing=False):
         if self.tried_times < self.max_tries:
@@ -222,9 +228,9 @@ class _IgnoredSingleJob(_SingleJob):
 class _Flow(_JobControl):
     __metaclass__ = abc.ABCMeta
 
-    def __init__(self, jenkins_api, timeout, securitytoken, job_name_prefix, max_tries, parent_max_tries, report_interval, secret_params, nesting_level):
+    def __init__(self, jenkins_api, timeout, securitytoken, job_name_prefix, max_tries, parent_max_tries, warn_only, report_interval, secret_params, nesting_level):
         secret_params_re = re.compile(secret_params) if isinstance(secret_params, str) else secret_params
-        super(_Flow, self).__init__(securitytoken, max_tries, parent_max_tries, report_interval, secret_params_re, nesting_level)
+        super(_Flow, self).__init__(securitytoken, max_tries, parent_max_tries, warn_only, report_interval, secret_params_re, nesting_level)
 
         self.api = jenkins_api
         self.timeout = timeout
@@ -235,7 +241,8 @@ class _Flow(_JobControl):
         securitytoken = securitytoken or self.securitytoken
         secret_params = secret_params or self.secret_params_re
         report_interval = report_interval or self.report_interval
-        flw = flow_cls(self.api, timeout, securitytoken, self.job_name_prefix+job_name_prefix, max_tries, self.total_max_tries, report_interval, secret_params, self.nesting_level)
+        flw = flow_cls(self.api, timeout, securitytoken, self.job_name_prefix+job_name_prefix, max_tries, self.total_max_tries, self.warn_only,
+                       report_interval, secret_params, self.nesting_level)
         self.jobs.append(flw)
         return flw
 
@@ -246,7 +253,7 @@ class _Flow(_JobControl):
         return self._create(_Serial, timeout, securitytoken, job_name_prefix, max_tries, report_interval, secret_params)
 
     def invoke(self, job_name, **params):
-        job = _SingleJob(self.api, self.securitytoken, self.job_name_prefix, self.max_tries, self.total_max_tries, job_name, params,
+        job = _SingleJob(self.api, self.securitytoken, self.job_name_prefix, self.max_tries, self.total_max_tries, job_name, params, self.warn_only,
                          self.report_interval, self.secret_params_re, self.nesting_level)
         self.jobs.append(job)
 
@@ -258,7 +265,7 @@ class _Flow(_JobControl):
         now = time.time()
         if self.timeout and now - self.invocation_time > self.timeout:
             unfinished_msg = "Unfinished jobs:" + str(self)
-            raise FlowTimeoutException("Timeout after:" + self._time_msg(start_time) + unfinished_msg)
+            raise FlowTimeoutException("Timeout after:" + self._time_msg(start_time) + unfinished_msg, self.warn_only)
 
     def __exit__(self, exc_type, exc_value, traceback):
         if exc_type:
@@ -276,9 +283,10 @@ class _Flow(_JobControl):
 
 
 class _Parallel(_Flow):
-    def __init__(self, jenkins_api, timeout, securitytoken, job_name_prefix='', max_tries=1, parent_max_tries=1, report_interval=None,
-                 secret_params=_default_secret_params_re, nesting_level=0):
-        super(_Parallel, self).__init__(jenkins_api, timeout, securitytoken, job_name_prefix, max_tries, parent_max_tries, report_interval, secret_params, nesting_level)
+    def __init__(self, jenkins_api, timeout, securitytoken, job_name_prefix='', max_tries=1, parent_max_tries=1, warn_only=False,
+                 report_interval=None, secret_params=_default_secret_params_re, nesting_level=0):
+        super(_Parallel, self).__init__(jenkins_api, timeout, securitytoken, job_name_prefix, max_tries, parent_max_tries, warn_only,
+                                        report_interval, secret_params, nesting_level)
         self._failed_child_jobs = {}
 
     def __enter__(self):
@@ -326,7 +334,8 @@ class _Parallel(_Flow):
             # All jobs have stopped running
             if self._failed_child_jobs:
                 print("FAILURE:", self, self._time_msg(start_time))
-                raise FailedChildJobsException(self, self._failed_child_jobs.values())
+                # TODO
+                raise FailedChildJobsException(self, self._failed_child_jobs.values(), self.warn_only)
             print("SUCCESS:", self, self._time_msg(start_time))
             self.successful = True
 
@@ -337,9 +346,10 @@ class _Parallel(_Flow):
 
 
 class _Serial(_Flow):
-    def __init__(self, jenkins_api, securitytoken, timeout, job_name_prefix='', max_tries=1, parent_max_tries=1, report_interval=None,
-                 secret_params=_default_secret_params_re, nesting_level=0):
-        super(_Serial, self).__init__(jenkins_api, securitytoken, timeout, job_name_prefix, max_tries, parent_max_tries, report_interval, secret_params, nesting_level)
+    def __init__(self, jenkins_api, securitytoken, timeout, job_name_prefix='', max_tries=1, parent_max_tries=1, warn_only=False,
+                 report_interval=None, secret_params=_default_secret_params_re, nesting_level=0):
+        super(_Serial, self).__init__(jenkins_api, securitytoken, timeout, job_name_prefix, max_tries, parent_max_tries, warn_only,
+                                      report_interval, secret_params, nesting_level)
         self.job_index = 0
 
     def _prepare_to_invoke(self, queuing=False):
@@ -389,7 +399,7 @@ class _Serial(_Flow):
                     pre_job.total_tried_times += 1
 
             print("FAILURE:", self, self._time_msg(start_time))
-            raise FailedChildJobException(self, job)
+            raise FailedChildJobException(self, job, self.warn_only)
 
         self.job_index += 1
         if self.job_index == len(self.jobs):
@@ -403,6 +413,35 @@ class _Serial(_Flow):
 
 
 class _TopLevelController(_Flow):
+    __metaclass__ = abc.ABCMeta
+
+    def set_build_result(self, result):
+        # Note: set-build-result can only be done from within the job
+        # Note: only available if Jenkins URL set in Jenkins system configuration
+        my_url = os.environ.get('BUILD_URL')
+        if my_url is not None:
+            print("INFO: Setting job result for", self, "to", repr(result))
+            import urllib2, subprocess
+
+            cli = 'jenkins-cli.jar'
+
+            def set_res():
+                subprocess.check_call(['java', '-jar', cli, '-s', my_url, 'set-build-result', result])
+
+            try:
+                # If cli is already present attempt to use it
+                set_res()
+            except subprocess.CalledProcessError :
+                # We failed for some reason, try again with updated cli
+                cli_url = self.api.baseurl + '/jnlpJars/' + cli
+                print("INFO: Downloading cli", repr(cli_url))
+                response = urllib2.urlopen (cli_url)
+                with open(cli, 'w') as ff:
+                    ff.write(response.read())
+                set_res()
+        else:
+            print("INFO:", self, "Not running in CI, no job to set result", repr(result), "for")
+
     def wait_for_jobs(self):
         if not self.jobs:
             print("WARNING: Empty toplevel flow", self, "nothing to do.")
@@ -411,11 +450,15 @@ class _TopLevelController(_Flow):
         # Wait for jobs to finish
         print()
 
-        last_report_time = start_time = time.time()
-
-        while not self.successful:
-            last_report_time = self._check(start_time, last_report_time)
-            time.sleep(min(0.5, self.report_interval))
+        try:
+            last_report_time = start_time = time.time()
+            while not self.successful:
+                last_report_time = self._check(start_time, last_report_time)
+                time.sleep(min(0.5, self.report_interval))
+        except JobControlException as ex:
+            if not ex.warn_only:
+                raise
+            self.set_build_result('unstable')
 
 
 def _start_msg():
@@ -428,9 +471,12 @@ def _start_msg():
 
 
 class parallel(_Parallel, _TopLevelController):
-    def __init__(self, jenkins_api, timeout, securitytoken=None, job_name_prefix='', max_tries=1, report_interval=_default_report_interval, secret_params=_default_secret_params_re):
+    def __init__(self, jenkins_api, timeout, securitytoken=None, job_name_prefix='', max_tries=1, warn_only=False,
+                 report_interval=_default_report_interval, secret_params=_default_secret_params_re):
+        """warn_only: causes failure in this job not to fail the parent flow"""
         _start_msg()
-        super(parallel, self).__init__(jenkins_api, timeout, securitytoken, job_name_prefix, max_tries, 1, report_interval, secret_params, 0)
+        super(parallel, self).__init__(jenkins_api, timeout, securitytoken, job_name_prefix, max_tries, 1, warn_only,
+                                       report_interval, secret_params, 0)
 
     def __exit__(self, exc_type, exc_value, traceback):
         super(parallel, self).__exit__(exc_type, exc_value, traceback)
@@ -438,9 +484,12 @@ class parallel(_Parallel, _TopLevelController):
 
 
 class serial(_Serial, _TopLevelController):
-    def __init__(self, jenkins_api, timeout, securitytoken=None, job_name_prefix='', max_tries=1, report_interval=_default_report_interval, secret_params=_default_secret_params_re):
+    def __init__(self, jenkins_api, timeout, securitytoken=None, job_name_prefix='', max_tries=1, warn_only=False,
+                 report_interval=_default_report_interval, secret_params=_default_secret_params_re):
+        """warn_only: causes failure in this job not to fail the parent flow"""
         _start_msg()
-        super(serial, self).__init__(jenkins_api, timeout, securitytoken, job_name_prefix, max_tries, 1, report_interval, secret_params, 0)
+        super(serial, self).__init__(jenkins_api, timeout, securitytoken, job_name_prefix, max_tries, 1, warn_only,
+                                     report_interval, secret_params, 0)
 
     def __exit__(self, exc_type, exc_value, traceback):
         super(serial, self).__exit__(exc_type, exc_value, traceback)
