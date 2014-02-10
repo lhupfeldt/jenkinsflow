@@ -34,7 +34,7 @@ def main():
             ctrl2.invoke('wait5-1')
             ctrl2.invoke('quick_fail', password='Y', fail='yes', s1='WORLD', c1='why')
 
-        # Never invoked because of failure in preceding 'parallel' 
+        # Never invoked because of failure in preceding 'parallel'
         ctrl1.invoke('wait4-2')
 
 if __name__ == '__main__':

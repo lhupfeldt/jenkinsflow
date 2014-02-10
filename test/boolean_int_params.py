@@ -22,7 +22,7 @@ sys.stdout = UnBuffered(sys.stdout)
 
 def main():
     logging.basicConfig()
-    logging.getLogger("").setLevel(logging.WARNING)    
+    logging.getLogger("").setLevel(logging.WARNING)
     template = jp(here, './framework/job.xml.tenjin')
 
     with mock_api.api(job_name_prefix='boolean_int_params_') as api:

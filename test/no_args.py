@@ -24,7 +24,7 @@ sys.stdout = UnBuffered(sys.stdout)
 
 def main():
     logging.basicConfig()
-    logging.getLogger("").setLevel(logging.WARNING)    
+    logging.getLogger("").setLevel(logging.WARNING)
 
     with mock_api.api(job_name_prefix='no_args_') as api:
         api.mock_job('job-1', exec_time=0.5, max_fails=0, expect_invocations=1, expect_order=1)

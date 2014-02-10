@@ -23,7 +23,7 @@ sys.stdout = UnBuffered(sys.stdout)
 
 def main():
     logging.basicConfig()
-    logging.getLogger("").setLevel(logging.WARNING)    
+    logging.getLogger("").setLevel(logging.WARNING)
 
     prefix = 'empty_flow'
     with mock_api.api(job_name_prefix=prefix) as api:
@@ -34,27 +34,27 @@ def main():
 
         with serial(api, timeout=70):
             pass
-        
+
         with parallel(api, timeout=70):
             pass
-        
+
         with serial(api, timeout=70, job_name_prefix=prefix, report_interval=1) as ctrl1:
             ctrl1.invoke('job-1')
-        
+
             with ctrl1.parallel():
                 pass
-        
+
             with ctrl1.serial():
                 pass
-        
+
             with ctrl1.parallel() as ctrl2:
                 with ctrl2.serial() as ctrl3a:
                     ctrl3a.invoke('job-2')
                     ctrl3a.invoke('job-3')
-        
+
                 with ctrl2.parallel():
                     pass
-        
+
             ctrl1.invoke('job-4')
 
 

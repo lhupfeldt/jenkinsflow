@@ -45,7 +45,7 @@ for demo in nested, single_level, prefix:
     run_demo(demo)
 
 print("Validating demos with failing jobs")
-for demo in hide_password, multi_level_errors1, multi_level_errors2:    
+for demo in hide_password, multi_level_errors1, multi_level_errors2:
     try:
         run_demo(demo)
     except JobControlFailException as ex:

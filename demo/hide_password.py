@@ -26,7 +26,7 @@ def main():
     api = jenkins.Jenkins(jenkinsurl)
 
     with serial(api, timeout=70, job_name_prefix='hide_password_', report_interval=3, secret_params='.*PASS.*|.*pass.*') as ctrl:
-        # NOTE: In order to ensure that passwords are not displayed in a stacktrace you must never put a literal password 
+        # NOTE: In order to ensure that passwords are not displayed in a stacktrace you must never put a literal password
         # In the last line in the with statement, or in any statement that may raise an exception. You shold not really
         # put clear text paswords in you code anyway :)
         p1, p2, p3 = 'SECRET', 'sec', 'not_security'

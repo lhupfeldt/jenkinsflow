@@ -34,7 +34,7 @@ def main():
         api.mock_job('wait10_fail', exec_time=10, max_fails=1, expect_invocations=1, expect_order=1, job_xml_template=template, params=(('fail', 'true', 'Force job to fail'),))
         api.mock_job('wait5', exec_time=5, max_fails=0, expect_invocations=1, expect_order=1)
         api.mock_job('wait5_fail', exec_time=5, max_fails=1, expect_invocations=1, expect_order=1, job_xml_template=template, params=(('fail', 'true', 'Force job to fail'),))
-    
+
         try:
             with parallel(api, timeout=20, job_name_prefix='sle_', report_interval=3) as ctrl:
                 ctrl.invoke('quick', password='Yes', s1='', c1=False)
@@ -46,7 +46,7 @@ def main():
             raise Exception("Should have failed!")
         except FailedChildJobsException as ex:
             print("Ok, got exception:", ex)
-    
+
     with mock_api.api(job_name_prefix='sle_') as api:
         api.mock_job('quick', exec_time=0.5, max_fails=0, expect_invocations=1, expect_order=1, job_xml_template=template, params=(('s1', '', 'desc'), ('c1', 'false', 'desc')))
         api.mock_job('quick_fail', exec_time=0.5, max_fails=1, expect_invocations=1, expect_order=2, job_xml_template=template, params=(('fail', 'true', 'Force job to fail'),))
@@ -60,7 +60,7 @@ def main():
             raise Exception("Should have failed!")
         except FailedChildJobException as ex:
             print("Ok, got exception:", ex)
-    
+
     with mock_api.api(job_name_prefix='sle_') as api:
         api.mock_job('quick', exec_time=0.5, max_fails=0, expect_invocations=1, expect_order=1, job_xml_template=template, params=(('s1', '', 'desc'), ('c1', 'false', 'desc')))
         api.mock_job('wait5', exec_time=5, max_fails=0, expect_invocations=1, expect_order=1)
