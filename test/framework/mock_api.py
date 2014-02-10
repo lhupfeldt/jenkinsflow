@@ -1,4 +1,4 @@
-import os, sys, abc
+import os, sys, abc, re
 from collections import OrderedDict
 import time
 from os.path import join as jp
@@ -138,7 +138,7 @@ class _JobsMixin(object):
 
 class MockApi(_JobsMixin):
     def __init__(self, job_name_prefix):
-        self.job_name_prefix = os.path.basename(job_name_prefix).replace('_jobs.pyc', '_').replace('_jobs.py', '_')
+        self.job_name_prefix = job_name_prefix
         self._jf_jobs = OrderedDict()
 
     # --- Mock API ---
@@ -181,7 +181,7 @@ class MockApi(_JobsMixin):
 class JenkinsWrapper(jenkins.Jenkins, _JobsMixin):
     def __init__(self, job_name_prefix, jenkinsurl):
         super(JenkinsWrapper, self).__init__(jenkinsurl)
-        self.job_name_prefix = os.path.basename(job_name_prefix).replace('_jobs.pyc', '_').replace('_jobs.py', '_')
+        self.job_name_prefix = job_name_prefix
         self._jf_jobs = OrderedDict()
         try:
             file_name = jp(here, self.job_name_prefix + 'job.xml')
@@ -199,6 +199,7 @@ def is_mocked():
 
 
 def api(job_name_prefix, jenkinsurl=os.environ.get('JENKINSFLOW_JENKINSURL') or "http://localhost:8080"):
+    job_name_prefix = re.sub(r'(_jobs)?\.pyc?$', '_', os.path.basename(job_name_prefix))
     if is_mocked():
         print 'Using Mocked API'
         clean_jobs_state()
