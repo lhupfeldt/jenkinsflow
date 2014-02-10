@@ -1,3 +1,5 @@
+from __future__ import print_function
+
 import os, sys, abc, re
 from collections import OrderedDict
 import time
@@ -35,7 +37,7 @@ class Job(object):
         self.build = Build(self, initial_buildno)
 
     def debug(self, what):
-        # print "Mock job: ", what, self, "time:", time.time()
+        # print("Mock job: ", what, self, "time:", time.time())
         pass
 
     def get_build_triggerurl(self):
@@ -92,7 +94,7 @@ class Build(object):
         self.debug('__init__')
 
     def debug(self, what):
-        print "Mock build: ", what, self, "time:", time.time()
+        print("Mock build: ", what, self, "time:", time.time())
 
     def is_running(self):
         return self.job.is_running()
@@ -147,7 +149,7 @@ class MockApi(_JobsMixin):
         return self._jf_jobs[name]
 
     def test_results(self):
-        print "Checking results"
+        print("Checking results")
 
         max_actual_order = 0
         last_expected_order = 0
@@ -186,7 +188,7 @@ class JenkinsWrapper(jenkins.Jenkins, _JobsMixin):
         try:
             file_name = jp(here, self.job_name_prefix + 'job.xml')
             with open(file_name) as ff:
-                print "Using specialized job xml:", file_name
+                print("Using specialized job xml:", file_name)
                 self.config_xml = ff.read()
         except IOError:
             with open(jp(here, 'job.xml')) as ff:
@@ -201,9 +203,9 @@ def is_mocked():
 def api(job_name_prefix, jenkinsurl=os.environ.get('JENKINSFLOW_JENKINSURL') or "http://localhost:8080"):
     job_name_prefix = re.sub(r'(_jobs)?\.pyc?$', '_', os.path.basename(job_name_prefix))
     if is_mocked():
-        print 'Using Mocked API'
+        print('Using Mocked API')
         clean_jobs_state()
         return MockApi(job_name_prefix)
     else:
-        print 'Using Real Jenkins API'
+        print('Using Real Jenkins API')
         return JenkinsWrapper(job_name_prefix, jenkinsurl)

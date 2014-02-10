@@ -2,6 +2,7 @@
 # All rights reserved. This work is under a BSD license, see LICENSE.TXT.
 
 from __future__ import print_function
+
 import os, time, re, abc
 
 _default_report_interval = 5
@@ -118,7 +119,7 @@ class _SingleJob(_JobControl):
             # TODO: token instead of None?
             url = self.job.get_build_triggerurl(None, params=self.params if params else None)
         except TypeError:
-            # print ex
+            # print(ex)
             # Newer version take no args for get_build_triggerurl
             url = self.job.get_build_triggerurl()
             # Even Newer versions of jenkinsapi returns basic path without any args

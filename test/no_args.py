@@ -3,6 +3,8 @@
 # Copyright (c) 2012 - 2014 Lars Hupfeldt Nielsen, Hupfeldt IT
 # All rights reserved. This work is under a BSD license, see LICENSE.TXT.
 
+from __future__ import print_function
+
 import sys
 import os.path
 from os.path import join as jp
@@ -26,7 +28,7 @@ def main():
 
     with mock_api.api(job_name_prefix='no_args_') as api:
         api.mock_job('job-1', exec_time=0.5, max_fails=0, expect_invocations=1, expect_order=1)
-        print
+        print()
 
         with serial(api, timeout=70, job_name_prefix='no_args_', report_interval=1) as ctrl1:
             ctrl1.invoke('job-1')

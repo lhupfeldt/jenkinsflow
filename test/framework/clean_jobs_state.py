@@ -1,3 +1,5 @@
+from __future__ import print_function
+
 import os, glob
 from os.path import join as jp
 
