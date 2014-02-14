@@ -6,18 +6,17 @@ import time
 from os.path import join as jp
 
 here = os.path.abspath(os.path.dirname(__file__))
-sys.path.append(jp(here, '../..'))
+sys.path.append(jp(here, '../../..'))
 
-from jenkinsflow.jobload import update_job
 from jenkinsapi import jenkins
 
 from clean_jobs_state import clean_jobs_state
-from jobloadtemplate import update_job_from_template
+from jenkinsflow.jobload import update_job_from_template
 
 _current_order = 1
 
 
-class Job(object):
+class MockJob(object):
     def __init__(self, name, exec_time, max_fails, expect_invocations, expect_order, initial_buildno=0, invocation_delay=0.01):
         """Set max_fails to -1 for an unchecked invocation"""
         assert exec_time > 0
@@ -66,7 +65,7 @@ class Job(object):
         self.debug('get_last_build_or_none')
         return self.build if self.build.buildno else None
 
-    def invoke(self, securitytoken, invoke_pre_check_delay, block, build_params):
+    def invoke(self, securitytoken, invoke_pre_check_delay, block, build_params):  # pylint: disable=unused-argument
         global _current_order
         self.just_invoked = True
         self.actual_order = _current_order
@@ -114,18 +113,17 @@ class Build(object):
 
 class _JobsMixin(object):
     __metaclass__ = abc.ABCMeta
+    job_xml_template = jp(here, 'job.xml.tenjin')
 
-    def mock_job(self, name, exec_time, max_fails, expect_invocations, expect_order, initial_buildno=0, invocation_delay=0.1, job_xml_template=None, params=None):
+    def mock_job(self, name, exec_time, max_fails, expect_invocations, expect_order, initial_buildno=0, invocation_delay=0.1, params=None, script=None):
         name = self.job_name_prefix + name
         assert not self._jf_jobs.get(name)
-        if is_mocked():
-            self._jf_jobs[name] = Job(name, exec_time, max_fails, expect_invocations, expect_order, initial_buildno, invocation_delay)
-        elif job_xml_template or params:
-            if params:
-                assert job_xml_template, "Default job.xml does not support special 'params', you must specify a template"
-            update_job_from_template(self, name, job_xml_template, pre_delete=True, params=params, exec_time=exec_time)
+        if self.is_mocked:
+            self._jf_jobs[name] = MockJob(name, exec_time, max_fails, expect_invocations, expect_order, initial_buildno, invocation_delay)
         else:
-            update_job(self, name, self.config_xml, pre_delete=True)
+            # Create job in Jenkins
+            context = {'exec_time': exec_time, 'params': params or (), 'script': script}
+            update_job_from_template(self, name, self.job_xml_template, pre_delete=True, context=context)
 
     def __enter__(self):
         return self
@@ -136,6 +134,10 @@ class _JobsMixin(object):
 
     def test_results(self):
         pass
+
+    @property
+    def is_mocked(self):
+        return is_mocked()
 
 
 class MockApi(_JobsMixin):
@@ -185,14 +187,6 @@ class JenkinsWrapper(jenkins.Jenkins, _JobsMixin):
         super(JenkinsWrapper, self).__init__(jenkinsurl)
         self.job_name_prefix = job_name_prefix
         self._jf_jobs = OrderedDict()
-        try:
-            file_name = jp(here, self.job_name_prefix + 'job.xml')
-            with open(file_name) as ff:
-                print("Using specialized job xml:", file_name)
-                self.config_xml = ff.read()
-        except IOError:
-            with open(jp(here, 'job.xml')) as ff:
-                self.config_xml = ff.read()
 
 
 def is_mocked():

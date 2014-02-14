@@ -23,15 +23,15 @@ sys.stdout = UnBuffered(sys.stdout)
 def main():
     logging.basicConfig()
     logging.getLogger("").setLevel(logging.WARNING)
-    template = jp(here, './framework/job.xml.tenjin')
 
     with mock_api.api(job_name_prefix='boolean_int_params_') as api:
-        api.mock_job('job-1', exec_time=0.5, max_fails=0, expect_invocations=1, expect_order=1, job_xml_template=template, params=(('b1', False, 'boolean'), ('b2', True, 'boolean')))
-        api.mock_job('job-2', exec_time=0.5, max_fails=0, expect_invocations=1, expect_order=2, job_xml_template=template, params=(('i1', 1, 'boolean'), ('i2', 2, 'boolean')))
+        api.mock_job('job-1', exec_time=0.5, max_fails=0, expect_invocations=1, expect_order=1, params=(('b1', False, 'boolean'), ('b2', True, 'boolean')))
+        api.mock_job('job-2', exec_time=0.5, max_fails=0, expect_invocations=1, expect_order=2, params=(('i1', 1, 'boolean'), ('i2', 2, 'boolean')))
 
         with serial(api, timeout=20, job_name_prefix='boolean_int_params_', report_interval=1) as ctrl1:
             ctrl1.invoke('job-1', b1=True, b2=False)
             ctrl1.invoke('job-2', i1=7, i2=0)
+
 
 if __name__ == '__main__':
     main()

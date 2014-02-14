@@ -15,7 +15,7 @@ from framework import mock_api
 def main():
     with mock_api.api(__file__) as api:
         def job(name, params=None):
-            api.mock_job(name, exec_time=0.5, max_fails=0, expect_invocations=1, expect_order=1, job_xml_template=jp(here, '../test/framework/job.xml.tenjin'), params=params)
+            api.mock_job(name, exec_time=0.5, max_fails=0, expect_invocations=1, expect_order=1, params=params)
 
         job('wait4-1')
         job('wait2')

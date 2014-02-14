@@ -6,16 +6,22 @@
   <properties>
     <hudson.model.ParametersDefinitionProperty>
       <parameterDefinitions>
+        <?py # TODO cleanup, all parameters should come from model! ?>
+        <?py if not 'password' in params: ?>
         <hudson.model.PasswordParameterDefinition>
           <name>password</name>
           <description></description>
           <defaultValue>UVum+akeqwZJGAHJFYVNKg==</defaultValue>
         </hudson.model.PasswordParameterDefinition>
+        <?py #endif ?>
+        <?py if not 'sleep' in params: ?>
         <hudson.model.StringParameterDefinition>
           <name>sleep</name>
           <description>How many seconds the execution should last</description>
           <defaultValue>{==exec_time==}</defaultValue>
         </hudson.model.StringParameterDefinition>
+        <?py #endif ?>
+        <?py if not 'fail' in params: ?>
         <hudson.model.ChoiceParameterDefinition>
           <name>fail</name>
           <description>Decide whether the job fails</description>
@@ -27,6 +33,8 @@
             </a>
           </choices>
         </hudson.model.ChoiceParameterDefinition>
+        <?py #endif ?>
+
         <?py seen = set() ?>
         <?py for param in params: ?>
         <?py     if param[0] in seen: ?>
@@ -76,12 +84,16 @@
     <hudson.tasks.Shell>
       <command>#!/bin/bash
 set -u
+<?py if script is not None: ?>
+{==script==}
+<?py else: ?>
 echo fail=$fail
 echo sleeping=$sleep
 sleep $sleep
 [[ $fail == no ]] &amp;&amp; exit 0
 [[ $fail == yes ]] &amp;&amp; exit 1
 [[ $fail == maybe ]] &amp;&amp; exit $(( $SECONDS % 2 ))
+<?py #endif ?>
       </command>
     </hudson.tasks.Shell>
   </builders>
