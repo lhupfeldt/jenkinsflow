@@ -20,3 +20,4 @@ Test
 
    # Load test jobs into Jenkins and execute them
    JENKINSFLOW_JENKINSURL=<your jenkins> python ./test/tests.py
+   Note: Jenkins is default configured with only two executors on master. To avoid timeouts in the test cases this must be raised to at least 8.
