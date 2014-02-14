@@ -15,7 +15,7 @@ from framework import mock_api
 def main():
     with mock_api.api(__file__) as api:
         def job(name, params=None):
-            api.mock_job(name, exec_time=0.5, max_fails=0, expect_invocations=1, expect_order=1, params=params)
+            api.job(name, exec_time=0.5, max_fails=0, expect_invocations=1, expect_order=1, params=params)
 
         job('prepare')
         job('deploy_component1')

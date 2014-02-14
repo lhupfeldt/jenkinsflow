@@ -115,7 +115,7 @@ class _JobsMixin(object):
     __metaclass__ = abc.ABCMeta
     job_xml_template = jp(here, 'job.xml.tenjin')
 
-    def mock_job(self, name, exec_time, max_fails, expect_invocations, expect_order, initial_buildno=0, invocation_delay=0.1, params=None, script=None):
+    def job(self, name, exec_time, max_fails, expect_invocations, expect_order, initial_buildno=0, invocation_delay=0.1, params=None, script=None):
         name = self.job_name_prefix + name
         assert not self._jf_jobs.get(name)
         if self.is_mocked:

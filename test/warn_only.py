@@ -25,8 +25,8 @@ def main():
     logging.getLogger("").setLevel(logging.WARNING)
 
     with mock_api.api(__file__) as api:
-        api.mock_job('a1', exec_time=0.5, max_fails=0, expect_invocations=1, expect_order=1)
-        api.mock_job('a2_fail', exec_time=0.5, max_fails=1, expect_invocations=1, expect_order=2)
+        api.job('a1', exec_time=0.5, max_fails=0, expect_invocations=1, expect_order=1)
+        api.job('a2_fail', exec_time=0.5, max_fails=1, expect_invocations=1, expect_order=2)
 
         with serial(api, timeout=70, job_name_prefix='warn_only_', report_interval=3, warn_only=True) as ctrl1:
             ctrl1.invoke('a1')

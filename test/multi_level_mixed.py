@@ -27,13 +27,13 @@ def main():
     logging.getLogger("").setLevel(logging.WARNING)
 
     with mock_api.api(job_name_prefix='mlm_') as api:
-        api.mock_job('job-1', exec_time=0.5, max_fails=0, expect_invocations=1, expect_order=1)
-        api.mock_job('job-2', exec_time=0.5, max_fails=0, expect_invocations=1, expect_order=2)
-        api.mock_job('job-3', exec_time=0.5, max_fails=0, expect_invocations=1, expect_order=3)
-        api.mock_job('job-4', exec_time=0.5, max_fails=0, expect_invocations=1, expect_order=3)
-        api.mock_job('job-5', exec_time=0.5, max_fails=0, expect_invocations=1, expect_order=3)
-        api.mock_job('job-6', exec_time=0.5, max_fails=0, expect_invocations=1, expect_order=4)
-        api.mock_job('job-7', exec_time=0.5, max_fails=0, expect_invocations=1, expect_order=5)
+        api.job('job-1', exec_time=0.5, max_fails=0, expect_invocations=1, expect_order=1)
+        api.job('job-2', exec_time=0.5, max_fails=0, expect_invocations=1, expect_order=2)
+        api.job('job-3', exec_time=0.5, max_fails=0, expect_invocations=1, expect_order=3)
+        api.job('job-4', exec_time=0.5, max_fails=0, expect_invocations=1, expect_order=3)
+        api.job('job-5', exec_time=0.5, max_fails=0, expect_invocations=1, expect_order=3)
+        api.job('job-6', exec_time=0.5, max_fails=0, expect_invocations=1, expect_order=4)
+        api.job('job-7', exec_time=0.5, max_fails=0, expect_invocations=1, expect_order=5)
         print()
 
         with serial(api, timeout=70, job_name_prefix='mlm_', report_interval=1) as ctrl1:

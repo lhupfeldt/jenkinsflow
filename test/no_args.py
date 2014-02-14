@@ -27,7 +27,7 @@ def main():
     logging.getLogger("").setLevel(logging.WARNING)
 
     with mock_api.api(job_name_prefix='no_args_') as api:
-        api.mock_job('job-1', exec_time=0.5, max_fails=0, expect_invocations=1, expect_order=1)
+        api.job('job-1', exec_time=0.5, max_fails=0, expect_invocations=1, expect_order=1)
         print()
 
         with serial(api, timeout=70, job_name_prefix='no_args_', report_interval=1) as ctrl1:
