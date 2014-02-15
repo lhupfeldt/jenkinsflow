@@ -24,7 +24,7 @@ def main():
     logging.basicConfig()
     logging.getLogger("").setLevel(logging.WARNING)
 
-    with mock_api.api(job_name_prefix='sle_') as api:
+    with mock_api.api(job_name_prefix=__file__ + '1') as api:
         api.job('quick', exec_time=0.5, max_fails=0, expect_invocations=1, expect_order=1, params=(('s1', '', 'desc'), ('c1', 'false', 'desc')))
         api.job('quick_fail', exec_time=0.5, max_fails=1, expect_invocations=1, expect_order=1, params=(('fail', 'true', 'Force job to fail'),))
         api.job('wait10', exec_time=10, max_fails=0, expect_invocations=1, expect_order=1)
@@ -33,7 +33,7 @@ def main():
         api.job('wait5_fail', exec_time=5, max_fails=1, expect_invocations=1, expect_order=1, params=(('fail', 'true', 'Force job to fail'),))
 
         try:
-            with parallel(api, timeout=20, job_name_prefix='sle_', report_interval=3) as ctrl:
+            with parallel(api, timeout=20, job_name_prefix=api.job_name_prefix, report_interval=3) as ctrl:
                 ctrl.invoke('quick', password='Yes', s1='', c1=False)
                 ctrl.invoke('quick_fail')
                 ctrl.invoke('wait10')
@@ -44,13 +44,13 @@ def main():
         except FailedChildJobsException as ex:
             print("Ok, got exception:", ex)
 
-    with mock_api.api(job_name_prefix='sle_') as api:
+    with mock_api.api(job_name_prefix=__file__ + '2') as api:
         api.job('quick', exec_time=0.5, max_fails=0, expect_invocations=1, expect_order=1, params=(('s1', '', 'desc'), ('c1', 'false', 'desc')))
         api.job('quick_fail', exec_time=0.5, max_fails=1, expect_invocations=1, expect_order=2, params=(('fail', 'true', 'Force job to fail'),))
         api.job('wait5', exec_time=5, max_fails=0, expect_invocations=0, expect_order=None)
 
         try:
-            with serial(api, timeout=20, job_name_prefix='sle_', report_interval=3) as ctrl:
+            with serial(api, timeout=20, job_name_prefix=api.job_name_prefix, report_interval=3) as ctrl:
                 ctrl.invoke('quick', password='Yes', s1='', c1=False)
                 ctrl.invoke('quick_fail', fail='yes')
                 ctrl.invoke('wait5')
@@ -58,12 +58,12 @@ def main():
         except FailedChildJobException as ex:
             print("Ok, got exception:", ex)
 
-    with mock_api.api(job_name_prefix='sle_') as api:
+    with mock_api.api(job_name_prefix=__file__ + '3') as api:
         api.job('quick', exec_time=0.5, max_fails=0, expect_invocations=1, expect_order=1, params=(('s1', '', 'desc'), ('c1', 'false', 'desc')))
         api.job('wait5', exec_time=5, max_fails=0, expect_invocations=1, expect_order=1)
 
         try:
-            with parallel(api, timeout=1, job_name_prefix='sle_', report_interval=3) as ctrl:
+            with parallel(api, timeout=1, job_name_prefix=api.job_name_prefix, report_interval=3) as ctrl:
                 ctrl.invoke('quick', password='Yes', s1='', c1=False)
                 ctrl.invoke('wait5', sleep="5")
             raise Exception("Should have failed!")

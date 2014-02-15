@@ -3,12 +3,6 @@
 # Copyright (c) 2012 - 2014 Lars Hupfeldt Nielsen, Hupfeldt IT
 # All rights reserved. This work is under a BSD license, see LICENSE.TXT.
 
-import sys
-import os.path
-from os.path import join as jp
-here = os.path.dirname(__file__)
-sys.path.append(jp(here, '../test'))
-
 from framework import mock_api
 
 
@@ -17,6 +11,7 @@ def main():
         def job(name, params=None):
             api.job(name, exec_time=0.5, max_fails=0, expect_invocations=1, expect_order=1, params=params)
 
+        api.flow_job('flow')
         job('quick1')
         for index in 1, 2, 3:
             job('x_quick2-' + str(index))

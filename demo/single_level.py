@@ -17,13 +17,11 @@ from jenkinsflow.jobcontrol import parallel, serial
 from jenkinsflow.unbuffered import UnBuffered
 sys.stdout = UnBuffered(sys.stdout)
 
-jenkinsurl = "http://localhost:8080"
-
 
 def main():
     logging.basicConfig()
     logging.getLogger("").setLevel(logging.WARNING)
-    api = jenkins.Jenkins(jenkinsurl)
+    api = jenkins.Jenkins(os.environ.get('JENKINSFLOW_JENKINSURL') or "http://localhost:8080")
 
     with serial(api, timeout=30, job_name_prefix='single_level_', report_interval=3) as ctrl:
         ctrl.invoke('quick', password='X', s1='HELLO', c1=True)

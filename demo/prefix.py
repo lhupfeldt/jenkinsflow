@@ -20,12 +20,10 @@ from jenkinsflow.unbuffered import UnBuffered
 sys.stdout = UnBuffered(sys.stdout)
 
 
-jenkinsurl = "http://localhost:8080"
-
 def main():
     logging.basicConfig()
     logging.getLogger("").setLevel(logging.WARNING)
-    api = jenkins.Jenkins(jenkinsurl)
+    api = jenkins.Jenkins(os.environ.get('JENKINSFLOW_JENKINSURL') or "http://localhost:8080")
 
     with serial(api, timeout=70, report_interval=3, job_name_prefix='prefix_') as ctrl1:
         ctrl1.invoke('quick1')

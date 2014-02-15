@@ -14,7 +14,7 @@ from clean_jobs_state import clean_jobs_state
 from jenkinsflow.jobload import update_job_from_template
 
 _current_order = 1
-
+_file_name_subst = re.compile(r'(_jobs)?\.pyc?')
 
 class MockJob(object):
     def __init__(self, name, exec_time, max_fails, expect_invocations, expect_order, initial_buildno=0, invocation_delay=0.01):
@@ -181,12 +181,24 @@ class MockApi(_JobsMixin):
             elif job.expect_invocations != 0:
                 assert not job.get_last_build_or_none().is_good(), "Job: " + job.name + " should have been in failed state, but it is not"
 
+    def flow_job(self, name, params=None):
+        # Don't create flow jobs when mocked
+        pass
+
 
 class JenkinsWrapper(jenkins.Jenkins, _JobsMixin):
     def __init__(self, job_name_prefix, jenkinsurl):
         super(JenkinsWrapper, self).__init__(jenkinsurl)
         self.job_name_prefix = job_name_prefix
         self._jf_jobs = OrderedDict()
+
+    def flow_job(self, name, params=None):
+        """
+        Runs demo flow script as jenkins job
+        Requires jenkinsflow to be copied to /tmp
+        """
+        self.job('all_' + name, exec_time=0.5, max_fails=0, expect_invocations=1, expect_order=1, params=params,
+                 script="python " + jp('/tmp/jenkinsflow/demo', self.job_name_prefix[:-1] + '.py'))
 
 
 def is_mocked():
@@ -195,7 +207,9 @@ def is_mocked():
 
 
 def api(job_name_prefix, jenkinsurl=os.environ.get('JENKINSFLOW_JENKINSURL') or "http://localhost:8080"):
-    job_name_prefix = re.sub(r'(_jobs)?\.pyc?$', '_', os.path.basename(job_name_prefix))
+    job_name_prefix, num_replaces = _file_name_subst.subn('', os.path.basename(job_name_prefix))
+    if num_replaces:
+        job_name_prefix += '_'
     if is_mocked():
         print('Using Mocked API')
         clean_jobs_state()
