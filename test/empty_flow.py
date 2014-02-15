@@ -3,17 +3,11 @@
 # Copyright (c) 2012 - 2014 Lars Hupfeldt Nielsen, Hupfeldt IT
 # All rights reserved. This work is under a BSD license, see LICENSE.TXT.
 
-import logging
-
 from jenkinsflow.jobcontrol import serial, parallel
-
 from framework import mock_api
 
 
 def main():
-    logging.basicConfig()
-    logging.getLogger("").setLevel(logging.WARNING)
-
     with mock_api.api(job_name_prefix=__file__) as api:
         api.job('job-1', exec_time=0.5, max_fails=0, expect_invocations=1, expect_order=1)
         api.job('job-2', exec_time=0.5, max_fails=0, expect_invocations=1, expect_order=2)

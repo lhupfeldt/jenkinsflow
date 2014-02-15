@@ -6,7 +6,6 @@
 from __future__ import print_function
 
 from jenkinsflow.jobcontrol import serial
-
 from framework import mock_api
 
 

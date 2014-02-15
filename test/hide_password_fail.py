@@ -4,7 +4,6 @@
 # All rights reserved. This work is under a BSD license, see LICENSE.TXT.
 
 from framework import mock_api
-
 from jenkinsflow.jobcontrol import serial, FailedChildJobException
 
 

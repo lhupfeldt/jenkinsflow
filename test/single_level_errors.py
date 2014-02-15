@@ -6,8 +6,8 @@
 from __future__ import print_function
 
 from jenkinsflow.jobcontrol import parallel, serial, FailedChildJobException, FailedChildJobsException, FlowTimeoutException
-
 from framework import mock_api
+
 
 def main():
     with mock_api.api(job_name_prefix=__file__ + '1') as api:

@@ -15,8 +15,6 @@ from jenkinsapi import jenkins
 
 from jenkinsflow.jobcontrol import serial
 from jenkinsflow.unbuffered import UnBuffered
-# Unbuffered output does not work well in Jenkins, so in case
-# this is run from a hudson job, we want unbuffered output
 sys.stdout = UnBuffered(sys.stdout)
 
 
@@ -25,15 +23,13 @@ def main():
     logging.getLogger("").setLevel(logging.WARNING)
     api = jenkins.Jenkins(os.environ.get('JENKINSFLOW_JENKINSURL') or "http://localhost:8080")
 
-    with serial(api, timeout=70, job_name_prefix='multi_level_errors1_', report_interval=3) as ctrl1:
-        ctrl1.invoke('wait4-1')
+    with serial(api, timeout=70, job_name_prefix='hide_password_', report_interval=3, secret_params='.*PASS.*|.*pass.*') as ctrl:
+        # NOTE: In order to ensure that passwords are not displayed in a stacktrace you must never put a literal password
+        # In the last line in the with statement, or in any statement that may raise an exception. You shold not really
+        # put clear text paswords in you code anyway :)
+        p1, p2, p3 = 'SECRET', 'sec', 'not_security'
+        ctrl.invoke('passwd_args', password=p1, s1='no-secret', passwd=p2, PASS=p3)
 
-        with ctrl1.parallel(timeout=20, report_interval=3) as ctrl2:
-            ctrl2.invoke('wait5-1')
-            ctrl2.invoke('quick_fail', password='Y', fail='yes', s1='WORLD', c1='why')
-
-        # Never invoked because of failure in preceding 'parallel'
-        ctrl1.invoke('wait4-2')
 
 if __name__ == '__main__':
     main()

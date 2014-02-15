@@ -6,8 +6,8 @@
 from __future__ import print_function
 
 from jenkinsflow.jobcontrol import serial
-
 from framework import mock_api
+
 
 def main():
     with mock_api.api(job_name_prefix=__file__) as api:
@@ -16,6 +16,7 @@ def main():
 
         with serial(api, timeout=70, job_name_prefix=api.job_name_prefix, report_interval=1) as ctrl1:
             ctrl1.invoke('job-1')
+
 
 if __name__ == '__main__':
     main()

@@ -26,7 +26,7 @@ def main():
     api = jenkins.Jenkins(os.environ.get('JENKINSFLOW_JENKINSURL') or "http://localhost:8080")
 
     with serial(api, timeout=70, job_name_prefix='multi_level_errors2_', report_interval=3) as ctrl1:
-        ctrl1.invoke('wait4-1')
+        ctrl1.invoke('wait1-1')
 
         with ctrl1.parallel(timeout=40, report_interval=3) as ctrl2:
             with ctrl2.serial(timeout=40, report_interval=3) as ctrl3a:
@@ -38,9 +38,12 @@ def main():
 
             with ctrl2.parallel(timeout=40, report_interval=3) as ctrl3b:
                 ctrl3b.invoke('wait5-2a')
+                ctrl3b.invoke('quick_fail-2', password='HELLO', fail='yes', s1='WORLD', c1='maybe')
                 ctrl3b.invoke('wait5-2b')
                 ctrl3b.invoke('wait5-2c')
-                ctrl3b.invoke('quick_fail-2', password='HELLO', fail='yes', s1='WORLD', c1='maybe')
+
+        # Never invoked
+        ctrl1.invoke('wait1-2')
 
 
 if __name__ == '__main__':

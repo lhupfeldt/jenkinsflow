@@ -16,7 +16,6 @@ import multi_level_errors1, multi_level_errors2
 
 import multi_level_mixed, no_args, single_level_errors, invoke_unchecked, empty_flow, boolean_int_params, hide_password_fail
 
-os.chdir(here)
 
 def run_demo(demo):
     print("")
@@ -25,30 +24,38 @@ def run_demo(demo):
     job_load = imp.load_source(job_load_module_name, jp('../demo', job_load_module_name+ '.py'))
     print("-- loading jobs --")
     job_load.main()
-    print
+    print()
     print("-- running jobs --")
     demo.main()
 
 
-print("Runnning tests")
-for test in single_level_errors, invoke_unchecked, empty_flow, no_args, multi_level_mixed, boolean_int_params, hide_password_fail:
-    print("")
-    print("==== Test:", test.__name__, "====")
-    test.main()
+def main():
+    os.chdir(here)
 
-# TODO: allow running demos mocked
-if is_mocked():
-    sys.exit(0)
+    print("Runnning tests")
+    for test in single_level_errors, invoke_unchecked, empty_flow, no_args, multi_level_mixed, boolean_int_params, multi_level_errors1, hide_password_fail:
+        print("")
+        print("==== Test:", test.__name__, "====")
+        test.main()
 
-print("Validating demos")
-for demo in nested, single_level, prefix:
-    run_demo(demo)
+    # TODO: allow running demos mocked
+    if is_mocked():
+        sys.exit(0)
 
-print("Validating demos with failing jobs")
-for demo in hide_password, multi_level_errors1, multi_level_errors2:
-    try:
+    print("Validating demos")
+    for demo in nested, hide_password, single_level, prefix:
         run_demo(demo)
-    except JobControlFailException as ex:
-        print("Ok, got exception:", ex)
-    else:
-        raise Exception("Expected exception")
+
+    print("Validating demos with failing jobs")
+    for demo in (multi_level_errors2,):
+        try:
+            run_demo(demo)
+        except JobControlFailException as ex:
+            print("Ok, got exception:", ex)
+        else:
+            raise Exception("Expected exception")
+
+
+if __name__ == '__main__':
+    main()
+
