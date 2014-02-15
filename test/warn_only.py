@@ -5,20 +5,12 @@
 
 from __future__ import print_function
 
-import sys
-import os.path
-from os.path import join as jp
-here = os.path.dirname(__file__)
-sys.path.append(jp(here, '../..'))
-
 import logging
 
 from jenkinsflow.jobcontrol import serial
-from jenkinsflow.unbuffered import UnBuffered
 
 from framework import mock_api
 
-sys.stdout = UnBuffered(sys.stdout)
 
 def main():
     logging.basicConfig()
@@ -28,7 +20,7 @@ def main():
         api.job('a1', exec_time=0.5, max_fails=0, expect_invocations=1, expect_order=1)
         api.job('a2_fail', exec_time=0.5, max_fails=1, expect_invocations=1, expect_order=2)
 
-        with serial(api, timeout=70, job_name_prefix='warn_only_', report_interval=3, warn_only=True) as ctrl1:
+        with serial(api, timeout=70, job_name_prefix=api.job_name_prefix, report_interval=3, warn_only=True) as ctrl1:
             ctrl1.invoke('a1')
             ctrl1.invoke('a2_fail', fail='yes')
 

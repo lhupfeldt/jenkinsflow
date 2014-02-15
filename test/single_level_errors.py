@@ -5,25 +5,11 @@
 
 from __future__ import print_function
 
-import sys, time
-import os.path
-from os.path import join as jp
-here = os.path.dirname(__file__)
-sys.path.append(jp(here, '../..'))
-
-import logging
-
 from jenkinsflow.jobcontrol import parallel, serial, FailedChildJobException, FailedChildJobsException, FlowTimeoutException
-from jenkinsflow.unbuffered import UnBuffered
 
 from framework import mock_api
 
-sys.stdout = UnBuffered(sys.stdout)
-
 def main():
-    logging.basicConfig()
-    logging.getLogger("").setLevel(logging.WARNING)
-
     with mock_api.api(job_name_prefix=__file__ + '1') as api:
         api.job('quick', exec_time=0.5, max_fails=0, expect_invocations=1, expect_order=1, params=(('s1', '', 'desc'), ('c1', 'false', 'desc')))
         api.job('quick_fail', exec_time=0.5, max_fails=1, expect_invocations=1, expect_order=1, params=(('fail', 'true', 'Force job to fail'),))
@@ -69,7 +55,6 @@ def main():
             raise Exception("Should have failed!")
         except FlowTimeoutException as ex:
             print("Ok, got exception:", ex)
-            time.sleep(5)
 
 
 if __name__ == '__main__':

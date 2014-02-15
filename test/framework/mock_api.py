@@ -11,6 +11,9 @@ sys.path.append(jp(here, '../../..'))
 from jenkinsapi import jenkins
 
 from clean_jobs_state import clean_jobs_state
+from jenkinsflow.unbuffered import UnBuffered
+sys.stdout = UnBuffered(sys.stdout)
+
 from jenkinsflow.jobload import update_job_from_template
 
 _current_order = 1

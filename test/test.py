@@ -14,7 +14,7 @@ from framework.mock_api import is_mocked
 import nested, single_level, prefix, hide_password
 import multi_level_errors1, multi_level_errors2
 
-import multi_level_mixed, no_args, single_level_errors, invoke_unchecked, empty_flow, boolean_int_params
+import multi_level_mixed, no_args, single_level_errors, invoke_unchecked, empty_flow, boolean_int_params, hide_password_fail
 
 os.chdir(here)
 
@@ -31,7 +31,7 @@ def run_demo(demo):
 
 
 print("Runnning tests")
-for test in single_level_errors, invoke_unchecked, empty_flow, no_args, multi_level_mixed, boolean_int_params:
+for test in single_level_errors, invoke_unchecked, empty_flow, no_args, multi_level_mixed, boolean_int_params, hide_password_fail:
     print("")
     print("==== Test:", test.__name__, "====")
     test.main()
