@@ -451,11 +451,12 @@ class _TopLevelController(_Flow):
         # Wait for jobs to finish
         print()
 
+        mocked = os.environ.get('JENKINSFLOW_MOCK_API')
         try:
             last_report_time = start_time = time.time()
             while not self.successful:
                 last_report_time = self._check(start_time, last_report_time)
-                time.sleep(min(0.5, self.report_interval))
+                time.sleep(min(0.5 if not mocked else 0.01, self.report_interval))
         except JobControlException as ex:
             if not ex.warn_only:
                 raise

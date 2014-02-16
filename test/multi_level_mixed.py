@@ -34,6 +34,3 @@ def main():
                     ctrl3b.invoke('job-5', password='a', s1='b')
 
             ctrl1.invoke('job-7', password='a', s1='b')
-
-if __name__ == '__main__':
-    main()

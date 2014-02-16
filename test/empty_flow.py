@@ -38,7 +38,3 @@ def main():
                     pass
 
             ctrl1.invoke('job-4')
-
-
-if __name__ == '__main__':
-    main()

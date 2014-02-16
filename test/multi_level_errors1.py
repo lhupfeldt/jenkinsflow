@@ -28,7 +28,3 @@ def main():
             raise Exception("Should have failed!")
         except FailedChildJobException as ex:
             print("Ok, got exception:", ex)
-
-
-if __name__ == '__main__':
-    main()

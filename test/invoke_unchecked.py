@@ -6,6 +6,7 @@
 from jenkinsflow.jobcontrol import serial
 from framework import mock_api
 
+
 def main():
     with mock_api.api(job_name_prefix=__file__) as api:
         api.job('job-1', exec_time=0.5, max_fails=0, expect_invocations=1, expect_order=1)
@@ -30,6 +31,3 @@ def main():
                     ctrl3b.invoke('job-5')
 
             ctrl1.invoke('job-7')
-
-if __name__ == '__main__':
-    main()

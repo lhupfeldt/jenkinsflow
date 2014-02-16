@@ -25,7 +25,7 @@ def main():
     logging.getLogger("").setLevel(logging.WARNING)
     api = jenkins.Jenkins(os.environ.get('JENKINSFLOW_JENKINSURL') or "http://localhost:8080")
 
-    with serial(api, timeout=70, job_name_prefix='multi_level_errors2_', report_interval=3) as ctrl1:
+    with serial(api, timeout=70, job_name_prefix='errors_', report_interval=3) as ctrl1:
         ctrl1.invoke('wait1-1')
 
         with ctrl1.parallel(timeout=40, report_interval=3) as ctrl2:

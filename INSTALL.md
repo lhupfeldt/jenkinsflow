@@ -20,4 +20,7 @@ Test
 
    # Load test jobs into Jenkins and execute them
    JENKINSFLOW_JENKINSURL=<your jenkins> python ./test/tests.py
-   Note: Jenkins is default configured with only two executors on master. To avoid timeouts in the test cases this must be raised to at least 8.
+
+   Important:
+   Jenkins is default configured with only two executors on master. To avoid timeouts in the test cases this must be raised to at least 8.
+   Jenkins is default configured with a 'Quit period of 5 seconds'. To avoid timeouts in the test cases this should be set to 0.

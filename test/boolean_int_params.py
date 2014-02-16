@@ -15,7 +15,3 @@ def main():
         with serial(api, timeout=20, job_name_prefix=api.job_name_prefix, report_interval=1) as ctrl1:
             ctrl1.invoke('job-1', b1=True, b2=False)
             ctrl1.invoke('job-2', i1=7, i2=0)
-
-
-if __name__ == '__main__':
-    main()
