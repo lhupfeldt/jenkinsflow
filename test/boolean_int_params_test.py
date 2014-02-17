@@ -7,7 +7,7 @@ from jenkinsflow.jobcontrol import serial
 from framework import mock_api
 
 
-def main():
+def test_boolean_and_int_params():
     with mock_api.api(job_name_prefix=__file__) as api:
         api.job('job-1', exec_time=0.5, max_fails=0, expect_invocations=1, expect_order=1, params=(('b1', False, 'boolean'), ('b2', True, 'boolean')))
         api.job('job-2', exec_time=0.5, max_fails=0, expect_invocations=1, expect_order=2, params=(('i1', 1, 'boolean'), ('i2', 2, 'boolean')))

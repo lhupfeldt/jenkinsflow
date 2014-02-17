@@ -2,7 +2,7 @@
 
 from __future__ import print_function
 
-import sys, os, imp
+import sys, os, imp, subprocess
 from os.path import join as jp
 here = os.path.abspath(os.path.dirname(__file__))
 
@@ -10,7 +10,6 @@ sys.path.extend([jp(here, '../..'), jp(here, '../demo'), jp(here, '../demo/jobs'
 from jenkinsflow.jobcontrol import JobControlFailException
 
 import basic, prefix, hide_password, errors
-import single_level, multi_level_mixed, no_args, single_level_errors, invoke_unchecked, empty_flow, boolean_int_params, hide_password_fail, multi_level_errors1
 
 
 def run_demo(demo):
@@ -29,11 +28,11 @@ def run_demo(demo):
 def main():
     os.chdir(here)
 
-    print("Runnning tests")
-    for test in hide_password_fail, single_level, single_level_errors, invoke_unchecked, empty_flow, no_args, multi_level_mixed, boolean_int_params, multi_level_errors1:
-        print("\n\n")
-        print("==== Test:", test.__name__, "====")
-        test.main()
+    print("Running tests")
+    if len(sys.argv) > 1:
+        sys.exit(subprocess.call(['py.test', '--capture=sys'] + sys.argv[1:]))
+    else:
+        rc = subprocess.call(('py.test', '--capture=sys', '--cov=' + here + '/..', '--cov-report=term-missing'))
 
     print("Validating demos")
     for demo in basic, hide_password, prefix:
@@ -47,6 +46,8 @@ def main():
             print("Ok, got exception:", ex)
         else:
             raise Exception("Expected exception")
+
+    sys.exit(rc)
 
 
 if __name__ == '__main__':

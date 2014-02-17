@@ -7,7 +7,7 @@ from framework import mock_api
 from jenkinsflow.jobcontrol import serial, FailedChildJobException
 
 
-def main():
+def test_hide_password_failed_job():
     with mock_api.api(__file__) as api:
         def job(name, params=None):
             api.job(name, exec_time=0.5, max_fails=1, expect_invocations=1, expect_order=1, params=params)
