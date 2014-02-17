@@ -6,19 +6,21 @@
 from framework import mock_api
 
 
-def main():
-    with mock_api.api(__file__) as api:
-        def job(name, params=None):
-            api.job(name, exec_time=0.5, max_fails=0, expect_invocations=1, expect_order=1, params=params)
+def create_jobs():
+    api = mock_api.api(__file__)
+    def job(name, expect_order):
+        api.job(name, exec_time=0.5, max_fails=0, expect_invocations=1, expect_order=expect_order, params=None)
 
-        api.flow_job('flow')
-        job('quick1')
-        for index in 1, 2, 3:
-            job('x_quick2-' + str(index))
-        job('quick3')
-        job('y_z_quick4')
-        job('y_quick5')
+    api.flow_job('flow')
+    job('quick1', 1)
+    index = 0
+    for index in 1, 2, 3:
+        job('x_quick2-' + str(index), 1+index)
+    job('quick3', 2+index)
+    job('y_z_quick4', 3+index)
+    job('y_quick5', 3+index)
+    return api
 
 
 if __name__ == '__main__':
-    main()
+    create_jobs()

@@ -6,22 +6,23 @@
 from framework import mock_api
 
 
-def main():
-    with mock_api.api(__file__) as api:
-        def job(name, exec_time, params=None):
-            api.job(name, exec_time=exec_time, max_fails=0, expect_invocations=1, expect_order=1, params=params)
+def create_jobs():
+    api = mock_api.api(__file__)
+    def job(name, exec_time, max_fails=0, expect_order=0, expect_invocations=1, params=None):
+        api.job(name, exec_time=exec_time, max_fails=max_fails, expect_invocations=expect_invocations, expect_order=expect_order, params=params)
 
-        api.flow_job('flow')
-        job('wait1-1', 1)
-        job('wait2', 2)
-        job('quick_fail-1', 0.1, params=(('s1', 'WORLD', 'desc'), ('c1', ('to', 'be', 'or', 'not'), 'desc')))
-        job('quick', 0.1, params=(('s1', 'WORLD', 'desc'), ('c1', ('maybe', 'certain'), 'desc')))
-        job('wait5-2a', 5)
-        job('wait5-2b', 5)
-        job('wait5-2c', 5)
-        job('quick_fail-2', 0.1, params=(('s1', 'WORLD', 'desc'), ('c1', ('maybe', 'certain'), 'desc')))
-        job('wait1-2', 1)
+    api.flow_job('flow')
+    job('wait1-1', 1, 0, 1)
+    job('wait2', 2, 0, 2)
+    job('wait5-2a', 5, 0, 2)
+    job('quick_fail-2', 0.1, 1, 2, params=(('s1', 'WORLD', 'desc'), ('c1', ('maybe', 'certain'), 'desc')))
+    job('wait5-2b', 5, 0, 2)
+    job('wait5-2c', 5, 0, 2)
+    job('quick_fail-1', 0.5, 1, 2, params=(('s1', 'WORLD', 'desc'), ('c1', ('to', 'be', 'or', 'not'), 'desc')))
+    job('quick', 0.5, 0, 2, expect_invocations=None, params=(('s1', 'WORLD', 'desc'), ('c1', ('maybe', 'certain'), 'desc')))
+    job('wait1-2', 1, 0, 3, expect_invocations=None)
+    return api
 
 
 if __name__ == '__main__':
-    main()
+    create_jobs()

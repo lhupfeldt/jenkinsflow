@@ -45,8 +45,8 @@ def main():
             print("Ok, got exception:", ex)
 
     with mock_api.api(job_name_prefix=__file__ + '3') as api:
-        api.job('quick', exec_time=0.5, max_fails=0, expect_invocations=1, expect_order=1, params=(('s1', '', 'desc'), ('c1', 'false', 'desc')))
-        api.job('wait5', exec_time=5, max_fails=0, expect_invocations=1, expect_order=1)
+        api.job('quick', exec_time=0.5, max_fails=-1, expect_invocations=1, expect_order=None, params=(('s1', '', 'desc'), ('c1', 'false', 'desc')))
+        api.job('wait5', exec_time=5, max_fails=-1, expect_invocations=1, expect_order=None)
 
         try:
             with parallel(api, timeout=1, job_name_prefix=api.job_name_prefix, report_interval=3) as ctrl:

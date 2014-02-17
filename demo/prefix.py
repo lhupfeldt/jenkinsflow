@@ -20,10 +20,9 @@ from jenkinsflow.unbuffered import UnBuffered
 sys.stdout = UnBuffered(sys.stdout)
 
 
-def main():
+def main(api):
     logging.basicConfig()
     logging.getLogger("").setLevel(logging.WARNING)
-    api = jenkins.Jenkins(os.environ.get('JENKINSFLOW_JENKINSURL') or "http://localhost:8080")
 
     with serial(api, timeout=70, report_interval=3, job_name_prefix='prefix_') as ctrl1:
         ctrl1.invoke('quick1')
@@ -42,4 +41,4 @@ def main():
 
 
 if __name__ == '__main__':
-    main()
+    main(jenkins.Jenkins(os.environ.get('JENKINS_URL') or "http://localhost:8080"))

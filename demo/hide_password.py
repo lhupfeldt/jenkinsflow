@@ -18,10 +18,9 @@ from jenkinsflow.unbuffered import UnBuffered
 sys.stdout = UnBuffered(sys.stdout)
 
 
-def main():
+def main(api):
     logging.basicConfig()
     logging.getLogger("").setLevel(logging.WARNING)
-    api = jenkins.Jenkins(os.environ.get('JENKINSFLOW_JENKINSURL') or "http://localhost:8080")
 
     with serial(api, timeout=70, job_name_prefix='hide_password_', report_interval=3, secret_params='.*PASS.*|.*pass.*') as ctrl:
         # NOTE: In order to ensure that passwords are not displayed in a stacktrace you must never put a literal password
@@ -32,4 +31,4 @@ def main():
 
 
 if __name__ == '__main__':
-    main()
+    main(jenkins.Jenkins(os.environ.get('JENKINS_URL') or "http://localhost:8080"))
