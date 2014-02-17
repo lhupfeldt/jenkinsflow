@@ -9,6 +9,7 @@ from peak.util.proxies import ObjectWrapper
 here = os.path.abspath(os.path.dirname(__file__))
 sys.path.append(jp(here, '../../..'))
 
+import jenkinsapi
 from jenkinsapi import jenkins
 
 from clean_jobs_state import clean_jobs_state
@@ -81,6 +82,9 @@ class MockJob(object):
         self.start_time = self.invocation_time + self.invocation_delay
         self.end_time = self.start_time + self.exec_time
         self.debug('invoke')
+
+    def update_config(self, config_xml):
+        pass
 
     def __repr__(self):
         return self.name + \
@@ -215,14 +219,23 @@ class MockApi(_JobsMixin):
         assert not self._jf_jobs.get(name)
         self._jf_jobs[name] = MockJob(name, exec_time, max_fails, expect_invocations, expect_order, initial_buildno, invocation_delay)
 
-    # --- Mock API ---
-
-    def get_job(self, name):
-        return self._jf_jobs[name]
-
     def flow_job(self, name, params=None):
         # Don't create flow jobs when mocked
         pass
+
+    # --- Mock API ---
+
+    def delete_job(self, job_name):
+        del self._jf_jobs[job_name]
+
+    def create_job(self, job_name, config_xml):
+        pass
+
+    def get_job(self, name):
+        try:
+            return self._jf_jobs[name]
+        except KeyError:
+            raise jenkinsapi.custom_exceptions.UnknownJob(name)
 
 
 class JenkinsWrapperApi(jenkins.Jenkins, _JobsMixin):
@@ -247,9 +260,6 @@ class JenkinsWrapperApi(jenkins.Jenkins, _JobsMixin):
         assert job is not None
         self._jf_jobs[name] = WrapperJob(job, name, exec_time, max_fails, expect_invocations, expect_order)
 
-    def get_job(self, name):
-        return self._jf_jobs[name]
-
     def flow_job(self, name, params=None):
         """
         Runs demo flow script as jenkins job
@@ -257,6 +267,22 @@ class JenkinsWrapperApi(jenkins.Jenkins, _JobsMixin):
         """
         script = "python " + jp('/tmp/jenkinsflow/demo', self.job_name_prefix[:-1] + '.py')
         self._jenkins_job('all_' + name, exec_time=0.5, params=params, script=script)
+
+    # --- Wrapped API ---
+
+    def delete_job(self, job_name):
+        # del self._jf_jobs[job_name]
+        super(JenkinsWrapperApi, self).delete_job(job_name)
+
+    def create_job(self, job_name, config_xml):
+        # assert job_name in self._jf_jobs
+        super(JenkinsWrapperApi, self).create_job(job_name, config_xml)
+
+    def get_job(self, name):
+        try:
+            return self._jf_jobs[name]
+        except KeyError:
+            raise jenkinsapi.custom_exceptions.UnknownJob(name)
 
 
 def is_mocked():

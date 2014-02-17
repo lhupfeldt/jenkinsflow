@@ -16,7 +16,7 @@ Installation
 Test
 ----
 1. Install tenjin template engine:
-   pip install -U pytest pytest-cov logilab-devtools tenjin proxytypes
+   pip install -U pytest pytest-cov pytest-cache logilab-devtools tenjin proxytypes
 
 2. Run the tests:
    # Mocked tests do not require Jenkins

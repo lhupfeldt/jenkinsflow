@@ -36,4 +36,9 @@ nosetests.xml
 
 # Emacs backup
 *~
+TAGS
+
 *.tenjin.cache
+.cache
+
+__pycache__
