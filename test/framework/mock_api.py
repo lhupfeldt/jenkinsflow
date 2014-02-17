@@ -17,7 +17,7 @@ sys.stdout = UnBuffered(sys.stdout)
 
 from jenkinsflow.jobload import update_job_from_template
 
-_file_name_subst = re.compile(r'(_jobs)?\.pyc?')
+_file_name_subst = re.compile(r'(_jobs|_test)?\.pyc?')
 
 
 class MockJob(object):

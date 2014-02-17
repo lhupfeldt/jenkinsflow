@@ -3,8 +3,6 @@
 # Copyright (c) 2012 - 2014 Lars Hupfeldt Nielsen, Hupfeldt IT
 # All rights reserved. This work is under a BSD license, see LICENSE.TXT.
 
-from __future__ import print_function
-
 from jenkinsflow.jobcontrol import serial
 from framework import mock_api
 
@@ -18,7 +16,6 @@ def test_multi_level_mixed():
         api.job('job-5', exec_time=0.5, max_fails=0, expect_invocations=1, expect_order=3)
         api.job('job-6', exec_time=0.5, max_fails=0, expect_invocations=1, expect_order=4)
         api.job('job-7', exec_time=0.5, max_fails=0, expect_invocations=1, expect_order=5)
-        print()
 
         with serial(api, timeout=70, job_name_prefix=api.job_name_prefix, report_interval=1) as ctrl1:
             ctrl1.invoke('job-1', password='a', s1='b')

@@ -3,6 +3,8 @@
 # Copyright (c) 2012 - 2014 Lars Hupfeldt Nielsen, Hupfeldt IT
 # All rights reserved. This work is under a BSD license, see LICENSE.TXT.
 
+from pytest import raises
+
 from jenkinsflow.jobcontrol import serial, FailedChildJobException
 from framework import mock_api
 
@@ -14,7 +16,7 @@ def test_multi_level_errors():
         api.job('quick_fail', 0.5, max_fails=1, expect_invocations=1, expect_order=2, params=(('s1', 'WORLD', 'desc'), ('c1', ('why', 'not'), 'desc')))
         api.job('not_invoked', 0.5, max_fails=0, expect_invocations=0, expect_order=None)
 
-        try:
+        with raises(FailedChildJobException):
             with serial(api, timeout=70, job_name_prefix=api.job_name_prefix, report_interval=3) as ctrl1:
                 ctrl1.invoke('wait2')
 
@@ -24,7 +26,3 @@ def test_multi_level_errors():
 
                 # Never invoked because of failure in preceding 'parallel'
                 ctrl1.invoke('not_invoked')
-
-            raise Exception("Should have failed!")
-        except FailedChildJobException as ex:
-            print("Ok, got exception:", ex)
