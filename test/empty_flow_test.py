@@ -8,7 +8,7 @@ from framework import mock_api
 
 
 def test_empty_flow():
-    with mock_api.api(job_name_prefix=__file__) as api:
+    with mock_api.api(__file__) as api:
         api.job('job-1', exec_time=0.5, max_fails=0, expect_invocations=1, expect_order=1)
         api.job('job-2', exec_time=0.5, max_fails=0, expect_invocations=1, expect_order=2)
         api.job('job-3', exec_time=0.5, max_fails=0, expect_invocations=1, expect_order=3)

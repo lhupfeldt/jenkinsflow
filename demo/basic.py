@@ -27,7 +27,7 @@ def main(api):
     print("Doing stuff before flow ...")
     components = range(4)
 
-    with serial(api, timeout=70, job_name_prefix='basic_', report_interval=3) as ctrl1:
+    with serial(api, timeout=70, job_name_prefix='jenkinsflow_demo__basic__', report_interval=3) as ctrl1:
         ctrl1.invoke('prepare')
 
         with ctrl1.parallel(timeout=20, report_interval=3) as ctrl2:

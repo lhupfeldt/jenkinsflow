@@ -11,7 +11,7 @@ def create_jobs():
     def job(name, exec_time, max_fails=0, expect_order=0, expect_invocations=1, params=None):
         api.job(name, exec_time=exec_time, max_fails=max_fails, expect_invocations=expect_invocations, expect_order=expect_order, params=params)
 
-    api.flow_job('flow')
+    api.flow_job()
     job('wait1-1', 1, 0, 1)
     job('wait2', 2, 0, 2)
     job('wait5-2a', 5, 0, 2)

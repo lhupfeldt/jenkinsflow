@@ -7,8 +7,8 @@ from jenkinsflow.jobcontrol import parallel, serial
 from framework import mock_api
 
 
-def test_single_level():
-    with mock_api.api(__file__ + '1') as api:
+def test_single_level_serial():
+    with mock_api.api(__file__) as api:
         api.job('quick', 0.5, max_fails=0, expect_invocations=1, expect_order=1, params=(('s1', 'Hi', 'desc'), ('c1', ('true', 'maybe', 'false'), 'desc')))
         api.job('wait10', 10, max_fails=0, expect_invocations=1, expect_order=2)
         api.job('wait5', 5, max_fails=0, expect_invocations=1, expect_order=3)
@@ -18,7 +18,9 @@ def test_single_level():
             ctrl.invoke('wait10')
             ctrl.invoke('wait5')
 
-    with mock_api.api(__file__ + '2') as api:
+
+def test_single_level_parallel():
+    with mock_api.api(__file__) as api:
         api.job('quick', 0.5, max_fails=0, expect_invocations=1, expect_order=1, params=(('s1', 'Hi', 'desc'), ('c1', ('true', 'maybe', 'false'), 'desc')))
         api.job('wait10', 10, max_fails=0, expect_invocations=1, expect_order=1)
         api.job('wait5', 5, max_fails=0, expect_invocations=1, expect_order=1)

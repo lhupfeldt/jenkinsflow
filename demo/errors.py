@@ -24,7 +24,7 @@ def main(api):
     logging.basicConfig()
     logging.getLogger("").setLevel(logging.WARNING)
 
-    with serial(api, timeout=70, job_name_prefix='errors_', report_interval=3) as ctrl1:
+    with serial(api, timeout=70, job_name_prefix='jenkinsflow_demo__errors__', report_interval=3) as ctrl1:
         ctrl1.invoke('wait1-1')
 
         with ctrl1.parallel(timeout=40, report_interval=3) as ctrl2:

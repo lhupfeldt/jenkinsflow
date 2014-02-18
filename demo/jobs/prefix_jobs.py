@@ -11,7 +11,7 @@ def create_jobs():
     def job(name, expect_order):
         api.job(name, exec_time=0.5, max_fails=0, expect_invocations=1, expect_order=expect_order, params=None)
 
-    api.flow_job('flow')
+    api.flow_job()
     job('quick1', 1)
     index = 0
     for index in 1, 2, 3:

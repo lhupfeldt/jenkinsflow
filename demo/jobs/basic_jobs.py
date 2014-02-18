@@ -12,7 +12,7 @@ def create_jobs():
     def job(name, expect_order, params=None):
         api.job(name, exec_time=0.5, max_fails=0, expect_invocations=1, expect_order=expect_order, params=params)
 
-    api.flow_job('flow')
+    api.flow_job()
     job('prepare', 1)
     for component in components:
         job('deploy_component' + str(component), 2)

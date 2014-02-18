@@ -8,7 +8,7 @@ from framework import mock_api
 
 
 def test_no_args():
-    with mock_api.api(job_name_prefix=__file__) as api:
+    with mock_api.api(__file__) as api:
         api.job('job-1', exec_time=0.5, max_fails=0, expect_invocations=1, expect_order=1)
 
         with serial(api, timeout=70, job_name_prefix=api.job_name_prefix, report_interval=1) as ctrl1:

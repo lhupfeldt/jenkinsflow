@@ -18,7 +18,7 @@ sys.stdout = UnBuffered(sys.stdout)
 
 from jenkinsflow.jobload import update_job_from_template
 
-_file_name_subst = re.compile(r'(_jobs|_test)?\.pyc?')
+_file_name_subst = re.compile(r'(_jobs|_test)?\.py')
 
 
 class MockJob(object):
@@ -219,7 +219,7 @@ class MockApi(_JobsMixin):
         assert not self._jf_jobs.get(name)
         self._jf_jobs[name] = MockJob(name, exec_time, max_fails, expect_invocations, expect_order, initial_buildno, invocation_delay)
 
-    def flow_job(self, name, params=None):
+    def flow_job(self, name=None, params=None):
         # Don't create flow jobs when mocked
         pass
 
@@ -239,8 +239,10 @@ class MockApi(_JobsMixin):
 
 
 class JenkinsWrapperApi(jenkins.Jenkins, _JobsMixin):
-    def __init__(self, job_name_prefix, jenkinsurl):
+    def __init__(self, file_name, func_name, job_name_prefix, jenkinsurl):
         super(JenkinsWrapperApi, self).__init__(jenkinsurl)
+        self.file_name = file_name
+        self.func_name = func_name
         self.job_name_prefix = job_name_prefix
         WrapperJob._current_order = 1
         self._jf_jobs = OrderedDict()
@@ -260,13 +262,16 @@ class JenkinsWrapperApi(jenkins.Jenkins, _JobsMixin):
         assert job is not None
         self._jf_jobs[name] = WrapperJob(job, name, exec_time, max_fails, expect_invocations, expect_order)
 
-    def flow_job(self, name, params=None):
+    def flow_job(self, name=None, params=None):
         """
-        Runs demo flow script as jenkins job
+        Runs demo/test flow script as jenkins job
         Requires jenkinsflow to be copied to /tmp
         """
-        script = "python " + jp('/tmp/jenkinsflow/demo', self.job_name_prefix[:-1] + '.py')
-        self._jenkins_job('all_' + name, exec_time=0.5, params=params, script=script)
+        if self.func_name:
+            script = "/tmp/jenkinsflow/test/test.py -s -p no:cache -p no:cov " + self.file_name + " -k  " + self.func_name
+        else:
+            script = "python " + jp('/tmp/jenkinsflow/demo', self.file_name)
+        self._jenkins_job('flow_' + name if name else 'flow', exec_time=0.5, params=params, script=script)
 
     # --- Wrapped API ---
 
@@ -290,16 +295,28 @@ def is_mocked():
     return mocked and mocked.lower() == 'true'
 
 
-def api(job_name_prefix, jenkinsurl=os.environ.get('JENKINS_URL') or "http://localhost:8080"):
-    job_name_prefix, num_replaces = _file_name_subst.subn('', os.path.basename(job_name_prefix))
+def api(file_name, jenkinsurl=os.environ.get('JENKINS_URL') or "http://localhost:8080"):
+    base_name = os.path.basename(file_name).replace('.pyc', '.py')
+    job_name_prefix = _file_name_subst.sub('', base_name)
+    func_name = None
+    if '_test' in file_name:
+        func_name = sys._getframe().f_back.f_code.co_name  # pylint: disable=protected-access
+        file_name = base_name
+        func_name = func_name.replace('test_', '')
+        print("HOOO", func_name[0:len(job_name_prefix)], job_name_prefix)
+        assert func_name[0:len(job_name_prefix)] == job_name_prefix, \
+            "Naming standard not followed: " + repr('test_' + func_name) + " defined in file: " + repr(base_name) + " should be 'test_" + job_name_prefix + "_<sub test>'"
+        job_name_prefix = 'jenkinsflow_test__' + func_name + '__'
+    else:
+        job_name_prefix = 'jenkinsflow_demo__' + job_name_prefix + '__'
+        file_name = base_name.replace('_jobs', '')
+
     print()
     print("--- Preparing api for ", repr(job_name_prefix), "---")
-    if num_replaces:
-        job_name_prefix += '_'
     if is_mocked():
         print('Using Mocked API')
         clean_jobs_state()
         return MockApi(job_name_prefix)
     else:
         print('Using Real Jenkins API with wrapper')
-        return JenkinsWrapperApi(job_name_prefix, jenkinsurl)
+        return JenkinsWrapperApi(file_name, func_name, job_name_prefix, jenkinsurl)
