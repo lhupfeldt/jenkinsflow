@@ -268,7 +268,10 @@ class JenkinsWrapperApi(jenkins.Jenkins, _JobsMixin):
         Requires jenkinsflow to be copied to /tmp
         """
         if self.func_name:
-            script = "/tmp/jenkinsflow/test/test.py -s -p no:cache -p no:cov " + self.file_name + " -k  " + self.func_name
+            script  = "export PYTHONPATH=../..\n"
+            script += "cd /tmp/jenkinsflow/test\n"
+            script += "python -Bc &quot;from " + self.file_name.replace('.py', '') + " import *; test_" + self.func_name + "()&quot;"
+            # script = "/tmp/jenkinsflow/test/test.py -s -p no:cache -p no:cov " + self.file_name + " -k  " + self.func_name
         else:
             script = "python " + jp('/tmp/jenkinsflow/demo', self.file_name)
         self._jenkins_job('0flow_' + name if name else '0flow', exec_time=0.5, params=params, script=script)
