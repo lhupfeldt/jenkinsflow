@@ -11,7 +11,7 @@
         <hudson.model.PasswordParameterDefinition>
           <name>password</name>
           <description></description>
-          <defaultValue>UVum+akeqwZJGAHJFYVNKg==</defaultValue>
+          <defaultValue></defaultValue>
         </hudson.model.PasswordParameterDefinition>
         <?py #endif ?>
         <?py if not 'sleep' in params: ?>
@@ -78,7 +78,7 @@
   <blockBuildWhenDownstreamBuilding>false</blockBuildWhenDownstreamBuilding>
   <blockBuildWhenUpstreamBuilding>false</blockBuildWhenUpstreamBuilding>
   <authToken>hello</authToken>
-  <triggers class="vector"/>
+  <triggers/>
   <concurrentBuild>false</concurrentBuild>
   <builders>
     <hudson.tasks.Shell>

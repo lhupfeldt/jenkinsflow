@@ -177,7 +177,7 @@ class _JobsMixin(object):
         return is_mocked()
 
     def test_results(self):
-        print("Checking results")
+        print("Jenkinsflow Test Framework -- Checking results")
 
         max_actual_order = 0
         last_expected_order = 0
@@ -271,7 +271,7 @@ class JenkinsWrapperApi(jenkins.Jenkins, _JobsMixin):
             script = "/tmp/jenkinsflow/test/test.py -s -p no:cache -p no:cov " + self.file_name + " -k  " + self.func_name
         else:
             script = "python " + jp('/tmp/jenkinsflow/demo', self.file_name)
-        self._jenkins_job('flow_' + name if name else 'flow', exec_time=0.5, params=params, script=script)
+        self._jenkins_job('0flow_' + name if name else '0flow', exec_time=0.5, params=params, script=script)
 
     # --- Wrapped API ---
 
@@ -303,7 +303,6 @@ def api(file_name, jenkinsurl=os.environ.get('JENKINS_URL') or "http://localhost
         func_name = sys._getframe().f_back.f_code.co_name  # pylint: disable=protected-access
         file_name = base_name
         func_name = func_name.replace('test_', '')
-        print("HOOO", func_name[0:len(job_name_prefix)], job_name_prefix)
         assert func_name[0:len(job_name_prefix)] == job_name_prefix, \
             "Naming standard not followed: " + repr('test_' + func_name) + " defined in file: " + repr(base_name) + " should be 'test_" + job_name_prefix + "_<sub test>'"
         job_name_prefix = 'jenkinsflow_test__' + func_name + '__'

@@ -44,4 +44,4 @@ Demos
 3. Demo scripts can be executed from the loaded jobs
    Jenkins needs to be able to find the scripts, the demo jobs are setup to find the scripts in '/tmp/jenkinsflow'.
    Run ./tmp_install.sh to install in /tmp/...
-   Execute the demo flow jobs: 'jenkinsflow_demo__<demo-name>__flow'
+   Execute the demo flow jobs: 'jenkinsflow_demo__<demo-name>__0flow'

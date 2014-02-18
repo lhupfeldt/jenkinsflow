@@ -11,6 +11,7 @@ from framework import mock_api
 
 def test_multi_level_errors():
     with mock_api.api(__file__) as api:
+        api.flow_job()
         api.job('wait2', 2, max_fails=0, expect_invocations=1, expect_order=1)
         api.job('wait5', 5, max_fails=0, expect_invocations=1, expect_order=2)
         api.job('quick_fail', 0.5, max_fails=1, expect_invocations=1, expect_order=2, params=(('s1', 'WORLD', 'desc'), ('c1', ('why', 'not'), 'desc')))

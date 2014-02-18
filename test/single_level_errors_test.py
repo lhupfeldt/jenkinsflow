@@ -11,6 +11,7 @@ from framework import mock_api
 
 def test_single_level_errors_parallel():
     with mock_api.api(__file__) as api:
+        api.flow_job()
         api.job('quick', exec_time=0.5, max_fails=0, expect_invocations=1, expect_order=1, params=(('s1', '', 'desc'), ('c1', 'false', 'desc')))
         api.job('quick_fail', exec_time=0.5, max_fails=1, expect_invocations=1, expect_order=1, params=(('fail', 'true', 'Force job to fail'),))
         api.job('wait10', exec_time=10, max_fails=0, expect_invocations=1, expect_order=1)
