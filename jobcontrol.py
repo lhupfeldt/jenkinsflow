@@ -490,10 +490,11 @@ class _TopLevelController(_Flow):
         print()
 
         mocked = os.environ.get('JENKINSFLOW_MOCK_API')
+        sleep_time = 0.01 if mocked else 0.5
         last_report_time = start_time = time.time()
         while not self.result:
             last_report_time = self._check(start_time, last_report_time)
-            time.sleep(min(0.5 if not mocked else 0.01, self.report_interval))
+            time.sleep(min(sleep_time, self.report_interval))
 
         if self.result == self.RESULT_UNSTABLE:
             self.set_build_result('unstable')
@@ -513,6 +514,7 @@ class parallel(_Parallel, _TopLevelController):
                  report_interval=_default_report_interval, secret_params=_default_secret_params_re):
         """warn_only: causes failure in this job not to fail the parent flow"""
         _start_msg()
+        securitytoken = securitytoken or jenkins_api.securitytoken if hasattr(jenkins_api, 'securitytoken') else None
         super(parallel, self).__init__(jenkins_api, timeout, securitytoken, job_name_prefix, max_tries, 1, warn_only,
                                        report_interval, secret_params, 0)
 
@@ -525,6 +527,7 @@ class serial(_Serial, _TopLevelController):
     def __init__(self, jenkins_api, timeout, securitytoken=None, job_name_prefix='', max_tries=1, warn_only=False,
                  report_interval=_default_report_interval, secret_params=_default_secret_params_re):
         """warn_only: causes failure in this job not to fail the parent flow"""
+        securitytoken = securitytoken or jenkins_api.securitytoken if hasattr(jenkins_api, 'securitytoken') else None
         _start_msg()
         super(serial, self).__init__(jenkins_api, timeout, securitytoken, job_name_prefix, max_tries, 1, warn_only,
                                      report_interval, secret_params, 0)

@@ -19,6 +19,7 @@ from jenkinsflow.unbuffered import UnBuffered
 # this is run from a jenkins/hudson job, we want unbuffered output
 sys.stdout = UnBuffered(sys.stdout)
 
+import demo_security as security
 
 def main(api):
     logging.basicConfig()
@@ -27,7 +28,7 @@ def main(api):
     print("Doing stuff before flow ...")
     components = range(4)
 
-    with serial(api, timeout=70, job_name_prefix='jenkinsflow_demo__basic__', report_interval=3) as ctrl1:
+    with serial(api, timeout=70, securitytoken=security.securitytoken, job_name_prefix='jenkinsflow_demo__basic__', report_interval=3) as ctrl1:
         ctrl1.invoke('prepare')
 
         with ctrl1.parallel(timeout=20, report_interval=3) as ctrl2:
@@ -51,4 +52,4 @@ def main(api):
 
 
 if __name__ == '__main__':
-    main(jenkins.Jenkins(os.environ.get('JENKINS_URL') or "http://localhost:8080"))
+    main(jenkins.Jenkins(os.environ.get('JENKINS_URL') or "http://localhost:8080", security.username, security.password))

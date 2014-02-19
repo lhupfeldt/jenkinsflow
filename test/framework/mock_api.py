@@ -7,7 +7,8 @@ from os.path import join as jp
 from peak.util.proxies import ObjectWrapper
 
 here = os.path.abspath(os.path.dirname(__file__))
-sys.path.append(jp(here, '../../..'))
+sys.path.extend([jp(here, '../../..'), jp(here, '../../demo')])
+import demo_security as security
 
 import jenkinsapi
 from jenkinsapi import jenkins
@@ -239,11 +240,13 @@ class MockApi(_JobsMixin):
 
 
 class JenkinsWrapperApi(jenkins.Jenkins, _JobsMixin):
-    def __init__(self, file_name, func_name, job_name_prefix, jenkinsurl):
+    def __init__(self, file_name, func_name, job_name_prefix, jenkinsurl, username, password, securitytoken):
         super(JenkinsWrapperApi, self).__init__(jenkinsurl)
+        self.job_loader_jenkins = jenkins.Jenkins(jenkinsurl, username, password)
         self.file_name = file_name
         self.func_name = func_name
         self.job_name_prefix = job_name_prefix
+        self.securitytoken = securitytoken
         WrapperJob._current_order = 1
         self._jf_jobs = OrderedDict()
 
@@ -251,8 +254,8 @@ class JenkinsWrapperApi(jenkins.Jenkins, _JobsMixin):
         name = self.job_name_prefix + name
         assert not self._jf_jobs.get(name)
         # Create job in Jenkins
-        context = {'exec_time': exec_time, 'params': params or (), 'script': script}
-        update_job_from_template(self, name, self.job_xml_template, pre_delete=True, context=context)
+        context = {'exec_time': exec_time, 'params': params or (), 'script': script, 'securitytoken': self.securitytoken}
+        update_job_from_template(self.job_loader_jenkins, name, self.job_xml_template, pre_delete=True, context=context)
         return name
 
     def job(self, name, exec_time, max_fails, expect_invocations, expect_order, initial_buildno=0, invocation_delay=0.1, params=None, script=None):
@@ -280,11 +283,11 @@ class JenkinsWrapperApi(jenkins.Jenkins, _JobsMixin):
 
     def delete_job(self, job_name):
         # del self._jf_jobs[job_name]
-        super(JenkinsWrapperApi, self).delete_job(job_name)
+        self.job_loader_jenkins.delete_job(job_name)
 
     def create_job(self, job_name, config_xml):
         # assert job_name in self._jf_jobs
-        super(JenkinsWrapperApi, self).create_job(job_name, config_xml)
+        self.job_loader_jenkins.create_job(job_name, config_xml)
 
     def get_job(self, name):
         try:
@@ -321,4 +324,4 @@ def api(file_name, jenkinsurl=os.environ.get('JENKINS_URL') or "http://localhost
         return MockApi(job_name_prefix)
     else:
         print('Using Real Jenkins API with wrapper')
-        return JenkinsWrapperApi(file_name, func_name, job_name_prefix, jenkinsurl)
+        return JenkinsWrapperApi(file_name, func_name, job_name_prefix, jenkinsurl, security.username, security.password, security.securitytoken)

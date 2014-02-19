@@ -20,7 +20,7 @@ def test_single_level_errors_parallel():
         api.job('wait5_fail', exec_time=5, max_fails=1, expect_invocations=1, expect_order=1, params=(('fail', 'true', 'Force job to fail'),))
 
         with raises(FailedChildJobsException):
-            with parallel(api, timeout=20, job_name_prefix=api.job_name_prefix, report_interval=3) as ctrl:
+            with parallel(api, timeout=40, job_name_prefix=api.job_name_prefix, report_interval=3) as ctrl:
                 ctrl.invoke('quick', password='Yes', s1='', c1=False)
                 ctrl.invoke('quick_fail')
                 ctrl.invoke('wait10')

@@ -9,17 +9,21 @@ Installation
 
 3. To use the warn_only (experimental) feature, jenkins url must be set in Jenkins configuration.
 
-4. All set! You can now create jobs that have a shell execution step, which will a use this library to control the running of other jobs.
+4. Read the file demo/demo_security.py for notes about security, if you have enabled security on your Jenkins
+
+5. All set! You can now create jobs that have a shell execution step, which will a use this library to control the running of other jobs.
    See the demo directory for example flows. The demo jobs can be loaded by running tests, see below.
 
 
 Test
 ----
 
-1. Install tenjin template engine:
+1. Install pytest and tenjin template engine:
    pip install -U pytest pytest-cov pytest-cache pytest-instafail logilab-devtools tenjin proxytypes
 
-2. Run the tests:
+2. Read and update the file demo/demo_security.py if you have enabled security on your Jenkins
+
+3. Run the tests:
    # Mocked tests do not require Jenkins
    JENKINSFLOW_MOCK_API=true ./test.py
 
