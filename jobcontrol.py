@@ -64,7 +64,8 @@ class _JobControl(object):
         self.total_tried_times = 0
         self.invocation_time = None
 
-        self._prepare_to_invoke(queuing=True)
+    def _prepare_first(self):
+        self._prepare_to_invoke()
 
     def _jenkins_result_to_result(self, jenkinsresult):
         if jenkinsresult in ("PASSED", "SUCCESS"):
@@ -75,7 +76,7 @@ class _JobControl(object):
             return self.RESULT_UNSTABLE
         raise JobControlException("Unknown result type from build: " + str(jenkinsresult))
 
-    def _prepare_to_invoke(self, queuing=False):  # pylint: disable=unused-argument
+    def _prepare_to_invoke(self):
         """Must be called before each invocation of a job, as opposed to __init__, which is called once in entire run"""
         self.invocation_time = 0
 
@@ -116,15 +117,25 @@ class _JobControl(object):
 class _SingleJob(_JobControl):
     def __init__(self, jenkins_api, securitytoken, job_name_prefix, max_tries, parent_max_tries, job_name, params, warn_only, report_interval, secret_params_re, nesting_level):
         self.api = jenkins_api
-        self.api.poll()
-        self.job = self.api.get_job(job_name_prefix + job_name)
         for key, value in params.iteritems():
             # Handle parameters passed as int or bool. Booleans will be lowercased!
             if isinstance(value, (bool, int)):
                 params[key] = str(value).lower()
         self.params = params
         super(_SingleJob, self).__init__(securitytoken, max_tries, parent_max_tries, warn_only, report_interval, secret_params_re, nesting_level)
+
         self.total_max_tries = parent_max_tries
+        self.job = None
+        self.old_build = None
+        self.name = job_name_prefix + job_name
+        self.repr_str = self.name
+
+        print(self.indentation + "job: ", self.name)
+
+    def _prepare_first(self):
+        self.api.poll()
+        self.job = self.api.get_job(self.name)
+        self._prepare_to_invoke()
 
         # Build repr string with build-url with secret params replaced by '***'
         def build_query():
@@ -132,34 +143,33 @@ class _SingleJob(_JobControl):
             return '?' + '&'.join(query) if query else ''
 
         try:
-            # TODO: token instead of None?
-            url = self.job.get_build_triggerurl(None, params=self.params if params else None)
+            url = self.job.get_build_triggerurl(None, params=self.params)
+            if isinstance(url, tuple):
+                # Newer versions of jenkinsapi returns tuple (path, {args})
+                # Insert ' - ' so that the build URL is not directly clickable, but will instead point to the job
+                part1 = url[0].replace(self.job.name, self.job.name + ' - ')
+                self.repr_str = part1 + build_query()
+            else:
+                # Older versions of jenkinsapi return real URL
+                import urlparse
+                up = urlparse.urlparse(self.job.get_build_triggerurl(None, params=self.params))
+                # Insert ' - ' so that the build URL is not directly clickable, but will instead point to the job
+                path = up.path.replace(self.job.name, self.job.name + ' - ')
+                params = ';' + up.params if up.params else ''
+                fragment = '#' + up.fragment if up.fragment else ''
+                self.repr_str = repr(self.job.name) + ' ' + up.scheme + '://' + up.netloc + path + params + build_query() + fragment
         except TypeError:
-            # print(ex)
+            # Current Jenkins!
             # Newer version take no args for get_build_triggerurl
             url = self.job.get_build_triggerurl()
             # Even Newer versions of jenkinsapi returns basic path without any args
             # Insert ' - ' so that the build URL is not directly clickable, but will instead point to the job
             part1 = url.replace(self.job.name, self.job.name + ' - ')
             self.repr_str = part1 + build_query()
-            return
 
-        if isinstance(url, tuple):
-            # Newer versions of jenkinsapi returns tuple (path, {args})
-            # Insert ' - ' so that the build URL is not directly clickable, but will instead point to the job
-            part1 = url[0].replace(self.job.name, self.job.name + ' - ')
-            self.repr_str = part1 + build_query()
-        else:
-            # Older versions of jenkinsapi return real URL
-            import urlparse
-            up = urlparse.urlparse(self.job.get_build_triggerurl(None, params=self.params))
-            # Insert ' - ' so that the build URL is not directly clickable, but will instead point to the job
-            path = up.path.replace(self.job.name, self.job.name + ' - ')
-            params = ';' + up.params if up.params else ''
-            fragment = '#' + up.fragment if up.fragment else ''
-            self.repr_str = repr(self.job.name) + ' ' + up.scheme + '://' + up.netloc + path + params + build_query() + fragment
+        print(self.indentation + "job: ", end='')
+        self._print_status_message(self.old_build)
 
-        self.old_build = None
 
     def __repr__(self):
         return self.repr_str
@@ -168,13 +178,10 @@ class _SingleJob(_JobControl):
         state = "RUNNING" if self.job.is_running() else ("QUEUED" if self.job.is_queued() else "IDLE")
         print(repr(self.job.name), "Status", state, "- latest build:", '#' + str(build.buildno) if build else None)
 
-    def _prepare_to_invoke(self, queuing=False):
-        super(_SingleJob, self)._prepare_to_invoke(queuing)
+    def _prepare_to_invoke(self):
+        super(_SingleJob, self)._prepare_to_invoke()
         self.job.poll()
         self.old_build = self.job.get_last_build_or_none()
-        if queuing:
-            print(self.indentation + "Queuing job: ", end='')
-            self._print_status_message(self.old_build)
 
     def _check(self, start_time, last_report_time):
         if not self._invoke_if_not_invoked():
@@ -215,10 +222,6 @@ class _SingleJob(_JobControl):
 
         raise FailedSingleJobException(self.job, self.warn_only)
 
-    @property
-    def name(self):
-        return self.job.name
-
     def sequence(self):
         return self.name
 
@@ -227,9 +230,9 @@ class _IgnoredSingleJob(_SingleJob):
     def __init__(self, jenkins_api, securitytoken, job_name_prefix, job_name, params, report_interval, secret_params_re, nesting_level):
         super(_IgnoredSingleJob, self).__init__(jenkins_api, securitytoken, job_name_prefix, 1, 1, job_name, params, True, report_interval, secret_params_re, nesting_level)
 
-    def _prepare_to_invoke(self, queuing=False):
+    def _prepare_to_invoke(self):
         if self.tried_times < self.max_tries:
-            super(_IgnoredSingleJob, self)._prepare_to_invoke(queuing)
+            super(_IgnoredSingleJob, self)._prepare_to_invoke()
 
     def _check(self, start_time, last_report_time):
         try:
@@ -308,8 +311,14 @@ class _Parallel(_Flow):
                                         report_interval, secret_params, nesting_level)
         self._failed_child_jobs = {}
 
+    def _prepare_first(self):
+        print(self.indentation + "parallel flow: (")
+        for job in self.jobs:
+            job._prepare_first()
+        print(self.indentation + ")\n")
+
     def __enter__(self):
-        print(self.indentation + "Queuing jobs for parallel run: (")
+        print(self.indentation + "parallel flow: (")
         self.nesting_level += 1
         return self
 
@@ -379,12 +388,18 @@ class _Serial(_Flow):
         self.job_index = 0
         self.has_warning = False
 
-    def _prepare_to_invoke(self, queuing=False):
-        super(_Serial, self)._prepare_to_invoke(queuing)
+    def _prepare_first(self):
+        print(self.indentation + "serial flow: [")
+        for job in self.jobs:
+            job._prepare_first()
+        print(self.indentation + "]\n")
+
+    def _prepare_to_invoke(self):
+        super(_Serial, self)._prepare_to_invoke()
         self.job_index = 0
 
     def __enter__(self):
-        print(self.indentation + "Queuing jobs for serial run: [")
+        print(self.indentation + "serial flow: [")
         self.nesting_level += 1
         return self
 
@@ -507,10 +522,15 @@ class _TopLevelControllerMixin(object):
 
         # Wait for jobs to finish
         print()
+        print("--- Getting initial job status ---")
+        self._prepare_first()
 
         mocked = os.environ.get('JENKINSFLOW_MOCK_API')
         sleep_time = 0.01 if mocked else 0.5
         last_report_time = start_time = time.time()
+
+        print()
+        print("--- Starting flow ---")
         while not self.result:
             last_report_time = self._check(start_time, last_report_time)
             time.sleep(min(sleep_time, self.report_interval))
@@ -520,22 +540,26 @@ class _TopLevelControllerMixin(object):
 
 
 def _start_msg():
-    print("== Legend ==")
+    print()
+    print("=== Jenkinsflow ===")
+    print()
+    print("Legend:")
     print("Serial builds: []")
     print("Parallel builds: ()")
     print("Invoking (w/x,y/z): w=current invocation in current flow scope, x=max in scope, y=total number of invocations, z=total max invocations")
     print("Elapsed time: 'after: x/y': x=time spent during current run of job, y=time elapsed since start of outermost flow")
     print()
+    print("--- Calculating flow graph ---")
 
 
 class parallel(_Parallel, _TopLevelControllerMixin):
     def __init__(self, jenkins_api, timeout, securitytoken=None, username=None, password=None, job_name_prefix='', max_tries=1, warn_only=False,
                  report_interval=_default_report_interval, secret_params=_default_secret_params_re):
         """warn_only: causes failure in this job not to fail the parent flow"""
-        _start_msg()
         securitytoken = securitytoken or jenkins_api.securitytoken if hasattr(jenkins_api, 'securitytoken') else None
         self.username = username
         self.password = password
+        _start_msg()
         super(parallel, self).__init__(jenkins_api, timeout, securitytoken, job_name_prefix, max_tries, 1, warn_only,
                                        report_interval, secret_params, 0)
 
