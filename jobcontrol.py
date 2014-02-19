@@ -3,7 +3,7 @@
 
 from __future__ import print_function
 
-import os, time, re, abc
+import os, time, re, abc, tempfile
 
 _default_report_interval = 5
 _default_secret_params = '.*passw.*|.*PASSW.*'
@@ -452,7 +452,7 @@ class _Serial(_Flow):
         return [job.sequence() for job in self.jobs]
 
 
-class _TopLevelController(_Flow):
+class _TopLevelControllerMixin(object):
     __metaclass__ = abc.ABCMeta
 
     def set_build_result(self, result):
@@ -466,7 +466,24 @@ class _TopLevelController(_Flow):
             cli = 'jenkins-cli.jar'
 
             def set_res():
-                subprocess.check_call(['java', '-jar', cli, '-s', my_url, 'set-build-result', result])
+                command = ['java', '-jar', cli, '-s', my_url, 'set-build-result', result]
+                if self.username or self.password:
+                    assert self.password and self.username, "You must specify both username and password if any"
+                    fname = None
+                    try:
+                        fhandle, fname = tempfile.mkstemp()
+                        fhandle = os.fdopen(fhandle, 'w')
+                        fhandle.write(self.password)
+                        fhandle.close()
+                        subprocess.check_call(command + ['--username', self.username, '--password-file', fname])
+                    finally:
+                        try:
+                            os.remove(fname)
+                            fhandle.close()
+                        except IOError:
+                            pass
+                else:
+                    subprocess.check_call(command)
 
             try:
                 # If cli is already present attempt to use it
@@ -510,12 +527,14 @@ def _start_msg():
     print()
 
 
-class parallel(_Parallel, _TopLevelController):
-    def __init__(self, jenkins_api, timeout, securitytoken=None, job_name_prefix='', max_tries=1, warn_only=False,
+class parallel(_Parallel, _TopLevelControllerMixin):
+    def __init__(self, jenkins_api, timeout, securitytoken=None, username=None, password=None, job_name_prefix='', max_tries=1, warn_only=False,
                  report_interval=_default_report_interval, secret_params=_default_secret_params_re):
         """warn_only: causes failure in this job not to fail the parent flow"""
         _start_msg()
         securitytoken = securitytoken or jenkins_api.securitytoken if hasattr(jenkins_api, 'securitytoken') else None
+        self.username = username
+        self.password = password
         super(parallel, self).__init__(jenkins_api, timeout, securitytoken, job_name_prefix, max_tries, 1, warn_only,
                                        report_interval, secret_params, 0)
 
@@ -524,11 +543,13 @@ class parallel(_Parallel, _TopLevelController):
         self.wait_for_jobs()
 
 
-class serial(_Serial, _TopLevelController):
-    def __init__(self, jenkins_api, timeout, securitytoken=None, job_name_prefix='', max_tries=1, warn_only=False,
+class serial(_Serial, _TopLevelControllerMixin):
+    def __init__(self, jenkins_api, timeout, securitytoken=None, username=None, password=None, job_name_prefix='', max_tries=1, warn_only=False,
                  report_interval=_default_report_interval, secret_params=_default_secret_params_re):
         """warn_only: causes failure in this job not to fail the parent flow"""
         securitytoken = securitytoken or jenkins_api.securitytoken if hasattr(jenkins_api, 'securitytoken') else None
+        self.username = username
+        self.password = password
         _start_msg()
         super(serial, self).__init__(jenkins_api, timeout, securitytoken, job_name_prefix, max_tries, 1, warn_only,
                                      report_interval, secret_params, 0)
