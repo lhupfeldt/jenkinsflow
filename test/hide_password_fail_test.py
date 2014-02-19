@@ -6,7 +6,7 @@
 from pytest import raises
 
 from framework import mock_api
-from jenkinsflow.jobcontrol import serial, FailedChildJobException
+from jenkinsflow.flow import serial, FailedChildJobException
 
 
 def test_hide_password_failed_job():

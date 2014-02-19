@@ -3,7 +3,7 @@
 # Copyright (c) 2012 - 2014 Lars Hupfeldt Nielsen, Hupfeldt IT
 # All rights reserved. This work is under a BSD license, see LICENSE.TXT.
 
-from jenkinsflow.jobcontrol import serial
+from jenkinsflow.flow import serial
 from framework import mock_api
 
 

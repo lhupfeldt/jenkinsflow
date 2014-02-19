@@ -13,7 +13,7 @@ import logging
 
 from jenkinsapi import jenkins
 
-from jenkinsflow.jobcontrol import serial
+from jenkinsflow.flow import serial
 from jenkinsflow.unbuffered import UnBuffered
 # Unbuffered output does not work well in Jenkins/Hudson, so in case
 # this is run from a jenkins/hudson job, we want unbuffered output

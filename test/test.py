@@ -7,7 +7,7 @@ from os.path import join as jp
 here = os.path.abspath(os.path.dirname(__file__))
 
 sys.path.extend([jp(here, '../..'), jp(here, '../demo'), jp(here, '../demo/jobs'), jp(here, '../../jenkinsapi')])
-from jenkinsflow.jobcontrol import JobControlFailException
+from jenkinsflow.flow import JobControlFailException
 
 import basic, prefix, hide_password, errors
 

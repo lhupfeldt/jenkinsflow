@@ -5,7 +5,7 @@
 
 from pytest import raises
 
-from jenkinsflow.jobcontrol import serial, FailedChildJobException
+from jenkinsflow.flow import serial, FailedChildJobException
 from framework import mock_api
 
 

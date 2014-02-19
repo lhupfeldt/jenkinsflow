@@ -5,7 +5,7 @@ Installation
    pip install jenkinsapi
    optional: pip install tenjin (if you want to use the template based job loader)
 
-2. Make jenkinsflow files (jobcontrol.py and possibly unbuffered.py) available on to your jenkins/hudson installation.
+2. Make jenkinsflow files (flow.py and possibly unbuffered.py) available on to your jenkins/hudson installation.
 
 3. To use the warn_only (experimental) feature, jenkins url must be set in Jenkins configuration.
 

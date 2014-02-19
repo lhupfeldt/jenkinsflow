@@ -6,7 +6,7 @@
 import sys
 
 from framework import mock_api
-from jenkinsflow.jobcontrol import serial
+from jenkinsflow.flow import serial
 from jenkinsflow.unbuffered import UnBuffered
 
 
