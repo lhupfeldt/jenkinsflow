@@ -73,7 +73,7 @@ class _JobControl(object):
             return self.RESULT_FAIL
         if jenkinsresult == "UNSTABLE":
             return self.RESULT_UNSTABLE
-        raise JobControlException("Unknown result type from build:" + jenkinsresult)
+        raise JobControlException("Unknown result type from build: " + str(jenkinsresult))
 
     def _prepare_to_invoke(self, queuing=False):  # pylint: disable=unused-argument
         """Must be called before each invocation of a job, as opposed to __init__, which is called once in entire run"""
@@ -166,15 +166,15 @@ class _SingleJob(_JobControl):
 
     def _print_status_message(self, build):
         state = "RUNNING" if self.job.is_running() else ("QUEUED" if self.job.is_queued() else "IDLE")
-        print(repr(self.job.name), "Status", state, "- latest build:", build)
+        print(repr(self.job.name), "Status", state, "- latest build:", '#' + str(build.buildno) if build else None)
 
     def _prepare_to_invoke(self, queuing=False):
         super(_SingleJob, self)._prepare_to_invoke(queuing)
         self.job.poll()
         self.old_build = self.job.get_last_build_or_none()
         if queuing:
-            print(self.indentation + "Queuing job:", self.job, end='')
-        self._print_status_message(self.old_build)
+            print(self.indentation + "Queuing job: ", end='')
+            self._print_status_message(self.old_build)
 
     def _check(self, start_time, last_report_time):
         if not self._invoke_if_not_invoked():
@@ -206,7 +206,8 @@ class _SingleJob(_JobControl):
 
         # The job has stopped running
         self._print_status_message(build)
-        print(str(build.get_status()) + ":", repr(self.job.name), "- build: ", build.get_result_url(), self._time_msg(start_time))
+        url = build.get_result_url().replace('testReport/api/python', 'console')
+        print(str(build.get_status()) + ":", repr(self.job.name), "- build:", url, self._time_msg(start_time))
 
         self.result = self._jenkins_result_to_result(build.get_status())
         if self.result in (self.RESULT_SUCCESS, self.RESULT_UNSTABLE):
