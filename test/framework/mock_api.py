@@ -270,16 +270,15 @@ class JenkinsWrapperApi(jenkins.Jenkins, _JobsMixin):
     def flow_job(self, name=None, params=None):
         """
         Runs demo/test flow script as jenkins job
-        Requires jenkinsflow to be copied to /tmp
+        Requires jenkinsflow to be copied to /tmp and all jobs to be loaded beforehand (e.g. test.py has been run)
         """
         if self.func_name:
-            script  = "export PYTHONPATH=../..\n"
-            script += "cd /tmp/jenkinsflow/test\n"
+            script  = "export PYTHONPATH=/tmp:/tmp/jenkinsflow/test\n"
+            script += "export JENKINSFLOW_SKIP_JOB_LOAD=true\n"
             script += "python -Bc &quot;from " + self.file_name.replace('.py', '') + " import *; test_" + self.func_name + "()&quot;"
-            # script = "/tmp/jenkinsflow/test/test.py -s -p no:cache -p no:cov " + self.file_name + " -k  " + self.func_name
         else:
             script = "python " + jp('/tmp/jenkinsflow/demo', self.file_name)
-        self._jenkins_job('0flow_' + name if name else '0flow', exec_time=0.5, params=params, script=script)
+        self._jenkins_job('0flow_' + name if name else '0flow', exec_time=0.5, params=params, script=script, load_job=self.reload_jobs)
 
     # --- Wrapped API ---
 
@@ -308,7 +307,7 @@ def is_mocked():
     return mocked and mocked.lower() == 'true'
 
 
-def api(file_name, jenkinsurl=os.environ.get('JENKINS_URL') or "http://localhost:8080", reload_jobs=True):
+def api(file_name, jenkinsurl=os.environ.get('JENKINS_URL') or "http://localhost:8080"):
     base_name = os.path.basename(file_name).replace('.pyc', '.py')
     job_name_prefix = _file_name_subst.sub('', base_name)
     func_name = None
@@ -331,5 +330,6 @@ def api(file_name, jenkinsurl=os.environ.get('JENKINS_URL') or "http://localhost
         return MockApi(job_name_prefix)
     else:
         print('Using Real Jenkins API with wrapper')
+        reload_jobs = os.environ.get('JENKINSFLOW_SKIP_JOB_LOAD') != 'true'
         return JenkinsWrapperApi(file_name, func_name, job_name_prefix, reload_jobs,
                                  jenkinsurl, security.username, security.password, security.securitytoken)
