@@ -226,6 +226,9 @@ class MockApi(_JobsMixin):
 
     # --- Mock API ---
 
+    def poll(self):
+        pass
+
     def delete_job(self, job_name):
         del self._jf_jobs[job_name]
 
@@ -240,30 +243,29 @@ class MockApi(_JobsMixin):
 
 
 class JenkinsWrapperApi(jenkins.Jenkins, _JobsMixin):
-    def __init__(self, file_name, func_name, job_name_prefix, jenkinsurl, username, password, securitytoken):
+    def __init__(self, file_name, func_name, job_name_prefix, reload_jobs, jenkinsurl, username, password, securitytoken):
         super(JenkinsWrapperApi, self).__init__(jenkinsurl)
         self.job_loader_jenkins = jenkins.Jenkins(jenkinsurl, username, password)
         self.file_name = file_name
         self.func_name = func_name
         self.job_name_prefix = job_name_prefix
+        self.reload_jobs = reload_jobs
         self.securitytoken = securitytoken
         WrapperJob._current_order = 1
         self._jf_jobs = OrderedDict()
 
-    def _jenkins_job(self, name, exec_time, params=None, script=None):
+    def _jenkins_job(self, name, exec_time, params, script, load_job=True, pre_delete=True):
         name = self.job_name_prefix + name
         assert not self._jf_jobs.get(name)
         # Create job in Jenkins
-        context = {'exec_time': exec_time, 'params': params or (), 'script': script, 'securitytoken': self.securitytoken}
-        update_job_from_template(self.job_loader_jenkins, name, self.job_xml_template, pre_delete=True, context=context)
+        if load_job:
+            context = {'exec_time': exec_time, 'params': params or (), 'script': script, 'securitytoken': self.securitytoken}
+            update_job_from_template(self.job_loader_jenkins, name, self.job_xml_template, pre_delete=pre_delete, context=context)
         return name
 
     def job(self, name, exec_time, max_fails, expect_invocations, expect_order, initial_buildno=0, invocation_delay=0.1, params=None, script=None):
-        name = self._jenkins_job(name, exec_time, params, script)
-        # Create Wrapper
-        job = super(JenkinsWrapperApi, self).get_job(name)
-        assert job is not None
-        self._jf_jobs[name] = WrapperJob(job, name, exec_time, max_fails, expect_invocations, expect_order)
+        name = self._jenkins_job(name, exec_time, params, script, self.reload_jobs)
+        self._jf_jobs[name] = (name, exec_time, max_fails, expect_invocations, expect_order)
 
     def flow_job(self, name=None, params=None):
         """
@@ -291,7 +293,12 @@ class JenkinsWrapperApi(jenkins.Jenkins, _JobsMixin):
 
     def get_job(self, name):
         try:
-            return self._jf_jobs[name]
+            job = self._jf_jobs[name]
+            if isinstance(job, tuple):
+                # super(JenkinsWrapperApi, self).poll()
+                jenkins_job = super(JenkinsWrapperApi, self).get_job(name)
+                self._jf_jobs[name] = job = WrapperJob(jenkins_job, job[0], job[1], job[2], job[3], job[4])
+            return job
         except KeyError:
             raise jenkinsapi.custom_exceptions.UnknownJob(name)
 
@@ -301,7 +308,7 @@ def is_mocked():
     return mocked and mocked.lower() == 'true'
 
 
-def api(file_name, jenkinsurl=os.environ.get('JENKINS_URL') or "http://localhost:8080"):
+def api(file_name, jenkinsurl=os.environ.get('JENKINS_URL') or "http://localhost:8080", reload_jobs=True):
     base_name = os.path.basename(file_name).replace('.pyc', '.py')
     job_name_prefix = _file_name_subst.sub('', base_name)
     func_name = None
@@ -324,4 +331,5 @@ def api(file_name, jenkinsurl=os.environ.get('JENKINS_URL') or "http://localhost
         return MockApi(job_name_prefix)
     else:
         print('Using Real Jenkins API with wrapper')
-        return JenkinsWrapperApi(file_name, func_name, job_name_prefix, jenkinsurl, security.username, security.password, security.securitytoken)
+        return JenkinsWrapperApi(file_name, func_name, job_name_prefix, reload_jobs,
+                                 jenkinsurl, security.username, security.password, security.securitytoken)

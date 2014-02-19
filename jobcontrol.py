@@ -116,6 +116,7 @@ class _JobControl(object):
 class _SingleJob(_JobControl):
     def __init__(self, jenkins_api, securitytoken, job_name_prefix, max_tries, parent_max_tries, job_name, params, warn_only, report_interval, secret_params_re, nesting_level):
         self.api = jenkins_api
+        self.api.poll()
         self.job = self.api.get_job(job_name_prefix + job_name)
         for key, value in params.iteritems():
             # Handle parameters passed as int or bool. Booleans will be lowercased!
