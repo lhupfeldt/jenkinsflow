@@ -17,7 +17,12 @@ class JobControlException(Exception):
         super(JobControlException, self).__init__(message)
         self.warn_only = warn_only
 
+
 class FlowTimeoutException(JobControlException):
+    pass
+
+
+class FlowScopeException(JobControlException):
     pass
 
 
@@ -55,18 +60,28 @@ class _JobControl(object):
         self.parent_flow = parent_flow
         self.top_flow = parent_flow.top_flow
 
-        self.securitytoken = securitytoken
         self.max_tries = max_tries
         self.total_max_tries = self.max_tries * self.parent_flow.total_max_tries
+
+        self.nesting_level = self.parent_flow.nesting_level + 1
+        if self.nesting_level != self.top_flow.current_nesting_level + 1:
+            raise FlowScopeException("Flow used out of scope")
+
+        self.securitytoken = securitytoken
         self.warn_only = warn_only
         self.report_interval = report_interval
         self.secret_params_re = secret_params_re
-        self.nesting_level = self.parent_flow.nesting_level + 1
 
         self.result = self.RESULT_FAIL
         self.tried_times = 0
         self.total_tried_times = 0
         self.invocation_time = None
+
+    def __enter__(self):
+        self.top_flow.current_nesting_level += 1
+
+    def __exit__(self, exc_type, exc_value, traceback):
+        self.top_flow.current_nesting_level -= 1
 
     def _prepare_first(self):
         self._prepare_to_invoke()
@@ -262,17 +277,17 @@ class _Flow(_JobControl):
         self.job_name_prefix = self.parent_flow.job_name_prefix + job_name_prefix
         self.jobs = []
 
-    def _create(self, flow_cls, timeout=0, securitytoken=None, job_name_prefix='', max_tries=1, warn_only=False, report_interval=None, secret_params=None):
+    def _create_child_flow(self, flow_cls, timeout=0, securitytoken=None, job_name_prefix='', max_tries=1, warn_only=False, report_interval=None, secret_params=None):
         securitytoken = securitytoken or self.securitytoken
         secret_params = secret_params or self.secret_params_re
         report_interval = report_interval or self.report_interval
         return flow_cls(self, timeout, securitytoken, job_name_prefix, max_tries, warn_only, report_interval, secret_params)
 
     def parallel(self, timeout=0, securitytoken=None, job_name_prefix='', max_tries=1, warn_only=False, report_interval=None, secret_params=None):
-        return self._create(_Parallel, timeout, securitytoken, job_name_prefix, max_tries, warn_only, report_interval, secret_params)
+        return self._create_child_flow(_Parallel, timeout, securitytoken, job_name_prefix, max_tries, warn_only, report_interval, secret_params)
 
     def serial(self, timeout=0, securitytoken=None, job_name_prefix='', max_tries=1, warn_only=False, report_interval=None, secret_params=None):
-        return self._create(_Serial, timeout, securitytoken, job_name_prefix, max_tries, warn_only, report_interval, secret_params)
+        return self._create_child_flow(_Serial, timeout, securitytoken, job_name_prefix, max_tries, warn_only, report_interval, secret_params)
 
     def invoke(self, job_name, **params):
         job = _SingleJob(self, self.securitytoken, self.job_name_prefix, self.max_tries, job_name, params, self.warn_only,
@@ -293,15 +308,14 @@ class _Flow(_JobControl):
         if exc_type:
             return None
 
-        if not self.parent_flow:
-            return
+        super(_Flow, self).__exit__(exc_type, exc_value, traceback)
+        if self.parent_flow:
+            # Insert myself in parent if I'm not empty
+            if self.jobs:
+                self.parent_flow.jobs.append(self)
+                return
 
-        # Insert myself in parent if I'm not empty
-        if self.jobs:
-            self.parent_flow.jobs.append(self)
-            return
-
-        print(self.indentation + "INFO: Ignoring empty flow")
+            print(self.indentation + "INFO: Ignoring empty flow")
 
 
 class _Parallel(_Flow):
@@ -319,6 +333,7 @@ class _Parallel(_Flow):
 
     def __enter__(self):
         print(self.indentation + "parallel flow: (")
+        super(_Parallel, self).__enter__()
         return self
 
     def __exit__(self, exc_type, exc_value, traceback):
@@ -399,6 +414,7 @@ class _Serial(_Flow):
 
     def __enter__(self):
         print(self.indentation + "serial flow: [")
+        super(_Serial, self).__enter__()
         return self
 
     def __exit__(self, exc_type, exc_value, traceback):
@@ -477,6 +493,7 @@ class _TopLevelControllerMixin(object):
         self.job_name_prefix = ''
         self.total_max_tries = 1
         self.nesting_level = -1
+        self.current_nesting_level = -1
 
         self._api = jenkins_api
         self.username = username

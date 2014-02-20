@@ -265,7 +265,7 @@ class JenkinsWrapperApi(jenkins.Jenkins, _JobsMixin):
 
     def job(self, name, exec_time, max_fails, expect_invocations, expect_order, initial_buildno=0, invocation_delay=0.1, params=None, script=None):
         name = self._jenkins_job(name, exec_time, params, script, self.reload_jobs)
-        self._jf_jobs[name] = (name, exec_time, max_fails, expect_invocations, expect_order)
+        self._jf_jobs[name] = MockJob(name, exec_time, max_fails, expect_invocations, expect_order, initial_buildno, invocation_delay)
 
     def flow_job(self, name=None, params=None):
         """
@@ -293,10 +293,10 @@ class JenkinsWrapperApi(jenkins.Jenkins, _JobsMixin):
     def get_job(self, name):
         try:
             job = self._jf_jobs[name]
-            if isinstance(job, tuple):
+            if isinstance(job, MockJob):
                 # super(JenkinsWrapperApi, self).poll()
                 jenkins_job = super(JenkinsWrapperApi, self).get_job(name)
-                self._jf_jobs[name] = job = WrapperJob(jenkins_job, job[0], job[1], job[2], job[3], job[4])
+                self._jf_jobs[name] = job = WrapperJob(jenkins_job, job.name, job.exec_time, job.max_fails, job.expect_invocations, job.expect_order)
             return job
         except KeyError:
             raise jenkinsapi.custom_exceptions.UnknownJob(name)
