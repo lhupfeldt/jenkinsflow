@@ -67,10 +67,10 @@ class _JobControl(object):
         if self.nesting_level != self.top_flow.current_nesting_level + 1:
             raise FlowScopeException("Flow used out of scope")
 
-        self.securitytoken = securitytoken
+        self.securitytoken = securitytoken or self.parent_flow.securitytoken
         self.warn_only = warn_only
-        self.report_interval = report_interval
-        self.secret_params_re = secret_params_re
+        self.report_interval = report_interval or self.parent_flow.report_interval
+        self.secret_params_re = secret_params_re or self.parent_flow.secret_params_re
 
         self.result = self.RESULT_FAIL
         self.tried_times = 0
@@ -277,17 +277,11 @@ class _Flow(_JobControl):
         self.job_name_prefix = self.parent_flow.job_name_prefix + job_name_prefix
         self.jobs = []
 
-    def _create_child_flow(self, flow_cls, timeout=0, securitytoken=None, job_name_prefix='', max_tries=1, warn_only=False, report_interval=None, secret_params=None):
-        securitytoken = securitytoken or self.securitytoken
-        secret_params = secret_params or self.secret_params_re
-        report_interval = report_interval or self.report_interval
-        return flow_cls(self, timeout, securitytoken, job_name_prefix, max_tries, warn_only, report_interval, secret_params)
-
     def parallel(self, timeout=0, securitytoken=None, job_name_prefix='', max_tries=1, warn_only=False, report_interval=None, secret_params=None):
-        return self._create_child_flow(_Parallel, timeout, securitytoken, job_name_prefix, max_tries, warn_only, report_interval, secret_params)
+        return _Parallel(self, timeout, securitytoken, job_name_prefix, max_tries, warn_only, report_interval, secret_params)
 
     def serial(self, timeout=0, securitytoken=None, job_name_prefix='', max_tries=1, warn_only=False, report_interval=None, secret_params=None):
-        return self._create_child_flow(_Serial, timeout, securitytoken, job_name_prefix, max_tries, warn_only, report_interval, secret_params)
+        return _Serial(self, timeout, securitytoken, job_name_prefix, max_tries, warn_only, report_interval, secret_params)
 
     def invoke(self, job_name, **params):
         job = _SingleJob(self, self.securitytoken, self.job_name_prefix, self.max_tries, job_name, params, self.warn_only,
@@ -494,6 +488,9 @@ class _TopLevelControllerMixin(object):
         self.total_max_tries = 1
         self.nesting_level = -1
         self.current_nesting_level = -1
+        self.securitytoken = None
+        self.report_interval = _default_report_interval
+        self.secret_params_re = _default_secret_params_re
 
         self._api = jenkins_api
         self.username = username
