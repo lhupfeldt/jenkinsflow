@@ -266,9 +266,7 @@ class _Flow(_JobControl):
         securitytoken = securitytoken or self.securitytoken
         secret_params = secret_params or self.secret_params_re
         report_interval = report_interval or self.report_interval
-        flw = flow_cls(self, timeout, securitytoken, job_name_prefix, max_tries, warn_only, report_interval, secret_params)
-        self.jobs.append(flw)
-        return flw
+        return flow_cls(self, timeout, securitytoken, job_name_prefix, max_tries, warn_only, report_interval, secret_params)
 
     def parallel(self, timeout=0, securitytoken=None, job_name_prefix='', max_tries=1, warn_only=False, report_interval=None, secret_params=None):
         return self._create(_Parallel, timeout, securitytoken, job_name_prefix, max_tries, warn_only, report_interval, secret_params)
@@ -295,15 +293,15 @@ class _Flow(_JobControl):
         if exc_type:
             return None
 
-        # Check for and remove empty flows
-        new_job_list = []
-        for job in self.jobs:
-            if isinstance(job, _Flow):
-                if not job.jobs:
-                    print(self.indentation + "INFO: Removing empty flow", job, "from: ", self)
-                    continue
-            new_job_list.append(job)
-        self.jobs = new_job_list
+        if not self.parent_flow:
+            return
+
+        # Insert myself in parent if I'm not empty
+        if self.jobs:
+            self.parent_flow.jobs.append(self)
+            return
+
+        print(self.indentation + "INFO: Ignoring empty flow")
 
 
 class _Parallel(_Flow):
@@ -324,8 +322,9 @@ class _Parallel(_Flow):
         return self
 
     def __exit__(self, exc_type, exc_value, traceback):
+        print(self.indentation + ")")
         super(_Parallel, self).__exit__(exc_type, exc_value, traceback)
-        print(self.indentation + ")\n")
+        print()
 
     def _check(self, start_time, last_report_time):
         self._invoke_if_not_invoked()
@@ -403,8 +402,9 @@ class _Serial(_Flow):
         return self
 
     def __exit__(self, exc_type, exc_value, traceback):
+        print(self.indentation + "]")
         super(_Serial, self).__exit__(exc_type, exc_value, traceback)
-        print(self.indentation + "]\n")
+        print()
 
     def _check(self, start_time, last_report_time):
         self._invoke_if_not_invoked()
