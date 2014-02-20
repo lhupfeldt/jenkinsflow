@@ -36,6 +36,12 @@ class FailedSingleJobException(JobControlFailException):
         super(FailedSingleJobException, self).__init__(msg, warn_only)
 
 
+class MissingJobsException(FailedSingleJobException):
+    def __init__(self, job):
+        msg = "Could not get job info: " + repr(job)
+        super(MissingJobsException, self).__init__(msg, warn_only=False)
+
+
 class FailedChildJobException(JobControlFailException):
     def __init__(self, flow_job, failed_child_job, warn_only):
         msg = "Failed child job in: " + repr(flow_job) + ", child job:" + repr(failed_child_job) + ", warn_only:" + str(warn_only)
@@ -56,7 +62,7 @@ class _JobControl(object):
     RESULT_UNCHECKED = 2
     RESULT_SUCCESS = 3
 
-    def __init__(self, parent_flow, securitytoken, max_tries, warn_only, report_interval, secret_params_re):
+    def __init__(self, parent_flow, securitytoken, max_tries, warn_only, report_interval, secret_params_re, allow_missing_jobs):
         self.parent_flow = parent_flow
         self.top_flow = parent_flow.top_flow
 
@@ -71,6 +77,7 @@ class _JobControl(object):
         self.warn_only = warn_only
         self.report_interval = report_interval or self.parent_flow.report_interval
         self.secret_params_re = secret_params_re or self.parent_flow.secret_params_re
+        self.allow_missing_jobs = allow_missing_jobs if allow_missing_jobs is not None else self.parent_flow.allow_missing_jobs
 
         self.result = self.RESULT_FAIL
         self.tried_times = 0
@@ -138,13 +145,13 @@ class _JobControl(object):
 
 
 class _SingleJob(_JobControl):
-    def __init__(self, parent_flow, securitytoken, job_name_prefix, max_tries, job_name, params, warn_only, report_interval, secret_params_re):
+    def __init__(self, parent_flow, securitytoken, job_name_prefix, max_tries, job_name, params, warn_only, report_interval, secret_params_re, allow_missing_jobs):
         for key, value in params.iteritems():
             # Handle parameters passed as int or bool. Booleans will be lowercased!
             if isinstance(value, (bool, int)):
                 params[key] = str(value).lower()
         self.params = params
-        super(_SingleJob, self).__init__(parent_flow, securitytoken, max_tries, warn_only, report_interval, secret_params_re)
+        super(_SingleJob, self).__init__(parent_flow, securitytoken, max_tries, warn_only, report_interval, secret_params_re, allow_missing_jobs)
         self.job = None
         self.old_build = None
         self.name = job_name_prefix + job_name
@@ -152,9 +159,17 @@ class _SingleJob(_JobControl):
 
         print(self.indentation + "job: ", self.name)
 
-    def _prepare_first(self):
+    def _prepare_first(self, require_job=False):
         self.api.poll()
-        self.job = self.api.get_job(self.name)
+        try:
+            self.job = self.api.get_job(self.name)
+        except Exception as ex:
+            self.repr_str = repr(ex)
+            if require_job or not self.allow_missing_jobs:
+                raise MissingJobsException(self.job)
+            print(self.indentation + "NOTE: ", self.repr_str)
+            return
+
         self._prepare_to_invoke()
 
         # Build repr string with build-url with secret params replaced by '***'
@@ -205,6 +220,8 @@ class _SingleJob(_JobControl):
 
     def _check(self, start_time, last_report_time):
         if not self._invoke_if_not_invoked():
+            if self.job is None:
+                self._prepare_first(require_job=True)
             try:
                 self.job.invoke(securitytoken=self.securitytoken, invoke_pre_check_delay=0, block=False, build_params=self.params if self.params else None)
             except TypeError as ex:
@@ -247,8 +264,8 @@ class _SingleJob(_JobControl):
 
 
 class _IgnoredSingleJob(_SingleJob):
-    def __init__(self, parent_flow, securitytoken, job_name_prefix, job_name, params, report_interval, secret_params_re):
-        super(_IgnoredSingleJob, self).__init__(parent_flow, securitytoken, job_name_prefix, 1, job_name, params, True, report_interval, secret_params_re)
+    def __init__(self, parent_flow, securitytoken, job_name_prefix, job_name, params, report_interval, secret_params_re, allow_missing_jobs):
+        super(_IgnoredSingleJob, self).__init__(parent_flow, securitytoken, job_name_prefix, 1, job_name, params, True, report_interval, secret_params_re, allow_missing_jobs)
 
     def _prepare_to_invoke(self):
         if self.tried_times < self.max_tries:
@@ -270,26 +287,26 @@ class _IgnoredSingleJob(_SingleJob):
 class _Flow(_JobControl):
     __metaclass__ = abc.ABCMeta
 
-    def __init__(self, parent_flow, timeout, securitytoken, job_name_prefix, max_tries, warn_only, report_interval, secret_params):
+    def __init__(self, parent_flow, timeout, securitytoken, job_name_prefix, max_tries, warn_only, report_interval, secret_params, allow_missing_jobs):
         secret_params_re = re.compile(secret_params) if isinstance(secret_params, str) else secret_params
-        super(_Flow, self).__init__(parent_flow, securitytoken, max_tries, warn_only, report_interval, secret_params_re)
+        super(_Flow, self).__init__(parent_flow, securitytoken, max_tries, warn_only, report_interval, secret_params_re, allow_missing_jobs)
         self.timeout = timeout
         self.job_name_prefix = self.parent_flow.job_name_prefix + job_name_prefix
         self.jobs = []
 
-    def parallel(self, timeout=0, securitytoken=None, job_name_prefix='', max_tries=1, warn_only=False, report_interval=None, secret_params=None):
-        return _Parallel(self, timeout, securitytoken, job_name_prefix, max_tries, warn_only, report_interval, secret_params)
+    def parallel(self, timeout=0, securitytoken=None, job_name_prefix='', max_tries=1, warn_only=False, report_interval=None, secret_params=None, allow_missing_jobs=None):
+        return _Parallel(self, timeout, securitytoken, job_name_prefix, max_tries, warn_only, report_interval, secret_params, allow_missing_jobs)
 
-    def serial(self, timeout=0, securitytoken=None, job_name_prefix='', max_tries=1, warn_only=False, report_interval=None, secret_params=None):
-        return _Serial(self, timeout, securitytoken, job_name_prefix, max_tries, warn_only, report_interval, secret_params)
+    def serial(self, timeout=0, securitytoken=None, job_name_prefix='', max_tries=1, warn_only=False, report_interval=None, secret_params=None, allow_missing_jobs=None):
+        return _Serial(self, timeout, securitytoken, job_name_prefix, max_tries, warn_only, report_interval, secret_params, allow_missing_jobs)
 
     def invoke(self, job_name, **params):
         job = _SingleJob(self, self.securitytoken, self.job_name_prefix, self.max_tries, job_name, params, self.warn_only,
-                         self.report_interval, self.secret_params_re)
+                         self.report_interval, self.secret_params_re, self.allow_missing_jobs)
         self.jobs.append(job)
 
     def invoke_unchecked(self, job_name, **params):
-        job = _IgnoredSingleJob(self, self.securitytoken, self.job_name_prefix, job_name, params, self.report_interval, self.secret_params_re)
+        job = _IgnoredSingleJob(self, self.securitytoken, self.job_name_prefix, job_name, params, self.report_interval, self.secret_params_re, self.allow_missing_jobs)
         self.jobs.append(job)
 
     def _check_timeout(self, start_time):
@@ -314,9 +331,9 @@ class _Flow(_JobControl):
 
 class _Parallel(_Flow):
     def __init__(self, parent_flow, timeout, securitytoken, job_name_prefix='', max_tries=1, warn_only=False,
-                 report_interval=None, secret_params=_default_secret_params_re):
+                 report_interval=None, secret_params=_default_secret_params_re, allow_missing_jobs=None):
         super(_Parallel, self).__init__(parent_flow, timeout, securitytoken, job_name_prefix, max_tries, warn_only,
-                                        report_interval, secret_params)
+                                        report_interval, secret_params, allow_missing_jobs)
         self._failed_child_jobs = {}
 
     def _prepare_first(self):
@@ -390,9 +407,9 @@ class _Parallel(_Flow):
 
 class _Serial(_Flow):
     def __init__(self, parent_flow, securitytoken, timeout, job_name_prefix='', max_tries=1, warn_only=False,
-                 report_interval=None, secret_params=_default_secret_params_re):
+                 report_interval=None, secret_params=_default_secret_params_re, allow_missing_jobs=None):
         super(_Serial, self).__init__(parent_flow, securitytoken, timeout, job_name_prefix, max_tries, warn_only,
-                                      report_interval, secret_params)
+                                      report_interval, secret_params, allow_missing_jobs)
         self.job_index = 0
         self.has_warning = False
 
@@ -491,6 +508,7 @@ class _TopLevelControllerMixin(object):
         self.securitytoken = None
         self.report_interval = _default_report_interval
         self.secret_params_re = _default_secret_params_re
+        self.allow_missing_jobs = None
 
         self._api = jenkins_api
         self.username = username
@@ -536,10 +554,10 @@ class _TopLevelControllerMixin(object):
 
 class parallel(_Parallel, _TopLevelControllerMixin):
     def __init__(self, jenkins_api, timeout, securitytoken=None, username=None, password=None, job_name_prefix='', max_tries=1, warn_only=False,
-                 report_interval=_default_report_interval, secret_params=_default_secret_params_re):
+                 report_interval=_default_report_interval, secret_params=_default_secret_params_re, allow_missing_jobs=False):
         """warn_only: causes failure in this job not to fail the parent flow"""
         securitytoken = self.toplevel_init(jenkins_api, securitytoken, username, password)
-        super(parallel, self).__init__(self, timeout, securitytoken, job_name_prefix, max_tries, warn_only, report_interval, secret_params)
+        super(parallel, self).__init__(self, timeout, securitytoken, job_name_prefix, max_tries, warn_only, report_interval, secret_params, allow_missing_jobs)
         self.parent_flow = None
 
     def __exit__(self, exc_type, exc_value, traceback):
@@ -549,10 +567,10 @@ class parallel(_Parallel, _TopLevelControllerMixin):
 
 class serial(_Serial, _TopLevelControllerMixin):
     def __init__(self, jenkins_api, timeout, securitytoken=None, username=None, password=None, job_name_prefix='', max_tries=1, warn_only=False,
-                 report_interval=_default_report_interval, secret_params=_default_secret_params_re):
+                 report_interval=_default_report_interval, secret_params=_default_secret_params_re, allow_missing_jobs=False):
         """warn_only: causes failure in this job not to fail the parent flow"""
         securitytoken = self.toplevel_init(jenkins_api, securitytoken, username, password)
-        super(serial, self).__init__(self, timeout, securitytoken, job_name_prefix, max_tries, warn_only, report_interval, secret_params)
+        super(serial, self).__init__(self, timeout, securitytoken, job_name_prefix, max_tries, warn_only, report_interval, secret_params, allow_missing_jobs)
         self.parent_flow = None
 
     def __exit__(self, exc_type, exc_value, traceback):

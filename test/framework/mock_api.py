@@ -239,7 +239,7 @@ class MockApi(_JobsMixin):
         try:
             return self._jf_jobs[name]
         except KeyError:
-            raise jenkinsapi.custom_exceptions.UnknownJob(name)
+            raise jenkinsapi.custom_exceptions.UnknownJob("Job not found: " + name)
 
 
 class JenkinsWrapperApi(jenkins.Jenkins, _JobsMixin):
