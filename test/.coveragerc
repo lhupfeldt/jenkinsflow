@@ -1,0 +1,15 @@
+[report]
+exclude_lines =
+    # Have to re-enable the standard pragma
+    pragma: no cover
+
+    # Don't complain if tests don't hit defensive assertion code:
+    raise .*Internal error.*
+    raise .*AbstractNotImplemented.*
+
+    if _debug_exc:
+    def debug
+    Old.*jenkinsapi
+    old.*jenkinsapi
+
+omit = ./*
