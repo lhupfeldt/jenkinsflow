@@ -19,8 +19,8 @@ def create_jobs():
     job('wait5-2b', 5, 0, 2)
     job('wait5-2c', 5, 0, 2)
     job('quick_fail-1', 0.5, 1, 2, params=(('s1', 'WORLD', 'desc'), ('c1', ('to', 'be', 'or', 'not'), 'desc')))
-    job('quick', 0.5, 0, 2, expect_invocations=None, params=(('s1', 'WORLD', 'desc'), ('c1', ('maybe', 'certain'), 'desc')))
-    job('wait1-2', 1, 0, 3, expect_invocations=None)
+    job('quick', 0.5, 0, 2, expect_invocations=0, params=(('s1', 'WORLD', 'desc'), ('c1', ('maybe', 'certain'), 'desc')))
+    job('wait1-2', 1, 0, 3, expect_invocations=0)
     return api
 
 

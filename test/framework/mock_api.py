@@ -18,6 +18,8 @@ from jenkinsflow.unbuffered import UnBuffered
 sys.stdout = UnBuffered(sys.stdout)
 
 from jenkinsflow.jobload import update_job_from_template
+from jenkinsflow.flow import hyperspeed_time
+
 
 _file_name_subst = re.compile(r'(_jobs|_test)?\.py')
 
@@ -25,10 +27,16 @@ _file_name_subst = re.compile(r'(_jobs|_test)?\.py')
 class MockJob(object):
     _current_order = 1
 
-    def __init__(self, name, exec_time, max_fails, expect_invocations, expect_order, initial_buildno=0, invocation_delay=0.01):
-        """Set max_fails to -1 for an unchecked invocation"""
+    def __init__(self, name, exec_time, max_fails, expect_invocations, expect_order, initial_buildno=None, invocation_delay=0.01, unknown_result=False):
+        """Set max_fails to None an indeterminate result (timeout)"""
         assert exec_time > 0
+        assert max_fails >= 0
+        assert expect_invocations >= 0
+        assert expect_order >= 1 or expect_order is None
+        assert initial_buildno is None or initial_buildno >= 1
         assert invocation_delay > 0
+        assert unknown_result in (False, True)
+
         self.name = name
         self.exec_time = exec_time
         self.max_fails = max_fails
@@ -37,49 +45,53 @@ class MockJob(object):
         self.invocation = 0
         self.invocation_time = self.start_time = self.end_time = 0
         self.invocation_delay = invocation_delay
+        self.unknown_result = unknown_result
+
         self.base_url = 'http://hupfeldtit.dk/jobs/' + self.name
-        self.just_invoked = False
         self.actual_order = -1
         self.debug('__init__')
-        self.build = Build(self, initial_buildno)
+        self.initial_buildno = initial_buildno
+        self.build = Build(self, initial_buildno) if initial_buildno is not None else None
 
     def debug(self, what):
-        # print("Mock job: ", what, self, "time:", time.time())
+        #print("Mock job: ", what, self, "time:", hyperspeed_time())
         pass
 
     def get_build_triggerurl(self):
         return self.base_url + '/hello/build'
 
     def is_running(self):
-        running = self.start_time < time.time() < self.end_time
+        running = self.start_time <= hyperspeed_time() < self.end_time
         self.debug('is_running: ' + repr(running))
         return running
 
     def is_queued(self):
-        queued = self.invocation_time < time.time() < self.start_time
+        queued = self.invocation_time <= hyperspeed_time() < self.start_time
         self.debug('is_queued: ' + repr(queued))
         return queued
 
     def poll(self):
-        # self.debug('poll')
-        if self.is_running():
-            # self.debug('poll: job is running')
-            if self.just_invoked:
-                self.build.buildno = self.build.buildno + self.invocation
-                self.debug('poll: new buildno ' + repr(self.build.buildno))
-                self.just_invoked = False
+        self.debug('poll')
+
+        # If has been invoked and is running or already finished
+        if self.end_time and hyperspeed_time() >= self.start_time:
+            if self.build is None:
+                self.build = Build(self, 1)
+            elif isinstance(self.initial_buildno, int):
+                self.build.buildno = self.initial_buildno + 1
 
     def get_last_build_or_none(self):
         self.debug('get_last_build_or_none')
-        return self.build if self.build.buildno else None
+        return self.build
 
     def invoke(self, securitytoken=None, block=False, skip_if_running=False, invoke_pre_check_delay=3,  # pylint: disable=unused-argument
                invoke_block_delay=15, build_params=None, cause=None, files=None):
-        self.just_invoked = True
+        assert not self.is_running()
+
         self.actual_order = MockJob._current_order
         MockJob._current_order += 1
         self.invocation += 1
-        self.invocation_time = time.time()
+        self.invocation_time = hyperspeed_time()
         self.start_time = self.invocation_time + self.invocation_delay
         self.end_time = self.start_time + self.exec_time
         self.debug('invoke')
@@ -105,19 +117,23 @@ class WrapperJob(ObjectWrapper):
     max_fails = None
     expect_invocations = None
     expect_order = None
+    unknown_result = None
+
     invocation = None
     invocation_time = None
     invocation_delay = None
     actual_order = None
 
-    def __init__(self, jenkins_job, name, exec_time, max_fails, expect_invocations, expect_order):
-        """Set max_fails to -1 for an unchecked invocation"""
+    def __init__(self, jenkins_job, name, exec_time, max_fails, expect_invocations, expect_order, unknown_result):
+        """Set max_fails to None for an indeterminate result (timeout)"""
         assert exec_time > 0
         self.name = name
         self.exec_time = exec_time
         self.max_fails = max_fails
         self.expect_invocations = expect_invocations
         self.expect_order = expect_order
+        self.unknown_result = unknown_result
+
         self.invocation = 0
         self.invocation_time = 0
         self.actual_order = -1
@@ -163,7 +179,7 @@ class _JobsMixin(object):
     job_xml_template = jp(here, 'job.xml.tenjin')
 
     @abc.abstractmethod
-    def job(self, name, exec_time, max_fails, expect_invocations, expect_order, initial_buildno=0, invocation_delay=0.1, params=None, script=None):
+    def job(self, name, exec_time, max_fails, expect_invocations, expect_order, initial_buildno=None, invocation_delay=0.1, params=None, script=None, unknown_result=False):
         pass
 
     def __enter__(self):
@@ -197,16 +213,15 @@ class _JobsMixin(object):
                 last_expected_order = job.expect_order
                 max_actual_order = max(job.actual_order, max_actual_order)
 
-            if job.max_fails == -1:
-                # Unchecked job
-                continue
+            if  job.expect_invocations is not None:
+                # Check expected number of job invocations
+                assert job.expect_invocations == job.invocation, "Job: " + job.name + " invoked " + str(job.invocation) + " times, expected " + str(job.expect_invocations) + " invocations"
 
-            # Check expected number of job invocations
-            assert job.expect_invocations == job.invocation, "Job: " + job.name + " invoked " + str(job.invocation) + " times, expected " + str(job.expect_invocations) + " invocations"
-            if job.invocation > job.max_fails:
-                assert job.get_last_build_or_none().is_good(), "Job: " + job.name + " should have been in state good, but it is not"
-            elif job.expect_invocations != 0:
-                assert not job.get_last_build_or_none().is_good(), "Job: " + job.name + " should have been in failed state, but it is not"
+            if not job.unknown_result:
+                if job.invocation > job.max_fails:
+                    assert job.get_last_build_or_none().is_good(), "Job: " + job.name + " should have been in state good, but it is not"
+                elif job.expect_invocations != 0:
+                    assert not job.get_last_build_or_none().is_good(), "Job: " + job.name + " should have been in failed state, but it is not"
 
 
 class MockApi(_JobsMixin):
@@ -215,10 +230,10 @@ class MockApi(_JobsMixin):
         MockJob._current_order = 1
         self._jf_jobs = OrderedDict()
 
-    def job(self, name, exec_time, max_fails, expect_invocations, expect_order, initial_buildno=0, invocation_delay=0.1, params=None, script=None):
+    def job(self, name, exec_time, max_fails, expect_invocations, expect_order, initial_buildno=None, invocation_delay=0.1, params=None, script=None, unknown_result=False):
         name = self.job_name_prefix + name
         assert not self._jf_jobs.get(name)
-        self._jf_jobs[name] = MockJob(name, exec_time, max_fails, expect_invocations, expect_order, initial_buildno, invocation_delay)
+        self._jf_jobs[name] = MockJob(name, exec_time, max_fails, expect_invocations, expect_order, initial_buildno, invocation_delay, unknown_result)
 
     def flow_job(self, name=None, params=None):
         # Don't create flow jobs when mocked
@@ -263,9 +278,9 @@ class JenkinsWrapperApi(jenkins.Jenkins, _JobsMixin):
             update_job_from_template(self.job_loader_jenkins, name, self.job_xml_template, pre_delete=pre_delete, context=context)
         return name
 
-    def job(self, name, exec_time, max_fails, expect_invocations, expect_order, initial_buildno=0, invocation_delay=0.1, params=None, script=None):
+    def job(self, name, exec_time, max_fails, expect_invocations, expect_order, initial_buildno=None, invocation_delay=0.1, params=None, script=None, unknown_result=False):
         name = self._jenkins_job(name, exec_time, params, script, self.reload_jobs)
-        self._jf_jobs[name] = MockJob(name, exec_time, max_fails, expect_invocations, expect_order, initial_buildno, invocation_delay)
+        self._jf_jobs[name] = MockJob(name, exec_time, max_fails, expect_invocations, expect_order, initial_buildno, invocation_delay, unknown_result)
 
     def flow_job(self, name=None, params=None):
         """
@@ -296,7 +311,7 @@ class JenkinsWrapperApi(jenkins.Jenkins, _JobsMixin):
             if isinstance(job, MockJob):
                 # super(JenkinsWrapperApi, self).poll()
                 jenkins_job = super(JenkinsWrapperApi, self).get_job(name)
-                self._jf_jobs[name] = job = WrapperJob(jenkins_job, job.name, job.exec_time, job.max_fails, job.expect_invocations, job.expect_order)
+                self._jf_jobs[name] = job = WrapperJob(jenkins_job, job.name, job.exec_time, job.max_fails, job.expect_invocations, job.expect_order, job.unknown_result)
             return job
         except KeyError:
             raise jenkinsapi.custom_exceptions.UnknownJob(name)

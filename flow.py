@@ -6,11 +6,18 @@ from __future__ import print_function
 import os, time, re, abc
 from set_build_result import set_build_result
 
+_default_poll_interval = 0.5
 _default_report_interval = 5
 _default_secret_params = '.*passw.*|.*PASSW.*'
 _default_secret_params_re = re.compile(_default_secret_params)
 
 _debug = False
+
+
+_hyperspeed_speedup = 1 if os.environ.get('JENKINSFLOW_MOCK_API') != 'true' else 100
+def hyperspeed_time():
+    return time.time() * _hyperspeed_speedup
+
 
 class JobControlException(Exception):
     def __init__(self, message, warn_only=False):
@@ -90,8 +97,9 @@ class _JobControl(object):
     def __exit__(self, exc_type, exc_value, traceback):
         self.top_flow.current_nesting_level -= 1
 
+    @abc.abstractmethod
     def _prepare_first(self):
-        self._prepare_to_invoke()
+        raise Exception("AbstractNotImplemented")
 
     def _jenkins_result_to_result(self, jenkinsresult):
         if jenkinsresult in ("PASSED", "SUCCESS"):
@@ -110,22 +118,22 @@ class _JobControl(object):
         if self.invocation_time:
             return True
 
-        self.invocation_time = time.time()
+        self.invocation_time = hyperspeed_time()
         print("\nInvoking (%d/%d,%d/%d):" % (self.tried_times + 1, self.max_tries, self.total_tried_times + 1, self.total_max_tries), self)
         return False
 
     @abc.abstractmethod
     def _check(self, start_time, last_report_time):
         """Polled by flow controller until the job reaches state 'successful' or tried_times == parent.max_tries * self.max_tries"""
-        pass
+        raise Exception("AbstractNotImplemented")
 
     def _time_msg(self, start_time):
-        now = time.time()
+        now = hyperspeed_time()
         return "after: %.3fs/%.3fs" % (now - self.invocation_time, now - start_time)
 
     @abc.abstractmethod
     def sequence(self):
-        pass
+        raise Exception("AbstractNotImplemented")
 
     @property
     def indentation(self):
@@ -177,7 +185,7 @@ class _SingleJob(_JobControl):
             query = [key + '=' + (value if not self.secret_params_re.search(key) else '******') for key, value in self.params.iteritems()]
             return '?' + '&'.join(query) if query else ''
 
-        try:
+        try:  # This is for support of old jenkinsapi version, not tested
             url = self.job.get_build_triggerurl(None, params=self.params)
             if isinstance(url, tuple):
                 # Newer versions of jenkinsapi returns tuple (path, {args})
@@ -224,25 +232,25 @@ class _SingleJob(_JobControl):
                 self._prepare_first(require_job=True)
             try:
                 self.job.invoke(securitytoken=self.securitytoken, invoke_pre_check_delay=0, block=False, build_params=self.params if self.params else None)
-            except TypeError as ex:
-                # Older version of jenkinsapi
+            except TypeError as ex:  # Old version of jenkinsapi
                 self.job.invoke(securitytoken=self.securitytoken, invoke_pre_check_delay=0, block=False, params=self.params if self.params else None)
 
-        self.job.poll()
         for _ in range(1, 20):
+            self.job.poll()
             try:
                 build = self.job.get_last_build_or_none()
+                break
             except KeyError as ex:
-                # Workaround for jenkinsapi timing dependency
+                # Workaround for jenkinsapi timing dependency?
                 print("'get_last_build_or_none' failed: " + str(ex) + ", retrying.")
-                time.sleep(0.1)
+                time.sleep(0.1 / _hyperspeed_speedup)
 
         if build == None:
             return last_report_time
 
         old_buildno = (self.old_build.buildno if self.old_build else None)
         if build.buildno == old_buildno or build.is_running():
-            now = time.time()
+            now = hyperspeed_time()
             if now - last_report_time >= self.report_interval:
                 self._print_status_message(build)
                 last_report_time = now
@@ -310,9 +318,10 @@ class _Flow(_JobControl):
         self.jobs.append(job)
 
     def _check_timeout(self, start_time):
-        now = time.time()
+        now = hyperspeed_time()
         if self.timeout and now - self.invocation_time > self.timeout:
-            unfinished_msg = "Unfinished jobs:" + str(self)
+            # TODO: These are not the unfinished jobs!
+            unfinished_msg = ". Unfinished jobs:" + str(self)
             raise FlowTimeoutException("Timeout after:" + self._time_msg(start_time) + unfinished_msg, self.warn_only)
 
     def __exit__(self, exc_type, exc_value, traceback):
@@ -496,7 +505,7 @@ class _Serial(_Flow):
 class _TopLevelControllerMixin(object):
     __metaclass__ = abc.ABCMeta
 
-    def toplevel_init(self, jenkins_api, securitytoken, username, password):
+    def toplevel_init(self, jenkins_api, securitytoken, username, password, poll_interval):
         self._start_msg()
         # pylint: disable=attribute-defined-outside-init
         self.parent_flow = self
@@ -513,6 +522,8 @@ class _TopLevelControllerMixin(object):
         self._api = jenkins_api
         self.username = username
         self.password = password
+        self.poll_interval = poll_interval
+
         return securitytoken or jenkins_api.securitytoken if hasattr(jenkins_api, 'securitytoken') else None
 
     @staticmethod
@@ -538,15 +549,13 @@ class _TopLevelControllerMixin(object):
         print("--- Getting initial job status ---")
         self._prepare_first()
 
-        mocked = os.environ.get('JENKINSFLOW_MOCK_API')
-        sleep_time = 0.01 if mocked else 0.5
-        last_report_time = start_time = time.time()
+        last_report_time = start_time = hyperspeed_time()
 
         print()
         print("--- Starting flow ---")
         while not self.result:
             last_report_time = self._check(start_time, last_report_time)
-            time.sleep(min(sleep_time, self.report_interval))
+            time.sleep(float(min(self.poll_interval, self.report_interval)) / _hyperspeed_speedup)
 
         if self.result == self.RESULT_UNSTABLE:
             set_build_result(self.username, self.password, 'unstable')
@@ -554,9 +563,9 @@ class _TopLevelControllerMixin(object):
 
 class parallel(_Parallel, _TopLevelControllerMixin):
     def __init__(self, jenkins_api, timeout, securitytoken=None, username=None, password=None, job_name_prefix='', max_tries=1, warn_only=False,
-                 report_interval=_default_report_interval, secret_params=_default_secret_params_re, allow_missing_jobs=False):
+                 report_interval=_default_report_interval, poll_interval=_default_poll_interval, secret_params=_default_secret_params_re, allow_missing_jobs=False):
         """warn_only: causes failure in this job not to fail the parent flow"""
-        securitytoken = self.toplevel_init(jenkins_api, securitytoken, username, password)
+        securitytoken = self.toplevel_init(jenkins_api, securitytoken, username, password, poll_interval)
         super(parallel, self).__init__(self, timeout, securitytoken, job_name_prefix, max_tries, warn_only, report_interval, secret_params, allow_missing_jobs)
         self.parent_flow = None
 
@@ -567,9 +576,9 @@ class parallel(_Parallel, _TopLevelControllerMixin):
 
 class serial(_Serial, _TopLevelControllerMixin):
     def __init__(self, jenkins_api, timeout, securitytoken=None, username=None, password=None, job_name_prefix='', max_tries=1, warn_only=False,
-                 report_interval=_default_report_interval, secret_params=_default_secret_params_re, allow_missing_jobs=False):
+                 report_interval=_default_report_interval, poll_interval=_default_poll_interval, secret_params=_default_secret_params_re, allow_missing_jobs=False):
         """warn_only: causes failure in this job not to fail the parent flow"""
-        securitytoken = self.toplevel_init(jenkins_api, securitytoken, username, password)
+        securitytoken = self.toplevel_init(jenkins_api, securitytoken, username, password, poll_interval)
         super(serial, self).__init__(self, timeout, securitytoken, job_name_prefix, max_tries, warn_only, report_interval, secret_params, allow_missing_jobs)
         self.parent_flow = None
 

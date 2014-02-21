@@ -44,8 +44,8 @@ def test_single_level_errors_serial():
 
 def test_single_level_errors_timeout():
     with mock_api.api(__file__) as api:
-        api.job('quick', exec_time=0.5, max_fails=-1, expect_invocations=1, expect_order=None, params=(('s1', '', 'desc'), ('c1', 'false', 'desc')))
-        api.job('wait5', exec_time=5, max_fails=-1, expect_invocations=1, expect_order=None)
+        api.job('quick', exec_time=0.5, max_fails=0, expect_invocations=1, expect_order=None, params=(('s1', '', 'desc'), ('c1', 'false', 'desc')))
+        api.job('wait5', exec_time=5, max_fails=0, expect_invocations=1, expect_order=None, unknown_result=True)
 
         with raises(FlowTimeoutException):
             with parallel(api, timeout=1, job_name_prefix=api.job_name_prefix, report_interval=3) as ctrl:
