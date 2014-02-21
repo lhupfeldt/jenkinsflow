@@ -69,7 +69,7 @@ class _JobControl(object):
     RESULT_UNCHECKED = 2
     RESULT_SUCCESS = 3
 
-    def __init__(self, parent_flow, securitytoken, max_tries, warn_only, report_interval, secret_params_re, allow_missing_jobs):
+    def __init__(self, parent_flow, securitytoken, max_tries, warn_only, secret_params_re, allow_missing_jobs):
         self.parent_flow = parent_flow
         self.top_flow = parent_flow.top_flow
 
@@ -82,7 +82,6 @@ class _JobControl(object):
 
         self.securitytoken = securitytoken or self.parent_flow.securitytoken
         self.warn_only = warn_only
-        self.report_interval = report_interval or self.parent_flow.report_interval
         self.secret_params_re = secret_params_re or self.parent_flow.secret_params_re
         self.allow_missing_jobs = allow_missing_jobs if allow_missing_jobs is not None else self.parent_flow.allow_missing_jobs
 
@@ -153,13 +152,13 @@ class _JobControl(object):
 
 
 class _SingleJob(_JobControl):
-    def __init__(self, parent_flow, securitytoken, job_name_prefix, max_tries, job_name, params, warn_only, report_interval, secret_params_re, allow_missing_jobs):
+    def __init__(self, parent_flow, securitytoken, job_name_prefix, max_tries, job_name, params, warn_only, secret_params_re, allow_missing_jobs):
         for key, value in params.iteritems():
             # Handle parameters passed as int or bool. Booleans will be lowercased!
             if isinstance(value, (bool, int)):
                 params[key] = str(value).lower()
         self.params = params
-        super(_SingleJob, self).__init__(parent_flow, securitytoken, max_tries, warn_only, report_interval, secret_params_re, allow_missing_jobs)
+        super(_SingleJob, self).__init__(parent_flow, securitytoken, max_tries, warn_only, secret_params_re, allow_missing_jobs)
         self.job = None
         self.old_build = None
         self.name = job_name_prefix + job_name
@@ -267,8 +266,8 @@ class _SingleJob(_JobControl):
 
 
 class _IgnoredSingleJob(_SingleJob):
-    def __init__(self, parent_flow, securitytoken, job_name_prefix, job_name, params, report_interval, secret_params_re, allow_missing_jobs):
-        super(_IgnoredSingleJob, self).__init__(parent_flow, securitytoken, job_name_prefix, 1, job_name, params, True, report_interval, secret_params_re, allow_missing_jobs)
+    def __init__(self, parent_flow, securitytoken, job_name_prefix, job_name, params, secret_params_re, allow_missing_jobs):
+        super(_IgnoredSingleJob, self).__init__(parent_flow, securitytoken, job_name_prefix, 1, job_name, params, True, secret_params_re, allow_missing_jobs)
 
     def _prepare_to_invoke(self):
         if self.tried_times < self.max_tries:
@@ -292,9 +291,11 @@ class _Flow(_JobControl):
 
     def __init__(self, parent_flow, timeout, securitytoken, job_name_prefix, max_tries, warn_only, report_interval, secret_params, allow_missing_jobs):
         secret_params_re = re.compile(secret_params) if isinstance(secret_params, str) else secret_params
-        super(_Flow, self).__init__(parent_flow, securitytoken, max_tries, warn_only, report_interval, secret_params_re, allow_missing_jobs)
+        super(_Flow, self).__init__(parent_flow, securitytoken, max_tries, warn_only, secret_params_re, allow_missing_jobs)
         self.timeout = timeout
         self.job_name_prefix = self.parent_flow.job_name_prefix + job_name_prefix
+        self.report_interval = report_interval or self.parent_flow.report_interval
+
         self.jobs = []
         self.last_report_time = 0
 
@@ -305,12 +306,11 @@ class _Flow(_JobControl):
         return _Serial(self, timeout, securitytoken, job_name_prefix, max_tries, warn_only, report_interval, secret_params, allow_missing_jobs)
 
     def invoke(self, job_name, **params):
-        job = _SingleJob(self, self.securitytoken, self.job_name_prefix, self.max_tries, job_name, params, self.warn_only,
-                         self.report_interval, self.secret_params_re, self.allow_missing_jobs)
+        job = _SingleJob(self, self.securitytoken, self.job_name_prefix, self.max_tries, job_name, params, self.warn_only, self.secret_params_re, self.allow_missing_jobs)
         self.jobs.append(job)
 
     def invoke_unchecked(self, job_name, **params):
-        job = _IgnoredSingleJob(self, self.securitytoken, self.job_name_prefix, job_name, params, self.report_interval, self.secret_params_re, self.allow_missing_jobs)
+        job = _IgnoredSingleJob(self, self.securitytoken, self.job_name_prefix, job_name, params, self.secret_params_re, self.allow_missing_jobs)
         self.jobs.append(job)
 
     def _check_timeout(self):
