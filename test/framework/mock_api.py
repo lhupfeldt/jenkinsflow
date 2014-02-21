@@ -156,7 +156,8 @@ class Build(object):
         self.debug('__init__')
 
     def debug(self, what):
-        print("Mock build: ", what, self, "time:", time.time())
+        #print("Mock build: ", what, self, "time:", time.time())
+        pass
 
     def is_running(self):
         return self.job.is_running()
