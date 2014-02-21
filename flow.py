@@ -11,8 +11,6 @@ _default_report_interval = 5
 _default_secret_params = '.*passw.*|.*PASSW.*'
 _default_secret_params_re = re.compile(_default_secret_params)
 
-_debug = False
-
 
 _hyperspeed_speedup = 1 if os.environ.get('JENKINSFLOW_MOCK_API') != 'true' else 100
 def hyperspeed_time():
@@ -144,11 +142,6 @@ class _JobControl(object):
 
     def __repr__(self):
         return str(self.sequence())
-
-    def debug(self, *args):
-        if not _debug:
-            return
-        print('DEBUG in ' + self.__class__.__name__ + ':', ' '.join([str(arg) for arg in args]))
 
 
 class _SingleJob(_JobControl):
