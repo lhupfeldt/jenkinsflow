@@ -4,7 +4,7 @@
 from __future__ import print_function
 
 import os, time, re, abc
-from enum import IntEnum
+from enum import IntEnum, Enum
 from set_build_result import set_build_result
 
 _default_poll_interval = 0.5
@@ -61,6 +61,7 @@ class FailedChildJobsException(JobControlFailException):
 
 
 class BuildResult(IntEnum):
+    # pylint: disable=no-init
     FAILURE = 0
     UNSTABLE = 1
     UNCHECKED = 2
@@ -69,6 +70,13 @@ class BuildResult(IntEnum):
     # Jenkins Aliases?
     PASSED = 3
     FAILED = 0
+
+
+class BuildProgressState(Enum):
+    # pylint: disable=no-init
+    RUNNING = 0
+    QUEUED = 1
+    IDLE = 2
 
 
 class _JobControl(object):
@@ -208,8 +216,8 @@ class _SingleJob(_JobControl):
         return self.repr_str
 
     def _print_status_message(self, build):
-        state = "RUNNING" if self.job.is_running() else ("QUEUED" if self.job.is_queued() else "IDLE")
-        print(repr(self.job.name), "Status", state, "- latest build:", '#' + str(build.buildno) if build else None)
+        state = BuildProgressState.RUNNING if self.job.is_running() else BuildProgressState.QUEUED if self.job.is_queued() else BuildProgressState.IDLE
+        print(repr(self.job.name), "Status", state.name, "- latest build:", '#' + str(build.buildno) if build else None)
 
     def _prepare_to_invoke(self):
         super(_SingleJob, self)._prepare_to_invoke()
@@ -243,14 +251,12 @@ class _SingleJob(_JobControl):
 
         # The job has stopped running
         self._print_status_message(build)
+        self.result = BuildResult[build.get_status()]
         url = build.get_result_url().replace('testReport/api/python', 'console')
         print(str(build.get_status()) + ":", repr(self.job.name), "- build:", url, self._time_msg())
 
-        self.result = BuildResult[build.get_status()]
-        if self.result in (BuildResult.SUCCESS, BuildResult.UNSTABLE):
-            return
-
-        raise FailedSingleJobException(self.job, self.warn_only)
+        if self.result not in (BuildResult.SUCCESS, BuildResult.UNSTABLE):
+            raise FailedSingleJobException(self.job, self.warn_only)
 
     def sequence(self):
         return self.name
