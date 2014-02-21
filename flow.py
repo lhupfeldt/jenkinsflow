@@ -81,6 +81,7 @@ class BuildProgressState(Enum):
 
 class _JobControl(object):
     __metaclass__ = abc.ABCMeta
+    _next_node_id = 0
 
     def __init__(self, parent_flow, securitytoken, max_tries, warn_only, secret_params_re, allow_missing_jobs):
         self.parent_flow = parent_flow
@@ -102,6 +103,9 @@ class _JobControl(object):
         self.tried_times = 0
         self.total_tried_times = 0
         self.invocation_time = None
+
+        self.node_id = _JobControl._next_node_id
+        _JobControl._next_node_id += 1
 
     def __enter__(self):
         self.top_flow.current_nesting_level += 1
