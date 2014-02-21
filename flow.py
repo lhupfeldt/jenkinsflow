@@ -4,6 +4,7 @@
 from __future__ import print_function
 
 import os, time, re, abc
+from enum import IntEnum
 from set_build_result import set_build_result
 
 _default_poll_interval = 0.5
@@ -59,13 +60,20 @@ class FailedChildJobsException(JobControlFailException):
         super(FailedChildJobsException, self).__init__(msg, warn_only)
 
 
+class BuildResult(IntEnum):
+    FAIL = 0
+    UNSTABLE = 1
+    UNCHECKED = 2
+    SUCCESS = 3
+
+    # Jenkins Aliases
+    PASSED = 3
+    FAILED = 0
+    FAILURE = 0
+
+
 class _JobControl(object):
     __metaclass__ = abc.ABCMeta
-
-    RESULT_FAIL = 0
-    RESULT_UNSTABLE = 1
-    RESULT_UNCHECKED = 2
-    RESULT_SUCCESS = 3
 
     def __init__(self, parent_flow, securitytoken, max_tries, warn_only, secret_params_re, allow_missing_jobs):
         self.parent_flow = parent_flow
@@ -83,7 +91,7 @@ class _JobControl(object):
         self.secret_params_re = secret_params_re or self.parent_flow.secret_params_re
         self.allow_missing_jobs = allow_missing_jobs if allow_missing_jobs is not None else self.parent_flow.allow_missing_jobs
 
-        self.result = self.RESULT_FAIL
+        self.result = BuildResult.FAIL
         self.tried_times = 0
         self.total_tried_times = 0
         self.invocation_time = None
@@ -97,15 +105,6 @@ class _JobControl(object):
     @abc.abstractmethod
     def _prepare_first(self):
         raise Exception("AbstractNotImplemented")
-
-    def _jenkins_result_to_result(self, jenkinsresult):
-        if jenkinsresult in ("PASSED", "SUCCESS"):
-            return self.RESULT_SUCCESS
-        if jenkinsresult in ("FAILED", "FAILURE", "FAIL"):
-            return self.RESULT_FAIL
-        if jenkinsresult == "UNSTABLE":
-            return self.RESULT_UNSTABLE
-        raise JobControlException("Unknown result type from build: " + str(jenkinsresult))
 
     def _prepare_to_invoke(self):
         """Must be called before each invocation of a job, as opposed to __init__, which is called once in entire run"""
@@ -248,8 +247,8 @@ class _SingleJob(_JobControl):
         url = build.get_result_url().replace('testReport/api/python', 'console')
         print(str(build.get_status()) + ":", repr(self.job.name), "- build:", url, self._time_msg())
 
-        self.result = self._jenkins_result_to_result(build.get_status())
-        if self.result in (self.RESULT_SUCCESS, self.RESULT_UNSTABLE):
+        self.result = BuildResult[build.get_status()]
+        if self.result in (BuildResult.SUCCESS, BuildResult.UNSTABLE):
             return
 
         raise FailedSingleJobException(self.job, self.warn_only)
@@ -272,7 +271,7 @@ class _IgnoredSingleJob(_SingleJob):
         except FailedSingleJobException:
             pass
         finally:
-            self.result = self.RESULT_UNCHECKED
+            self.result = BuildResult.UNCHECKED
 
 
 # Retries are handled in the _Flow classes instead of _SingleJob since the individual jobs don't know
@@ -392,18 +391,18 @@ class _Parallel(_Flow):
 
         if finished:
             # All jobs have stopped running
-            self.result = self.RESULT_SUCCESS
+            self.result = BuildResult.SUCCESS
             for job in self.jobs:
-                self.result = min(self.result, job.result if not (job.warn_only and job.result == self.RESULT_FAIL) else self.RESULT_UNSTABLE)
+                self.result = min(self.result, job.result if not (job.warn_only and job.result == BuildResult.FAIL) else BuildResult.UNSTABLE)
 
-            if self.result == self.RESULT_FAIL:
+            if self.result == BuildResult.FAIL:
                 print("FAILURE:", self, self._time_msg())
                 raise FailedChildJobsException(self, self._failed_child_jobs.values(), self.warn_only)
 
-            if self.result == self.RESULT_SUCCESS:
+            if self.result == BuildResult.SUCCESS:
                 print("SUCCESS:", self, self._time_msg())
 
-            if self.result == self.RESULT_UNSTABLE:
+            if self.result == BuildResult.UNSTABLE:
                 print("UNSTABLE:", self, self._time_msg())
 
     def sequence(self):
@@ -471,7 +470,7 @@ class _Serial(_Flow):
 
             if not self.warn_only:
                 print("FAILURE:", self, self._time_msg())
-                self.result = self.RESULT_FAIL
+                self.result = BuildResult.FAIL
                 raise FailedChildJobException(self, job, self.warn_only)
 
             self.has_warning = True
@@ -481,14 +480,14 @@ class _Serial(_Flow):
 
         if self.job_index == len(self.jobs):
             # Check if any of the jobs is in warning or we have warning set ourself
-            self.result = self.RESULT_UNSTABLE if self.has_warning else self.RESULT_SUCCESS
+            self.result = BuildResult.UNSTABLE if self.has_warning else BuildResult.SUCCESS
             for job in self.jobs:
-                self.result = min(self.result, job.result if not (job.warn_only and job.result == self.RESULT_FAIL) else self.RESULT_UNSTABLE)
+                self.result = min(self.result, job.result if not (job.warn_only and job.result == BuildResult.FAIL) else BuildResult.UNSTABLE)
 
-            if self.result == self.RESULT_SUCCESS:
+            if self.result == BuildResult.SUCCESS:
                 print("SUCCESS:", self, self._time_msg())
 
-            if self.result == self.RESULT_UNSTABLE:
+            if self.result == BuildResult.UNSTABLE:
                 print("UNSTABLE:", self, self._time_msg())
 
     def sequence(self):
@@ -553,7 +552,7 @@ class _TopLevelControllerMixin(object):
             self._check(None)
             time.sleep(sleep_time)
 
-        if self.result == self.RESULT_UNSTABLE:
+        if self.result == BuildResult.UNSTABLE:
             set_build_result(self.username, self.password, 'unstable')
 
 

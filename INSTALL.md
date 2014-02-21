@@ -1,8 +1,8 @@
 Installation
 ------------
 
-1. Install jenkinsapi python library:
-   pip install jenkinsapi
+1. Install jenkinsapi python library and other dependencies:
+   pip install jenkinsapi enum34
    optional: pip install tenjin (if you want to use the template based job loader)
 
 2. Make jenkinsflow files (flow.py and possibly unbuffered.py) available on to your jenkins/hudson installation.
