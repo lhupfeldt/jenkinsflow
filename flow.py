@@ -123,13 +123,13 @@ class _JobControl(object):
         return False
 
     @abc.abstractmethod
-    def _check(self, start_time, last_report_time):
+    def _check(self, last_report_time):
         """Polled by flow controller until the job reaches state 'successful' or tried_times == parent.max_tries * self.max_tries"""
         raise Exception("AbstractNotImplemented")
 
-    def _time_msg(self, start_time):
+    def _time_msg(self):
         now = hyperspeed_time()
-        return "after: %.3fs/%.3fs" % (now - self.invocation_time, now - start_time)
+        return "after: %.3fs/%.3fs" % (now - self.invocation_time, now - self.top_flow.start_time)
 
     @abc.abstractmethod
     def sequence(self):
@@ -226,7 +226,7 @@ class _SingleJob(_JobControl):
         self.job.poll()
         self.old_build = self.job.get_last_build_or_none()
 
-    def _check(self, start_time, last_report_time):
+    def _check(self, last_report_time):
         if not self._invoke_if_not_invoked():
             if self.job is None:
                 self._prepare_first(require_job=True)
@@ -259,7 +259,7 @@ class _SingleJob(_JobControl):
         # The job has stopped running
         self._print_status_message(build)
         url = build.get_result_url().replace('testReport/api/python', 'console')
-        print(str(build.get_status()) + ":", repr(self.job.name), "- build:", url, self._time_msg(start_time))
+        print(str(build.get_status()) + ":", repr(self.job.name), "- build:", url, self._time_msg())
 
         self.result = self._jenkins_result_to_result(build.get_status())
         if self.result in (self.RESULT_SUCCESS, self.RESULT_UNSTABLE):
@@ -279,9 +279,9 @@ class _IgnoredSingleJob(_SingleJob):
         if self.tried_times < self.max_tries:
             super(_IgnoredSingleJob, self)._prepare_to_invoke()
 
-    def _check(self, start_time, last_report_time):
+    def _check(self, last_report_time):
         try:
-            return super(_IgnoredSingleJob, self)._check(start_time, last_report_time)
+            return super(_IgnoredSingleJob, self)._check(last_report_time)
         except FailedSingleJobException:
             return last_report_time
         finally:
@@ -317,12 +317,12 @@ class _Flow(_JobControl):
         job = _IgnoredSingleJob(self, self.securitytoken, self.job_name_prefix, job_name, params, self.report_interval, self.secret_params_re, self.allow_missing_jobs)
         self.jobs.append(job)
 
-    def _check_timeout(self, start_time):
+    def _check_timeout(self):
         now = hyperspeed_time()
         if self.timeout and now - self.invocation_time > self.timeout:
             # TODO: These are not the unfinished jobs!
             unfinished_msg = ". Unfinished jobs:" + str(self)
-            raise FlowTimeoutException("Timeout after:" + self._time_msg(start_time) + unfinished_msg, self.warn_only)
+            raise FlowTimeoutException("Timeout after:" + self._time_msg() + unfinished_msg, self.warn_only)
 
     def __exit__(self, exc_type, exc_value, traceback):
         if exc_type:
@@ -361,9 +361,9 @@ class _Parallel(_Flow):
         super(_Parallel, self).__exit__(exc_type, exc_value, traceback)
         print()
 
-    def _check(self, start_time, last_report_time):
+    def _check(self, last_report_time):
         self._invoke_if_not_invoked()
-        self._check_timeout(start_time)
+        self._check_timeout()
 
         finished = True
         for job in self.jobs:
@@ -371,7 +371,7 @@ class _Parallel(_Flow):
                 continue
 
             try:
-                last_report_time = job._check(start_time, last_report_time)
+                last_report_time = job._check(last_report_time)
                 if not job.result:
                     finished = False
                     continue
@@ -399,14 +399,14 @@ class _Parallel(_Flow):
                 self.result = min(self.result, job.result if not (job.warn_only and job.result == self.RESULT_FAIL) else self.RESULT_UNSTABLE)
 
             if self.result == self.RESULT_FAIL:
-                print("FAILURE:", self, self._time_msg(start_time))
+                print("FAILURE:", self, self._time_msg())
                 raise FailedChildJobsException(self, self._failed_child_jobs.values(), self.warn_only)
 
             if self.result == self.RESULT_SUCCESS:
-                print("SUCCESS:", self, self._time_msg(start_time))
+                print("SUCCESS:", self, self._time_msg())
 
             if self.result == self.RESULT_UNSTABLE:
-                print("UNSTABLE:", self, self._time_msg(start_time))
+                print("UNSTABLE:", self, self._time_msg())
 
         return last_report_time
 
@@ -442,13 +442,13 @@ class _Serial(_Flow):
         super(_Serial, self).__exit__(exc_type, exc_value, traceback)
         print()
 
-    def _check(self, start_time, last_report_time):
+    def _check(self, last_report_time):
         self._invoke_if_not_invoked()
-        self._check_timeout(start_time)
+        self._check_timeout()
 
         job = self.jobs[self.job_index]
         try:
-            last_report_time = job._check(start_time, last_report_time)
+            last_report_time = job._check(last_report_time)
             if not job.result:
                 return last_report_time
         except JobControlFailException:
@@ -475,7 +475,7 @@ class _Serial(_Flow):
                     pre_job.total_tried_times += 1
 
             if not self.warn_only:
-                print("FAILURE:", self, self._time_msg(start_time))
+                print("FAILURE:", self, self._time_msg())
                 self.result = self.RESULT_FAIL
                 raise FailedChildJobException(self, job, self.warn_only)
 
@@ -491,10 +491,10 @@ class _Serial(_Flow):
                 self.result = min(self.result, job.result if not (job.warn_only and job.result == self.RESULT_FAIL) else self.RESULT_UNSTABLE)
 
             if self.result == self.RESULT_SUCCESS:
-                print("SUCCESS:", self, self._time_msg(start_time))
+                print("SUCCESS:", self, self._time_msg())
 
             if self.result == self.RESULT_UNSTABLE:
-                print("UNSTABLE:", self, self._time_msg(start_time))
+                print("UNSTABLE:", self, self._time_msg())
 
         return last_report_time
 
@@ -549,13 +549,15 @@ class _TopLevelControllerMixin(object):
         print("--- Getting initial job status ---")
         self._prepare_first()
 
-        last_report_time = start_time = hyperspeed_time()
+        self.start_time = hyperspeed_time() # pylint: disable=attribute-defined-outside-init
+        last_report_time = self.start_time
 
         print()
         print("--- Starting flow ---")
+        sleep_time = float(min(self.poll_interval, self.report_interval)) / _hyperspeed_speedup
         while not self.result:
-            last_report_time = self._check(start_time, last_report_time)
-            time.sleep(float(min(self.poll_interval, self.report_interval)) / _hyperspeed_speedup)
+            last_report_time = self._check(last_report_time)
+            time.sleep(sleep_time)
 
         if self.result == self.RESULT_UNSTABLE:
             set_build_result(self.username, self.password, 'unstable')
