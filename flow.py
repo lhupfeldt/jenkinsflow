@@ -61,15 +61,14 @@ class FailedChildJobsException(JobControlFailException):
 
 
 class BuildResult(IntEnum):
-    FAIL = 0
+    FAILURE = 0
     UNSTABLE = 1
     UNCHECKED = 2
     SUCCESS = 3
 
-    # Jenkins Aliases
+    # Jenkins Aliases?
     PASSED = 3
     FAILED = 0
-    FAILURE = 0
 
 
 class _JobControl(object):
@@ -91,7 +90,7 @@ class _JobControl(object):
         self.secret_params_re = secret_params_re or self.parent_flow.secret_params_re
         self.allow_missing_jobs = allow_missing_jobs if allow_missing_jobs is not None else self.parent_flow.allow_missing_jobs
 
-        self.result = BuildResult.FAIL
+        self.result = BuildResult.FAILURE
         self.tried_times = 0
         self.total_tried_times = 0
         self.invocation_time = None
@@ -393,17 +392,11 @@ class _Parallel(_Flow):
             # All jobs have stopped running
             self.result = BuildResult.SUCCESS
             for job in self.jobs:
-                self.result = min(self.result, job.result if not (job.warn_only and job.result == BuildResult.FAIL) else BuildResult.UNSTABLE)
+                self.result = min(self.result, job.result if not (job.warn_only and job.result == BuildResult.FAILURE) else BuildResult.UNSTABLE)
+            print(self.result.name, self, self._time_msg())
 
-            if self.result == BuildResult.FAIL:
-                print("FAILURE:", self, self._time_msg())
+            if self.result == BuildResult.FAILURE:
                 raise FailedChildJobsException(self, self._failed_child_jobs.values(), self.warn_only)
-
-            if self.result == BuildResult.SUCCESS:
-                print("SUCCESS:", self, self._time_msg())
-
-            if self.result == BuildResult.UNSTABLE:
-                print("UNSTABLE:", self, self._time_msg())
 
     def sequence(self):
         return tuple([job.sequence() for job in self.jobs])
@@ -469,8 +462,8 @@ class _Serial(_Flow):
                     pre_job.total_tried_times += 1
 
             if not self.warn_only:
-                print("FAILURE:", self, self._time_msg())
-                self.result = BuildResult.FAIL
+                self.result = BuildResult.FAILURE
+                print(self.result.name, self, self._time_msg())
                 raise FailedChildJobException(self, job, self.warn_only)
 
             self.has_warning = True
@@ -482,13 +475,8 @@ class _Serial(_Flow):
             # Check if any of the jobs is in warning or we have warning set ourself
             self.result = BuildResult.UNSTABLE if self.has_warning else BuildResult.SUCCESS
             for job in self.jobs:
-                self.result = min(self.result, job.result if not (job.warn_only and job.result == BuildResult.FAIL) else BuildResult.UNSTABLE)
-
-            if self.result == BuildResult.SUCCESS:
-                print("SUCCESS:", self, self._time_msg())
-
-            if self.result == BuildResult.UNSTABLE:
-                print("UNSTABLE:", self, self._time_msg())
+                self.result = min(self.result, job.result if not (job.warn_only and job.result == BuildResult.FAILURE) else BuildResult.UNSTABLE)
+            print(self.result.name, self, self._time_msg())
 
     def sequence(self):
         return [job.sequence() for job in self.jobs]
