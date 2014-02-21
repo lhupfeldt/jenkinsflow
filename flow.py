@@ -238,7 +238,7 @@ class _SingleJob(_JobControl):
             try:
                 build = self.job.get_last_build_or_none()
                 break
-            except KeyError as ex:
+            except KeyError as ex:  # pragma: no cover
                 # Workaround for jenkinsapi timing dependency?
                 print("'get_last_build_or_none' failed: " + str(ex) + ", retrying.")
                 time.sleep(0.1 / _hyperspeed_speedup)
