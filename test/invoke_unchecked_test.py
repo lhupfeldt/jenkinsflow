@@ -13,8 +13,10 @@ def test_invoke_unchecked():
         api.job('j1', exec_time=0.5, max_fails=0, expect_invocations=1, expect_order=None, unknown_result=True)
         api.job('j2', exec_time=0.5, max_fails=0, expect_invocations=1, expect_order=2)
         api.job('j3', exec_time=0.5, max_fails=0, expect_invocations=1, expect_order=3)
-        api.job('j4', exec_time=0.5, max_fails=1, expect_invocations=1, expect_order=None, unknown_result=True)
-        api.job('j5', exec_time=0.5, max_fails=0, expect_invocations=1, expect_order=None, unknown_result=True)
+        # Make sure result is available during first invocation of _check, only way to hit error handling code in unchecked job
+        api.job('j4', exec_time=0.00000000000000000000000000000000001, max_fails=1, expect_invocations=1, expect_order=None, 
+                invocation_delay=0.00000000000000000000000000000000001, unknown_result=True)
+        api.job('j5', exec_time=100, max_fails=0, expect_invocations=1, expect_order=None, unknown_result=True)
         api.job('j6', exec_time=0.5, max_fails=0, expect_invocations=1, expect_order=4)
         api.job('j7', exec_time=0.5, max_fails=0, expect_invocations=1, expect_order=5)
 
