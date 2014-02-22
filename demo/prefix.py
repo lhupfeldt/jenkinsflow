@@ -15,8 +15,6 @@ from jenkinsapi import jenkins
 
 from jenkinsflow.flow import serial
 from jenkinsflow.unbuffered import UnBuffered
-# Unbuffered output does not work well in Jenkins, so in case
-# this is run from a hudson job, we want unbuffered output
 sys.stdout = UnBuffered(sys.stdout)
 
 import demo_security as security

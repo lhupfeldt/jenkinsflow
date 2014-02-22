@@ -20,7 +20,7 @@ def test_warn_only_serial():
 
         with serial(api, timeout=70, username=username, password=password, job_name_prefix=api.job_name_prefix, report_interval=3, warn_only=True) as ctrl1:
             ctrl1.invoke('j11')
-            ctrl1.invoke('j12_fail', fail='yes')
+            ctrl1.invoke('j12_fail')
             ctrl1.invoke('j13')
 
 
@@ -31,7 +31,7 @@ def test_warn_only_parallel():
         api.job('j2', exec_time=0.5, max_fails=0, expect_invocations=1, expect_order=1)
 
         with parallel(api, timeout=70, username=username, password=password, job_name_prefix=api.job_name_prefix, report_interval=3, warn_only=True) as ctrl1:
-            ctrl1.invoke('j1_fail', fail='yes')
+            ctrl1.invoke('j1_fail')
             ctrl1.invoke('j2')
 
 
@@ -48,7 +48,7 @@ def test_warn_only_nested_serial_parallel():
 
             with ctrl1.parallel(warn_only=True) as ctrl2:
                 ctrl2.invoke('j21')
-                ctrl2.invoke('j22_fail', fail='yes')
+                ctrl2.invoke('j22_fail')
                 ctrl2.invoke('j23')
 
 
@@ -65,7 +65,7 @@ def test_warn_only_nested_parallel_serial():
 
             with ctrl1.serial(warn_only=True) as ctrl2:
                 ctrl2.invoke('j21')
-                ctrl2.invoke('j22_fail', fail='yes')
+                ctrl2.invoke('j22_fail')
                 ctrl2.invoke('j23')
 
 
@@ -82,7 +82,7 @@ def test_warn_only_nested_serial_serial():
 
             with ctrl1.serial(warn_only=True) as ctrl2:
                 ctrl2.invoke('j21')
-                ctrl2.invoke('j22_fail', fail='yes')
+                ctrl2.invoke('j22_fail')
                 ctrl2.invoke('j23')
 
 
@@ -99,7 +99,7 @@ def test_warn_only_nested_parallel_parallel():
 
             with ctrl1.parallel(warn_only=True) as ctrl2:
                 ctrl2.invoke('j21')
-                ctrl2.invoke('j22_fail', fail='yes')
+                ctrl2.invoke('j22_fail')
                 ctrl2.invoke('j23')
 
 
@@ -117,7 +117,7 @@ def test_warn_only_nested_serial_serial_continue():
             with ctrl1.serial() as ctrl2:
                 ctrl2.invoke('j21')
                 with ctrl2.serial(warn_only=True) as ctrl3:
-                    ctrl3.invoke('j22_fail', fail='yes')
+                    ctrl3.invoke('j22_fail')
                 ctrl2.invoke('j23')
 
 
@@ -135,7 +135,7 @@ def test_warn_only_nested_parallel_serial_continue():
             with ctrl1.serial() as ctrl2:
                 ctrl2.invoke('j21')
                 with ctrl2.serial(warn_only=True) as ctrl3:
-                    ctrl3.invoke('j22_fail', fail='yes')
+                    ctrl3.invoke('j22_fail')
                 ctrl2.invoke('j23')
 
 
@@ -154,8 +154,8 @@ def test_warn_only_nested_serial_serial_continue_fail():
                 with ctrl1.serial() as ctrl2:
                     ctrl2.invoke('j21')
                     with ctrl2.serial(warn_only=True) as ctrl3:
-                        ctrl3.invoke('j22_fail', fail='yes')
-                    ctrl2.invoke('j23_fail', fail='yes')
+                        ctrl3.invoke('j22_fail')
+                    ctrl2.invoke('j23_fail')
 
 
 def test_warn_only_nested_parallel_serial_continue_fail():
@@ -173,5 +173,5 @@ def test_warn_only_nested_parallel_serial_continue_fail():
                 with ctrl1.serial() as ctrl2:
                     ctrl2.invoke('j21')
                     with ctrl2.serial(warn_only=True) as ctrl3:
-                        ctrl3.invoke('j22_fail', fail='yes')
-                    ctrl2.invoke('j23_fail', fail='yes')
+                        ctrl3.invoke('j22_fail')
+                    ctrl2.invoke('j23_fail')

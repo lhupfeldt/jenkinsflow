@@ -23,7 +23,7 @@ def test_multi_level_errors():
 
                 with ctrl1.parallel(timeout=20, report_interval=3) as ctrl2:
                     ctrl2.invoke('wait5')
-                    ctrl2.invoke('quick_fail', password='Y', fail='yes', s1='WORLD', c1='why')
+                    ctrl2.invoke('quick_fail', password='Y', s1='WORLD', c1='why')
 
                 # Never invoked because of failure in preceding 'parallel'
                 ctrl1.invoke('not_invoked')

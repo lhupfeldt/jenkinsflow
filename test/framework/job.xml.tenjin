@@ -1,4 +1,5 @@
 <?xml version='1.0' encoding='UTF-8'?>
+<?py param_names = [param[0] for param in params] ?>
 <project>
   <actions/>
   <description></description>
@@ -7,32 +8,19 @@
     <hudson.model.ParametersDefinitionProperty>
       <parameterDefinitions>
         <?py # TODO cleanup, all parameters should come from model! ?>
-        <?py if not 'password' in params: ?>
+        <?py if not 'password' in param_names: ?>
         <hudson.model.PasswordParameterDefinition>
           <name>password</name>
           <description></description>
           <defaultValue></defaultValue>
         </hudson.model.PasswordParameterDefinition>
         <?py #endif ?>
-        <?py if not 'sleep' in params: ?>
+        <?py if not 'sleep' in param_names: ?>
         <hudson.model.StringParameterDefinition>
           <name>sleep</name>
           <description>How many seconds the execution should last</description>
           <defaultValue>{==exec_time==}</defaultValue>
         </hudson.model.StringParameterDefinition>
-        <?py #endif ?>
-        <?py if not 'fail' in params: ?>
-        <hudson.model.ChoiceParameterDefinition>
-          <name>fail</name>
-          <description>Decide whether the job fails</description>
-          <choices class="java.util.Arrays$ArrayList">
-            <a class="string-array">
-              <string>no</string>
-              <string>yes</string>
-              <string>maybe</string>
-            </a>
-          </choices>
-        </hudson.model.ChoiceParameterDefinition>
         <?py #endif ?>
 
         <?py seen = set() ?>
@@ -87,12 +75,16 @@ set -u
 <?py if script is not None: ?>
 {==script==}
 <?py else: ?>
-echo fail=$fail
 echo sleeping=$sleep
 sleep $sleep
-[[ $fail == no ]] &amp;&amp; exit 0
-[[ $fail == yes ]] &amp;&amp; exit 1
-[[ $fail == maybe ]] &amp;&amp; exit $(( $SECONDS % 2 ))
+<?py #endif ?>
+<?py if 'force_result' in param_names: ?>
+[[ $force_result == success ]] &amp;&amp; exit 0
+[[ $force_result == fail ]] &amp;&amp; exit 1
+[[ $force_result == unstable ]] &amp;&amp; {
+    /tmp/jenkinsflow/set_build_result.py --username {==username==} --password {==password==}
+    exit 0
+}
 <?py #endif ?>
       </command>
     </hudson.tasks.Shell>
