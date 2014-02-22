@@ -43,8 +43,8 @@ class FailedSingleJobException(JobControlFailException):
 
 
 class MissingJobsException(FailedSingleJobException):
-    def __init__(self, job):
-        msg = "Could not get job info: " + repr(job)
+    def __init__(self, job_name):
+        msg = "Could not get job info for: " + repr(job_name)
         super(MissingJobsException, self).__init__(msg, warn_only=False)
 
 
@@ -174,9 +174,10 @@ class _SingleJob(_JobControl):
         try:
             self.job = self.api.get_job(self.name)
         except Exception as ex:
+            # TODO? stack trace
             self.repr_str = repr(ex)
             if require_job or not self.allow_missing_jobs:
-                raise MissingJobsException(self.job)
+                raise MissingJobsException(self.name)
             print(self.indentation + "NOTE: ", self.repr_str)
             return
 
