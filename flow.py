@@ -236,7 +236,11 @@ class _SingleJob(_JobControl):
             try:
                 self.job.invoke(securitytoken=self.securitytoken, invoke_pre_check_delay=0, block=False, build_params=self.params if self.params else None)
             except TypeError as ex:  # Old version of jenkinsapi
-                self.job.invoke(securitytoken=self.securitytoken, invoke_pre_check_delay=0, block=False, params=self.params if self.params else None)
+                try:
+                    self.job.invoke(securitytoken=self.securitytoken, invoke_pre_check_delay=0, block=False, params=self.params if self.params else None)
+                except TypeError:  # Not the old version after all? reraise originalexception
+                    # TODO stacktrace of second exception
+                    raise ex
 
         for _ in range(1, 20):
             self.job.poll()
