@@ -53,9 +53,10 @@ class MockJob(object):
         self.debug('__init__')
         self.initial_buildno = initial_buildno
         self.build = Build(self, initial_buildno) if initial_buildno is not None else None
+        self.just_invoked = False
 
     def debug(self, what):
-        #print("Mock job: ", what, self, "time:", hyperspeed_time())
+        print("Mock job: ", what, self) # , "time:", hyperspeed_time())
         pass
 
     def get_build_triggerurl(self):
@@ -72,30 +73,35 @@ class MockJob(object):
         return queued
 
     def poll(self):
-        self.debug('poll')
+        # If has been invoked and started running or already (supposed to be) finished
+        if self.just_invoked and self.end_time and hyperspeed_time() >= self.start_time:
+            self.just_invoked = False
 
-        # If has been invoked and is running or already finished
-        if self.end_time and hyperspeed_time() >= self.start_time:
+            print('poll, current-build:' + str(self.build))
             if self.build is None:
+                self.debug('poll, new-build')
                 self.build = Build(self, 1)
-            elif isinstance(self.initial_buildno, int):
-                self.build.buildno = self.initial_buildno + self.invocation
+                return
+
+            self.build = Build(self, self.build.buildno + 1)
+            print('poll, updated-build'+ str(self.build))
 
     def get_last_build_or_none(self):
-        self.debug('get_last_build_or_none')
+        self.debug('get_last_build_or_none, build' + repr(self.build))
         return self.build
 
     def invoke(self, securitytoken=None, block=False, skip_if_running=False, invoke_pre_check_delay=3,  # pylint: disable=unused-argument
                invoke_block_delay=15, build_params=None, cause=None, files=None):
         assert not self.is_running()
 
+        self.just_invoked = True
         self.actual_order = MockJob._current_order
         MockJob._current_order += 1
         self.invocation += 1
         self.invocation_time = hyperspeed_time()
         self.start_time = self.invocation_time + self.invocation_delay
         self.end_time = self.start_time + self.exec_time
-        self.debug('invoke')
+        print('invoke, invocation:', self.invocation)
 
     def update_config(self, config_xml):
         pass
