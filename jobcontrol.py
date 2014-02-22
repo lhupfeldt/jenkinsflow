@@ -427,7 +427,7 @@ class _TopLevelController(_Flow):
             return
 
         # Wait for jobs to finish
-        print
+        print 'Starting jobs'
 
         last_report_time = start_time = time.time()
 
