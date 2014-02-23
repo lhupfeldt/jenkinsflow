@@ -351,7 +351,7 @@ class _Flow(_JobControl):
             self.last_report_time = now
         return report_now
 
-    def json(self, file_path=None):
+    def json(self, file_path=None, indent=None):
         def process_jobs(jobs, prev_nodes, is_parallel=False):
             nodes = []
             links = []
@@ -362,7 +362,7 @@ class _Flow(_JobControl):
                     nodes.append({"id": job.node_id, "name": job.name, "url": job.job.baseurl})
                     if prev_nodes:
                         for node in prev_nodes:
-                            links.append({"source": node, "target": job.job.name})
+                            links.append({"source": node, "target": job.node_id})
                     if not is_parallel:
                         prev_nodes = [job.node_id]
                     else:
@@ -392,9 +392,9 @@ class _Flow(_JobControl):
         import json
         if file_path is not None:
             with open(file_path, 'w+') as out_file:
-                json.dump(graph, out_file)
-
-        return json.dumps(graph)
+                json.dump(graph, out_file, indent=indent)
+        else:
+            return json.dumps(graph, indent=indent)
 
 
 class _Parallel(_Flow):
