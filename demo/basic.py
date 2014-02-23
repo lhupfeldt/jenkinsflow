@@ -35,7 +35,10 @@ def main(api, graph_output_dir):
     g3_components = range(2)
     component_groups = OrderedDict((('g1', g1_components), ('g2', g2_components), ('g3', g3_components)))
 
-    with serial(api, timeout=70, securitytoken=security.securitytoken, job_name_prefix='jenkinsflow_demo__basic__', report_interval=3) as ctrl1:
+    with serial(api, timeout=70, securitytoken=security.securitytoken, job_name_prefix='jenkinsflow_demo__basic__', report_interval=3,
+                # Write json flow graph to display in browser, see INSTALL.md
+                json_dir=graph_output_dir, json_indent=4) as ctrl1:
+
         ctrl1.invoke('prepare')
 
         with ctrl1.parallel(timeout=0, report_interval=3) as ctrl2:
@@ -61,8 +64,6 @@ def main(api, graph_output_dir):
         ctrl1.invoke('promote')
 
     print("Doing stuff after flow ...")
-
-    ctrl1.json(file_path=jp(graph_output_dir, 'flow_graph.json'), indent=4)
 
 
 if __name__ == '__main__':

@@ -6,7 +6,7 @@ Installation
    optional: pip install tenjin (if you want to use the template based job loader)
 
 2. To use the experimental visualisation feature:  
-   pip install bottle
+   pip install bottle atomicfile
 
 3. Make jenkinsflow files (flow.py and possibly unbuffered.py) available to your jenkins/hudson installation.
 

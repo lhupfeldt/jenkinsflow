@@ -4,6 +4,7 @@
 from __future__ import print_function
 
 import os, time, re, abc
+from os.path import join as jp
 from enum import IntEnum, Enum
 from set_build_result import set_build_result
 
@@ -360,7 +361,7 @@ class _Flow(_JobControl):
             assert isinstance(prev_nodes, list)
             for job in jobs:
                 if isinstance(job, _SingleJob):
-                    nodes.append({"id": link_id(job), "name": job.name, "url": job.job.baseurl})
+                    nodes.append({"id": link_id(job), "name": job.name, "url": job.job.baseurl if job.job else None})
                     for node in prev_nodes:
                         links.append({"source": node, "target": link_id(job)})
                     if not is_parallel:
@@ -390,8 +391,9 @@ class _Flow(_JobControl):
         graph = {'nodes': nodes, 'links': links}
 
         import json
+        from atomicfile import AtomicFile
         if file_path is not None:
-            with open(file_path, 'w+') as out_file:
+            with AtomicFile(file_path, 'w+') as out_file:
                 json.dump(graph, out_file, indent=indent)
         else:
             return json.dumps(graph, indent=indent)
@@ -555,7 +557,7 @@ class _Serial(_Flow):
 class _TopLevelControllerMixin(object):
     __metaclass__ = abc.ABCMeta
 
-    def toplevel_init(self, jenkins_api, securitytoken, username, password, poll_interval):
+    def toplevel_init(self, jenkins_api, securitytoken, username, password, poll_interval, json_dir, json_indent):
         self._start_msg()
         # pylint: disable=attribute-defined-outside-init
         self.parent_flow = self
@@ -573,6 +575,8 @@ class _TopLevelControllerMixin(object):
         self.username = username
         self.password = password
         self.poll_interval = poll_interval
+        self.json_dir = json_dir
+        self.json_indent = json_indent
 
         return securitytoken or jenkins_api.securitytoken if hasattr(jenkins_api, 'securitytoken') else None
 
@@ -594,10 +598,16 @@ class _TopLevelControllerMixin(object):
             print("WARNING: Empty toplevel flow", self, "nothing to do.")
             return
 
+        if self.json_dir:
+            self.json(jp(self.json_dir, 'flow_graph.json'), self.json_indent)
+
         # Wait for jobs to finish
         print()
         print("--- Getting initial job status ---")
         self._prepare_first()
+
+        if self.json_dir:
+            self.json(jp(self.json_dir, 'flow_graph.json'), self.json_indent)
 
         # pylint: disable=attribute-defined-outside-init
         self.start_time = hyperspeed_time()
@@ -616,9 +626,10 @@ class _TopLevelControllerMixin(object):
 
 class parallel(_Parallel, _TopLevelControllerMixin):
     def __init__(self, jenkins_api, timeout, securitytoken=None, username=None, password=None, job_name_prefix='', max_tries=1, warn_only=False,
-                 report_interval=_default_report_interval, poll_interval=_default_poll_interval, secret_params=_default_secret_params_re, allow_missing_jobs=False):
+                 report_interval=_default_report_interval, poll_interval=_default_poll_interval, secret_params=_default_secret_params_re, allow_missing_jobs=False,
+                 json_dir=None, json_indent=None):
         """warn_only: causes failure in this job not to fail the parent flow"""
-        securitytoken = self.toplevel_init(jenkins_api, securitytoken, username, password, poll_interval)
+        securitytoken = self.toplevel_init(jenkins_api, securitytoken, username, password, poll_interval, json_dir, json_indent)
         super(parallel, self).__init__(self, timeout, securitytoken, job_name_prefix, max_tries, warn_only, report_interval, secret_params, allow_missing_jobs)
         self.parent_flow = None
 
@@ -629,9 +640,10 @@ class parallel(_Parallel, _TopLevelControllerMixin):
 
 class serial(_Serial, _TopLevelControllerMixin):
     def __init__(self, jenkins_api, timeout, securitytoken=None, username=None, password=None, job_name_prefix='', max_tries=1, warn_only=False,
-                 report_interval=_default_report_interval, poll_interval=_default_poll_interval, secret_params=_default_secret_params_re, allow_missing_jobs=False):
+                 report_interval=_default_report_interval, poll_interval=_default_poll_interval, secret_params=_default_secret_params_re, allow_missing_jobs=False,
+                 json_dir=None, json_indent=None):
         """warn_only: causes failure in this job not to fail the parent flow"""
-        securitytoken = self.toplevel_init(jenkins_api, securitytoken, username, password, poll_interval)
+        securitytoken = self.toplevel_init(jenkins_api, securitytoken, username, password, poll_interval, json_dir, json_indent)
         super(serial, self).__init__(self, timeout, securitytoken, job_name_prefix, max_tries, warn_only, report_interval, secret_params, allow_missing_jobs)
         self.parent_flow = None
 
