@@ -236,11 +236,13 @@ class _SingleJob(_JobControl):
         if not self._invoke_if_not_invoked():
             if self.job is None:
                 self._prepare_first(require_job=True)
+
+            build_params = self.params if self.params else None
             try:
-                self.job.invoke(securitytoken=self.securitytoken, invoke_pre_check_delay=0, block=False, build_params=self.params if self.params else None)
+                self.job.invoke(securitytoken=self.securitytoken, invoke_pre_check_delay=0, block=False, build_params=build_params, cause=self.top_flow.cause)
             except TypeError as ex:  # Old version of jenkinsapi
                 try:
-                    self.job.invoke(securitytoken=self.securitytoken, invoke_pre_check_delay=0, block=False, params=self.params if self.params else None)
+                    self.job.invoke(securitytoken=self.securitytoken, invoke_pre_check_delay=0, block=False, params=build_params, cause=self.top_flow.cause)
                 except TypeError:  # Not the old version after all? reraise originalexception
                     # TODO stacktrace of second exception
                     raise ex
@@ -566,10 +568,17 @@ class _TopLevelControllerMixin(object):
         self.total_max_tries = 1
         self.nesting_level = -1
         self.current_nesting_level = -1
-        self.securitytoken = None
         self.report_interval = _default_report_interval
         self.secret_params_re = _default_secret_params_re
         self.allow_missing_jobs = None
+
+        jenkins_job_name = os.environ.get('JOB_NAME')
+        if jenkins_job_name:
+            self.cause = "By flow job " + repr(jenkins_job_name) + ' #' +  os.environ.get('BUILD_NUMBER')
+        else:
+            import getpass
+            user = getpass.getuser()
+            self.cause = "By flow script, user " + repr(user)
 
         self._api = jenkins_api
         self.username = username
@@ -577,8 +586,10 @@ class _TopLevelControllerMixin(object):
         self.poll_interval = poll_interval
         self.json_dir = json_dir
         self.json_indent = json_indent
+        self.securitytoken = securitytoken
 
-        return securitytoken or jenkins_api.securitytoken if hasattr(jenkins_api, 'securitytoken') else None
+        # Allow test framework to set securitytoken, that we won't have to litter all the testcases with it
+        return self.securitytoken or jenkins_api.securitytoken if hasattr(jenkins_api, 'securitytoken') else None
 
     @staticmethod
     def _start_msg():
