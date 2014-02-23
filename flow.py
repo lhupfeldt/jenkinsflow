@@ -364,9 +364,9 @@ class _Flow(_JobControl):
                         for node in prev_nodes:
                             links.append({"source": node, "target": job.job.name})
                     if not is_parallel:
-                        prev_nodes = [job.job.name]
+                        prev_nodes = [job.node_id]
                     else:
-                        new_prev_nodes.append(job.job.name)
+                        new_prev_nodes.append(job.node_id)
                 elif isinstance(job, _Parallel):
                     par_nodes, par_links, prev_nodes = process_jobs(job.jobs, prev_nodes, is_parallel=True)
                     nodes.extend(par_nodes)

@@ -1,7 +1,11 @@
+#!/usr/bin/python
+
 from bottle import route, run, static_file, post, response
 from jenkinsapi.jenkins import Jenkins
+from os.path import join as jp
 import json
 import requests
+import argparse
 
 jenkins_url = 'http://localhost:8080/'
 
@@ -38,18 +42,26 @@ def builds():
     response.content_type = 'application/json'
     return json.dumps(rsp.json())
 
+
 @post('/jenkinsflow/build/<name>')
 def job(name):
     rsp = requests.get(jenkins_url + 'job/' + name + '/api/json')
     response.content_type = 'application/json'
     return json.dumps(rsp.json())
 
+
 @route('/jenkinsflow/flow_graph.json')
 def graph_json():
     response.content_type = 'text'
-    js = open('/var/www/jenkinsflow/flow_graph.json', 'r')
-    return js
-    # return static_file('flow_graph.json',
-    #                    root='/var/www/jenkinsflow/')
+    return open('flow_graph.json', 'r')
+    # return static_file('flow_graph.json', root=./)
 
-run(host='localhost', port=9090)
+
+if __name__ == '__main__':
+    parser = argparse.ArgumentParser(description='Serve flow grap')
+    parser.add_argument('--hostname', default='localhost', help='hostname to listen on')
+    parser.add_argument('--port', default=9090, help='port to listen on')
+    parser.add_argument('--document_dir', default='/var/www/jenkinsflow/', help='Where to find json flow graph')
+    args = parser.parse_args()
+
+    run(host=args.hostname, port=args.port, debug=True)

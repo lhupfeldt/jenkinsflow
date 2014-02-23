@@ -21,7 +21,10 @@ def run_demo(demo):
     api = job_load.create_jobs()
     print()
     print("-- running jobs --")
-    demo.main(api, '/tmp/')
+    visual_server_doc_dir = '/tmp/jenkinsflow'
+    if not os.path.exists(visual_server_doc_dir):
+        os.makedirs(visual_server_doc_dir)
+    demo.main(api, visual_server_doc_dir)
     api.test_results()
 
 

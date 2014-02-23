@@ -5,13 +5,16 @@ Installation
    pip install jenkinsapi enum34
    optional: pip install tenjin (if you want to use the template based job loader)
 
-2. Make jenkinsflow files (flow.py and possibly unbuffered.py) available on to your jenkins/hudson installation.
+2. To use the experimental visualisation feature:  
+   pip install bottle
 
-3. To use the warn_only (experimental) feature, jenkins url must be set in Jenkins configuration.
+3. Make jenkinsflow files (flow.py and possibly unbuffered.py) available to your jenkins/hudson installation.
 
-4. Read the file demo/demo_security.py for notes about security, if you have enabled security on your Jenkins
+4. To use the warn_only (experimental) feature, jenkins url must be set in Jenkins configuration.
 
-5. All set! You can now create jobs that have a shell execution step, which will a use this library to control the running of other jobs.
+5. Read the file demo/demo_security.py for notes about security, if you have enabled security on your Jenkins
+
+6. All set! You can now create jobs that have a shell execution step, which will a use this library to control the running of other jobs.
    See the demo directory for example flows. The demo jobs can be loaded by running tests, see below.
 
 
@@ -49,3 +52,7 @@ Demos
    Jenkins needs to be able to find the scripts, the demo jobs are setup to find the scripts in '/tmp/jenkinsflow'.
    Run ./tmp_install.sh to install in /tmp/...
    Execute the demo flow jobs: 'jenkinsflow_demo__<demo-name>__0flow'
+
+4. To see a live flow graph of the basic demo in your browser:
+   Start 'python ./server.py' before running demo/basic.py
+   Open localhost:9090 in your browser
