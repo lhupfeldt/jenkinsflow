@@ -24,9 +24,9 @@ def test_single_level_errors_parallel():
                 ctrl.invoke('quick', password='Yes', s1='', c1=False)
                 ctrl.invoke('quick_fail')
                 ctrl.invoke('wait10')
-                ctrl.invoke('wait10_fail', fail='yes')
+                ctrl.invoke('wait10_fail')
                 ctrl.invoke('wait5')
-                ctrl.invoke('wait5_fail', fail='yes')
+                ctrl.invoke('wait5_fail')
 
 
 def test_single_level_errors_serial():
@@ -38,7 +38,7 @@ def test_single_level_errors_serial():
         with raises(FailedChildJobException):
             with serial(api, timeout=20, job_name_prefix=api.job_name_prefix, report_interval=3) as ctrl:
                 ctrl.invoke('quick', password='Yes', s1='', c1=False)
-                ctrl.invoke('quick_fail', fail='yes')
+                ctrl.invoke('quick_fail')
                 ctrl.invoke('wait5')
 
 

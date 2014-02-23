@@ -21,7 +21,7 @@ def run_demo(demo):
     api = job_load.create_jobs()
     print()
     print("-- running jobs --")
-    demo.main(api)
+    demo.main(api, '/tmp/')
     api.test_results()
 
 

@@ -15,13 +15,11 @@ from jenkinsapi import jenkins
 
 from jenkinsflow.flow import serial
 from jenkinsflow.unbuffered import UnBuffered
-# Unbuffered output does not work well in Jenkins, so in case
-# this is run from a hudson job, we want unbuffered output
 sys.stdout = UnBuffered(sys.stdout)
 
 import demo_security as security
 
-def main(api):
+def main(api, _):
     logging.basicConfig()
     logging.getLogger("").setLevel(logging.WARNING)
 
@@ -42,4 +40,4 @@ def main(api):
 
 
 if __name__ == '__main__':
-    main(jenkins.Jenkins(os.environ.get('JENKINS_URL') or "http://localhost:8080", security.username, security.password))
+    main(jenkins.Jenkins(os.environ.get('JENKINS_URL') or "http://localhost:8080", security.username, security.password), '/var/www/jenkinsflow')

@@ -1,9 +1,11 @@
+#!/usr/bin/python
+
 # Copyright (c) 2012 - 2014 Lars Hupfeldt Nielsen, Hupfeldt IT
 # All rights reserved. This work is under a BSD license, see LICENSE.TXT.
 
 from __future__ import print_function
 
-import os, tempfile
+import argparse, os, tempfile
 
 cli_jar = 'jenkins-cli.jar'
 
@@ -52,3 +54,14 @@ def set_build_result(username, password, result, java='java'):
         with open(cli_jar, 'w') as ff:
             ff.write(response.read())
         set_res()
+
+
+if __name__ == '__main__':
+    parser = argparse.ArgumentParser(description='Change result of JenkinsJob. Must be run from within the job!')
+    parser.add_argument('--username', help='Name of jenkins user with access to the job')
+    parser.add_argument('--password', help='Password of jenkins user with access to the job. *** Warning Insecure, will show up in process listing! ***')
+    parser.add_argument('--result', default='unstable', help="The result to set. Should probably be 'unstable'")
+    parser.add_argument('--java', default='java', help="Alternative 'java' executable.")
+    args = parser.parse_args()
+
+    set_build_result(args.username, args.password, args.result, args.java)

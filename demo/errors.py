@@ -16,12 +16,12 @@ from jenkinsapi import jenkins
 from jenkinsflow.flow import serial
 from jenkinsflow.unbuffered import UnBuffered
 # Unbuffered output does not work well in Jenkins, so in case
-# this is run from a hudson job, we want unbuffered output
+# this is run from a jenkins job, we want unbuffered output
 sys.stdout = UnBuffered(sys.stdout)
 
 import demo_security as security
 
-def main(api):
+def main(api, _):
     logging.basicConfig()
     logging.getLogger("").setLevel(logging.WARNING)
 
@@ -31,14 +31,14 @@ def main(api):
         with ctrl1.parallel(timeout=40, report_interval=3) as ctrl2:
             with ctrl2.serial(timeout=40, report_interval=3) as ctrl3a:
                 ctrl3a.invoke('wait2')
-                ctrl3a.invoke('quick_fail-1', password='HELLO', fail='yes', s1='WORLD', c1='be')
+                ctrl3a.invoke('quick_fail-1', password='HELLO', s1='WORLD', c1='be')
 
                 # Never invoked
                 ctrl3a.invoke('quick', password='HELLO', s1='WORLD', c1='maybe')
 
             with ctrl2.parallel(timeout=40, report_interval=3) as ctrl3b:
                 ctrl3b.invoke('wait5-2a')
-                ctrl3b.invoke('quick_fail-2', password='HELLO', fail='yes', s1='WORLD', c1='maybe')
+                ctrl3b.invoke('quick_fail-2', password='HELLO', s1='WORLD', c1='maybe')
                 ctrl3b.invoke('wait5-2b')
                 ctrl3b.invoke('wait5-2c')
 
@@ -47,4 +47,4 @@ def main(api):
 
 
 if __name__ == '__main__':
-    main(jenkins.Jenkins(os.environ.get('JENKINS_URL') or "http://localhost:8080", security.username, security.password))
+    main(jenkins.Jenkins(os.environ.get('JENKINS_URL') or "http://localhost:8080", security.username, security.password), '/var/www/jenkinsflow')

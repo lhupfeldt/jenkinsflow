@@ -3,10 +3,8 @@
 
 from __future__ import print_function
 
-import os
-import time
-import re
-import abc
+import os, time, re, abc
+from enum import IntEnum, Enum
 from set_build_result import set_build_result
 
 _default_poll_interval = 0.5
@@ -14,12 +12,8 @@ _default_report_interval = 5
 _default_secret_params = '.*passw.*|.*PASSW.*'
 _default_secret_params_re = re.compile(_default_secret_params)
 
-_debug = False
-
 
 _hyperspeed_speedup = 1 if os.environ.get('JENKINSFLOW_MOCK_API') != 'true' else 100
-
-
 def hyperspeed_time():
     return time.time() * _hyperspeed_speedup
 
@@ -49,8 +43,8 @@ class FailedSingleJobException(JobControlFailException):
 
 
 class MissingJobsException(FailedSingleJobException):
-    def __init__(self, job):
-        msg = "Could not get job info: " + repr(job)
+    def __init__(self, job_name):
+        msg = "Could not get job info for: " + repr(job_name)
         super(MissingJobsException, self).__init__(msg, warn_only=False)
 
 
@@ -66,15 +60,30 @@ class FailedChildJobsException(JobControlFailException):
         super(FailedChildJobsException, self).__init__(msg, warn_only)
 
 
+class BuildResult(IntEnum):
+    # pylint: disable=no-init
+    FAILURE = 0
+    UNSTABLE = 1
+    UNCHECKED = 2
+    SUCCESS = 3
+
+    # Jenkins Aliases?
+    PASSED = 3
+    FAILED = 0
+
+
+class BuildProgressState(Enum):
+    # pylint: disable=no-init
+    RUNNING = 0
+    QUEUED = 1
+    IDLE = 2
+
+
 class _JobControl(object):
     __metaclass__ = abc.ABCMeta
+    _next_node_id = 0
 
-    RESULT_FAIL = 0
-    RESULT_UNSTABLE = 1
-    RESULT_UNCHECKED = 2
-    RESULT_SUCCESS = 3
-
-    def __init__(self, parent_flow, securitytoken, max_tries, warn_only, report_interval, secret_params_re, allow_missing_jobs):
+    def __init__(self, parent_flow, securitytoken, max_tries, warn_only, secret_params_re, allow_missing_jobs):
         self.parent_flow = parent_flow
         self.top_flow = parent_flow.top_flow
 
@@ -87,14 +96,16 @@ class _JobControl(object):
 
         self.securitytoken = securitytoken or self.parent_flow.securitytoken
         self.warn_only = warn_only
-        self.report_interval = report_interval or self.parent_flow.report_interval
         self.secret_params_re = secret_params_re or self.parent_flow.secret_params_re
         self.allow_missing_jobs = allow_missing_jobs if allow_missing_jobs is not None else self.parent_flow.allow_missing_jobs
 
-        self.result = self.RESULT_FAIL
+        self.result = BuildResult.FAILURE
         self.tried_times = 0
         self.total_tried_times = 0
         self.invocation_time = None
+
+        self.node_id = _JobControl._next_node_id
+        _JobControl._next_node_id += 1
 
     def __enter__(self):
         self.top_flow.current_nesting_level += 1
@@ -105,15 +116,6 @@ class _JobControl(object):
     @abc.abstractmethod
     def _prepare_first(self):
         raise Exception("AbstractNotImplemented")
-
-    def _jenkins_result_to_result(self, jenkinsresult):
-        if jenkinsresult in ("PASSED", "SUCCESS"):
-            return self.RESULT_SUCCESS
-        if jenkinsresult in ("FAILED", "FAILURE", "FAIL"):
-            return self.RESULT_FAIL
-        if jenkinsresult == "UNSTABLE":
-            return self.RESULT_UNSTABLE
-        raise JobControlException("Unknown result type from build: " + str(jenkinsresult))
 
     def _prepare_to_invoke(self):
         """Must be called before each invocation of a job, as opposed to __init__, which is called once in entire run"""
@@ -151,20 +153,17 @@ class _JobControl(object):
     def __repr__(self):
         return str(self.sequence())
 
-    def debug(self, *args):
-        if not _debug:
-            return
-        print('DEBUG in ' + self.__class__.__name__ + ':', ' '.join([str(arg) for arg in args]))
-
 
 class _SingleJob(_JobControl):
-    def __init__(self, parent_flow, securitytoken, job_name_prefix, max_tries, job_name, params, warn_only, report_interval, secret_params_re, allow_missing_jobs):
+    def __init__(self, parent_flow, securitytoken, job_name_prefix, max_tries, job_name, params, warn_only, secret_params_re, allow_missing_jobs):
         for key, value in params.iteritems():
             # Handle parameters passed as int or bool. Booleans will be lowercased!
             if isinstance(value, (bool, int)):
                 params[key] = str(value).lower()
         self.params = params
-        super(_SingleJob, self).__init__(parent_flow, securitytoken, max_tries, warn_only, report_interval, secret_params_re, allow_missing_jobs)
+        super(_SingleJob, self).__init__(parent_flow, securitytoken, max_tries, warn_only, secret_params_re, allow_missing_jobs)
+        # There is no separate retry for individual jobs, so set self.total_max_tries to the same as parent flow!
+        self.total_max_tries = self.parent_flow.total_max_tries
         self.job = None
         self.old_build = None
         self.name = job_name_prefix + job_name
@@ -177,9 +176,10 @@ class _SingleJob(_JobControl):
         try:
             self.job = self.api.get_job(self.name)
         except Exception as ex:
+            # TODO? stack trace
             self.repr_str = repr(ex)
             if require_job or not self.allow_missing_jobs:
-                raise MissingJobsException(self.job)
+                raise MissingJobsException(self.name)
             print(self.indentation + "NOTE: ", self.repr_str)
             return
 
@@ -222,13 +222,14 @@ class _SingleJob(_JobControl):
         return self.repr_str
 
     def _print_status_message(self, build):
-        state = "RUNNING" if self.job.is_running() else ("QUEUED" if self.job.is_queued() else "IDLE")
-        print(repr(self.job.name), "Status", state, "- latest build:", '#' + str(build.buildno) if build else None)
+        state = BuildProgressState.RUNNING if self.job.is_running() else BuildProgressState.QUEUED if self.job.is_queued() else BuildProgressState.IDLE
+        print(repr(self.job.name), "Status", state.name, "- latest build:", '#' + str(build.buildno) if build else None)
 
     def _prepare_to_invoke(self):
         super(_SingleJob, self)._prepare_to_invoke()
         self.job.poll()
         self.old_build = self.job.get_last_build_or_none()
+        self.result = BuildResult.FAILED
 
     def _check(self, report_now):
         if not self._invoke_if_not_invoked():
@@ -237,14 +238,18 @@ class _SingleJob(_JobControl):
             try:
                 self.job.invoke(securitytoken=self.securitytoken, invoke_pre_check_delay=0, block=False, build_params=self.params if self.params else None)
             except TypeError as ex:  # Old version of jenkinsapi
-                self.job.invoke(securitytoken=self.securitytoken, invoke_pre_check_delay=0, block=False, params=self.params if self.params else None)
+                try:
+                    self.job.invoke(securitytoken=self.securitytoken, invoke_pre_check_delay=0, block=False, params=self.params if self.params else None)
+                except TypeError:  # Not the old version after all? reraise originalexception
+                    # TODO stacktrace of second exception
+                    raise ex
 
         for _ in range(1, 20):
             self.job.poll()
             try:
                 build = self.job.get_last_build_or_none()
                 break
-            except KeyError as ex:
+            except KeyError as ex:  # pragma: no cover
                 # Workaround for jenkinsapi timing dependency?
                 print("'get_last_build_or_none' failed: " + str(ex) + ", retrying.")
                 time.sleep(0.1 / _hyperspeed_speedup)
@@ -257,22 +262,20 @@ class _SingleJob(_JobControl):
 
         # The job has stopped running
         self._print_status_message(build)
+        self.result = BuildResult[build.get_status()]
         url = build.get_result_url().replace('testReport/api/python', 'console')
         print(str(build.get_status()) + ":", repr(self.job.name), "- build:", url, self._time_msg())
 
-        self.result = self._jenkins_result_to_result(build.get_status())
-        if self.result in (self.RESULT_SUCCESS, self.RESULT_UNSTABLE):
-            return
-
-        raise FailedSingleJobException(self.job, self.warn_only)
+        if self.result not in (BuildResult.SUCCESS, BuildResult.UNSTABLE):
+            raise FailedSingleJobException(self.job, self.warn_only)
 
     def sequence(self):
         return self.name
 
 
 class _IgnoredSingleJob(_SingleJob):
-    def __init__(self, parent_flow, securitytoken, job_name_prefix, job_name, params, report_interval, secret_params_re, allow_missing_jobs):
-        super(_IgnoredSingleJob, self).__init__(parent_flow, securitytoken, job_name_prefix, 1, job_name, params, True, report_interval, secret_params_re, allow_missing_jobs)
+    def __init__(self, parent_flow, securitytoken, job_name_prefix, job_name, params, secret_params_re, allow_missing_jobs):
+        super(_IgnoredSingleJob, self).__init__(parent_flow, securitytoken, job_name_prefix, 1, job_name, params, True, secret_params_re, allow_missing_jobs)
 
     def _prepare_to_invoke(self):
         if self.tried_times < self.max_tries:
@@ -284,7 +287,7 @@ class _IgnoredSingleJob(_SingleJob):
         except FailedSingleJobException:
             pass
         finally:
-            self.result = self.RESULT_UNCHECKED
+            self.result = BuildResult.UNCHECKED
 
 
 # Retries are handled in the _Flow classes instead of _SingleJob since the individual jobs don't know
@@ -296,9 +299,11 @@ class _Flow(_JobControl):
 
     def __init__(self, parent_flow, timeout, securitytoken, job_name_prefix, max_tries, warn_only, report_interval, secret_params, allow_missing_jobs):
         secret_params_re = re.compile(secret_params) if isinstance(secret_params, str) else secret_params
-        super(_Flow, self).__init__(parent_flow, securitytoken, max_tries, warn_only, report_interval, secret_params_re, allow_missing_jobs)
+        super(_Flow, self).__init__(parent_flow, securitytoken, max_tries, warn_only, secret_params_re, allow_missing_jobs)
         self.timeout = timeout
         self.job_name_prefix = self.parent_flow.job_name_prefix + job_name_prefix
+        self.report_interval = report_interval or self.parent_flow.report_interval
+
         self.jobs = []
         self.last_report_time = 0
 
@@ -309,12 +314,11 @@ class _Flow(_JobControl):
         return _Serial(self, timeout, securitytoken, job_name_prefix, max_tries, warn_only, report_interval, secret_params, allow_missing_jobs)
 
     def invoke(self, job_name, **params):
-        job = _SingleJob(self, self.securitytoken, self.job_name_prefix, self.max_tries, job_name, params, self.warn_only,
-                         self.report_interval, self.secret_params_re, self.allow_missing_jobs)
+        job = _SingleJob(self, self.securitytoken, self.job_name_prefix, self.max_tries, job_name, params, self.warn_only, self.secret_params_re, self.allow_missing_jobs)
         self.jobs.append(job)
 
     def invoke_unchecked(self, job_name, **params):
-        job = _IgnoredSingleJob(self, self.securitytoken, self.job_name_prefix, job_name, params, self.report_interval, self.secret_params_re, self.allow_missing_jobs)
+        job = _IgnoredSingleJob(self, self.securitytoken, self.job_name_prefix, job_name, params, self.secret_params_re, self.allow_missing_jobs)
         self.jobs.append(job)
 
     def _check_timeout(self):
@@ -348,33 +352,31 @@ class _Flow(_JobControl):
         return report_now
 
     def json(self, file_path=None):
-        def process_jobs(jobs, prev_nodes, parallel=False):
+        def process_jobs(jobs, prev_nodes, is_parallel=False):
             nodes = []
             links = []
             new_prev_nodes = []
             assert isinstance(prev_nodes, list)
             for job in jobs:
                 if isinstance(job, _SingleJob):
-                    nodes.append({"id": job.job.name,
-                                 "name": job.job.name,
-                                 "url": job.job.baseurl})
+                    nodes.append({"id": job.node_id, "name": job.name, "url": job.job.baseurl})
                     if prev_nodes:
                         for node in prev_nodes:
                             links.append({"source": node, "target": job.job.name})
-                    if not parallel:
+                    if not is_parallel:
                         prev_nodes = [job.job.name]
                     else:
                         new_prev_nodes.append(job.job.name)
                 elif isinstance(job, _Parallel):
-                    par_nodes, par_links, prev_nodes = process_jobs(job.jobs, prev_nodes, parallel=True)
+                    par_nodes, par_links, prev_nodes = process_jobs(job.jobs, prev_nodes, is_parallel=True)
                     nodes.extend(par_nodes)
                     links.extend(par_links)
                 elif isinstance(job, _Serial):
-                    if parallel:
+                    if is_parallel:
                         save_prev_nodes = prev_nodes
-                    par_nodes, par_links, prev_nodes = process_jobs(job.jobs, prev_nodes, parallel=False)
+                    par_nodes, par_links, prev_nodes = process_jobs(job.jobs, prev_nodes, is_parallel=False)
                     nodes.extend(par_nodes)
-                    if parallel:
+                    if is_parallel:
                         prev_nodes = save_prev_nodes
                         new_prev_nodes.append(par_links[len(par_links)-1]['target'])
                     links.extend(par_links)
@@ -384,7 +386,7 @@ class _Flow(_JobControl):
         nodes = []
         links = []
         prev_nodes = []
-        nodes, links, __ = process_jobs(self.jobs, prev_nodes, parallel=False)
+        nodes, links, _ = process_jobs(self.jobs, prev_nodes, is_parallel=False)
         graph = {'nodes': nodes, 'links': links}
 
         import json
@@ -422,6 +424,7 @@ class _Parallel(_Flow):
         report_now = self._check_invoke_timeout_report()
 
         finished = True
+        retry = False
         for job in self.jobs:
             if job.result or job.total_tried_times == job.total_max_tries:
                 continue
@@ -440,29 +443,26 @@ class _Parallel(_Flow):
 
                 if job.tried_times < job.max_tries:
                     print("RETRY:", job, "failed but will be retried. Up to", job.max_tries - job.tried_times, "more times in current flow")
+                    retry = True
                     job._prepare_to_invoke()
                     continue
 
                 if job.total_tried_times < job.total_max_tries:
                     print("RETRY:", job, "failed but will be retried. Up to", job.total_max_tries - job.total_tried_times, "more times through outer flow")
+                    retry = True
                     job._prepare_to_invoke()
                     job.tried_times = 0
+                    continue
 
-        if finished:
+        if finished and not retry:
             # All jobs have stopped running
-            self.result = self.RESULT_SUCCESS
+            self.result = BuildResult.SUCCESS
             for job in self.jobs:
-                self.result = min(self.result, job.result if not (job.warn_only and job.result == self.RESULT_FAIL) else self.RESULT_UNSTABLE)
+                self.result = min(self.result, job.result if not (job.warn_only and job.result == BuildResult.FAILURE) else BuildResult.UNSTABLE)
+            print(self.result.name, self, self._time_msg())
 
-            if self.result == self.RESULT_FAIL:
-                print("FAILURE:", self, self._time_msg())
+            if self.result == BuildResult.FAILURE:
                 raise FailedChildJobsException(self, self._failed_child_jobs.values(), self.warn_only)
-
-            if self.result == self.RESULT_SUCCESS:
-                print("SUCCESS:", self, self._time_msg())
-
-            if self.result == self.RESULT_UNSTABLE:
-                print("UNSTABLE:", self, self._time_msg())
 
     def sequence(self):
         return tuple([job.sequence() for job in self.jobs])
@@ -513,6 +513,7 @@ class _Serial(_Flow):
 
             if job.tried_times < job.max_tries:
                 print("RETRY:", job, "failed, retrying child jobs from beginning. Up to", job.max_tries - job.tried_times, "more times in current flow")
+                job._prepare_to_invoke()
                 for pre_job in self.jobs[0:num_fail]:
                     pre_job._prepare_to_invoke()
                     pre_job.tried_times += 1
@@ -521,17 +522,20 @@ class _Serial(_Flow):
 
             if job.total_tried_times < job.total_max_tries:
                 print("RETRY:", job, "failed, retrying child jobs from beginning. Up to", job.total_max_tries - job.total_tried_times, "more times through outermost flow")
+                job._prepare_to_invoke()
                 job.tried_times = 0
                 for pre_job in self.jobs[0:num_fail]:
                     pre_job._prepare_to_invoke()
                     pre_job.tried_times = 0
                     pre_job.total_tried_times += 1
+                return
 
             if not self.warn_only:
-                print("FAILURE:", self, self._time_msg())
-                self.result = self.RESULT_FAIL
+                self.result = BuildResult.FAILURE
+                print(self.result.name, self, self._time_msg())
                 raise FailedChildJobException(self, job, self.warn_only)
 
+            # All retries are exhausted
             self.has_warning = True
             self.job_index = len(self.jobs) - 1
 
@@ -539,15 +543,10 @@ class _Serial(_Flow):
 
         if self.job_index == len(self.jobs):
             # Check if any of the jobs is in warning or we have warning set ourself
-            self.result = self.RESULT_UNSTABLE if self.has_warning else self.RESULT_SUCCESS
+            self.result = BuildResult.UNSTABLE if self.has_warning else BuildResult.SUCCESS
             for job in self.jobs:
-                self.result = min(self.result, job.result if not (job.warn_only and job.result == self.RESULT_FAIL) else self.RESULT_UNSTABLE)
-
-            if self.result == self.RESULT_SUCCESS:
-                print("SUCCESS:", self, self._time_msg())
-
-            if self.result == self.RESULT_UNSTABLE:
-                print("UNSTABLE:", self, self._time_msg())
+                self.result = min(self.result, job.result if not (job.warn_only and job.result == BuildResult.FAILURE) else BuildResult.UNSTABLE)
+            print(self.result.name, self, self._time_msg())
 
     def sequence(self):
         return [job.sequence() for job in self.jobs]
@@ -611,7 +610,7 @@ class _TopLevelControllerMixin(object):
             self._check(None)
             time.sleep(sleep_time)
 
-        if self.result == self.RESULT_UNSTABLE:
+        if self.result == BuildResult.UNSTABLE:
             set_build_result(self.username, self.password, 'unstable')
 
 
