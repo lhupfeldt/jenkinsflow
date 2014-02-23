@@ -62,7 +62,7 @@ def main(api, graph_output_dir):
 
     print("Doing stuff after flow ...")
 
-    ctrl1.json(file_path=jp(graph_output_dir, 'flow_graph.json'))
+    ctrl1.json(file_path=jp(graph_output_dir, 'flow_graph.json'), indent=4)
 
 
 if __name__ == '__main__':
