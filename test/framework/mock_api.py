@@ -56,7 +56,7 @@ class MockJob(object):
         self.just_invoked = False
 
     def debug(self, what):
-        print("Mock job: ", what, self) # , "time:", hyperspeed_time())
+        #print("Mock job: ", what, self) # , "time:", hyperspeed_time())
         pass
 
     def get_build_triggerurl(self):
@@ -77,17 +77,14 @@ class MockJob(object):
         if self.just_invoked and self.end_time and hyperspeed_time() >= self.start_time:
             self.just_invoked = False
 
-            print('poll, current-build:' + str(self.build))
             if self.build is None:
                 self.debug('poll, new-build')
                 self.build = Build(self, 1)
                 return
 
             self.build = Build(self, self.build.buildno + 1)
-            print('poll, updated-build'+ str(self.build))
 
     def get_last_build_or_none(self):
-        self.debug('get_last_build_or_none, build' + repr(self.build))
         return self.build
 
     def invoke(self, securitytoken=None, block=False, skip_if_running=False, invoke_pre_check_delay=3,  # pylint: disable=unused-argument
