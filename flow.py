@@ -361,9 +361,8 @@ class _Flow(_JobControl):
             for job in jobs:
                 if isinstance(job, _SingleJob):
                     nodes.append({"id": link_id(job), "name": job.name, "url": job.job.baseurl})
-                    if prev_nodes:
-                        for node in prev_nodes:
-                            links.append({"source": node, "target": link_id(job)})
+                    for node in prev_nodes:
+                        links.append({"source": node, "target": link_id(job)})
                     if not is_parallel:
                         prev_nodes = [link_id(job)]
                     else:
