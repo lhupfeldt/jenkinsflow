@@ -48,7 +48,7 @@ class MockJob(object):
         self.unknown_result = unknown_result
         self.final_result = final_result
 
-        self.base_url = 'http://hupfeldtit.dk/jobs/' + self.name
+        self.baseurl = 'http://hupfeldtit.dk/jobs/' + self.name
         self.actual_order = -1
         self.debug('__init__')
         self.initial_buildno = initial_buildno
@@ -60,7 +60,7 @@ class MockJob(object):
         pass
 
     def get_build_triggerurl(self):
-        return self.base_url + '/hello/build'
+        return self.baseurl + '/mock/build'
 
     def is_running(self):
         running = self.start_time <= hyperspeed_time() < self.end_time
@@ -177,7 +177,7 @@ class Build(object):
         return 'PASSED' if self.is_good() else 'FAILED'
 
     def get_result_url(self):
-        return self.job.base_url + '/mock/build/status'
+        return self.job.baseurl + '/mock/build/status'
 
     def is_good(self):
         return self.job.invocation > self.job.max_fails

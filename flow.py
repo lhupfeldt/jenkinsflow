@@ -218,7 +218,6 @@ class _SingleJob(_JobControl):
         print(self.indentation + "job: ", end='')
         self._print_status_message(self.old_build)
 
-
     def __repr__(self):
         return self.repr_str
 
@@ -351,6 +350,51 @@ class _Flow(_JobControl):
         if report_now:
             self.last_report_time = now
         return report_now
+
+    def json(self, file_path=None):
+        def process_jobs(jobs, prev_nodes, is_parallel=False):
+            nodes = []
+            links = []
+            new_prev_nodes = []
+            assert isinstance(prev_nodes, list)
+            for job in jobs:
+                if isinstance(job, _SingleJob):
+                    nodes.append({"id": job.node_id, "name": job.name, "url": job.job.baseurl})
+                    if prev_nodes:
+                        for node in prev_nodes:
+                            links.append({"source": node, "target": job.job.name})
+                    if not is_parallel:
+                        prev_nodes = [job.job.name]
+                    else:
+                        new_prev_nodes.append(job.job.name)
+                elif isinstance(job, _Parallel):
+                    par_nodes, par_links, prev_nodes = process_jobs(job.jobs, prev_nodes, is_parallel=True)
+                    nodes.extend(par_nodes)
+                    links.extend(par_links)
+                elif isinstance(job, _Serial):
+                    if is_parallel:
+                        save_prev_nodes = prev_nodes
+                    par_nodes, par_links, prev_nodes = process_jobs(job.jobs, prev_nodes, is_parallel=False)
+                    nodes.extend(par_nodes)
+                    if is_parallel:
+                        prev_nodes = save_prev_nodes
+                        new_prev_nodes.append(par_links[len(par_links)-1]['target'])
+                    links.extend(par_links)
+
+            return nodes, links, prev_nodes if not new_prev_nodes else new_prev_nodes
+
+        nodes = []
+        links = []
+        prev_nodes = []
+        nodes, links, _ = process_jobs(self.jobs, prev_nodes, is_parallel=False)
+        graph = {'nodes': nodes, 'links': links}
+
+        import json
+        if file_path is not None:
+            with open(file_path, 'w+') as out_file:
+                json.dump(graph, out_file)
+
+        return json.dumps(graph)
 
 
 class _Parallel(_Flow):

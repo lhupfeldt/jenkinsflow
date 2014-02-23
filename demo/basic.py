@@ -24,10 +24,11 @@ sys.stdout = UnBuffered(sys.stdout)
 
 import demo_security as security
 
-def main(api):
+
+def main(api, graph_output_dir):
     logging.basicConfig()
     logging.getLogger("").setLevel(logging.WARNING)
-    
+
     print("Doing stuff before flow ...")
     g1_components = range(1)
     g2_components = range(2)
@@ -61,6 +62,8 @@ def main(api):
 
     print("Doing stuff after flow ...")
 
+    ctrl1.json(file_path=jp(graph_output_dir, 'flow_graph.json'))
+
 
 if __name__ == '__main__':
-    main(jenkins.Jenkins(os.environ.get('JENKINS_URL') or "http://localhost:8080", security.username, security.password))
+    main(jenkins.Jenkins(os.environ.get('JENKINS_URL') or "http://localhost:8080", security.username, security.password), '/var/www/jenkinsflow')
