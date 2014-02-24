@@ -53,8 +53,10 @@ def job(name):
 @route('/jenkinsflow/flow_graph.json')
 def graph_json():
     response.content_type = 'text'
-    return open('flow_graph.json', 'r')
-    # return static_file('flow_graph.json', root=./)
+    # js = open('/var/www/jenkinsflow/flow_graph.json', 'r')
+    # return js
+    return static_file('flow_graph.json',
+                       root='/var/www/jenkinsflow/')
 
 
 if __name__ == '__main__':

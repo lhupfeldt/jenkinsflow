@@ -6,50 +6,57 @@
 
   <script type='text/javascript' src='https://ajax.googleapis.com/ajax/libs/prototype/1.7.1.0/prototype.js'></script>
   <script type='text/javascript' src='http://d3js.org/d3.v3.min.js'></script>
-  <script type='text/javascript' src="http://cpettitt.github.io/project/dagre/latest/dagre.js"></script>
-  <style type='text/css'>
-    .node rect {
-    stroke-width: 1.5px;
-    stroke: #333;
-    fill: #fff;
+  <script src="http://cpettitt.github.io/project/graphlib/latest/graphlib.min.js"></script>
+  <script src="http://cpettitt.github.io/project/dagre-d3/latest/dagre-d3.js"></script>
+  <!-- <script type='text/javascript' src="http://cpettitt.github.io/project/dagre/latest/dagre.js"></script> -->
+<style type='text/css'>
+svg {
+  border: 1px solid black;
+  overflow: hidden;
 }
-    .node-changed rect {
-    stroke-width: 1.5px;
-    stroke: #333;
-    fill: #ccc;
+
+text {
+  font-weight: 300;
+  font-family: "Helvetica Neue", Helvetica, Arial, sans-serf;
+  font-size: 14px;
 }
-#node-CLOSED rect {
-    stroke-width: 3px;
-    fill: #f88;
+
+.node rect {
+  stroke-width: 2px;
+  stroke: #333;
+  fill: #fff;
 }
-.node text {
-    font: 300 12px "Verdana";
-}
+
 .node:hover {
-    cursor: pointer;
-    opacity: 0.4;
+  stroke-width: 2px;
+  stroke: #333;
+  fill: #aaaaaa;
+  cursor: pointer;
+  opacity: 0.4;
 }
-path.edge {
-    fill: none;
-    stroke: #333;
-    stroke-width: 1.5px;
+
+.edgeLabel rect {
+  fill: #fff;
 }
-.edge:hover {
-    cursor: pointer;
-    opacity: 0.4;
+
+.edgePath path {
+  stroke: #333;
+  stroke-width: 1.5px;
+  fill: none;
 }
-  </style>
+</style>
 
 <script src="js/graph.js"></script>
 
 </head>
 <body>
-  <svg width=0 height=0>
+  <svg width="1024" height="900">
     <defs>
         <marker id="arrowhead" viewBox="0 0 10 10" refX="8" refY="5" markerUnits="strokeWidth" markerWidth="8" markerHeight="5" orient="auto" style="fill: #333">
             <path d="M 0 0 L 10 5 L 0 10 z"></path>
         </marker>
     </defs>
+    <g transform="translate(20,20)"/>
 </svg>
 </body>
 </html>
