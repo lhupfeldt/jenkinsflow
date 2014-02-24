@@ -16,7 +16,7 @@ def run_demo(demo):
     print("\n\n")
     print("==== Demo:", demo.__name__, "====")
     job_load_module_name = demo.__name__ + '_jobs'
-    job_load = imp.load_source(job_load_module_name, jp('../demo/jobs', job_load_module_name + '.py'))
+    job_load = imp.load_source(job_load_module_name, jp(here, '../demo/jobs', job_load_module_name + '.py'))
     print("-- loading jobs --")
     api = job_load.create_jobs()
     print()
@@ -29,8 +29,6 @@ def run_demo(demo):
 
 
 def main():
-    os.chdir(here)
-
     print("Running tests")
     if len(sys.argv) > 1:
         sys.exit(subprocess.call(['py.test', '--capture=sys', '--instafail'] + sys.argv[1:]))
