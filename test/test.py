@@ -48,9 +48,10 @@ def main():
         else:
             raise Exception("Expected exception")
 
+    if rc:
+        print('*** ERROR: There were errors! Check output! ***', file=sys.stderr)
     sys.exit(rc)
 
 
 if __name__ == '__main__':
     main()
-
