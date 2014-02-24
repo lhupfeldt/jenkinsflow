@@ -48,7 +48,7 @@ class MockJob(object):
         self.unknown_result = unknown_result
         self.final_result = final_result
 
-        self.baseurl = 'http://hupfeldtit.dk/jobs/' + self.name
+        self.baseurl = 'http://hupfeldtit.dk/job/' + self.name
         self.actual_order = -1
         self.debug('__init__')
         self.initial_buildno = initial_buildno
@@ -60,7 +60,7 @@ class MockJob(object):
         pass
 
     def get_build_triggerurl(self):
-        return self.baseurl + '/mock/build'
+        return self.baseurl + '/' + self.name + '/build'
 
     def is_running(self):
         running = self.start_time <= hyperspeed_time() < self.end_time
@@ -98,7 +98,6 @@ class MockJob(object):
         self.invocation_time = hyperspeed_time()
         self.start_time = self.invocation_time + self.invocation_delay
         self.end_time = self.start_time + self.exec_time
-        print('invoke, invocation:', self.invocation)
 
     def update_config(self, config_xml):
         pass
@@ -117,7 +116,6 @@ class WrapperJob(ObjectWrapper):
     _current_order = 1
 
     # NOTE: ObjectWrapper class requires all attributes which are NOT proxied to be declared statically and overridden at instance level
-    name = None
     exec_time = None
     max_fails = None
     expect_invocations = None
@@ -133,7 +131,7 @@ class WrapperJob(ObjectWrapper):
     def __init__(self, jenkins_job, name, exec_time, max_fails, expect_invocations, expect_order, unknown_result, final_result):
         """Set max_fails to None for an indeterminate result (timeout)"""
         assert exec_time > 0
-        self.name = name
+        _ = name # Cheat pylint
         self.exec_time = exec_time
         self.max_fails = max_fails
         self.expect_invocations = expect_invocations
