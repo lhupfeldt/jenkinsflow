@@ -53,14 +53,13 @@ def job(name):
 @route('/jenkinsflow/flow_graph.json')
 def graph_json():
     response.content_type = 'text'
-    # js = open('/var/www/jenkinsflow/flow_graph.json', 'r')
+    # js = open(jp(args.document_dir, 'flow_graph.json', 'r')
     # return js
-    return static_file('flow_graph.json',
-                       root='/var/www/jenkinsflow/')
+    return static_file('flow_graph.json', root=args.document_dir)
 
 
 if __name__ == '__main__':
-    parser = argparse.ArgumentParser(description='Serve flow grap')
+    parser = argparse.ArgumentParser(description='Serve flow graph.')
     parser.add_argument('--hostname', default='localhost', help='hostname to listen on')
     parser.add_argument('--port', default=9090, help='port to listen on')
     parser.add_argument('--document_dir', default='/var/www/jenkinsflow/', help='Where to find json flow graph')
