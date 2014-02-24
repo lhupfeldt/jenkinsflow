@@ -241,6 +241,7 @@ class MockApi(_JobsMixin):
         self.job_name_prefix = job_name_prefix
         MockJob._current_order = 1
         self._jf_jobs = OrderedDict()
+        self._deleted_jobs = {}
 
     def job(self, name, exec_time, max_fails, expect_invocations, expect_order, initial_buildno=None, invocation_delay=0.1, params=None, script=None, unknown_result=False, final_result=None):
         name = self.job_name_prefix + name
@@ -256,11 +257,17 @@ class MockApi(_JobsMixin):
     def poll(self):
         pass
 
+    # Delete/Create hack sufficient to get resonable coverage on job_load test
     def delete_job(self, job_name):
+        try:
+            self._deleted_jobs[job_name] = self._jf_jobs[job_name]
+        except KeyError:
+            raise jenkinsapi.custom_exceptions.UnknownJob("Job not found: " + job_name)
         del self._jf_jobs[job_name]
 
     def create_job(self, job_name, config_xml):
-        pass
+        if not job_name in self._jf_jobs:
+            self._jf_jobs[job_name] = self._deleted_jobs[job_name]
 
     def get_job(self, name):
         try:
