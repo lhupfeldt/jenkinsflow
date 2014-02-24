@@ -18,3 +18,5 @@ def test_unbuffered():
 
         with serial(api, timeout=70, job_name_prefix=api.job_name_prefix) as ctrl:
             ctrl.invoke('unbuf')
+
+    assert sys.stdout.writable() == True
