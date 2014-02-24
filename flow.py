@@ -82,7 +82,6 @@ class BuildProgressState(Enum):
 
 class _JobControl(object):
     __metaclass__ = abc.ABCMeta
-    _next_node_id = 0
 
     def __init__(self, parent_flow, securitytoken, max_tries, warn_only, secret_params_re, allow_missing_jobs):
         self.parent_flow = parent_flow
@@ -105,8 +104,8 @@ class _JobControl(object):
         self.total_tried_times = 0
         self.invocation_time = None
 
-        self.node_id = _JobControl._next_node_id
-        _JobControl._next_node_id += 1
+        self.node_id = self.top_flow._next_node_id
+        self.top_flow._next_node_id += 1
 
     def __enter__(self):
         self.top_flow.current_nesting_level += 1
@@ -354,7 +353,7 @@ class _Flow(_JobControl):
             self.last_report_time = now
         return report_now
 
-    def json(self, file_path=None, indent=None):
+    def json(self, file_path, indent=None):
         link_id = lambda job : job.name if indent else job.node_id
         def process_jobs(jobs, prev_nodes, is_parallel=False):
             nodes = []
@@ -571,6 +570,7 @@ class _TopLevelControllerMixin(object):
         self.report_interval = _default_report_interval
         self.secret_params_re = _default_secret_params_re
         self.allow_missing_jobs = None
+        self._next_node_id = 0
 
         jenkins_job_name = os.environ.get('JOB_NAME')
         if jenkins_job_name:
@@ -587,6 +587,8 @@ class _TopLevelControllerMixin(object):
         self.json_dir = json_dir
         self.json_indent = json_indent
         self.securitytoken = securitytoken
+
+        self.json_file = jp(self.json_dir, 'flow_graph.json') if json_dir is not None else None
 
         # Allow test framework to set securitytoken, that we won't have to litter all the testcases with it
         return self.securitytoken or jenkins_api.securitytoken if hasattr(jenkins_api, 'securitytoken') else None
@@ -609,16 +611,16 @@ class _TopLevelControllerMixin(object):
             print("WARNING: Empty toplevel flow", self, "nothing to do.")
             return
 
-        if self.json_dir:
-            self.json(jp(self.json_dir, 'flow_graph.json'), self.json_indent)
+        #if self.json_dir:
+        #    self.json(jp(self.json_dir, 'flow_graph.json'), self.json_indent)
 
         # Wait for jobs to finish
         print()
         print("--- Getting initial job status ---")
         self._prepare_first()
 
-        if self.json_dir:
-            self.json(jp(self.json_dir, 'flow_graph.json'), self.json_indent)
+        if self.json_file:
+            self.json(self.json_file, self.json_indent)
 
         # pylint: disable=attribute-defined-outside-init
         self.start_time = hyperspeed_time()
