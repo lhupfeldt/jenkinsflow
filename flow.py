@@ -353,7 +353,7 @@ class _Flow(_JobControl):
             self.last_report_time = now
         return report_now
 
-    def json(self, file_path, indent=None):
+    def json(self, file_path, indent=None, strip_top_level_prefix=True):
         link_id = lambda job : job.name if indent else job.node_id
         def process_jobs(jobs, prev_nodes, is_parallel=False):
             nodes = []
@@ -362,7 +362,8 @@ class _Flow(_JobControl):
             assert isinstance(prev_nodes, list)
             for job in jobs:
                 if isinstance(job, _SingleJob):
-                    nodes.append({"id": link_id(job), "name": job.name, "url": job.job.baseurl if job.job is not None else None})
+                    name = job.name[len(job.top_flow.job_name_prefix):] if strip_top_level_prefix else job.name
+                    nodes.append({"id": link_id(job), "name": name, "url": job.job.baseurl if job.job is not None else None})
                     for node in prev_nodes:
                         links.append({"source": node, "target": link_id(job)})
                     if not is_parallel:
