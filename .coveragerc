@@ -12,4 +12,10 @@ exclude_lines =
     Old.*jenkinsapi
     old.*jenkinsapi
 
-omit = test/*
+    # set_build_result
+    main\(sys.argv\)
+    set_build_result\(args
+
+omit = 
+     test/*
+     server.py
