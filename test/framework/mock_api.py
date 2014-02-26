@@ -13,7 +13,6 @@ import demo_security as security
 import jenkinsapi
 from jenkinsapi import jenkins
 
-from clean_jobs_state import clean_jobs_state
 from jenkinsflow.unbuffered import UnBuffered
 sys.stdout = UnBuffered(sys.stdout)
 
@@ -361,7 +360,6 @@ def api(file_name, jenkinsurl=os.environ.get('JENKINS_URL') or "http://localhost
     print("--- Preparing api for ", repr(job_name_prefix), "---")
     if is_mocked():
         print('Using Mocked API')
-        clean_jobs_state()
         return MockApi(job_name_prefix)
     else:
         print('Using Real Jenkins API with wrapper')
