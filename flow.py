@@ -6,6 +6,8 @@ from __future__ import print_function
 import os, time, re, abc
 from os.path import join as jp
 from enum import IntEnum, Enum
+from collections import OrderedDict
+
 from set_build_result import set_build_result
 
 _default_poll_interval = 0.5
@@ -153,6 +155,16 @@ class _JobControl(object):
     def __repr__(self):
         return str(self.sequence())
 
+    @abc.abstractmethod
+    def last_jobs_in_flow(self):
+        """For json graph calculation"""
+        raise Exception("AbstractNotImplemented")
+
+    @abc.abstractmethod
+    def links_and_nodes(self, prev_jobs, node_to_id):
+        """For json graph calculation"""
+        raise Exception("AbstractNotImplemented")
+
 
 class _SingleJob(_JobControl):
     def __init__(self, parent_flow, securitytoken, job_name_prefix, max_tries, job_name, params, warn_only, secret_params_re, allow_missing_jobs):
@@ -274,6 +286,21 @@ class _SingleJob(_JobControl):
     def sequence(self):
         return self.name
 
+    def last_jobs_in_flow(self):
+        return [self]
+
+    def links_and_nodes(self, prev_jobs, node_to_id):
+        node_id = node_to_id(self)
+        node_name = self.name[self.top_flow.json_strip_index:]
+        url = self.job.baseurl if self.job is not None else None
+        node = OrderedDict((("id", node_id), ("name", node_name), ("url", url)))
+        links = []
+        for job in prev_jobs:
+            links.append(OrderedDict((("source", node_to_id(job)), ("target", node_id))))
+
+        return [node], links
+
+
 
 class _IgnoredSingleJob(_SingleJob):
     def __init__(self, parent_flow, securitytoken, job_name_prefix, job_name, params, secret_params_re, allow_missing_jobs):
@@ -353,7 +380,7 @@ class _Flow(_JobControl):
             self.last_report_time = now
         return report_now
 
-    def json(self, file_path, indent=None, strip_top_level_prefix=True):
+    def _old_json(self, file_path, indent=None, strip_top_level_prefix=True):
         link_id = lambda job : job.name if indent else job.node_id
         def process_jobs(jobs, prev_nodes, is_parallel=False):
             nodes = []
@@ -389,7 +416,23 @@ class _Flow(_JobControl):
         nodes = []
         links = []
         prev_nodes = []
-        nodes, links, _ = process_jobs(self.jobs, prev_nodes, is_parallel=False)
+        nodes, links, _ = process_jobs(self.jobs, prev_nodes, is_parallel=isinstance(self, _Parallel))
+        graph = {'nodes': nodes, 'links': links}
+
+        import json
+        from atomicfile import AtomicFile
+        if file_path is not None:
+            with AtomicFile(file_path, 'w+') as out_file:
+                json.dump(graph, out_file, indent=indent)
+        else:
+            return json.dumps(graph, indent=indent)
+
+    def json(self, file_path, indent=None):
+        node_to_id = lambda job : job.node_id
+        if indent:
+            node_to_id = lambda job : job.name
+
+        nodes, links = self.links_and_nodes([], node_to_id)
         graph = {'nodes': nodes, 'links': links}
 
         import json
@@ -470,6 +513,21 @@ class _Parallel(_Flow):
 
     def sequence(self):
         return tuple([job.sequence() for job in self.jobs])
+
+    def last_jobs_in_flow(self):
+        jobs = []
+        for job in self.jobs:
+            jobs.extend(job.last_jobs_in_flow())
+        return jobs
+
+    def links_and_nodes(self, prev_jobs, node_to_id):
+        nodes = []
+        links = []
+        for job in self.jobs:
+            child_nodes, child_links = job.links_and_nodes(prev_jobs, node_to_id)
+            nodes.extend(child_nodes)
+            links.extend(child_links)
+        return nodes, links
 
 
 class _Serial(_Flow):
@@ -555,13 +613,27 @@ class _Serial(_Flow):
     def sequence(self):
         return [job.sequence() for job in self.jobs]
 
+    def last_jobs_in_flow(self):
+        return self.jobs[-1].last_jobs_in_flow()
+
+    def links_and_nodes(self, prev_jobs, node_to_id):
+        nodes = []
+        links = []
+        for job in self.jobs:
+            child_nodes, child_links = job.links_and_nodes(prev_jobs, node_to_id)
+            nodes.extend(child_nodes)
+            links.extend(child_links)
+            prev_jobs = job.last_jobs_in_flow()
+        return nodes, links
+
 
 class _TopLevelControllerMixin(object):
     __metaclass__ = abc.ABCMeta
 
-    def toplevel_init(self, jenkins_api, securitytoken, username, password, poll_interval, json_dir, json_indent):
+    def toplevel_init(self, jenkins_api, securitytoken, username, password, top_level_job_name_prefix, poll_interval, json_dir, json_indent, json_strip_top_level_prefix):
         self._start_msg()
         # pylint: disable=attribute-defined-outside-init
+        # Note: Special handling in top level flow, these atributes will be modified in proper flow init
         self.parent_flow = self
         self.top_flow = self
         self.job_name_prefix = ''
@@ -582,13 +654,14 @@ class _TopLevelControllerMixin(object):
             self.cause = "By flow script, user " + repr(user)
 
         self._api = jenkins_api
+        self.securitytoken = securitytoken
         self.username = username
         self.password = password
         self.poll_interval = poll_interval
+
         self.json_dir = json_dir
         self.json_indent = json_indent
-        self.securitytoken = securitytoken
-
+        self.json_strip_index = len(top_level_job_name_prefix) if json_strip_top_level_prefix else 0
         self.json_file = jp(self.json_dir, 'flow_graph.json') if json_dir is not None else None
 
         # Allow test framework to set securitytoken, that we won't have to litter all the testcases with it
@@ -612,8 +685,8 @@ class _TopLevelControllerMixin(object):
             print("WARNING: Empty toplevel flow", self, "nothing to do.")
             return
 
-        #if self.json_dir:
-        #    self.json(jp(self.json_dir, 'flow_graph.json'), self.json_indent)
+        if self.json_dir:
+            self.json(jp(self.json_dir, 'flow_graph.json'), self.json_indent)
 
         # Wait for jobs to finish
         print()
@@ -641,9 +714,10 @@ class _TopLevelControllerMixin(object):
 class parallel(_Parallel, _TopLevelControllerMixin):
     def __init__(self, jenkins_api, timeout, securitytoken=None, username=None, password=None, job_name_prefix='', max_tries=1, warn_only=False,
                  report_interval=_default_report_interval, poll_interval=_default_poll_interval, secret_params=_default_secret_params_re, allow_missing_jobs=False,
-                 json_dir=None, json_indent=None):
+                 json_dir=None, json_indent=None, json_strip_top_level_prefix=True):
         """warn_only: causes failure in this job not to fail the parent flow"""
-        securitytoken = self.toplevel_init(jenkins_api, securitytoken, username, password, poll_interval, json_dir, json_indent)
+        securitytoken = self.toplevel_init(jenkins_api, securitytoken, username, password, job_name_prefix, poll_interval,
+                                           json_dir, json_indent, json_strip_top_level_prefix)
         super(parallel, self).__init__(self, timeout, securitytoken, job_name_prefix, max_tries, warn_only, report_interval, secret_params, allow_missing_jobs)
         self.parent_flow = None
 
@@ -655,9 +729,10 @@ class parallel(_Parallel, _TopLevelControllerMixin):
 class serial(_Serial, _TopLevelControllerMixin):
     def __init__(self, jenkins_api, timeout, securitytoken=None, username=None, password=None, job_name_prefix='', max_tries=1, warn_only=False,
                  report_interval=_default_report_interval, poll_interval=_default_poll_interval, secret_params=_default_secret_params_re, allow_missing_jobs=False,
-                 json_dir=None, json_indent=None):
+                 json_dir=None, json_indent=None, json_strip_top_level_prefix=True):
         """warn_only: causes failure in this job not to fail the parent flow"""
-        securitytoken = self.toplevel_init(jenkins_api, securitytoken, username, password, poll_interval, json_dir, json_indent)
+        securitytoken = self.toplevel_init(jenkins_api, securitytoken, username, password, job_name_prefix, poll_interval,
+                                           json_dir, json_indent, json_strip_top_level_prefix)
         super(serial, self).__init__(self, timeout, securitytoken, job_name_prefix, max_tries, warn_only, report_interval, secret_params, allow_missing_jobs)
         self.parent_flow = None
 
