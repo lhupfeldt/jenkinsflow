@@ -7,7 +7,7 @@ try:
     import tenjin
     from tenjin.helpers import *
     engine = tenjin.Engine()
-except ImportError:
+except ImportError:  # pragma: no cover
     engine = None
 
 from jenkinsapi.custom_exceptions import UnknownJob
