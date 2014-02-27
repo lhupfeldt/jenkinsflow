@@ -26,31 +26,30 @@ def download_cli(cli_jar, base_url):
     import urllib2
 
     cli_url = base_url + '/jnlpJars/' + cli_jar
-    print("INFO: Downloading cli", repr(cli_url))
+    print("INFO: Downloading cli:", repr(cli_url))
     response = urllib2.urlopen(cli_url)
     with open(cli_jar, 'w') as ff:
         ff.write(response.read())
+    print("INFO: Download finished:", repr(cli_jar))
 
 
 def set_build_result(username, password, result, java='java'):
     # Note: set-build-result can only be done from within the job
     # Note: only available if Jenkins URL set in Jenkins system configuration
 
-    my_url = os.environ.get('BUILD_URL')
-    if my_url is None:
-        print("INFO: Not running inside Jenkins or Hudson job, no job to set result", repr(result), "for!", file=sys.stderr)
-        return
+    print("INFO: Setting job result to", repr(result))
 
     cli_jar, base_url = cli_jar_info()
     if base_url is None:
         raise Exception("Could not get env variable JENKINS_URL or HUDSON_URL. Don't know whether to use " +
-                        jenkins_cli_jar + " or " + hudson_cli_jar + " for setting result! You must set 'Jenkins Location' in Jenkins setup for JENKINS_URL to be exported.")
+                        jenkins_cli_jar + " or " + hudson_cli_jar + " for setting result! " +
+                        "You must set 'Jenkins Location' in Jenkins setup for JENKINS_URL to be exported. " +
+                        "You must set 'Hudson URL' in Hudson setup for HUDSON_URL to be exported.")
 
-    print("INFO: Setting job result to", repr(result))
     import subprocess
 
     def set_res():
-        command = [java, '-jar', cli_jar, '-s', my_url, 'set-build-result', result]
+        command = [java, '-jar', cli_jar, '-s', base_url, 'set-build-result', result]
         if username or password:
             assert password and username, "You must specify both username and password if any"
             fname = None

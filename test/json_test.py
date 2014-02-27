@@ -101,19 +101,19 @@ def _assert_json(got_json, expected_json):
 
 def _flow(api, strip_prefix):
     with serial(api, timeout=70, job_name_prefix=api.job_name_prefix, report_interval=1, json_dir='.', json_strip_top_level_prefix=strip_prefix) as ctrl1:
-        ctrl1.invoke('j1', password='a', s1='b')
-        ctrl1.invoke('j2', password='a', s1='b')
+        ctrl1.invoke('j1')
+        ctrl1.invoke('j2')
 
         with ctrl1.parallel(timeout=40, report_interval=3) as ctrl2:
             with ctrl2.serial(timeout=40, report_interval=3) as ctrl3a:
-                ctrl3a.invoke('j3', password='a', s1='b')
-                ctrl3a.invoke('j6', password='a', s1='b')
+                ctrl3a.invoke('j3')
+                ctrl3a.invoke('j6')
 
             with ctrl2.parallel(timeout=40, report_interval=3) as ctrl3b:
-                ctrl3b.invoke('j4', password='a', s1='b')
-                ctrl3b.invoke('j5', password='a', s1='b')
+                ctrl3b.invoke('j4')
+                ctrl3b.invoke('j5')
 
-        ctrl1.invoke('j7', password='a', s1='b')
+        ctrl1.invoke('j7')
 
     return ctrl1
 

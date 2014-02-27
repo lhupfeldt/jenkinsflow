@@ -23,7 +23,7 @@ def main(api, _):
     logging.basicConfig()
     logging.getLogger("").setLevel(logging.WARNING)
 
-    with serial(api, timeout=70, job_name_prefix='jenkinsflow_demo__hide_password__', report_interval=3, secret_params='.*PASS.*|.*pass.*') as ctrl:
+    with serial(api, timeout=70, securitytoken=security.securitytoken, job_name_prefix='jenkinsflow_demo__hide_password__', report_interval=3, secret_params='.*PASS.*|.*pass.*') as ctrl:
         # NOTE: In order to ensure that passwords are not displayed in a stacktrace you must never put a literal password
         # In the last line in the with statement, or in any statement that may raise an exception. You shold not really
         # put clear text paswords in you code anyway :)
@@ -32,6 +32,5 @@ def main(api, _):
 
 
 if __name__ == '__main__':
-    # Note: This flow uses username/password instead of securitytoken, to demonstrate that feature, it could have used securitytoken
-    # See demo_security.py
-    main(jenkins.Jenkins(os.environ.get('JENKINS_URL') or "http://localhost:8080", security.username, security.password), '/var/www/jenkinsflow')
+    jenkins = jenkins.Jenkins(os.environ.get('JENKINS_URL') or os.environ.get('HUDSON_URL') or "http://localhost:8080")
+    main(jenkins, '/var/www/jenkinsflow')

@@ -1,14 +1,24 @@
 Installation
 ------------
+In the following Jenkins also means Hudson unless otherwise stated.
 
 1. Install jenkinsapi python library and other dependencies:
    pip install jenkinsapi enum34
+   # Jenkinsapi can be found here https://github.com/salimfadhley/jenkinsapi
    optional: pip install tenjin (if you want to use the template based job loader)
+
+   Note: If jenkinsapi is placed next to jenkinsflow, that version of jenkinsapi will be used for the tests. 
+
+   Note: if you use Hudson (3.x):
+      a. You cannot use the pip installed jenkinsapi, instead get it from:
+         https://github.com/henriklynggaard/jenkinsapi.git 
+         checkout the 'hudson_support' branch
+      b. You need to install the REST API plugin and enable REST API
 
 2. To use the experimental visualisation feature:
    pip install bottle atomicfile
 
-3. Make jenkinsflow files (flow.py and possibly unbuffered.py) available to your Jenkins/Hudson installation.
+3. Make jenkinsflow files (flow.py and possibly unbuffered.py) available to your Jenkins installation.
 
 4. To use the warn_only (experimental) feature, Jenkins URL must be set in Jenkins configuration.
 
@@ -27,8 +37,10 @@ Test
 2. Read and update the file demo/demo_security.py if you have enabled security on your Jenkins
 
 3. Run the tests:
-   # Mocked tests do not require Jenkins
+   # Mocked tests do not require Jenkins (but there will be a couple of xfails if jenkins is not running)
    JENKINSFLOW_MOCK_API=true ./test.py
+   # Or if you are using Hudson
+   JENKINSFLOW_MOCK_API=true HUDSON_URL=<your Hudson> python ./test/tests.py
 
    # Load test jobs into Jenkins and execute them
    JENKINS_URL=<your Jenkins> python ./test/tests.py

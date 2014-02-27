@@ -1,0 +1,3 @@
+#!/bin/bash
+
+echo Fake 'cli' call whan running outside of Jenkins: $@

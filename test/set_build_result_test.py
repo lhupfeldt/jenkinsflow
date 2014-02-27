@@ -9,7 +9,6 @@
 from __future__ import print_function
 
 import os
-from os.path import join as jp
 import subprocess
 import urllib2
 import pytest
@@ -22,27 +21,6 @@ from framework import mock_api
 from demo_security import username, password
 
 here = os.path.dirname(__file__)
-
-def _set_unset_env_fixture(var_name, not_set_value, request):
-    has_url = os.environ.get(var_name)
-    if not has_url:
-        os.environ[var_name] = not_set_value
-    def fin():
-        if not has_url:
-            del os.environ[var_name]
-    request.addfinalizer(fin)
-
-
-@pytest.fixture
-def env_build_url(request):
-    # Fake that we are running from inside jenkins job
-    _set_unset_env_fixture('BUILD_URL', 'http://localhost:8080/job/not_there', request)
-
-
-@pytest.fixture
-def env_base_url(request):
-    # Fake that we are running from inside jenkins job
-    _set_unset_env_fixture('JENKINS_URL', 'http://localhost:8080', request)
 
 
 @pytest.fixture
@@ -63,7 +41,7 @@ def no_pre_existing_cli(request):
         os.remove(set_build_result.hudson_cli_jar)
 
 
-def test_set_build_result(env_build_url, env_base_url, pre_existing_cli, capfd):
+def test_set_build_result(pre_existing_cli, env_base_url, capfd):
     with raises(subprocess.CalledProcessError):
         with mock_api.api(__file__) as api:
             try:
@@ -82,13 +60,14 @@ def test_set_build_result(env_build_url, env_base_url, pre_existing_cli, capfd):
         _, serr = capfd.readouterr()
         assert "http://localhost:8080/job/not_there/" in serr
 
-def test_set_build_result_no_auth(env_build_url, env_base_url, pre_existing_cli, capfd):
+
+def test_set_build_result_no_auth(pre_existing_cli, env_base_url, capfd):
     with raises(subprocess.CalledProcessError):
         with mock_api.api(__file__) as api:
             try:
                 api.flow_job()
                 api.job('j1_fail', exec_time=0.5, max_fails=1, expect_invocations=1, expect_order=1)
-    
+
                 with serial(api, timeout=70, job_name_prefix=api.job_name_prefix, report_interval=3, warn_only=True) as ctrl1:
                     ctrl1.invoke('j1_fail')
 
@@ -102,7 +81,7 @@ def test_set_build_result_no_auth(env_build_url, env_base_url, pre_existing_cli,
         assert "http://localhost:8080/job/not_there/" in serr
 
 
-def test_set_build_result_no_jenkinsurl(env_build_url, pre_existing_cli, capfd):
+def test_set_build_result_no_jenkinsurl(pre_existing_cli, env_no_base_url, capfd):
     with raises(Exception) as exinfo:
         with mock_api.api(__file__) as api:
             api.flow_job()
@@ -111,19 +90,7 @@ def test_set_build_result_no_jenkinsurl(env_build_url, pre_existing_cli, capfd):
             with serial(api, timeout=70, username=username, password=password, job_name_prefix=api.job_name_prefix, report_interval=3, warn_only=True) as ctrl1:
                 ctrl1.invoke('j1_fail')
 
-    assert "Could not get env variable JENKINS_URL or HUDSON_URL. Don't know whether to use jenkins-cli.jar or hudson-cli.jar for setting result! You must set 'Jenkins Location' in Jenkins setup for JENKINS_URL to be exported." in exinfo.value.message
-
-
-def test_set_build_result_no_build_url(pre_existing_cli, capfd):
-    with mock_api.api(__file__) as api:
-        api.flow_job()
-        api.job('j1_fail', exec_time=0.5, max_fails=1, expect_invocations=1, expect_order=1)
-    
-        with serial(api, timeout=70, username=username, password=password, job_name_prefix=api.job_name_prefix, report_interval=3, warn_only=True) as ctrl1:
-            ctrl1.invoke('j1_fail')
-    
-    sout, serr = capfd.readouterr()
-    assert "INFO: Not running inside Jenkins or Hudson job, no job to set result 'unstable' for!" in serr
+    assert "Could not get env variable JENKINS_URL or HUDSON_URL. Don't know whether to use jenkins-cli.jar or hudson-cli.jar for setting result! You must set 'Jenkins Location' in Jenkins setup for JENKINS_URL to be exported. You must set 'Hudson URL' in Hudson setup for HUDSON_URL to be exported." in exinfo.value.message
 
 
 def test_set_build_result_call_script(pre_existing_cli, capfd):

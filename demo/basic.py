@@ -67,4 +67,5 @@ def main(api, graph_output_dir):
 
 
 if __name__ == '__main__':
-    main(jenkins.Jenkins(os.environ.get('JENKINS_URL') or "http://localhost:8080"), '/tmp/jenkinsflow')
+    jenkins = jenkins.Jenkins(os.environ.get('JENKINS_URL') or os.environ.get('HUDSON_URL') or "http://localhost:8080")
+    main(jenkins, '/tmp/jenkinsflow')

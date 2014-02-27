@@ -1,0 +1,56 @@
+import os
+import pytest
+
+
+def _set_env_fixture(var_name, not_set_value, request):
+    """
+    Ensure env var_name is set to the value 'not_set_value' IFF it was not already set
+    Set back to original value, if any, or unset it, after test
+    """
+    has_var = os.environ.get(var_name)
+    if not has_var:
+        os.environ[var_name] = not_set_value
+        def fin():
+            del os.environ[var_name]
+        request.addfinalizer(fin)
+
+
+def _unset_env_fixture(var_name, request):
+    """
+    Ensure env var_name is NOT set
+    Set back to original value, if any, after test
+    """
+    has_var = os.environ.get(var_name)
+    if has_var:
+        del os.environ[var_name]
+        def fin():
+            os.environ[var_name] = has_var
+        request.addfinalizer(fin)
+
+
+@pytest.fixture
+def env_base_url(request):
+    # Fake that we are running from inside jenkins job
+    if os.environ.get('HUDSON_URL') is None:
+        _set_env_fixture('JENKINS_URL', 'http://localhost:8080', request)
+
+
+@pytest.fixture
+def env_no_base_url(request):
+    # Make sure it looks as if we are we are running from outside jenkins job
+    _unset_env_fixture('JENKINS_URL', request)
+    _unset_env_fixture('HUDSON_URL', request)
+
+
+@pytest.fixture(scope="module")
+def fake_java(request):
+    if not os.environ.get('BUILD_URL'):
+        # Running outside of Jenkins, fake call to java - cli, use script ./framework/java
+        here = os.path.abspath(os.path.dirname(__file__))
+        orig_path = os.environ.get('PATH')
+        os.environ['PATH'] = os.path.join(here, 'framework') + ':' + orig_path or ''
+
+        if orig_path:
+            def fin():
+                os.environ['PATH'] = orig_path
+            request.addfinalizer(fin)

@@ -5,4 +5,4 @@ Python API with high level build flow constructs (parallel/serial) for Jenkins (
 
 See INSTALL.md for installation.
 See demo/... for some usage examples.
-I don't test on Hudson, but patches are welcome.
+I don't test continuously on Hudson, but patches are welcome.

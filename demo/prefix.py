@@ -23,7 +23,7 @@ def main(api, _):
     logging.basicConfig()
     logging.getLogger("").setLevel(logging.WARNING)
 
-    with serial(api, timeout=70, securitytoken=security.securitytoken, report_interval=3, job_name_prefix='jenkinsflow_demo__prefix__') as ctrl1:
+    with serial(api, timeout=70, report_interval=3, job_name_prefix='jenkinsflow_demo__prefix__') as ctrl1:
         ctrl1.invoke('quick1')
 
         for index in 1, 2, 3:
@@ -40,4 +40,7 @@ def main(api, _):
 
 
 if __name__ == '__main__':
-    main(jenkins.Jenkins(os.environ.get('JENKINS_URL') or "http://localhost:8080", security.username, security.password), '/var/www/jenkinsflow')
+    # Note: This flow uses username/password instead of securitytoken, to demonstrate that feature, it could have used securitytoken
+    # See demo_security.py
+    jenkins = jenkins.Jenkins(os.environ.get('JENKINS_URL') or os.environ.get('HUDSON_URL') or "http://localhost:8080", security.username, security.password)
+    main(jenkins, '/var/www/jenkinsflow')

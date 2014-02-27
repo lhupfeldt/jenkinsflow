@@ -47,4 +47,5 @@ def main(api, _):
 
 
 if __name__ == '__main__':
-    main(jenkins.Jenkins(os.environ.get('JENKINS_URL') or "http://localhost:8080"), '/var/www/jenkinsflow')
+    jenkins = jenkins.Jenkins(os.environ.get('JENKINS_URL') or os.environ.get('HUDSON_URL') or "http://localhost:8080")
+    main(jenkins, '/var/www/jenkinsflow')

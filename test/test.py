@@ -6,7 +6,9 @@ import sys, os, imp, subprocess
 from os.path import join as jp
 here = os.path.abspath(os.path.dirname(__file__))
 
-sys.path.extend([jp(here, '../..'), jp(here, '../demo'), jp(here, '../demo/jobs'), jp(here, '../../jenkinsapi')])
+extra_sys_path = [os.path.normpath(path) for path in [jp(here, '../..'), jp(here, '../demo'), jp(here, '../demo/jobs'), jp(here, '../../jenkinsapi')]]
+sys.path.extend(extra_sys_path)
+os.environ['PYTHONPATH'] = ':'.join(extra_sys_path)
 from jenkinsflow.flow import JobControlFailException
 
 import basic, prefix, hide_password, errors

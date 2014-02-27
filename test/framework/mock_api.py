@@ -147,9 +147,14 @@ class WrapperJob(ObjectWrapper):
                invoke_block_delay=15, build_params=None, cause=None, files=None):
         self.actual_order = WrapperJob._current_order
         WrapperJob._current_order += 1
-        if self.invocation < self.max_fails:
+
+        if self.max_fails > 0 or self.final_result:
             build_params = build_params or {}
-            build_params['force_result'] = 'fail'
+            if self.invocation < self.max_fails:
+                build_params['force_result'] = 'fail'
+            if self.invocation >= self.max_fails:
+                build_params['force_result'] = self.final_result or 'success'
+
         self.invocation += 1
         self.invocation_time = time.time()
         self.__subject__.invoke(securitytoken, block, skip_if_running, invoke_pre_check_delay,  # pylint: disable=no-member
@@ -274,11 +279,12 @@ class MockApi(_JobsMixin):
 
 
 class JenkinsWrapperApi(jenkins.Jenkins, _JobsMixin):
-    def __init__(self, file_name, func_name, job_name_prefix, reload_jobs, jenkinsurl, username, password, securitytoken):
+    def __init__(self, file_name, func_name, func_num_params, job_name_prefix, reload_jobs, jenkinsurl, username, password, securitytoken):
         super(JenkinsWrapperApi, self).__init__(jenkinsurl)
         self.job_loader_jenkins = jenkins.Jenkins(jenkinsurl, username, password)
         self.file_name = file_name
         self.func_name = func_name
+        self.func_num_params = func_num_params
         self.job_name_prefix = job_name_prefix
         self.reload_jobs = reload_jobs
         self.securitytoken = securitytoken
@@ -309,7 +315,9 @@ class JenkinsWrapperApi(jenkins.Jenkins, _JobsMixin):
         if self.func_name:
             script  = "export PYTHONPATH=/tmp:/tmp/jenkinsflow/test\n"
             script += "export JENKINSFLOW_SKIP_JOB_LOAD=true\n"
-            script += "python -Bc &quot;from " + self.file_name.replace('.py', '') + " import *; test_" + self.func_name + "()&quot;"
+            # Supply dummy args for the py.test fixtures
+            dummy_args = ','.join(['0' for _ in range(self.func_num_params)])
+            script += "python -Bc &quot;from " + self.file_name.replace('.py', '') + " import *; test_" + self.func_name + "(" + dummy_args + ")&quot;"
         else:
             script = "python " + jp('/tmp/jenkinsflow/demo', self.file_name)
         self._jenkins_job('0flow_' + name if name else '0flow', exec_time=0.5, params=params, script=script, load_job=self.reload_jobs)
@@ -341,12 +349,14 @@ def is_mocked():
     return mocked and mocked.lower() == 'true'
 
 
-def api(file_name, jenkinsurl=os.environ.get('JENKINS_URL') or "http://localhost:8080"):
+def api(file_name, jenkinsurl=os.environ.get('JENKINS_URL') or os.environ.get('HUDSON_URL') or "http://localhost:8080"):
     base_name = os.path.basename(file_name).replace('.pyc', '.py')
     job_name_prefix = _file_name_subst.sub('', base_name)
     func_name = None
+    func_num_params = 0
     if '_test' in file_name:
         func_name = sys._getframe().f_back.f_code.co_name  # pylint: disable=protected-access
+        func_num_params = sys._getframe().f_back.f_code.co_argcount  # pylint: disable=protected-access
         file_name = base_name
         func_name = func_name.replace('test_', '')
         assert func_name[0:len(job_name_prefix)] == job_name_prefix, \
@@ -364,5 +374,5 @@ def api(file_name, jenkinsurl=os.environ.get('JENKINS_URL') or "http://localhost
     else:
         print('Using Real Jenkins API with wrapper')
         reload_jobs = os.environ.get('JENKINSFLOW_SKIP_JOB_LOAD') != 'true'
-        return JenkinsWrapperApi(file_name, func_name, job_name_prefix, reload_jobs,
+        return JenkinsWrapperApi(file_name, func_name, func_num_params, job_name_prefix, reload_jobs,
                                  jenkinsurl, security.username, security.password, security.securitytoken)

@@ -11,7 +11,7 @@ from framework import mock_api
 from demo_security import username, password
 
 
-def test_warn_only_serial():
+def test_warn_only_serial(env_base_url, fake_java, capfd):
     with mock_api.api(__file__) as api:
         api.flow_job()
         api.job('j11', exec_time=0.5, max_fails=0, expect_invocations=1, expect_order=1)
@@ -24,7 +24,7 @@ def test_warn_only_serial():
             ctrl1.invoke('j13')
 
 
-def test_warn_only_parallel():
+def test_warn_only_parallel(env_base_url, fake_java, capfd):
     with mock_api.api(__file__) as api:
         api.flow_job()
         api.job('j1_fail', exec_time=0.5, max_fails=1, expect_invocations=1, expect_order=1)
@@ -35,7 +35,7 @@ def test_warn_only_parallel():
             ctrl1.invoke('j2')
 
 
-def test_warn_only_nested_serial_parallel():
+def test_warn_only_nested_serial_parallel(env_base_url, fake_java, capfd):
     with mock_api.api(__file__) as api:
         api.flow_job()
         api.job('j11', exec_time=0.5, max_fails=0, expect_invocations=1, expect_order=1)
@@ -52,7 +52,7 @@ def test_warn_only_nested_serial_parallel():
                 ctrl2.invoke('j23')
 
 
-def test_warn_only_nested_parallel_serial():
+def test_warn_only_nested_parallel_serial(env_base_url, fake_java, capfd):
     with mock_api.api(__file__) as api:
         api.flow_job()
         api.job('j11', exec_time=0.5, max_fails=0, expect_invocations=1, expect_order=1)
@@ -69,7 +69,7 @@ def test_warn_only_nested_parallel_serial():
                 ctrl2.invoke('j23')
 
 
-def test_warn_only_nested_serial_serial():
+def test_warn_only_nested_serial_serial(env_base_url, fake_java, capfd):
     with mock_api.api(__file__) as api:
         api.flow_job()
         api.job('j11', exec_time=0.5, max_fails=0, expect_invocations=1, expect_order=1)
@@ -86,7 +86,7 @@ def test_warn_only_nested_serial_serial():
                 ctrl2.invoke('j23')
 
 
-def test_warn_only_nested_parallel_parallel():
+def test_warn_only_nested_parallel_parallel(env_base_url, fake_java, capfd):
     with mock_api.api(__file__) as api:
         api.flow_job()
         api.job('j11', exec_time=0.5, max_fails=0, expect_invocations=1, expect_order=1)
@@ -103,7 +103,7 @@ def test_warn_only_nested_parallel_parallel():
                 ctrl2.invoke('j23')
 
 
-def test_warn_only_nested_serial_serial_continue():
+def test_warn_only_nested_serial_serial_continue(env_base_url, fake_java, capfd):
     with mock_api.api(__file__) as api:
         api.flow_job()
         api.job('j11', exec_time=0.5, max_fails=0, expect_invocations=1, expect_order=1)
@@ -121,7 +121,7 @@ def test_warn_only_nested_serial_serial_continue():
                 ctrl2.invoke('j23')
 
 
-def test_warn_only_nested_parallel_serial_continue():
+def test_warn_only_nested_parallel_serial_continue(env_base_url, fake_java, capfd):
     with mock_api.api(__file__) as api:
         api.flow_job()
         api.job('j11', exec_time=0.5, max_fails=0, expect_invocations=1, expect_order=1)
