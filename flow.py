@@ -380,53 +380,6 @@ class _Flow(_JobControl):
             self.last_report_time = now
         return report_now
 
-    def _old_json(self, file_path, indent=None, strip_top_level_prefix=True):
-        link_id = lambda job : job.name if indent else job.node_id
-        def process_jobs(jobs, prev_nodes, is_parallel=False):
-            nodes = []
-            links = []
-            new_prev_nodes = []
-            assert isinstance(prev_nodes, list)
-            for job in jobs:
-                if isinstance(job, _SingleJob):
-                    name = job.name[len(job.top_flow.job_name_prefix):] if strip_top_level_prefix else job.name
-                    nodes.append({"id": link_id(job), "name": name, "url": job.job.baseurl if job.job is not None else None})
-                    for node in prev_nodes:
-                        links.append({"source": node, "target": link_id(job)})
-                    if not is_parallel:
-                        prev_nodes = [link_id(job)]
-                    else:
-                        new_prev_nodes.append(link_id(job))
-                elif isinstance(job, _Parallel):
-                    par_nodes, par_links, prev_nodes = process_jobs(job.jobs, prev_nodes, is_parallel=True)
-                    nodes.extend(par_nodes)
-                    links.extend(par_links)
-                elif isinstance(job, _Serial):
-                    if is_parallel:
-                        save_prev_nodes = prev_nodes
-                    par_nodes, par_links, prev_nodes = process_jobs(job.jobs, prev_nodes, is_parallel=False)
-                    nodes.extend(par_nodes)
-                    if is_parallel:
-                        prev_nodes = save_prev_nodes
-                        new_prev_nodes.append(par_links[len(par_links)-1]['target'])
-                    links.extend(par_links)
-
-            return nodes, links, prev_nodes if not new_prev_nodes else new_prev_nodes
-
-        nodes = []
-        links = []
-        prev_nodes = []
-        nodes, links, _ = process_jobs(self.jobs, prev_nodes, is_parallel=isinstance(self, _Parallel))
-        graph = {'nodes': nodes, 'links': links}
-
-        import json
-        from atomicfile import AtomicFile
-        if file_path is not None:
-            with AtomicFile(file_path, 'w+') as out_file:
-                json.dump(graph, out_file, indent=indent)
-        else:
-            return json.dumps(graph, indent=indent)
-
     def json(self, file_path, indent=None):
         node_to_id = lambda job : job.node_id
         if indent:
