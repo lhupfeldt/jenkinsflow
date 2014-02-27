@@ -5,12 +5,12 @@ Installation
    pip install jenkinsapi enum34
    optional: pip install tenjin (if you want to use the template based job loader)
 
-2. To use the experimental visualisation feature:  
+2. To use the experimental visualisation feature:
    pip install bottle atomicfile
 
-3. Make jenkinsflow files (flow.py and possibly unbuffered.py) available to your jenkins/hudson installation.
+3. Make jenkinsflow files (flow.py and possibly unbuffered.py) available to your Jenkins/Hudson installation.
 
-4. To use the warn_only (experimental) feature, jenkins url must be set in Jenkins configuration.
+4. To use the warn_only (experimental) feature, Jenkins URL must be set in Jenkins configuration.
 
 5. Read the file demo/demo_security.py for notes about security, if you have enabled security on your Jenkins
 
@@ -31,14 +31,18 @@ Test
    JENKINSFLOW_MOCK_API=true ./test.py
 
    # Load test jobs into Jenkins and execute them
-   JENKINS_URL=<your jenkins> python ./test/tests.py
+   JENKINS_URL=<your Jenkins> python ./test/tests.py
+   # Or if you are using Hudson
+   HUDSON_URL=<your Hudson> python ./test/tests.py
 
    Important:
    Jenkins is default configured with only two executors on master. To avoid timeouts in the test cases this must be raised to at least 8.
-   Jenkins is default configured with a 'Quit period of 5 seconds'. To avoid timeouts in the test cases this should be set to 0.
+   Jenkins is default configured with a 'Quiet period' of 5 seconds. To avoid timeouts in the test cases this should be set to 0.
 
    All jobs created by the test script are prefixed with 'jenkinsflow_', so they can easily be removed.
 
+   The test suite creates jobs called ..._0flow. These jobs are not executed by the test suite, by you can run them to see what the flows look like in a Jenkins job.
+   If your Jenkins is not secured, you must set username and password to '' in demo_security,  in order to be able to run all the ..._0flow jobs.
 
 Demos
 ----
@@ -46,7 +50,7 @@ Demos
 1. Run tests as described above to load jobs Jenkins
 
 2. Demo scripts can be executed from command line:
-   python ./demo/<demo>.py 
+   python ./demo/<demo>.py
 
 3. Demo scripts can be executed from the loaded jobs
    Jenkins needs to be able to find the scripts, the demo jobs are setup to find the scripts in '/tmp/jenkinsflow'.
