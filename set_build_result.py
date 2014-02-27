@@ -9,6 +9,21 @@ import sys, os, argparse, tempfile
 
 cli_jar = 'jenkins-cli.jar'
 
+
+def download_cli():
+    import urllib2
+
+    base_url = os.environ.get('JENKINS_URL') or os.environ.get('HUDSON_URL')
+    if base_url is None:
+        raise Exception("Could not get env variable JENKINS_URL or HUDSON_URL. Don't know how to download " + cli_jar + " needed for setting result!")
+
+    cli_url = base_url + '/jnlpJars/' + cli_jar
+    print("INFO: Downloading cli", repr(cli_url))
+    response = urllib2.urlopen(cli_url)
+    with open(cli_jar, 'w') as ff:
+        ff.write(response.read())
+
+
 def set_build_result(username, password, result, java='java'):
     # Note: set-build-result can only be done from within the job
     # Note: only available if Jenkins URL set in Jenkins system configuration
@@ -19,7 +34,7 @@ def set_build_result(username, password, result, java='java'):
         return
 
     print("INFO: Setting job result to", repr(result))
-    import urllib2, subprocess
+    import subprocess
 
     def set_res():
         command = [java, '-jar', cli_jar, '-s', my_url, 'set-build-result', result]
@@ -46,15 +61,7 @@ def set_build_result(username, password, result, java='java'):
         set_res()
     except subprocess.CalledProcessError :
         # We failed for some reason, try again with updated cli_jar
-        base_url = os.environ.get('JENKINS_URL') or os.environ.get('HUDSON_URL')
-        if base_url is None: 
-            raise Exception("Could not get env variable JENKINS_URL or HUDSON_URL. Don't know how to download " + cli_jar + " needed for setting result!")
-
-        cli_url = base_url + '/jnlpJars/' + cli_jar
-        print("INFO: Downloading cli", repr(cli_url))
-        response = urllib2.urlopen(cli_url)
-        with open(cli_jar, 'w') as ff:
-            ff.write(response.read())
+        download_cli()
         set_res()
 
 

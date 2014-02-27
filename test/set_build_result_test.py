@@ -42,9 +42,27 @@ def env_build_url(request):
 def env_base_url(request):
     # Fake that we are running from inside jenkins job
     _set_unset_env_fixture('JENKINS_URL', 'http://localhost:8080', request)
+    _set_unset_env_fixture('HUDSON_URL', 'http://localhost:8080', request)
 
 
-def test_set_build_result(env_build_url, env_base_url, capfd):
+@pytest.fixture
+def pre_existing_cli(request):
+    has_url = os.environ.get('JENKINS_URL') or os.environ.get('HUDSON_URL')
+    if not has_url:
+        os.environ['JENKINS_URL'] = 'http://localhost:8080'
+    if not os.path.exists(set_build_result.cli_jar):
+        set_build_result.download_cli()
+    if not has_url:
+        del os.environ['JENKINS_URL']
+
+
+@pytest.fixture
+def no_pre_existing_cli(request):
+    if os.path.exists(set_build_result.cli_jar):
+        os.remove(set_build_result.cli_jar)
+
+
+def test_set_build_result(env_build_url, env_base_url, pre_existing_cli, capfd):
     with raises(subprocess.CalledProcessError):
         with mock_api.api(__file__) as api:
             api.flow_job()
@@ -57,7 +75,7 @@ def test_set_build_result(env_build_url, env_base_url, capfd):
         assert "java.io.IOException: There's no Jenkins running at http://localhost:8080/job/not_there/" in serr
 
 
-def test_set_build_result_no_auth(env_build_url, env_base_url, capfd):
+def test_set_build_result_no_auth(env_build_url, env_base_url, pre_existing_cli, capfd):
     with raises(subprocess.CalledProcessError):
         with mock_api.api(__file__) as api:
             api.flow_job()
@@ -70,7 +88,7 @@ def test_set_build_result_no_auth(env_build_url, env_base_url, capfd):
         assert "java.io.IOException: There's no Jenkins running at http://localhost:8080/job/not_there/" in serr
 
 
-def test_set_build_result_no_jenkinsurl(env_build_url, capfd):
+def test_set_build_result_no_jenkinsurl(env_build_url, pre_existing_cli, capfd):
     with raises(Exception) as exinfo:
         with mock_api.api(__file__) as api:
             api.flow_job()
@@ -82,7 +100,7 @@ def test_set_build_result_no_jenkinsurl(env_build_url, capfd):
     assert "Could not get env variable JENKINS_URL or HUDSON_URL. Don't know how to download jenkins-cli.jar needed for setting result!" in exinfo.value.message
 
 
-def test_set_build_result_no_build_url(capfd):
+def test_set_build_result_no_build_url(pre_existing_cli, capfd):
     with mock_api.api(__file__) as api:
         api.flow_job()
         api.job('j1_fail', exec_time=0.5, max_fails=1, expect_invocations=1, expect_order=1)
@@ -94,6 +112,6 @@ def test_set_build_result_no_build_url(capfd):
     assert "INFO: Not running inside Jenkins or Hudson job, no job to set result 'unstable' for!" in serr
 
 
-def test_set_build_result_call_script(capfd):
+def test_set_build_result_call_script(pre_existing_cli, capfd):
     with raises(SystemExit):
         set_build_result.main(['--username', 'dummy', '--password', 'dummy', '-h'])
