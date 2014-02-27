@@ -7,15 +7,23 @@ from __future__ import print_function
 
 import sys, os, argparse, tempfile
 
-cli_jar = 'jenkins-cli.jar'
+jenkins_cli_jar = 'jenkins-cli.jar'
+hudson_cli_jar = 'hudson-cli.jar'
 
 
-def download_cli():
-    import urllib2
+def cli_jar_info():
+    base_url = os.environ.get('JENKINS_URL')
+    cli_jar = jenkins_cli_jar
 
-    base_url = os.environ.get('JENKINS_URL') or os.environ.get('HUDSON_URL')
     if base_url is None:
-        raise Exception("Could not get env variable JENKINS_URL or HUDSON_URL. Don't know how to download " + cli_jar + " needed for setting result!")
+        base_url = os.environ.get('HUDSON_URL')
+        cli_jar = hudson_cli_jar
+
+    return cli_jar, base_url
+
+
+def download_cli(cli_jar, base_url):
+    import urllib2
 
     cli_url = base_url + '/jnlpJars/' + cli_jar
     print("INFO: Downloading cli", repr(cli_url))
@@ -32,6 +40,11 @@ def set_build_result(username, password, result, java='java'):
     if my_url is None:
         print("INFO: Not running inside Jenkins or Hudson job, no job to set result", repr(result), "for!", file=sys.stderr)
         return
+
+    cli_jar, base_url = cli_jar_info()
+    if base_url is None:
+        raise Exception("Could not get env variable JENKINS_URL or HUDSON_URL. Don't know whether to use " +
+                        jenkins_cli_jar + " or " + hudson_cli_jar + " for setting result! You must set 'Jenkins Location' in Jenkins setup for JENKINS_URL to be exported.")
 
     print("INFO: Setting job result to", repr(result))
     import subprocess
@@ -61,7 +74,7 @@ def set_build_result(username, password, result, java='java'):
         set_res()
     except subprocess.CalledProcessError :
         # We failed for some reason, try again with updated cli_jar
-        download_cli()
+        download_cli(cli_jar, base_url)
         set_res()
 
 
