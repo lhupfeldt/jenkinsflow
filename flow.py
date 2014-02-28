@@ -449,7 +449,6 @@ class _Parallel(_Flow):
 
                 if job.total_tried_times < job.total_max_tries:
                     print("RETRY:", job, "failed but will be retried. Up to", job.total_max_tries - job.total_tried_times, "more times through outer flow")
-                    finished = False
                     job._prepare_to_invoke()
                     job.tried_times = 0
                     continue
@@ -537,14 +536,13 @@ class _Serial(_Flow):
                 return
 
             if job.total_tried_times < job.total_max_tries:
-                print("RETRY:", job, "failed, retrying child jobs from beginning. Up to", job.total_max_tries - job.total_tried_times, "more times through outermost flow")
+                print("RETRY:", job, "failed, retrying child jobs from beginning. Up to", job.total_max_tries - job.total_tried_times, "more times through outer flow")
                 job._prepare_to_invoke()
                 job.tried_times = 0
                 for pre_job in self.jobs[0:num_fail]:
                     pre_job._prepare_to_invoke()
                     pre_job.tried_times = 0
                     pre_job.total_tried_times += 1
-                return
 
             if not self.warn_only:
                 self.result = BuildResult.FAILURE

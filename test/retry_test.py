@@ -65,17 +65,66 @@ def test_retry_parallel_inner():
                 ctrl2.invoke('j23')
 
 
-def test_retry_through_parent_level():
+def test_retry_serial_through_parent_serial_level():
+    with mock_api.api(__file__) as api:
+        api.flow_job()
+        api.job('j11', 0.1, max_fails=0, expect_invocations=1, expect_order=1)
+        api.job('j21', 0.1, max_fails=0, expect_invocations=2, expect_order=2)
+        api.job('j31_fail', 0.1, max_fails=2, expect_invocations=3, expect_order=3)
+        api.job('j32', 0.1, max_fails=0, expect_invocations=1, expect_order=4)
+
+        with serial(api, timeout=70, job_name_prefix=api.job_name_prefix) as ctrl1:
+            ctrl1.invoke('j11')
+            with ctrl1.serial(timeout=70, max_tries=2) as ctrl2:
+                ctrl2.invoke('j21')
+                with ctrl2.serial(timeout=70, max_tries=2) as ctrl3:
+                    ctrl3.invoke('j31_fail')
+                    ctrl3.invoke('j32')
+
+
+def test_retry_serial_through_parent_parallel_level():
     with mock_api.api(__file__) as api:
         api.flow_job()
         api.job('j11', 0.1, max_fails=0, expect_invocations=1, expect_order=1)
         api.job('j21', 0.1, max_fails=0, expect_invocations=1, expect_order=2)
+        api.job('j31_fail', 0.1, max_fails=2, expect_invocations=3, expect_order=2)
+
+        with serial(api, timeout=70, job_name_prefix=api.job_name_prefix) as ctrl1:
+            ctrl1.invoke('j11')
+            with ctrl1.parallel(timeout=70, max_tries=2) as ctrl2:
+                ctrl2.invoke('j21')
+                with ctrl2.serial(timeout=70, max_tries=2) as ctrl3:
+                    ctrl3.invoke('j31_fail')
+
+
+def test_retry_parallel_through_parent_serial_level():
+    with mock_api.api(__file__) as api:
+        api.flow_job()
+        api.job('j11', 0.1, max_fails=0, expect_invocations=1, expect_order=1)
+        api.job('j21', 0.1, max_fails=0, expect_invocations=2, expect_order=2)
         api.job('j31_fail', 0.1, max_fails=2, expect_invocations=3, expect_order=3)
 
         with serial(api, timeout=70, job_name_prefix=api.job_name_prefix) as ctrl1:
             ctrl1.invoke('j11')
             with ctrl1.serial(timeout=70, max_tries=2) as ctrl2:
                 ctrl2.invoke('j21')
+                with ctrl2.parallel(timeout=70, max_tries=2) as ctrl3:
+                    ctrl3.invoke('j31_fail')
+
+
+def test_retry_parallel_through_parent_parallel_level():
+    with mock_api.api(__file__) as api:
+        api.flow_job()
+        api.job('j11', 0.1, max_fails=0, expect_invocations=1, expect_order=1)
+        api.job('j21', 0.1, max_fails=0, expect_invocations=1, expect_order=2)
+        api.job('j22_fail', 0.1, max_fails=1, expect_invocations=2, expect_order=2)
+        api.job('j31_fail', 0.1, max_fails=2, expect_invocations=3, expect_order=2)
+
+        with serial(api, timeout=70, job_name_prefix=api.job_name_prefix) as ctrl1:
+            ctrl1.invoke('j11')
+            with ctrl1.parallel(timeout=70, max_tries=2) as ctrl2:
+                ctrl2.invoke('j21')
+                ctrl2.invoke('j22_fail')
                 with ctrl2.parallel(timeout=70, max_tries=2) as ctrl3:
                     ctrl3.invoke('j31_fail')
 
