@@ -252,7 +252,8 @@ class MockApi(_JobsMixin):
 
     def flow_job(self, name=None, params=None):
         # Don't create flow jobs when mocked
-        pass
+        name = '0flow_' + name if name else '0flow'
+        return (self.job_name_prefix or '') + name
 
     # --- Mock API ---
 
@@ -309,8 +310,10 @@ class JenkinsWrapperApi(jenkins.Jenkins, _JobsMixin):
 
     def flow_job(self, name=None, params=None):
         """
-        Runs demo/test flow script as jenkins job
+        Creates a flow job
+        For running demo/test flow script as jenkins job
         Requires jenkinsflow to be copied to /tmp and all jobs to be loaded beforehand (e.g. test.py has been run)
+        Returns job name
         """
         if self.func_name:
             script  = "export PYTHONPATH=/tmp:/tmp/jenkinsflow/test\n"
@@ -320,7 +323,9 @@ class JenkinsWrapperApi(jenkins.Jenkins, _JobsMixin):
             script += "python -Bc &quot;from " + self.file_name.replace('.py', '') + " import *; test_" + self.func_name + "(" + dummy_args + ")&quot;"
         else:
             script = "python " + jp('/tmp/jenkinsflow/demo', self.file_name)
-        self._jenkins_job('0flow_' + name if name else '0flow', exec_time=0.5, params=params, script=script, load_job=self.reload_jobs)
+        name = '0flow_' + name if name else '0flow'
+        self._jenkins_job(name, exec_time=0.5, params=params, script=script, load_job=self.reload_jobs)
+        return (self.job_name_prefix or '') + name
 
     # --- Wrapped API ---
 

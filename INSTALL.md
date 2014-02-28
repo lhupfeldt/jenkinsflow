@@ -69,6 +69,9 @@ Demos
    Run ./tmp_install.sh to install in /tmp/...
    Execute the demo flow jobs: 'jenkinsflow_demo__<demo-name>__0flow'
 
-4. To see a live flow graph of the basic demo in your browser:
-   Start 'python ./server.py' before running demo/basic.py
+4. To see a flow graph of the basic demo in your browser:
+   Start 'python ./visual/server.py' --json-dir '/tmp/jenkinsflowgraphs/jenkinsflow_demo__basic__0flow' before running demo/basic.py
    Open localhost:9090 in your browser
+
+   The test suite also puts some other graps in subdirectories under '/tmp/jenkinsflowgraphs'
+   The 'visual' feature is still experimental and does not yet show live info about the running flow/jobs

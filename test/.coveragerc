@@ -11,6 +11,9 @@ exclude_lines =
     def debug
     Old.*jenkinsapi
     old.*jenkinsapi
+
+    # set_build_result
     main\(sys.argv\)
+    set_build_result\(args
 
 omit = ./*

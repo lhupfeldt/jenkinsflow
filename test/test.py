@@ -13,6 +13,7 @@ from jenkinsflow.flow import JobControlFailException
 
 import basic, prefix, hide_password, errors
 
+_flow_graph_root_dir = '/tmp/jenkinsflowgraphs'
 
 def run_demo(demo):
     print("\n\n")
@@ -23,10 +24,10 @@ def run_demo(demo):
     api = job_load.create_jobs()
     print()
     print("-- running jobs --")
-    visual_server_doc_dir = '/tmp/jenkinsflow'
-    if not os.path.exists(visual_server_doc_dir):
-        os.makedirs(visual_server_doc_dir)
-    demo.main(api, visual_server_doc_dir)
+    graph_dir = jp(_flow_graph_root_dir, 'jenkinsflow_demo__' + demo.__name__ + '__0flow')
+    if not os.path.exists(graph_dir):
+        os.makedirs(graph_dir)
+    demo.main(api, graph_dir)
     api.test_results()
 
 

@@ -3,11 +3,13 @@
 # Copyright (c) 2012 - 2014 Lars Hupfeldt Nielsen, Hupfeldt IT
 # All rights reserved. This work is under a BSD license, see LICENSE.TXT.
 
-import re
+import os, re
+from os.path import join as jp
 from jenkinsflow.flow import serial
 from framework import mock_api
 
 _http_re = re.compile(r'https?://[^/]*/job/')
+_flow_graph_root_dir = '/tmp/jenkinsflowgraphs'
 
 _compact_json = """
 {"nodes": [{"id": 1, "name": "j1", "url": "http://x.x/job/jenkinsflow_test__json_strip_prefix__j1"}, {"id": 2, "name": "j2", "url": "http://x.x/job/jenkinsflow_test__json_strip_prefix__j2"}, {"id": 5, "name": "j3", "url": "http://x.x/job/jenkinsflow_test__json_strip_prefix__j3"}, {"id": 6, "name": "j6", "url": "http://x.x/job/jenkinsflow_test__json_strip_prefix__j6"}, {"id": 8, "name": "j4", "url": "http://x.x/job/jenkinsflow_test__json_strip_prefix__j4"}, {"id": 9, "name": "j5", "url": "http://x.x/job/jenkinsflow_test__json_strip_prefix__j5"}, {"id": 10, "name": "j7", "url": "http://x.x/job/jenkinsflow_test__json_strip_prefix__j7"}], "links": [{"source": 1, "target": 2}, {"source": 2, "target": 5}, {"source": 5, "target": 6}, {"source": 2, "target": 8}, {"source": 2, "target": 9}, {"source": 6, "target": 10}, {"source": 8, "target": 10}, {"source": 9, "target": 10}]}
@@ -99,8 +101,11 @@ def _assert_json(got_json, expected_json):
     assert got_json.strip() == expected_json
 
 
-def _flow(api, strip_prefix):
-    with serial(api, timeout=70, job_name_prefix=api.job_name_prefix, report_interval=1, json_dir='.', json_strip_top_level_prefix=strip_prefix) as ctrl1:
+def _flow(api, strip_prefix, json_dir):
+    if not os.path.exists(json_dir):
+        os.makedirs(json_dir)
+
+    with serial(api, timeout=70, job_name_prefix=api.job_name_prefix, report_interval=1, json_dir=json_dir, json_strip_top_level_prefix=strip_prefix) as ctrl1:
         ctrl1.invoke('j1')
         ctrl1.invoke('j2')
 
@@ -120,7 +125,7 @@ def _flow(api, strip_prefix):
 
 def test_json_strip_prefix():
     with mock_api.api(__file__) as api:
-        api.flow_job()
+        flow_name = api.flow_job()
         api.job('j1', exec_time=0.5, max_fails=0, expect_invocations=1, expect_order=1)
         api.job('j2', exec_time=0.5, max_fails=0, expect_invocations=1, expect_order=2)
         api.job('j3', exec_time=0.5, max_fails=0, expect_invocations=1, expect_order=3)
@@ -129,11 +134,12 @@ def test_json_strip_prefix():
         api.job('j6', exec_time=0.5, max_fails=0, expect_invocations=1, expect_order=4)
         api.job('j7', exec_time=0.5, max_fails=0, expect_invocations=1, expect_order=5)
 
-        ctrl1 = _flow(api, True)
+        ctrl1 = _flow(api, True, jp(_flow_graph_root_dir, flow_name))
 
         # Test pretty printing
-        ctrl1.json("pretty.json", indent=4)
-        with open("pretty.json") as jf:
+        json_file = jp(_flow_graph_root_dir, flow_name, "pretty.json")
+        ctrl1.json(json_file, indent=4)
+        with open(json_file) as jf:
             _assert_json(jf.read().strip(), _pretty_json)
 
         # Test default compact json
@@ -147,7 +153,7 @@ def test_json_strip_prefix():
 
 def test_json_no_strip_prefix():
     with mock_api.api(__file__) as api:
-        api.flow_job()
+        flow_name = api.flow_job()
         api.job('j1', exec_time=0.5, max_fails=0, expect_invocations=1, expect_order=1)
         api.job('j2', exec_time=0.5, max_fails=0, expect_invocations=1, expect_order=2)
         api.job('j3', exec_time=0.5, max_fails=0, expect_invocations=1, expect_order=3)
@@ -156,11 +162,12 @@ def test_json_no_strip_prefix():
         api.job('j6', exec_time=0.5, max_fails=0, expect_invocations=1, expect_order=4)
         api.job('j7', exec_time=0.5, max_fails=0, expect_invocations=1, expect_order=5)
 
-        ctrl1 = _flow(api, False)
+        ctrl1 = _flow(api, False, jp(_flow_graph_root_dir, flow_name))
 
         # Test pretty printing wi no stripping of top level prefix
-        ctrl1.json("verbose_pretty.json", indent=4)
-        with open("verbose_pretty.json") as jf:
+        json_file = jp(_flow_graph_root_dir, flow_name, "verbose_pretty.json")
+        ctrl1.json(json_file, indent=4)
+        with open(json_file) as jf:
             got_json = jf.read().strip()
             expect_json = _pretty_json.replace('strip_prefix', 'no_strip_prefix').replace('name": "', 'name": "jenkinsflow_test__json_no_strip_prefix__')
             _assert_json(got_json, expect_json)

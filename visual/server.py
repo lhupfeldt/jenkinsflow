@@ -2,27 +2,31 @@
 
 from bottle import route, run, static_file, post, response
 from jenkinsapi.jenkins import Jenkins
+import os
 from os.path import join as jp
 import json
 import requests
 import argparse
 
+here = os.path.abspath(os.path.dirname(__file__))
+
+_json_dir = '/var/www/jenkinsflow/'
 jenkins_url = 'http://localhost:8080/'
 
 
 @route('/jenkinsflow/graph')
 def index():
-    return static_file('flow_vis.html', root='./')
+    return static_file('flow_vis.html', root=here)
 
 
 @route('/jenkinsflow/js/<filename>')
 def js(filename):
-    return static_file(filename, root='./js/')
+    return static_file(filename, root=jp(here, 'js'))
 
 
 @route('/jenkinsflow/stylesheets/<filename>')
 def stylesheets(filename):
-    return static_file(filename, root='./stylesheets/')
+    return static_file(filename, root=jp(here, 'stylesheets'))
 
 
 @post('/jenkinsflow/builds')
@@ -58,15 +62,16 @@ def job(name):
 @route('/jenkinsflow/flow_graph.json')
 def graph_json():
     response.content_type = 'text'
-    return open(jp(args.document_dir, 'flow_graph.json'), 'r')
-    # return static_file('flow_graph.json', root=args.document_dir)
+    return open(jp(_json_dir, 'flow_graph.json'), 'r')
+    # return static_file('flow_graph.json', root=_json_dir)
 
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Serve flow graph.')
     parser.add_argument('--hostname', default='localhost', help='hostname to listen on')
     parser.add_argument('--port', default=9090, help='port to listen on')
-    parser.add_argument('--document_dir', default='/var/www/jenkinsflow/', help='Where to find json flow graph')
+    parser.add_argument('--json-dir', default=_json_dir, help='Where to find json flow graph')
     args = parser.parse_args()
+    _json_dir = args.json_dir
 
     run(host=args.hostname, port=args.port, debug=True)
