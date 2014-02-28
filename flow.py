@@ -425,7 +425,6 @@ class _Parallel(_Flow):
         report_now = self._check_invoke_timeout_report()
 
         finished = True
-        retry = False
         for job in self.jobs:
             if job.result or job.total_tried_times == job.total_max_tries:
                 continue
@@ -444,18 +443,18 @@ class _Parallel(_Flow):
 
                 if job.tried_times < job.max_tries:
                     print("RETRY:", job, "failed but will be retried. Up to", job.max_tries - job.tried_times, "more times in current flow")
-                    retry = True
+                    finished = False
                     job._prepare_to_invoke()
                     continue
 
                 if job.total_tried_times < job.total_max_tries:
                     print("RETRY:", job, "failed but will be retried. Up to", job.total_max_tries - job.total_tried_times, "more times through outer flow")
-                    retry = True
+                    finished = False
                     job._prepare_to_invoke()
                     job.tried_times = 0
                     continue
 
-        if finished and not retry:
+        if finished:
             # All jobs have stopped running
             self.result = BuildResult.SUCCESS
             for job in self.jobs:
