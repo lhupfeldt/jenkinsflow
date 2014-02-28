@@ -41,44 +41,52 @@ def no_pre_existing_cli(request):
         os.remove(set_build_result.hudson_cli_jar)
 
 
-def test_set_build_result(pre_existing_cli, env_base_url, capfd):
-    with raises(subprocess.CalledProcessError):
-        with mock_api.api(__file__) as api:
-            try:
-                api.flow_job()
-                api.job('j1_fail', exec_time=0.5, max_fails=1, expect_invocations=1, expect_order=1)
+def test_set_build_result_no_cli_jar(fake_java, no_pre_existing_cli, env_base_url, capfd):
+    with mock_api.api(__file__) as api:
+        try:
+            api.flow_job()
+            api.job('j1_fail', exec_time=0.5, max_fails=1, expect_invocations=1, expect_order=1)
 
-                with serial(api, timeout=70, username=username, password=password, job_name_prefix=api.job_name_prefix, report_interval=3, warn_only=True) as ctrl1:
-                    ctrl1.invoke('j1_fail')
+            with serial(api, timeout=70, username=username, password=password, job_name_prefix=api.job_name_prefix, report_interval=3, warn_only=True) as ctrl1:
+                ctrl1.invoke('j1_fail')
 
-            except urllib2.URLError:
-                # Jenkins is not running, so we cant test this
-                if not api.is_mocked:
-                    raise
-                xfail()
-
-        _, serr = capfd.readouterr()
-        assert "http://localhost:8080/job/not_there/" in serr
+        except urllib2.URLError:
+            # Jenkins is not running, so we cant test this
+            if not api.is_mocked:
+                raise
+            xfail()
 
 
-def test_set_build_result_no_auth(pre_existing_cli, env_base_url, capfd):
-    with raises(subprocess.CalledProcessError):
-        with mock_api.api(__file__) as api:
-            try:
-                api.flow_job()
-                api.job('j1_fail', exec_time=0.5, max_fails=1, expect_invocations=1, expect_order=1)
+def test_set_build_result(fake_java, pre_existing_cli, env_base_url, capfd):
+    with mock_api.api(__file__) as api:
+        try:
+            api.flow_job()
+            api.job('j1_fail', exec_time=0.5, max_fails=1, expect_invocations=1, expect_order=1)
 
-                with serial(api, timeout=70, job_name_prefix=api.job_name_prefix, report_interval=3, warn_only=True) as ctrl1:
-                    ctrl1.invoke('j1_fail')
+            with serial(api, timeout=70, username=username, password=password, job_name_prefix=api.job_name_prefix, report_interval=3, warn_only=True) as ctrl1:
+                ctrl1.invoke('j1_fail')
 
-            except urllib2.URLError:
-                # Jenkins is not running, so we cant test this
-                if not api.is_mocked:
-                    raise
-                xfail()
+        except urllib2.URLError:
+            # Jenkins is not running, so we cant test this
+            if not api.is_mocked:
+                raise
+            xfail()
 
-        _, serr = capfd.readouterr()
-        assert "http://localhost:8080/job/not_there/" in serr
+
+def test_set_build_result_no_auth(fake_java, pre_existing_cli, env_base_url, capfd):
+    with mock_api.api(__file__) as api:
+        try:
+            api.flow_job()
+            api.job('j1_fail', exec_time=0.5, max_fails=1, expect_invocations=1, expect_order=1)
+
+            with serial(api, timeout=70, job_name_prefix=api.job_name_prefix, report_interval=3, warn_only=True) as ctrl1:
+                ctrl1.invoke('j1_fail')
+
+        except urllib2.URLError:
+            # Jenkins is not running, so we cant test this
+            if not api.is_mocked:
+                raise
+            xfail()
 
 
 def test_set_build_result_no_jenkinsurl(pre_existing_cli, env_no_base_url, capfd):
