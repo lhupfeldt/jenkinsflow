@@ -42,6 +42,18 @@ def env_no_base_url(request):
     _unset_env_fixture('HUDSON_URL', request)
 
 
+@pytest.fixture
+def env_job_name(request):
+    # Fake that we are running from inside jenkins job
+    _set_env_fixture('JOB_NAME', 'hudelihuu', request)
+
+
+@pytest.fixture
+def env_build_number(request):
+    # Fake that we are running from inside jenkins job
+    _set_env_fixture('BUILD_NUMBER', '1', request)
+
+
 @pytest.fixture(scope="module")
 def fake_java(request):
     if not os.environ.get('BUILD_URL'):
