@@ -22,6 +22,9 @@ window.onload=function(){
               nodes = json["nodes"].map(function(s) {
                 return { id: s.id, value: { label: s.name } };
               });
+              job_urls =json["nodes"].map(function(s) {
+                return s.url;
+              });
               update(links, nodes);
           }
       }
