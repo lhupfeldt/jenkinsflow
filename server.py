@@ -20,6 +20,11 @@ def js(filename):
     return static_file(filename, root='./js/')
 
 
+@route('/jenkinsflow/stylesheets/<filename>')
+def stylesheets(filename):
+    return static_file(filename, root='./stylesheets/')
+
+
 @post('/jenkinsflow/builds')
 def builds():
     # TODO: change this to jenkinsapi call because this url
