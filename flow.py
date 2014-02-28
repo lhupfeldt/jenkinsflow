@@ -406,6 +406,7 @@ class _Parallel(_Flow):
 
     def _prepare_first(self):
         print(self.indentation + "parallel flow: (")
+        self._prepare_to_invoke()
         for job in self.jobs:
             job._prepare_first()
         print(self.indentation + ")\n")
@@ -493,6 +494,7 @@ class _Serial(_Flow):
 
     def _prepare_first(self):
         print(self.indentation + "serial flow: [")
+        self._prepare_to_invoke()
         for job in self.jobs:
             job._prepare_first()
         print(self.indentation + "]\n")
@@ -600,7 +602,7 @@ class _TopLevelControllerMixin(object):
 
         jenkins_job_name = os.environ.get('JOB_NAME')
         if jenkins_job_name:
-            self.cause = "By flow job " + repr(jenkins_job_name) + ' #' +  os.environ.get('BUILD_NUMBER')
+            self.cause = "By flow job " + repr(jenkins_job_name) + ' #' +  os.environ.get('BUILD_NUMBER', ' None')
         else:
             import getpass
             user = getpass.getuser()
