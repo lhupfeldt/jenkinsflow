@@ -28,10 +28,6 @@ class AbstractApiBuild(object):
     __metaclass__ = abc.ABCMeta
 
     @abc.abstractmethod
-    def is_good(self):
-        raise Exception("AbstractNotImplemented")
-
-    @abc.abstractmethod
     def is_running(self):
         raise Exception("AbstractNotImplemented")
 

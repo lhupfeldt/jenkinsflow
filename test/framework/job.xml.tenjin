@@ -79,9 +79,9 @@ echo sleeping={==exec_time==}
 sleep {==exec_time==}
 <?py #endif ?>
 <?py if 'force_result' in param_names: ?>
-[[ $force_result == success ]] &amp;&amp; exit 0
-[[ $force_result == fail ]] &amp;&amp; exit 1
-[[ $force_result == unstable ]] &amp;&amp; {
+[[ $force_result == SUCCESS ]] &amp;&amp; exit 0
+[[ $force_result == FAILURE ]] &amp;&amp; exit 1
+[[ $force_result == UNSTABLE ]] &amp;&amp; {
     /tmp/jenkinsflow/set_build_result.py --username {==username==} --password {==password==}
     exit 0
 }

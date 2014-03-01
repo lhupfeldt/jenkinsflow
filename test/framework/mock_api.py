@@ -97,10 +97,10 @@ class WrapperJob(ObjectWrapper, TestJob):
         if self.has_force_result_param:
             build_params = build_params or {}
             if self.invocation < self.max_fails:
-                build_params['force_result'] = 'fail'
+                build_params['force_result'] = 'FAILURE'
             if self.invocation >= self.max_fails:
-                build_params['force_result'] = self.final_result or 'success'
-        
+                build_params['force_result'] = 'SUCCESS' if self.final_result is None else self.final_result.name
+
         self.__subject__.invoke(securitytoken, block, skip_if_running, invoke_pre_check_delay, invoke_block_delay, build_params, cause, files) # pylint: disable=no-member
         TestJob.invoke(self, securitytoken, block, skip_if_running, invoke_pre_check_delay, invoke_block_delay, build_params, cause, files)
 
@@ -115,13 +115,14 @@ class Build(TestBuild):
         return self.job.is_running()
 
     def get_status(self):
-        return 'PASSED' if self.is_good() else 'FAILED'
+        if self.job.invocation <= self.job.max_fails:
+            return 'FAILED'
+        if self.job.final_result is None:
+            return 'PASSED'
+        return self.job.final_result.name
 
     def get_result_url(self):
         return self.job.baseurl + '/mock/build/status'
-
-    def is_good(self):
-        return self.job.invocation > self.job.max_fails
 
     def __repr__(self):
         return self.job.name + " #" + repr(self.buildno) + " " + self.get_status()
@@ -190,7 +191,7 @@ class JenkinsWrapperApi(jenkins.Jenkins, TestJenkins):
     def job(self, name, exec_time, max_fails, expect_invocations, expect_order, initial_buildno=None, invocation_delay=0.1, params=None, script=None, unknown_result=False, final_result=None):
         if max_fails > 0 or final_result:
             params = list(params) if params else []
-            params.append(('force_result', ('success', 'fail', 'unstable'), 'Caller can force job to success, fail or unstable'))
+            params.append(('force_result', ('SUCCESS', 'FAILURE', 'UNSTABLE'), 'Caller can force job to success, fail or unstable'))
         name = self._jenkins_job(name, exec_time, params, script, self.reload_jobs, pre_delete=True)
         self.test_jobs[name] = MockJob(name, exec_time, max_fails, expect_invocations, expect_order, initial_buildno, invocation_delay, unknown_result, final_result)
 

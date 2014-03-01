@@ -8,6 +8,7 @@ from collections import OrderedDict
 
 from .abstract_api import AbstractApiJob, AbstractApiBuild as TestBuild, AbstractApiJenkins
 
+from jenkinsflow.flow import BuildResult
 
 def is_mocked():
     mocked = os.environ.get('JENKINSFLOW_MOCK_API')
@@ -36,7 +37,7 @@ class TestJob(AbstractApiJob):
         self.initial_buildno = initial_buildno
         self.invocation_delay = invocation_delay
         self.unknown_result = unknown_result
-        self.final_result = final_result
+        self.final_result = final_result if final_result is None else BuildResult[final_result.upper()]
 
         self.invocation = 0
         self.invocation_time = self.start_time = self.end_time = 0
@@ -119,8 +120,9 @@ class TestJenkins(AbstractApiJenkins):
                 # Check expected number of job invocations
                 assert job.expect_invocations == job.invocation, "Job: " + job.name + " invoked " + str(job.invocation) + " times, expected " + str(job.expect_invocations) + " invocations"
 
-            if not job.unknown_result:
+            if not job.unknown_result and job.expect_invocations != 0:
                 if job.invocation > job.max_fails:
-                    assert job.get_last_build_or_none().is_good(), "Job: " + job.name + " should have been in state good, but it is not"
-                elif job.expect_invocations != 0:
-                    assert not job.get_last_build_or_none().is_good(), "Job: " + job.name + " should have been in failed state, but it is not"
+                    expect_status = BuildResult.SUCCESS if job.final_result is None else job.final_result
+                else:
+                    expect_status = BuildResult.FAILURE
+                assert BuildResult[job.get_last_build_or_none().get_status()] == expect_status, "Job: " + job.name + " should have been in state" + repr(expect_status) + " but it is not"
