@@ -48,18 +48,24 @@ class MockJob(object):
         self.final_result = final_result
 
         self.baseurl = 'http://hupfeldtit.dk/job/' + self.name
+        self.build_params = None
+
         self.actual_order = -1
         self.debug('__init__')
         self.initial_buildno = initial_buildno
         self.build = Build(self, initial_buildno) if initial_buildno is not None else None
         self.just_invoked = False
 
+    @property
+    def has_force_result_param(self):
+        return self.max_fails > 0 or self.final_result
+
     def debug(self, what):
         #print("Mock job: ", what, self) # , "time:", hyperspeed_time())
         pass
 
     def get_build_triggerurl(self):
-        return self.baseurl + '/' + self.name + '/build'
+        return self.baseurl + ( '/buildWithParameters' if self.build_params or self.has_force_result_param else '/build' )
 
     def is_running(self):
         running = self.start_time <= hyperspeed_time() < self.end_time
@@ -97,6 +103,7 @@ class MockJob(object):
         self.invocation_time = hyperspeed_time()
         self.start_time = self.invocation_time + self.invocation_delay
         self.end_time = self.start_time + self.exec_time
+        self.build_params = build_params
 
     def update_config(self, config_xml):
         pass
@@ -143,12 +150,16 @@ class WrapperJob(ObjectWrapper):
         self.actual_order = -1
         ObjectWrapper.__init__(self, jenkins_job)
 
+    @property
+    def has_force_result_param(self):
+        return self.max_fails > 0 or self.final_result
+
     def invoke(self, securitytoken=None, block=False, skip_if_running=False, invoke_pre_check_delay=3,  # pylint: disable=unused-argument
                invoke_block_delay=15, build_params=None, cause=None, files=None):
         self.actual_order = WrapperJob._current_order
         WrapperJob._current_order += 1
 
-        if self.max_fails > 0 or self.final_result:
+        if self.has_force_result_param:
             build_params = build_params or {}
             if self.invocation < self.max_fails:
                 build_params['force_result'] = 'fail'

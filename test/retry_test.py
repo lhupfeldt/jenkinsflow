@@ -4,7 +4,7 @@
 # All rights reserved. This work is under a BSD license, see LICENSE.TXT.
 
 from jenkinsflow.flow import parallel, serial
-from framework import mock_api
+from framework import mock_api, utils
 
 
 def test_retry_serial_toplevel():
@@ -129,7 +129,7 @@ def test_retry_parallel_through_parent_parallel_level():
                     ctrl3.invoke('j31_fail')
 
 
-def test_retry_parallel_through_outer_level():
+def test_retry_parallel_through_outer_level(capsys):
     with mock_api.api(__file__) as api:
         api.flow_job()
         api.job('j11', 0.1, max_fails=0, expect_invocations=1, expect_order=1)
@@ -145,6 +145,11 @@ def test_retry_parallel_through_outer_level():
                     ctrl3.invoke('j31')
                     with ctrl3.parallel(timeout=70, max_tries=2) as ctrl4:
                         ctrl4.invoke('j41_fail')
+
+        sout, _ = capsys.readouterr()
+        sout = utils.replace_host_port(sout)
+        assert 'RETRY: http://x.x/job/jenkinsflow_test__retry_parallel_through_outer_level__j41_fail - /buildWithParameters failed but will be retried. Up to 1 more times in current flow' in sout, 'SOUT:' + sout
+        assert 'RETRY: http://x.x/job/jenkinsflow_test__retry_parallel_through_outer_level__j41_fail - /buildWithParameters failed but will be retried. Up to 2 more times through outer flow' in sout, 'SOUT:' + sout
 
 
 def test_retry_serial_through_outer_level():

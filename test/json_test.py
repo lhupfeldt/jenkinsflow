@@ -3,12 +3,11 @@
 # Copyright (c) 2012 - 2014 Lars Hupfeldt Nielsen, Hupfeldt IT
 # All rights reserved. This work is under a BSD license, see LICENSE.TXT.
 
-import os, re
+import os
 from os.path import join as jp
 from jenkinsflow.flow import serial
-from framework import mock_api
+from framework import mock_api, utils
 
-_http_re = re.compile(r'https?://[^/]*/job/')
 _flow_graph_root_dir = '/tmp/jenkinsflowgraphs'
 
 _compact_json = """
@@ -96,7 +95,7 @@ def _assert_json(got_json, expected_json):
     print("--- expected json ---")
     print(expected_json)
     print("--- got json ---")
-    got_json = _http_re.sub('http://x.x/job/', got_json)
+    got_json = utils.replace_host_port(got_json)
     print(got_json)
     assert got_json.strip() == expected_json
 
