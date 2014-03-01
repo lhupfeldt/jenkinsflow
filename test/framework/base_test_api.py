@@ -37,7 +37,7 @@ class TestJob(AbstractApiJob):
         self.initial_buildno = initial_buildno
         self.invocation_delay = invocation_delay
         self.unknown_result = unknown_result
-        self.final_result = final_result if final_result is None else BuildResult[final_result.upper()]
+        self.final_result = final_result if isinstance(final_result, (BuildResult, type(None))) else BuildResult[final_result.upper()]
 
         self.invocation = 0
         self.invocation_time = self.start_time = self.end_time = 0
