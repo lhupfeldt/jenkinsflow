@@ -21,7 +21,9 @@ class TestJob(AbstractApiJob):
     _current_order = 1
 
     def __init__(self, exec_time, max_fails, expect_invocations, expect_order, initial_buildno=None, invocation_delay=0.01, unknown_result=False, final_result=None):
-        """Set max_fails to None if the result is indeterminate (timeout)"""
+        """
+        Set unknown_result to True if the result is indeterminate (timeout or invoke_unchecked)
+        """
         assert exec_time > 0
         assert max_fails >= 0
         assert expect_invocations >= 0

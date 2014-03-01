@@ -319,6 +319,9 @@ class _IgnoredSingleJob(_SingleJob):
         finally:
             self.result = BuildResult.UNCHECKED
 
+    def last_jobs_in_flow(self):
+        return []
+
 
 # Retries are handled in the _Flow classes instead of _SingleJob since the individual jobs don't know
 # how to retry. The _Serial flow is retried from start of flow and in _Parallel flow individual jobs
@@ -573,7 +576,11 @@ class _Serial(_Flow):
         return [job.sequence() for job in self.jobs]
 
     def last_jobs_in_flow(self):
-        return self.jobs[-1].last_jobs_in_flow()
+        for job in self.jobs[-1:0:-1]:
+            last_jobs = job.last_jobs_in_flow()
+            if last_jobs:
+                return last_jobs
+        return []
 
     def nodes(self, node_to_id):
         nodes = []
