@@ -13,7 +13,7 @@ exclude_lines =
     old.*jenkinsapi
 
     # set_build_result
-    main\(sys.argv\)
+    main\(sys.argv
     set_build_result\(args
 
 omit = 
