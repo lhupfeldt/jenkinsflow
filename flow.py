@@ -161,7 +161,12 @@ class _JobControl(object):
         raise Exception("AbstractNotImplemented")
 
     @abc.abstractmethod
-    def links_and_nodes(self, prev_jobs, node_to_id):
+    def nodes(self, node_to_id):
+        """For json graph calculation"""
+        raise Exception("AbstractNotImplemented")
+
+    @abc.abstractmethod
+    def links(self, prev_jobs, node_to_id):
         """For json graph calculation"""
         raise Exception("AbstractNotImplemented")
 
@@ -289,17 +294,13 @@ class _SingleJob(_JobControl):
     def last_jobs_in_flow(self):
         return [self]
 
-    def links_and_nodes(self, prev_jobs, node_to_id):
-        node_id = node_to_id(self)
+    def nodes(self, node_to_id):
         node_name = self.name[self.top_flow.json_strip_index:]
         url = self.job.baseurl if self.job is not None else None
-        node = OrderedDict((("id", node_id), ("name", node_name), ("url", url)))
-        links = []
-        for job in prev_jobs:
-            links.append(OrderedDict((("source", node_to_id(job)), ("target", node_id))))
+        return [OrderedDict((("id", node_to_id(self)), ("name", node_name), ("url", url)))]
 
-        return [node], links
-
+    def links(self, prev_jobs, node_to_id):
+        return [OrderedDict((("source", node_to_id(job)), ("target", node_to_id(self)))) for job in prev_jobs]
 
 
 class _IgnoredSingleJob(_SingleJob):
@@ -385,7 +386,8 @@ class _Flow(_JobControl):
         if indent:
             node_to_id = lambda job : job.name
 
-        nodes, links = self.links_and_nodes([], node_to_id)
+        nodes = self.nodes(node_to_id)
+        links = self.links([], node_to_id)
         graph = {'nodes': nodes, 'links': links}
 
         import json
@@ -472,14 +474,19 @@ class _Parallel(_Flow):
             jobs.extend(job.last_jobs_in_flow())
         return jobs
 
-    def links_and_nodes(self, prev_jobs, node_to_id):
+    def nodes(self, node_to_id):
         nodes = []
+        for job in self.jobs:
+            child_nodes = job.nodes(node_to_id)
+            nodes.extend(child_nodes)
+        return nodes
+
+    def links(self, prev_jobs, node_to_id):
         links = []
         for job in self.jobs:
-            child_nodes, child_links = job.links_and_nodes(prev_jobs, node_to_id)
-            nodes.extend(child_nodes)
+            child_links = job.links(prev_jobs, node_to_id)
             links.extend(child_links)
-        return nodes, links
+        return links
 
 
 class _Serial(_Flow):
@@ -568,15 +575,20 @@ class _Serial(_Flow):
     def last_jobs_in_flow(self):
         return self.jobs[-1].last_jobs_in_flow()
 
-    def links_and_nodes(self, prev_jobs, node_to_id):
+    def nodes(self, node_to_id):
         nodes = []
+        for job in self.jobs:
+            child_nodes = job.nodes(node_to_id)
+            nodes.extend(child_nodes)
+        return nodes
+
+    def links(self, prev_jobs, node_to_id):
         links = []
         for job in self.jobs:
-            child_nodes, child_links = job.links_and_nodes(prev_jobs, node_to_id)
-            nodes.extend(child_nodes)
+            child_links = job.links(prev_jobs, node_to_id)
             links.extend(child_links)
             prev_jobs = job.last_jobs_in_flow()
-        return nodes, links
+        return links
 
 
 class _TopLevelControllerMixin(object):
