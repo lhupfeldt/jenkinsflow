@@ -104,3 +104,6 @@ def test_set_build_result_no_jenkinsurl(pre_existing_cli, env_no_base_url, capfd
 def test_set_build_result_call_script(pre_existing_cli, capfd):
     with raises(SystemExit):
         set_build_result.main(['--username', 'dummy', '--password', 'dummy', '-h'])
+
+    sout, _ = capfd.readouterr()
+    assert 'Name of jenkins user with access to the job' in sout
