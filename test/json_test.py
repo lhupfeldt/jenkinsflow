@@ -6,89 +6,19 @@
 import os
 from os.path import join as jp
 from jenkinsflow.flow import serial
-from framework import mock_api, utils
+from jenkinsflow.test.framework import mock_api, utils
+
+here = os.path.abspath(os.path.dirname(__file__))
 
 _flow_graph_root_dir = '/tmp/jenkinsflowgraphs'
 
-_compact_json = """
-{"nodes": [{"id": 1, "name": "j1", "url": "http://x.x/job/jenkinsflow_test__json_strip_prefix__j1"}, {"id": 2, "name": "j2", "url": "http://x.x/job/jenkinsflow_test__json_strip_prefix__j2"}, {"id": 5, "name": "j3", "url": "http://x.x/job/jenkinsflow_test__json_strip_prefix__j3"}, {"id": 6, "name": "j6", "url": "http://x.x/job/jenkinsflow_test__json_strip_prefix__j6"}, {"id": 8, "name": "j4", "url": "http://x.x/job/jenkinsflow_test__json_strip_prefix__j4"}, {"id": 9, "name": "j5", "url": "http://x.x/job/jenkinsflow_test__json_strip_prefix__j5"}, {"id": 10, "name": "j7", "url": "http://x.x/job/jenkinsflow_test__json_strip_prefix__j7"}], "links": [{"source": 1, "target": 2}, {"source": 2, "target": 5}, {"source": 5, "target": 6}, {"source": 2, "target": 8}, {"source": 2, "target": 9}, {"source": 6, "target": 10}, {"source": 8, "target": 10}, {"source": 9, "target": 10}]}
-""".strip()
 
-_pretty_json = """
-{
-    "nodes": [
-        {
-            "id": "jenkinsflow_test__json_strip_prefix__j1", 
-            "name": "j1", 
-            "url": "http://x.x/job/jenkinsflow_test__json_strip_prefix__j1"
-        }, 
-        {
-            "id": "jenkinsflow_test__json_strip_prefix__j2", 
-            "name": "j2", 
-            "url": "http://x.x/job/jenkinsflow_test__json_strip_prefix__j2"
-        }, 
-        {
-            "id": "jenkinsflow_test__json_strip_prefix__j3", 
-            "name": "j3", 
-            "url": "http://x.x/job/jenkinsflow_test__json_strip_prefix__j3"
-        }, 
-        {
-            "id": "jenkinsflow_test__json_strip_prefix__j6", 
-            "name": "j6", 
-            "url": "http://x.x/job/jenkinsflow_test__json_strip_prefix__j6"
-        }, 
-        {
-            "id": "jenkinsflow_test__json_strip_prefix__j4", 
-            "name": "j4", 
-            "url": "http://x.x/job/jenkinsflow_test__json_strip_prefix__j4"
-        }, 
-        {
-            "id": "jenkinsflow_test__json_strip_prefix__j5", 
-            "name": "j5", 
-            "url": "http://x.x/job/jenkinsflow_test__json_strip_prefix__j5"
-        }, 
-        {
-            "id": "jenkinsflow_test__json_strip_prefix__j7", 
-            "name": "j7", 
-            "url": "http://x.x/job/jenkinsflow_test__json_strip_prefix__j7"
-        }
-    ], 
-    "links": [
-        {
-            "source": "jenkinsflow_test__json_strip_prefix__j1", 
-            "target": "jenkinsflow_test__json_strip_prefix__j2"
-        }, 
-        {
-            "source": "jenkinsflow_test__json_strip_prefix__j2", 
-            "target": "jenkinsflow_test__json_strip_prefix__j3"
-        }, 
-        {
-            "source": "jenkinsflow_test__json_strip_prefix__j3", 
-            "target": "jenkinsflow_test__json_strip_prefix__j6"
-        }, 
-        {
-            "source": "jenkinsflow_test__json_strip_prefix__j2", 
-            "target": "jenkinsflow_test__json_strip_prefix__j4"
-        }, 
-        {
-            "source": "jenkinsflow_test__json_strip_prefix__j2", 
-            "target": "jenkinsflow_test__json_strip_prefix__j5"
-        }, 
-        {
-            "source": "jenkinsflow_test__json_strip_prefix__j6", 
-            "target": "jenkinsflow_test__json_strip_prefix__j7"
-        }, 
-        {
-            "source": "jenkinsflow_test__json_strip_prefix__j4", 
-            "target": "jenkinsflow_test__json_strip_prefix__j7"
-        }, 
-        {
-            "source": "jenkinsflow_test__json_strip_prefix__j5", 
-            "target": "jenkinsflow_test__json_strip_prefix__j7"
-        }
-    ]
-}
-""".strip()
+with open(jp(here, "json_test_compact.json")) as _jf:
+    _compact_json = _jf.read().strip()
+
+
+with open(jp(here, "json_test_pretty.json")) as _jf:
+    _pretty_json = _jf.read().strip()
 
 
 def _assert_json(got_json, expected_json):

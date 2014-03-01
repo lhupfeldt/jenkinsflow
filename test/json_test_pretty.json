@@ -1,0 +1,73 @@
+{
+    "nodes": [
+        {
+            "id": "jenkinsflow_test__json_strip_prefix__j1", 
+            "name": "j1", 
+            "url": "http://x.x/job/jenkinsflow_test__json_strip_prefix__j1"
+        }, 
+        {
+            "id": "jenkinsflow_test__json_strip_prefix__j2", 
+            "name": "j2", 
+            "url": "http://x.x/job/jenkinsflow_test__json_strip_prefix__j2"
+        }, 
+        {
+            "id": "jenkinsflow_test__json_strip_prefix__j3", 
+            "name": "j3", 
+            "url": "http://x.x/job/jenkinsflow_test__json_strip_prefix__j3"
+        }, 
+        {
+            "id": "jenkinsflow_test__json_strip_prefix__j6", 
+            "name": "j6", 
+            "url": "http://x.x/job/jenkinsflow_test__json_strip_prefix__j6"
+        }, 
+        {
+            "id": "jenkinsflow_test__json_strip_prefix__j4", 
+            "name": "j4", 
+            "url": "http://x.x/job/jenkinsflow_test__json_strip_prefix__j4"
+        }, 
+        {
+            "id": "jenkinsflow_test__json_strip_prefix__j5", 
+            "name": "j5", 
+            "url": "http://x.x/job/jenkinsflow_test__json_strip_prefix__j5"
+        }, 
+        {
+            "id": "jenkinsflow_test__json_strip_prefix__j7", 
+            "name": "j7", 
+            "url": "http://x.x/job/jenkinsflow_test__json_strip_prefix__j7"
+        }
+    ], 
+    "links": [
+        {
+            "source": "jenkinsflow_test__json_strip_prefix__j1", 
+            "target": "jenkinsflow_test__json_strip_prefix__j2"
+        }, 
+        {
+            "source": "jenkinsflow_test__json_strip_prefix__j2", 
+            "target": "jenkinsflow_test__json_strip_prefix__j3"
+        }, 
+        {
+            "source": "jenkinsflow_test__json_strip_prefix__j3", 
+            "target": "jenkinsflow_test__json_strip_prefix__j6"
+        }, 
+        {
+            "source": "jenkinsflow_test__json_strip_prefix__j2", 
+            "target": "jenkinsflow_test__json_strip_prefix__j4"
+        }, 
+        {
+            "source": "jenkinsflow_test__json_strip_prefix__j2", 
+            "target": "jenkinsflow_test__json_strip_prefix__j5"
+        }, 
+        {
+            "source": "jenkinsflow_test__json_strip_prefix__j6", 
+            "target": "jenkinsflow_test__json_strip_prefix__j7"
+        }, 
+        {
+            "source": "jenkinsflow_test__json_strip_prefix__j4", 
+            "target": "jenkinsflow_test__json_strip_prefix__j7"
+        }, 
+        {
+            "source": "jenkinsflow_test__json_strip_prefix__j5", 
+            "target": "jenkinsflow_test__json_strip_prefix__j7"
+        }
+    ]
+}
