@@ -16,13 +16,13 @@ def test_missing_jobs_not_allowed():
         api.job('j2', 0.01, max_fails=0, expect_invocations=0, expect_order=None)
 
         with raises(MissingJobsException):
-            with serial(api, 5, job_name_prefix=api.job_name_prefix) as ctrl1:
+            with serial(api, 20, job_name_prefix=api.job_name_prefix) as ctrl1:
                 ctrl1.invoke('j1')
                 ctrl1.invoke('missingA')
                 ctrl1.invoke('j2')
 
         with raises(MissingJobsException):
-            with serial(api, 5, job_name_prefix=api.job_name_prefix) as ctrl1:
+            with serial(api, 20, job_name_prefix=api.job_name_prefix) as ctrl1:
                 ctrl1.invoke('j1')
                 ctrl1.invoke('missingA')
                 with ctrl1.parallel() as ctrl2:
@@ -38,7 +38,7 @@ def test_missing_jobs_allowed_still_missing_parallel():
         api.job('j2', 0.01, max_fails=0, expect_invocations=1, expect_order=1)
 
         with raises(FailedChildJobsException):
-            with parallel(api, 5, job_name_prefix=api.job_name_prefix, allow_missing_jobs=True) as ctrl1:
+            with parallel(api, 20, job_name_prefix=api.job_name_prefix, allow_missing_jobs=True) as ctrl1:
                 ctrl1.invoke('j1')
                 ctrl1.invoke('missingA')
                 ctrl1.invoke('j2')
@@ -51,7 +51,7 @@ def test_missing_jobs_allowed_still_missing_serial():
         api.job('j2', 0.01, max_fails=0, expect_invocations=0, expect_order=None)
 
         with raises(FailedChildJobException):
-            with serial(api, 5, job_name_prefix=api.job_name_prefix, allow_missing_jobs=True) as ctrl1:
+            with serial(api, 20, job_name_prefix=api.job_name_prefix, allow_missing_jobs=True) as ctrl1:
                 ctrl1.invoke('j1')
                 ctrl1.invoke('missingA')
                 ctrl1.invoke('j2')
@@ -64,7 +64,7 @@ def test_missing_jobs_allowed_still_missing_parallel_serial():
         api.job('j2', 0.01, max_fails=0, expect_invocations=0, expect_order=None)
 
         with raises(FailedChildJobsException):
-            with parallel(api, 5, job_name_prefix=api.job_name_prefix, allow_missing_jobs=True) as ctrl1:
+            with parallel(api, 20, job_name_prefix=api.job_name_prefix, allow_missing_jobs=True) as ctrl1:
                 ctrl1.invoke('j1')
                 ctrl1.invoke('missingA')
                 with ctrl1.serial() as ctrl2:

@@ -16,7 +16,7 @@ _default_secret_params = '.*passw.*|.*PASSW.*'
 _default_secret_params_re = re.compile(_default_secret_params)
 
 
-_hyperspeed_speedup = 1 if os.environ.get('JENKINSFLOW_MOCK_API') != 'true' else 500
+_hyperspeed_speedup = 1 if os.environ.get('JENKINSFLOW_MOCK_API') != 'true' else 2000
 def hyperspeed_time():
     return time.time() * _hyperspeed_speedup
 
