@@ -10,10 +10,10 @@ extra_sys_path = [os.path.normpath(path) for path in [jp(here, '../..'), jp(here
 sys.path.extend(extra_sys_path)
 os.environ['PYTHONPATH'] = ':'.join(extra_sys_path)
 from jenkinsflow.flow import JobControlFailException
+from jenkinsflow.test.framework import config
 
 import basic, prefix, hide_password, errors
 
-_flow_graph_root_dir = '/tmp/jenkinsflowgraphs'
 
 def run_demo(demo):
     print("\n\n")
@@ -24,14 +24,18 @@ def run_demo(demo):
     api = job_load.create_jobs()
     print()
     print("-- running jobs --")
-    graph_dir = jp(_flow_graph_root_dir, 'jenkinsflow_demo__' + demo.__name__ + '__0flow')
-    if not os.path.exists(graph_dir):
-        os.makedirs(graph_dir)
-    demo.main(api, graph_dir)
+    demo.main(api)
     api.test_results()
 
 
 def main():
+    print("Creating temporary test installation in", repr(config.pseudo_install_dir), "to make files available to Jenkins.")
+    install_script = jp(here, 'tmp_install.sh')
+    rc = subprocess.call([install_script])
+    if rc:
+        print("Failed test installation to. Install script is:", repr(install_script), file=sys.stderr)
+        print("Warning: Some tests will fail!", file=sys.stderr)
+
     print("Running tests")
     if len(sys.argv) > 1:
         sys.exit(subprocess.call(['py.test', '--capture=sys', '--instafail'] + sys.argv[1:]))

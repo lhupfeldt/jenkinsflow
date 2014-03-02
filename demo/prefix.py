@@ -19,7 +19,7 @@ sys.stdout = UnBuffered(sys.stdout)
 
 import demo_security as security
 
-def main(api, _):
+def main(api):
     logging.basicConfig()
     logging.getLogger("").setLevel(logging.WARNING)
 
@@ -43,4 +43,4 @@ if __name__ == '__main__':
     # Note: This flow uses username/password instead of securitytoken, to demonstrate that feature, it could have used securitytoken
     # See demo_security.py
     jenkins = jenkins.Jenkins(os.environ.get('JENKINS_URL') or os.environ.get('HUDSON_URL') or "http://localhost:8080", security.username, security.password)
-    main(jenkins, '/var/www/jenkinsflow')
+    main(jenkins)

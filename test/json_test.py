@@ -7,10 +7,9 @@ import os
 from os.path import join as jp
 from jenkinsflow.flow import serial
 from jenkinsflow.test.framework import mock_api, utils
+from jenkinsflow.test.framework.utils import flow_graph_dir
 
 here = os.path.abspath(os.path.dirname(__file__))
-
-_flow_graph_root_dir = '/tmp/jenkinsflowgraphs'
 
 
 with open(jp(here, "json_test_compact.json")) as _jf:
@@ -22,11 +21,12 @@ with open(jp(here, "json_test_pretty.json")) as _jf:
 
 
 def _assert_json(got_json, expected_json):
-    print("--- expected json ---")
-    print(expected_json)
-    print("--- got json ---")
     got_json = utils.replace_host_port(got_json)
-    print(got_json)
+    if not os.environ.get('JOB_NAME'):
+        print("--- expected json ---")
+        print(expected_json)
+        print("--- got json ---")
+        print(got_json)
     assert got_json.strip() == expected_json
 
 
@@ -67,10 +67,10 @@ def test_json_strip_prefix():
         api.job('j8_unchecked', exec_time=0.01, max_fails=0, expect_invocations=1, expect_order=None, unknown_result=True)
         api.job('j9', exec_time=0.01, max_fails=0, expect_invocations=1, expect_order=4)
 
-        ctrl1 = _flow(api, True, jp(_flow_graph_root_dir, flow_name))
+        ctrl1 = _flow(api, True, flow_graph_dir(flow_name))
 
         # Test pretty printing
-        json_file = jp(_flow_graph_root_dir, flow_name, "pretty.json")
+        json_file = jp(flow_graph_dir(flow_name), "pretty.json")
         ctrl1.json(json_file, indent=4)
         with open(json_file) as jf:
             _assert_json(jf.read().strip(), _pretty_json)
@@ -97,10 +97,10 @@ def test_json_no_strip_prefix():
         api.job('j8_unchecked', exec_time=0.01, max_fails=0, expect_invocations=1, expect_order=None, unknown_result=True)
         api.job('j9', exec_time=0.01, max_fails=0, expect_invocations=1, expect_order=4)
 
-        ctrl1 = _flow(api, False, jp(_flow_graph_root_dir, flow_name))
+        ctrl1 = _flow(api, False, flow_graph_dir(flow_name))
 
         # Test pretty printing with no stripping of top level prefix
-        json_file = jp(_flow_graph_root_dir, flow_name, "verbose_pretty.json")
+        json_file = jp(flow_graph_dir(flow_name), "verbose_pretty.json")
         ctrl1.json(json_file, indent=4)
         with open(json_file) as jf:
             got_json = jf.read().strip()
@@ -119,7 +119,7 @@ def test_json_unchecked_only_in_flows():
         api.job('j6', exec_time=0.01, max_fails=0, expect_invocations=1, expect_order=1)
         api.job('j7', exec_time=0.01, max_fails=0, expect_invocations=1, expect_order=2)
 
-        json_dir = jp(_flow_graph_root_dir, flow_name)
+        json_dir = flow_graph_dir(flow_name)
         if not os.path.exists(json_dir):
             os.makedirs(json_dir)
 

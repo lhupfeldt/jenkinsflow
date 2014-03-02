@@ -22,6 +22,7 @@ from jenkinsflow.jobload import update_job_from_template
 from jenkinsflow.flow import hyperspeed_time
 
 from .base_test_api import TestJob, TestBuild, TestJenkins, is_mocked
+from .config import test_tmp_dir, pseudo_install_dir
 
 _file_name_subst = re.compile(r'(_jobs|_test)?\.py')
 
@@ -184,7 +185,8 @@ class JenkinsWrapperApi(jenkins.Jenkins, TestJenkins):
         assert not self.test_jobs.get(name)
         # Create job in Jenkins
         if load_job:
-            context = dict(exec_time=exec_time, params=params or (), script=script, securitytoken=self.securitytoken, username=security.username, password=security.password)
+            context = dict(exec_time=exec_time, params=params or (), script=script, pseudo_install_dir=pseudo_install_dir,
+                           securitytoken=self.securitytoken, username=security.username, password=security.password)
             update_job_from_template(self.job_loader_jenkins, name, self.job_xml_template, pre_delete=pre_delete, context=context)
         return name
 
@@ -199,17 +201,18 @@ class JenkinsWrapperApi(jenkins.Jenkins, TestJenkins):
         """
         Creates a flow job
         For running demo/test flow script as jenkins job
-        Requires jenkinsflow to be copied to /tmp and all jobs to be loaded beforehand (e.g. test.py has been run)
+        Requires jenkinsflow to be copied to 'pseudo_install_dir' and all jobs to be loaded beforehand (e.g. test.py has been run)
         Returns job name
         """
+        #  Note: Use -B to avoid permission problems with .pyc files created from commandline test
         if self.func_name:
-            script  = "export PYTHONPATH=/tmp:/tmp/jenkinsflow/test\n"
+            script  = "export PYTHONPATH=" + test_tmp_dir + "\n"
             script += "export JENKINSFLOW_SKIP_JOB_LOAD=true\n"
             # Supply dummy args for the py.test fixtures
             dummy_args = ','.join(['0' for _ in range(self.func_num_params)])
-            script += "python -Bc &quot;from " + self.file_name.replace('.py', '') + " import *; test_" + self.func_name + "(" + dummy_args + ")&quot;"
+            script += "python -Bc &quot;from jenkinsflow.test." + self.file_name.replace('.py', '') + " import *; test_" + self.func_name + "(" + dummy_args + ")&quot;"
         else:
-            script = "python " + jp('/tmp/jenkinsflow/demo', self.file_name)
+            script = "python -B " + jp(pseudo_install_dir, 'demo', self.file_name)
         name = '0flow_' + name if name else '0flow'
         self._jenkins_job(name, exec_time=0.5, params=params, script=script, load_job=self.reload_jobs)
         return (self.job_name_prefix or '') + name

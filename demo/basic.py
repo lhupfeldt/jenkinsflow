@@ -23,19 +23,27 @@ from jenkinsflow.unbuffered import UnBuffered
 sys.stdout = UnBuffered(sys.stdout)
 
 import demo_security as security
+from jenkinsflow.test.framework.utils import flow_graph_dir
 
 
-def main(api, graph_output_dir):
+def main(api):
     logging.basicConfig()
     logging.getLogger("").setLevel(logging.WARNING)
 
     print("Doing stuff before flow ...")
+    demo_name = 'jenkinsflow_demo__basic'
+
+    graph_output_dir = flow_graph_dir(demo_name)
+    if not os.path.exists(graph_output_dir):
+        os.makedirs(graph_output_dir)
+
     g1_components = range(1)
     g2_components = range(2)
     g3_components = range(2)
     component_groups = OrderedDict((('g1', g1_components), ('g2', g2_components), ('g3', g3_components)))
 
-    with serial(api, timeout=70, securitytoken=security.securitytoken, job_name_prefix='jenkinsflow_demo__basic__', report_interval=3,
+    # Flow
+    with serial(api, timeout=70, securitytoken=security.securitytoken, job_name_prefix=demo_name + '__', report_interval=3,
                 # Write json flow graph to display in browser, see INSTALL.md
                 json_dir=graph_output_dir, json_indent=4) as ctrl1:
 
@@ -68,4 +76,4 @@ def main(api, graph_output_dir):
 
 if __name__ == '__main__':
     jenkins = jenkins.Jenkins(os.environ.get('JENKINS_URL') or os.environ.get('HUDSON_URL') or "http://localhost:8080")
-    main(jenkins, '/tmp/jenkinsflowgraphs/jenkinsflow_demo__basic__0flow')
+    main(jenkins)

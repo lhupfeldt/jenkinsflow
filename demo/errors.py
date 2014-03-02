@@ -21,7 +21,7 @@ sys.stdout = UnBuffered(sys.stdout)
 
 import demo_security as security
 
-def main(api, _):
+def main(api):
     logging.basicConfig()
     logging.getLogger("").setLevel(logging.WARNING)
 
@@ -48,4 +48,4 @@ def main(api, _):
 
 if __name__ == '__main__':
     jenkins = jenkins.Jenkins(os.environ.get('JENKINS_URL') or os.environ.get('HUDSON_URL') or "http://localhost:8080")
-    main(jenkins, '/var/www/jenkinsflow')
+    main(jenkins)

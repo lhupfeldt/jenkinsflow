@@ -27,6 +27,9 @@ In the following Jenkins also means Hudson unless otherwise stated.
 6. All set! You can now create jobs that have a shell execution step, which will a use this library to control the running of other jobs.
    See the demo directory for example flows. The demo jobs can be loaded by running tests, see below.
 
+Note: I think jenkinsflow should work on Windows, but it has not been tested.
+   I'm SURE the test/test.py script will fail on Windows. There are a few Linux/Unix bits in the test setup. Check test/framework/config.py and
+   test/tmp_install.sh. Patches are welcome:)
 
 Test
 ----
@@ -50,6 +53,8 @@ Test
    Important:
    Jenkins is default configured with only two executors on master. To avoid timeouts in the test cases this must be raised to at least 8.
    Jenkins is default configured with a 'Quiet period' of 5 seconds. To avoid timeouts in the test cases this should be set to 0.
+   Your Jenkins needs to be on the host where you are running the test. If it is not, you will need to make jenkinsflow available to jenkins. See
+   test/tmp_install.sh
 
    All jobs created by the test script are prefixed with 'jenkinsflow_', so they can easily be removed.
 
@@ -59,19 +64,19 @@ Test
 Demos
 ----
 
-1. Run tests as described above to load jobs Jenkins
+1. Run tests as described above to load jobs into Jenkins
 
 2. Demo scripts can be executed from command line:
    python ./demo/<demo>.py
 
-3. Demo scripts can be executed from the loaded jobs
-   Jenkins needs to be able to find the scripts, the demo jobs are setup to find the scripts in '/tmp/jenkinsflow'.
-   Run ./tmp_install.sh to install in /tmp/...
-   Execute the demo flow jobs: 'jenkinsflow_demo__<demo-name>__0flow'
+3. Demo scripts can be executed from the loaded 'jenkinsflow_demo__<demo-name>__0flow' Jenkins jobs.
+   Jenkins needs to be able to find the scripts, the test.py script creates a test installation.
 
 4. To see a flow graph of the basic demo in your browser:
-   Start 'python ./visual/server.py' --json-dir '/tmp/jenkinsflowgraphs/jenkinsflow_demo__basic__0flow' before running demo/basic.py
+   Start 'python ./visual/server.py' --json-dir '/tmp/jenkinsflow-test/graphs/jenkinsflow_demo__basic' before running ./demo/basic.py
    Open localhost:9090 in your browser
 
-   The test suite also puts some other graps in subdirectories under '/tmp/jenkinsflowgraphs'
+   The test suite also puts some other graps in subdirectories under '/tmp/jenkinsflow-test/graphs'
    The 'visual' feature is still experimental and does not yet show live info about the running flow/jobs
+
+   If you run ...0flow jobs that generate graphs from Jenkins the json graph file will be put in the workspace
