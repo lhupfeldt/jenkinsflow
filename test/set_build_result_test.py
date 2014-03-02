@@ -45,7 +45,7 @@ def test_set_build_result_no_cli_jar(fake_java, no_pre_existing_cli, env_base_ur
     with mock_api.api(__file__) as api:
         try:
             api.flow_job()
-            api.job('j1_fail', exec_time=0.5, max_fails=1, expect_invocations=1, expect_order=1)
+            api.job('j1_fail', exec_time=0.01, max_fails=1, expect_invocations=1, expect_order=1)
 
             with serial(api, timeout=70, username=username, password=password, job_name_prefix=api.job_name_prefix, report_interval=3, warn_only=True) as ctrl1:
                 ctrl1.invoke('j1_fail')
@@ -61,7 +61,7 @@ def test_set_build_result(fake_java, pre_existing_cli, env_base_url, capfd):
     with mock_api.api(__file__) as api:
         try:
             api.flow_job()
-            api.job('j1_fail', exec_time=0.5, max_fails=1, expect_invocations=1, expect_order=1)
+            api.job('j1_fail', exec_time=0.01, max_fails=1, expect_invocations=1, expect_order=1)
 
             with serial(api, timeout=70, username=username, password=password, job_name_prefix=api.job_name_prefix, report_interval=3, warn_only=True) as ctrl1:
                 ctrl1.invoke('j1_fail')
@@ -77,7 +77,7 @@ def test_set_build_result_no_auth(fake_java, pre_existing_cli, env_base_url, cap
     with mock_api.api(__file__) as api:
         try:
             api.flow_job()
-            api.job('j1_fail', exec_time=0.5, max_fails=1, expect_invocations=1, expect_order=1)
+            api.job('j1_fail', exec_time=0.01, max_fails=1, expect_invocations=1, expect_order=1)
 
             with serial(api, timeout=70, job_name_prefix=api.job_name_prefix, report_interval=3, warn_only=True) as ctrl1:
                 ctrl1.invoke('j1_fail')
@@ -93,7 +93,7 @@ def test_set_build_result_no_jenkinsurl(pre_existing_cli, env_no_base_url, capfd
     with raises(Exception) as exinfo:
         with mock_api.api(__file__) as api:
             api.flow_job()
-            api.job('j1_fail', exec_time=0.5, max_fails=1, expect_invocations=1, expect_order=1)
+            api.job('j1_fail', exec_time=0.01, max_fails=1, expect_invocations=1, expect_order=1)
 
             with serial(api, timeout=70, username=username, password=password, job_name_prefix=api.job_name_prefix, report_interval=3, warn_only=True) as ctrl1:
                 ctrl1.invoke('j1_fail')

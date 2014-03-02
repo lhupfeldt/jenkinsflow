@@ -12,7 +12,7 @@ from jenkinsflow.flow import serial, FailedChildJobException
 def test_hide_password_failed_job():
     with mock_api.api(__file__) as api:
         api.flow_job()
-        api.job('passwd_args', exec_time=0.5, max_fails=1, expect_invocations=1, expect_order=1,
+        api.job('passwd_args', exec_time=0.01, max_fails=1, expect_invocations=1, expect_order=1,
                 params=(('s1', 'no-secret', 'desc'), ('passwd', 'p2', 'desc'), ('PASS', 'p3', 'desc')))
 
         with raises(FailedChildJobException) as exinfo:

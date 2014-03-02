@@ -57,15 +57,15 @@ def _flow(api, strip_prefix, json_dir):
 def test_json_strip_prefix():
     with mock_api.api(__file__) as api:
         flow_name = api.flow_job()
-        api.job('j1', exec_time=0.5, max_fails=0, expect_invocations=1, expect_order=1)
-        api.job('j2', exec_time=0.5, max_fails=0, expect_invocations=1, expect_order=2)
-        api.job('j3', exec_time=0.5, max_fails=0, expect_invocations=1, expect_order=3)
-        api.job('j4', exec_time=0.5, max_fails=0, expect_invocations=1, expect_order=3)
-        api.job('j5', exec_time=0.5, max_fails=0, expect_invocations=1, expect_order=3)
-        api.job('j6', exec_time=0.5, max_fails=0, expect_invocations=1, expect_order=3)
-        api.job('j7_unchecked', exec_time=0.5, max_fails=0, expect_invocations=1, expect_order=None, unknown_result=True)
-        api.job('j8_unchecked', exec_time=0.5, max_fails=0, expect_invocations=1, expect_order=None, unknown_result=True)
-        api.job('j9', exec_time=0.5, max_fails=0, expect_invocations=1, expect_order=4)
+        api.job('j1', exec_time=0.01, max_fails=0, expect_invocations=1, expect_order=1)
+        api.job('j2', exec_time=0.01, max_fails=0, expect_invocations=1, expect_order=2)
+        api.job('j3', exec_time=0.01, max_fails=0, expect_invocations=1, expect_order=3)
+        api.job('j4', exec_time=0.01, max_fails=0, expect_invocations=1, expect_order=3)
+        api.job('j5', exec_time=0.01, max_fails=0, expect_invocations=1, expect_order=3)
+        api.job('j6', exec_time=0.01, max_fails=0, expect_invocations=1, expect_order=3)
+        api.job('j7_unchecked', exec_time=0.01, max_fails=0, expect_invocations=1, expect_order=None, unknown_result=True)
+        api.job('j8_unchecked', exec_time=0.01, max_fails=0, expect_invocations=1, expect_order=None, unknown_result=True)
+        api.job('j9', exec_time=0.01, max_fails=0, expect_invocations=1, expect_order=4)
 
         ctrl1 = _flow(api, True, jp(_flow_graph_root_dir, flow_name))
 
@@ -87,15 +87,15 @@ def test_json_strip_prefix():
 def test_json_no_strip_prefix():
     with mock_api.api(__file__) as api:
         flow_name = api.flow_job()
-        api.job('j1', exec_time=0.5, max_fails=0, expect_invocations=1, expect_order=1)
-        api.job('j2', exec_time=0.5, max_fails=0, expect_invocations=1, expect_order=2)
-        api.job('j3', exec_time=0.5, max_fails=0, expect_invocations=1, expect_order=3)
-        api.job('j4', exec_time=0.5, max_fails=0, expect_invocations=1, expect_order=3)
-        api.job('j5', exec_time=0.5, max_fails=0, expect_invocations=1, expect_order=3)
-        api.job('j6', exec_time=0.5, max_fails=0, expect_invocations=1, expect_order=3)
-        api.job('j7_unchecked', exec_time=0.5, max_fails=0, expect_invocations=1, expect_order=None, unknown_result=True)
-        api.job('j8_unchecked', exec_time=0.5, max_fails=0, expect_invocations=1, expect_order=None, unknown_result=True)
-        api.job('j9', exec_time=0.5, max_fails=0, expect_invocations=1, expect_order=4)
+        api.job('j1', exec_time=0.01, max_fails=0, expect_invocations=1, expect_order=1)
+        api.job('j2', exec_time=0.01, max_fails=0, expect_invocations=1, expect_order=2)
+        api.job('j3', exec_time=0.01, max_fails=0, expect_invocations=1, expect_order=3)
+        api.job('j4', exec_time=0.01, max_fails=0, expect_invocations=1, expect_order=3)
+        api.job('j5', exec_time=0.01, max_fails=0, expect_invocations=1, expect_order=3)
+        api.job('j6', exec_time=0.01, max_fails=0, expect_invocations=1, expect_order=3)
+        api.job('j7_unchecked', exec_time=0.01, max_fails=0, expect_invocations=1, expect_order=None, unknown_result=True)
+        api.job('j8_unchecked', exec_time=0.01, max_fails=0, expect_invocations=1, expect_order=None, unknown_result=True)
+        api.job('j9', exec_time=0.01, max_fails=0, expect_invocations=1, expect_order=4)
 
         ctrl1 = _flow(api, False, jp(_flow_graph_root_dir, flow_name))
 
@@ -111,13 +111,13 @@ def test_json_no_strip_prefix():
 def test_json_unchecked_only_in_flows():
     with mock_api.api(__file__) as api:
         flow_name = api.flow_job()
-        api.job('j1_unchecked', exec_time=0.1, max_fails=0, expect_invocations=1, expect_order=None, unknown_result=True)
-        api.job('j2_unchecked', exec_time=0.1, max_fails=0, expect_invocations=1, expect_order=None, unknown_result=True)
-        api.job('j3_unchecked', exec_time=0.1, max_fails=0, expect_invocations=1, expect_order=None, unknown_result=True)
-        api.job('j4_unchecked', exec_time=0.1, max_fails=0, expect_invocations=1, expect_order=None, unknown_result=True)
-        api.job('j5_unchecked', exec_time=0.1, max_fails=0, expect_invocations=1, expect_order=None, unknown_result=True)
-        api.job('j6', exec_time=0.5, max_fails=0, expect_invocations=1, expect_order=1)
-        api.job('j7', exec_time=0.5, max_fails=0, expect_invocations=1, expect_order=2)
+        api.job('j1_unchecked', exec_time=0.01, max_fails=0, expect_invocations=1, expect_order=None, unknown_result=True)
+        api.job('j2_unchecked', exec_time=0.01, max_fails=0, expect_invocations=1, expect_order=None, unknown_result=True)
+        api.job('j3_unchecked', exec_time=0.01, max_fails=0, expect_invocations=1, expect_order=None, unknown_result=True)
+        api.job('j4_unchecked', exec_time=0.01, max_fails=0, expect_invocations=1, expect_order=None, unknown_result=True)
+        api.job('j5_unchecked', exec_time=0.01, max_fails=0, expect_invocations=1, expect_order=None, unknown_result=True)
+        api.job('j6', exec_time=0.01, max_fails=0, expect_invocations=1, expect_order=1)
+        api.job('j7', exec_time=0.01, max_fails=0, expect_invocations=1, expect_order=2)
 
         json_dir = jp(_flow_graph_root_dir, flow_name)
         if not os.path.exists(json_dir):
