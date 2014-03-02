@@ -10,13 +10,16 @@ from collections import OrderedDict
 
 from set_build_result import set_build_result
 
-_default_poll_interval = 0.5
+is_mocked = os.environ.get('JENKINSFLOW_MOCK_API') == 'true'
+
+# Note: Mock poll interval must be higher than the shortest exec_time (0.01) or some og the tests will break
+_default_poll_interval = 0.5 if not is_mocked else 0.02
 _default_report_interval = 5
 _default_secret_params = '.*passw.*|.*PASSW.*'
 _default_secret_params_re = re.compile(_default_secret_params)
 
 
-_hyperspeed_speedup = 1 if os.environ.get('JENKINSFLOW_MOCK_API') != 'true' else 2000
+_hyperspeed_speedup = 1 if not is_mocked else 2000
 def hyperspeed_time():
     return time.time() * _hyperspeed_speedup
 
