@@ -19,7 +19,7 @@ _default_secret_params = '.*passw.*|.*PASSW.*'
 _default_secret_params_re = re.compile(_default_secret_params)
 
 
-_hyperspeed_speedup = 1 if not is_mocked else 2000
+_hyperspeed_speedup = float(1 if not is_mocked else 2000)
 def hyperspeed_time():
     return time.time() * _hyperspeed_speedup
 
@@ -676,7 +676,7 @@ class _TopLevelControllerMixin(object):
 
         print()
         print("--- Starting flow ---")
-        sleep_time = float(min(self.poll_interval, self.report_interval)) / _hyperspeed_speedup
+        sleep_time = min(self.poll_interval, self.report_interval) / _hyperspeed_speedup
         while not self.result:
             self._check(None)
             time.sleep(sleep_time)
