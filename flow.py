@@ -362,7 +362,7 @@ class _Flow(_JobControl):
         if self.timeout and now - self.invocation_time > self.timeout:
             # TODO: These are not the unfinished jobs!
             unfinished_msg = ". Unfinished jobs:" + str(self)
-            raise FlowTimeoutException("Timeout after:" + self._time_msg() + unfinished_msg, self.warn_only)
+            raise FlowTimeoutException("Timeout " + self._time_msg() + unfinished_msg, self.warn_only)
 
     def __exit__(self, exc_type, exc_value, traceback):
         if exc_type:
@@ -377,9 +377,8 @@ class _Flow(_JobControl):
 
             print(self.indentation + "INFO: Ignoring empty flow")
 
-    def _check_invoke_timeout_report(self):
+    def _check_invoke_report(self):
         self._invoke_if_not_invoked()
-        self._check_timeout()
 
         now = hyperspeed_time()
         report_now = now - self.last_report_time >= self.report_interval
@@ -430,7 +429,7 @@ class _Parallel(_Flow):
         print()
 
     def _check(self, report_now):
-        report_now = self._check_invoke_timeout_report()
+        report_now = self._check_invoke_report()
 
         finished = True
         for job in self.jobs:
@@ -470,6 +469,8 @@ class _Parallel(_Flow):
 
             if self.result == BuildResult.FAILURE:
                 raise FailedChildJobsException(self, self._failed_child_jobs.values(), self.warn_only)
+        else:
+            self._check_timeout()
 
     def sequence(self):
         return tuple([job.sequence() for job in self.jobs])
@@ -525,12 +526,13 @@ class _Serial(_Flow):
         print()
 
     def _check(self, report_now):
-        report_now = self._check_invoke_timeout_report()
+        report_now = self._check_invoke_report()
 
         job = self.jobs[self.job_index]
         try:
             job._check(report_now)
             if not job.result:
+                self._check_timeout()
                 return
         except JobControlFailException:
             # The job has stopped running
