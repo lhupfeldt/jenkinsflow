@@ -224,30 +224,11 @@ class _SingleJob(_JobControl):
             query = [key + '=' + (value if not self.secret_params_re.search(key) else '******') for key, value in self.params.iteritems()]
             return '?' + '&'.join(query) if query else ''
 
-        try:  # This is for support of old jenkinsapi version, not tested
-            url = self.job.get_build_triggerurl(None, params=self.params)
-            if isinstance(url, tuple):
-                # Newer versions of jenkinsapi returns tuple (path, {args})
-                # Insert ' - ' so that the build URL is not directly clickable, but will instead point to the job
-                part1 = url[0].replace(self.job.name, self.job.name + ' - ')
-                self.repr_str = part1 + build_query()
-            else:
-                # Older versions of jenkinsapi return real URL
-                import urlparse
-                up = urlparse.urlparse(self.job.get_build_triggerurl(None, params=self.params))
-                # Insert ' - ' so that the build URL is not directly clickable, but will instead point to the job
-                path = up.path.replace(self.job.name, self.job.name + ' - ')
-                params = ';' + up.params if up.params else ''
-                fragment = '#' + up.fragment if up.fragment else ''
-                self.repr_str = repr(self.job.name) + ' ' + up.scheme + '://' + up.netloc + path + params + build_query() + fragment
-        except TypeError:
-            # Current Jenkins!
-            # Newer version take no args for get_build_triggerurl
-            url = self.job.get_build_triggerurl()
-            # Even Newer versions of jenkinsapi returns basic path without any args
-            # Insert ' - ' so that the build URL is not directly clickable, but will instead point to the job
-            part1 = url.replace(self.job.name, self.job.name + ' - ')
-            self.repr_str = part1 + build_query()
+        url = self.job.get_build_triggerurl()
+        # jenkinsapi returns basic path without any args
+        # Insert ' - ' so that the build URL is not directly clickable, but will instead point to the job
+        part1 = url.replace(self.job.name, self.job.name + ' - ')
+        self.repr_str = part1 + build_query()
 
         print(self.indentation + "job: ", end='')
         self._print_status_message(self.old_build)
@@ -271,14 +252,7 @@ class _SingleJob(_JobControl):
                 self._prepare_first(require_job=True)
 
             build_params = self.params if self.params else None
-            try:
-                self.job.invoke(securitytoken=self.securitytoken, invoke_pre_check_delay=0, block=False, build_params=build_params, cause=self.top_flow.cause)
-            except TypeError as ex:  # Old version of jenkinsapi
-                try:
-                    self.job.invoke(securitytoken=self.securitytoken, invoke_pre_check_delay=0, block=False, params=build_params, cause=self.top_flow.cause)
-                except TypeError:  # Not the old version after all? reraise originalexception
-                    # TODO stacktrace of second exception
-                    raise ex
+            self.job.invoke(securitytoken=self.securitytoken, invoke_pre_check_delay=0, block=False, build_params=build_params, cause=self.top_flow.cause)
 
         for _ in range(1, 20):
             self.job.poll()

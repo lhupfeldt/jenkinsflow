@@ -9,8 +9,6 @@ exclude_lines =
 
     if _debug_exc:
     def debug
-    Old.*jenkinsapi
-    old.*jenkinsapi
 
     # set_build_result
     main\(sys.argv
