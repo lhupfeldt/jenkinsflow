@@ -2,7 +2,23 @@ import os
 import pytest
 
 
-def _set_env_fixture(var_name, not_set_value, request):
+def _set_env_fixture(var_name, value, request):
+    """
+    Ensure env var_name is set to the value <value>
+    Set back to original value, if any, or unset it, after test
+    """
+    has_var = os.environ.get(var_name)
+    os.environ[var_name] = value
+    if not has_var:
+        def fin():
+            del os.environ[var_name]
+    else:
+        def fin():
+            os.environ[var_name] = has_var
+    request.addfinalizer(fin)
+
+
+def _set_env_if_not_set_fixture(var_name, not_set_value, request):
     """
     Ensure env var_name is set to the value 'not_set_value' IFF it was not already set
     Set back to original value, if any, or unset it, after test
@@ -29,10 +45,25 @@ def _unset_env_fixture(var_name, request):
 
 
 @pytest.fixture
+def mock_api_bad_value(request):
+    _set_env_fixture('JENKINSFLOW_MOCK_API', 'true', request)
+
+
+@pytest.fixture
+def mock_api_307(request):
+    _set_env_fixture('JENKINSFLOW_MOCK_API', '307', request)
+
+
+@pytest.fixture
+def mock_api_none(request):
+    _unset_env_fixture('JENKINSFLOW_MOCK_API', request)
+
+
+@pytest.fixture
 def env_base_url(request):
     # Fake that we are running from inside jenkins job
     if os.environ.get('HUDSON_URL') is None:
-        _set_env_fixture('JENKINS_URL', 'http://localhost:8080', request)
+        _set_env_if_not_set_fixture('JENKINS_URL', 'http://localhost:8080', request)
 
 
 @pytest.fixture
@@ -45,13 +76,13 @@ def env_no_base_url(request):
 @pytest.fixture
 def env_job_name(request):
     # Fake that we are running from inside jenkins job
-    _set_env_fixture('JOB_NAME', 'hudelihuu', request)
+    _set_env_if_not_set_fixture('JOB_NAME', 'hudelihuu', request)
 
 
 @pytest.fixture
 def env_build_number(request):
     # Fake that we are running from inside jenkins job
-    _set_env_fixture('BUILD_NUMBER', '1', request)
+    _set_env_if_not_set_fixture('BUILD_NUMBER', '1', request)
 
 
 @pytest.fixture(scope="module")

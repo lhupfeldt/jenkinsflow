@@ -19,9 +19,9 @@ from jenkinsflow.unbuffered import UnBuffered
 sys.stdout = UnBuffered(sys.stdout)
 
 from jenkinsflow.jobload import update_job_from_template
-from jenkinsflow.flow import hyperspeed_time
+from jenkinsflow.flow import is_mocked, hyperspeed_time
 
-from .base_test_api import TestJob, TestBuild, TestJenkins, is_mocked
+from .base_test_api import TestJob, TestBuild, TestJenkins
 from .config import test_tmp_dir, pseudo_install_dir
 
 _file_name_subst = re.compile(r'(_jobs|_test)?\.py')
@@ -256,7 +256,7 @@ def api(file_name, jenkinsurl=os.environ.get('JENKINS_URL') or os.environ.get('H
 
     print()
     print("--- Preparing api for ", repr(job_name_prefix), "---")
-    if is_mocked():
+    if is_mocked:
         print('Using Mocked API')
         return MockApi(job_name_prefix)
     else:

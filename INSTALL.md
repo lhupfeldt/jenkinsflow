@@ -41,10 +41,13 @@ Test
 
 3. Run the tests:
    # Mocked tests do not require Jenkins (but there will be a couple of xfails if jenkins is not running)
-   JENKINSFLOW_MOCK_API=true ./test.py
+   JENKINSFLOW_MOCK_API=100 ./test.py
    # Or if you are using Hudson
-   JENKINSFLOW_MOCK_API=true HUDSON_URL=<your Hudson> python ./test/tests.py
+   JENKINSFLOW_MOCK_API=100 HUDSON_URL=<your Hudson> python ./test/tests.py
 
+   The value given to JENKINSFLOW_MOCK_API is the time time speedup for the mocked tests. If you have a reasonably fast computer, try 2000.
+   If you get FlowTimeoutException try a lower value.
+   
    # Load test jobs into Jenkins and execute them
    JENKINS_URL=<your Jenkins> python ./test/tests.py
    # Or if you are using Hudson

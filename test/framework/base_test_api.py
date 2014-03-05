@@ -8,11 +8,7 @@ from collections import OrderedDict
 
 from .abstract_api import AbstractApiJob, AbstractApiBuild as TestBuild, AbstractApiJenkins
 
-from jenkinsflow.flow import BuildResult
-
-def is_mocked():
-    mocked = os.environ.get('JENKINSFLOW_MOCK_API')
-    return mocked and mocked.lower() == 'true'
+from jenkinsflow.flow import BuildResult, is_mocked
 
 
 class TestJob(AbstractApiJob):
@@ -69,6 +65,8 @@ class TestJob(AbstractApiJob):
 class TestJenkins(AbstractApiJenkins):
     __metaclass__ = abc.ABCMeta
 
+    is_mocked = is_mocked
+
     def __init__(self, job_name_prefix):
         self.job_name_prefix = job_name_prefix
         TestJob._current_order = 1
@@ -86,10 +84,6 @@ class TestJenkins(AbstractApiJenkins):
         # Don't create flow jobs when mocked
         name = '0flow_' + name if name else '0flow'
         return (self.job_name_prefix or '') + name
-
-    @property
-    def is_mocked(self):
-        return is_mocked()
 
     def __enter__(self):
         return self
