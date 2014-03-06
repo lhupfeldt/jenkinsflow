@@ -7,9 +7,9 @@ from os.path import join as jp
 from .config import flow_graph_root_dir
 
 
-_http_re = re.compile(r'https?://[^/]*/')
+_http_re = re.compile(r'https?://.*?/job/')
 def replace_host_port(contains_url):
-    return _http_re.sub('http://x.x/', contains_url)
+    return _http_re.sub('http://x.x/job/', contains_url)
 
 
 def flow_graph_dir(flow_name):
