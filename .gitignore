@@ -48,3 +48,6 @@ __pycache__
 
 # PyChrm files
 .idea
+
+# Sphinx
+doc/_build/*
