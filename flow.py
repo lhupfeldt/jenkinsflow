@@ -123,8 +123,8 @@ class _JobControl(object):
         self.total_tried_times = 0
         self.invocation_time = None
 
-        self.node_id = self.top_flow._next_node_id
-        self.top_flow._next_node_id += 1
+        self.node_id = self.top_flow.next_node_id
+        self.top_flow.next_node_id += 1
 
     def __enter__(self):
         self.top_flow.current_nesting_level += 1
@@ -607,7 +607,7 @@ class _TopLevelControllerMixin(object):
         self.report_interval = _default_report_interval
         self.secret_params_re = _default_secret_params_re
         self.allow_missing_jobs = None
-        self._next_node_id = 0
+        self.next_node_id = 0
 
         jenkins_job_name = os.environ.get('JOB_NAME')
         if jenkins_job_name:
