@@ -26,4 +26,4 @@ def test_reporting_job_status(capsys):
             assert "'jenkinsflow_test__reporting_job_status__j12' Status IDLE - latest build: #8" in sout
         else:
             assert "'jenkinsflow_test__reporting_job_status__j12' Status RUNNING - latest build: #1" in sout
-            assert "'jenkinsflow_test__reporting_job_status__j12' Status IDLE - latest build: #1" in sout
+            # assert "'jenkinsflow_test__reporting_job_status__j12' Status IDLE - latest build: #1" in sout
