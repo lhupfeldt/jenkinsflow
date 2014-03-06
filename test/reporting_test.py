@@ -16,14 +16,15 @@ def test_reporting_job_status(capsys):
             ctrl1.invoke('j12')
 
         sout, _ = capsys.readouterr()
-        repr_not_invoked = "job: 'jenkinsflow_test__reporting_job_status__j11' Status IDLE - latest build: None"
-        assert repr_not_invoked in sout, repr_not_invoked + "\n - NOT FOUND IN:\n" + sout
 
         if api.is_mocked:
+            repr_not_invoked = "job: 'jenkinsflow_test__reporting_job_status__j11' Status IDLE - latest build: "
+            assert repr_not_invoked in sout, repr_not_invoked + "\n - NOT FOUND IN:\n" + sout
             assert "job: 'jenkinsflow_test__reporting_job_status__j12' Status IDLE - latest build: #7" in sout
             assert "'jenkinsflow_test__reporting_job_status__j12' Status QUEUED - latest build: #7" in sout
             assert "'jenkinsflow_test__reporting_job_status__j12' Status RUNNING - latest build: #8" in sout
             assert "'jenkinsflow_test__reporting_job_status__j12' Status IDLE - latest build: #8" in sout
         else:
-            assert "'jenkinsflow_test__reporting_job_status__j12' Status RUNNING - latest build: #1" in sout
-            # assert "'jenkinsflow_test__reporting_job_status__j12' Status IDLE - latest build: #1" in sout
+            # TODO: know if we cleaned jobs and check the 'repr_not_invoked' above
+            assert "'jenkinsflow_test__reporting_job_status__j12' Status RUNNING - latest build: " in sout
+            # assert "'jenkinsflow_test__reporting_job_status__j12' Status IDLE - latest build: " in sout
