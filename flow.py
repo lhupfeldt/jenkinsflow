@@ -273,7 +273,7 @@ class _SingleJob(_JobControl):
         # The job has stopped running
         self._print_status_message(build)
         self.result = BuildResult[build.get_status()]
-        url = build.get_result_url().replace('testReport/api/python', 'console')
+        url = build.get_result_url().replace('testReport/api/python', 'console').replace('testReport/api/json', 'console')
         print(str(build.get_status()) + ":", repr(self.job.name), "- build:", url, self._time_msg())
 
         if self.result not in (BuildResult.SUCCESS, BuildResult.UNSTABLE):
