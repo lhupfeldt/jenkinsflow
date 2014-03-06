@@ -4,7 +4,7 @@
 from pytest import raises
 
 from jenkinsflow.flow import serial, parallel, FailedChildJobException, FailedChildJobsException
-from framework import mock_api
+from .framework import mock_api
 
 from demo_security import username, password
 

@@ -2,7 +2,7 @@
 # All rights reserved. This work is under a BSD license, see LICENSE.TXT.
 
 from jenkinsflow.flow import serial
-from framework import mock_api
+from .framework import mock_api
 
 
 def test_cause_no_build_number(env_job_name):

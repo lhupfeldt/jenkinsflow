@@ -4,7 +4,7 @@
 from pytest import raises
 
 from jenkinsflow.flow import serial, FailedChildJobException
-from framework import mock_api
+from .framework import mock_api
 
 
 def test_multi_level_errors():

@@ -4,7 +4,7 @@
 from pytest import raises
 
 from jenkinsflow.flow import parallel, serial, FailedChildJobException, FailedChildJobsException
-from framework import mock_api
+from .framework import mock_api
 
 
 def test_single_level_errors_parallel():

@@ -4,7 +4,7 @@
 from pytest import raises
 
 from jenkinsflow.flow import parallel, serial, MissingJobsException, FailedChildJobsException, FailedChildJobException
-from framework import mock_api
+from .framework import mock_api
 
 
 def test_missing_jobs_not_allowed():

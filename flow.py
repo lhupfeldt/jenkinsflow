@@ -8,7 +8,7 @@ from os.path import join as jp
 from enum import IntEnum, Enum
 from collections import OrderedDict
 
-from set_build_result import set_build_result
+from .set_build_result import set_build_result
 
 
 def mocked():

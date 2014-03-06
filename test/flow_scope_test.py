@@ -4,7 +4,7 @@
 from pytest import raises
 
 from jenkinsflow.flow import parallel, serial, FlowScopeException
-from framework import mock_api
+from .framework import mock_api
 
 
 def test_flow_scope_job():

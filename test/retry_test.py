@@ -2,7 +2,7 @@
 # All rights reserved. This work is under a BSD license, see LICENSE.TXT.
 
 from jenkinsflow.flow import parallel, serial
-from framework import mock_api, utils
+from .framework import mock_api, utils
 
 
 def test_retry_serial_toplevel():

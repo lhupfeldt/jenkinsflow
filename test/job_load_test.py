@@ -7,7 +7,7 @@ from os.path import join as jp
 from pytest import raises
 
 from jenkinsflow import jobload
-from framework import mock_api
+from .framework import mock_api
 
 
 here = os.path.abspath(os.path.dirname(__file__))

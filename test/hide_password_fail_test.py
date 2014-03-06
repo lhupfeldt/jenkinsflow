@@ -3,7 +3,7 @@
 
 from pytest import raises
 
-from framework import mock_api
+from .framework import mock_api
 from jenkinsflow.flow import serial, FailedChildJobException
 
 

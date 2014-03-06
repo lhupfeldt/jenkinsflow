@@ -7,14 +7,13 @@
 from __future__ import print_function
 
 import os
-import subprocess
 import urllib2
 import pytest
 from pytest import raises, xfail
 
 from jenkinsflow import set_build_result
 from jenkinsflow.flow import serial
-from framework import mock_api
+from .framework import mock_api
 
 from demo_security import username, password
 

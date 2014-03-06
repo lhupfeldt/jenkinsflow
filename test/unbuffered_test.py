@@ -3,7 +3,7 @@
 
 import sys
 
-from framework import mock_api
+from .framework import mock_api
 from jenkinsflow.flow import serial
 from jenkinsflow.unbuffered import UnBuffered
 
