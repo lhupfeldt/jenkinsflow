@@ -4,15 +4,11 @@
 # All rights reserved. This work is under a BSD license, see LICENSE.TXT.
 
 from __future__ import print_function
+import demo_setup
 
-import sys
-import os.path
-from os.path import join as jp
-here = os.path.dirname(__file__)
-sys.path.append(jp(here, '../..'))
-
-from collections import OrderedDict
+import sys, os
 import logging
+from collections import OrderedDict
 
 from jenkinsapi import jenkins
 

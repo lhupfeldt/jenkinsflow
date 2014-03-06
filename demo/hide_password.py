@@ -3,19 +3,12 @@
 # Copyright (c) 2012 - 2014 Lars Hupfeldt Nielsen, Hupfeldt IT
 # All rights reserved. This work is under a BSD license, see LICENSE.TXT.
 
-import sys
-import os.path
-from os.path import join as jp
-here = os.path.dirname(__file__)
-sys.path.append(jp(here, '../..'))
-
+import demo_setup
 import logging
 
 from jenkinsapi import jenkins
 
 from jenkinsflow.flow import serial
-from jenkinsflow.unbuffered import UnBuffered
-sys.stdout = UnBuffered(sys.stdout)
 
 import demo_security as security
 

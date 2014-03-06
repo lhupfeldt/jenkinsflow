@@ -3,28 +3,16 @@
 # Copyright (c) 2012 - 2014 Lars Hupfeldt Nielsen, Hupfeldt IT
 # All rights reserved. This work is under a BSD license, see LICENSE.TXT.
 
-import sys
-import os.path
-from os.path import join as jp
-here = os.path.dirname(__file__)
-sys.path.append(jp(here, '../..'))
-
-import logging
+import demo_setup
+import os
 
 from jenkinsapi import jenkins
 
 from jenkinsflow.flow import serial
-from jenkinsflow.unbuffered import UnBuffered
-# Unbuffered output does not work well in Jenkins, so in case
-# this is run from a jenkins job, we want unbuffered output
-sys.stdout = UnBuffered(sys.stdout)
 
 import demo_security as security
 
 def main(api):
-    logging.basicConfig()
-    logging.getLogger("").setLevel(logging.WARNING)
-
     with serial(api, timeout=70, securitytoken=security.securitytoken, job_name_prefix='jenkinsflow_demo__errors__', report_interval=3) as ctrl1:
         ctrl1.invoke('wait1-1')
 
