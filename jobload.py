@@ -33,7 +33,7 @@ def update_job(jenkins, job_name, config_xml, pre_delete=False, async=False):
         jenkins.poll()
 
 
-def update_job_from_template(jenkins, job_name, config_xml_template, pre_delete=False, context=None):
+def update_job_from_template(jenkins, job_name, config_xml_template, pre_delete=False, async=False, context=None):
     """
     Create or update a job based on a Tenjin template
     config_xml_template: filename of tenjin xml template
@@ -41,4 +41,4 @@ def update_job_from_template(jenkins, job_name, config_xml_template, pre_delete=
     """
     assert engine, "You must install tenjin (e.g.: pip install tenjin)"
     config_xml = engine.render(config_xml_template, context or {})
-    update_job(jenkins, job_name, config_xml, pre_delete)
+    update_job(jenkins, job_name, config_xml, pre_delete, async)
