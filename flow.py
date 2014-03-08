@@ -182,6 +182,12 @@ class _JobControl(object):
     def __repr__(self):
         return str(self.sequence())
 
+    @property
+    def propagate_result(self):
+        if self.result == BuildResult.FAILURE and self.propagation == Propagation.FAILURE_TO_UNSTABLE:
+            return BuildResult.UNSTABLE
+        return self.result
+
     @abc.abstractmethod
     def last_jobs_in_flow(self):
         """For json graph calculation"""
@@ -463,7 +469,7 @@ class _Parallel(_Flow):
             # All jobs have stopped running
             self.result = BuildResult.SUCCESS
             for job in self.jobs:
-                self.result = min(self.result, job.result if not (job.propagation == Propagation.FAILURE_TO_UNSTABLE and job.result == BuildResult.FAILURE) else BuildResult.UNSTABLE)
+                self.result = min(self.result, job.propagate_result)
             print(self.result.name, self, self._time_msg())
 
             if self.result == BuildResult.FAILURE:
@@ -576,7 +582,7 @@ class _Serial(_Flow):
             # Check if any of the jobs is in warning or we have warning set ourself
             self.result = BuildResult.UNSTABLE if self.has_warning else BuildResult.SUCCESS
             for job in self.jobs:
-                self.result = min(self.result, job.result if not (job.propagation == Propagation.FAILURE_TO_UNSTABLE and job.result == BuildResult.FAILURE) else BuildResult.UNSTABLE)
+                self.result = min(self.result, job.propagate_result)
             print(self.result.name, self, self._time_msg())
 
     def sequence(self):
