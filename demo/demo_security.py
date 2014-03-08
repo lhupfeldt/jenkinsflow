@@ -11,7 +11,7 @@
 # Securitytoken MUST be used in order for the flow job to ammend the 'build cause' of jobs that it invokes, if username/password
 # is used the cause will always be 'Invoked by <username>'
 
-# Username and password are needed for creating jobs and for changing build status with the 'warn_only' feature
+# Username and password are needed for creating jobs and for changing build status with the 'Propagation.FAILURE_TO_UNSTABLE' feature
 # The ./test/test.py script will need to create Jenkins jobs which REQUIRES username/password
 
 securitytoken = 'jenkinsflow_securitytoken'

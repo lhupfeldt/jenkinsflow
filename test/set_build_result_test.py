@@ -12,7 +12,7 @@ import pytest
 from pytest import raises, xfail
 
 from jenkinsflow import set_build_result
-from jenkinsflow.flow import serial
+from jenkinsflow.flow import serial, Propagation
 from .framework import mock_api
 
 from demo_security import username, password
@@ -44,7 +44,7 @@ def test_set_build_result_no_cli_jar(fake_java, no_pre_existing_cli, env_base_ur
             api.flow_job()
             api.job('j1_fail', exec_time=0.01, max_fails=1, expect_invocations=1, expect_order=1)
 
-            with serial(api, timeout=70, username=username, password=password, job_name_prefix=api.job_name_prefix, report_interval=3, warn_only=True) as ctrl1:
+            with serial(api, timeout=70, username=username, password=password, job_name_prefix=api.job_name_prefix, report_interval=3, propagation=Propagation.FAILURE_TO_UNSTABLE) as ctrl1:
                 ctrl1.invoke('j1_fail')
 
         except urllib2.URLError:
@@ -60,7 +60,7 @@ def test_set_build_result(fake_java, pre_existing_cli, env_base_url, capfd):
             api.flow_job()
             api.job('j1_fail', exec_time=0.01, max_fails=1, expect_invocations=1, expect_order=1)
 
-            with serial(api, timeout=70, username=username, password=password, job_name_prefix=api.job_name_prefix, report_interval=3, warn_only=True) as ctrl1:
+            with serial(api, timeout=70, username=username, password=password, job_name_prefix=api.job_name_prefix, report_interval=3, propagation=Propagation.FAILURE_TO_UNSTABLE) as ctrl1:
                 ctrl1.invoke('j1_fail')
 
         except urllib2.URLError:
@@ -76,7 +76,7 @@ def test_set_build_result_no_auth(fake_java, pre_existing_cli, env_base_url, cap
             api.flow_job()
             api.job('j1_fail', exec_time=0.01, max_fails=1, expect_invocations=1, expect_order=1)
 
-            with serial(api, timeout=70, job_name_prefix=api.job_name_prefix, report_interval=3, warn_only=True) as ctrl1:
+            with serial(api, timeout=70, job_name_prefix=api.job_name_prefix, report_interval=3, propagation=Propagation.FAILURE_TO_UNSTABLE) as ctrl1:
                 ctrl1.invoke('j1_fail')
 
         except urllib2.URLError:
@@ -92,7 +92,7 @@ def test_set_build_result_no_jenkinsurl(pre_existing_cli, env_no_base_url, capfd
             api.flow_job()
             api.job('j1_fail', exec_time=0.01, max_fails=1, expect_invocations=1, expect_order=1)
 
-            with serial(api, timeout=70, username=username, password=password, job_name_prefix=api.job_name_prefix, report_interval=3, warn_only=True) as ctrl1:
+            with serial(api, timeout=70, username=username, password=password, job_name_prefix=api.job_name_prefix, report_interval=3, propagation=Propagation.FAILURE_TO_UNSTABLE) as ctrl1:
                 ctrl1.invoke('j1_fail')
 
     assert "Could not get env variable JENKINS_URL or HUDSON_URL. Don't know whether to use jenkins-cli.jar or hudson-cli.jar for setting result! You must set 'Jenkins Location' in Jenkins setup for JENKINS_URL to be exported. You must set 'Hudson URL' in Hudson setup for HUDSON_URL to be exported." in exinfo.value.message

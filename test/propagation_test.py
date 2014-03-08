@@ -3,37 +3,37 @@
 
 from pytest import raises
 
-from jenkinsflow.flow import serial, parallel, FailedChildJobException, FailedChildJobsException
+from jenkinsflow.flow import serial, parallel, FailedChildJobException, FailedChildJobsException, Propagation
 from .framework import mock_api
 
 from demo_security import username, password
 
 
-def test_warn_only_serial(env_base_url, fake_java, capfd):
+def test_propagation_serial(env_base_url, fake_java, capfd):
     with mock_api.api(__file__) as api:
         api.flow_job()
         api.job('j11', exec_time=0.01, max_fails=0, expect_invocations=1, expect_order=1)
         api.job('j12_fail', exec_time=0.01, max_fails=1, expect_invocations=1, expect_order=2)
         api.job('j13', exec_time=0.01, max_fails=0, expect_invocations=0, expect_order=None)
 
-        with serial(api, timeout=70, username=username, password=password, job_name_prefix=api.job_name_prefix, report_interval=3, warn_only=True) as ctrl1:
+        with serial(api, timeout=70, username=username, password=password, job_name_prefix=api.job_name_prefix, report_interval=3, propagation=Propagation.FAILURE_TO_UNSTABLE) as ctrl1:
             ctrl1.invoke('j11')
             ctrl1.invoke('j12_fail')
             ctrl1.invoke('j13')
 
 
-def test_warn_only_parallel(env_base_url, fake_java, capfd):
+def test_propagation_parallel(env_base_url, fake_java, capfd):
     with mock_api.api(__file__) as api:
         api.flow_job()
         api.job('j1_fail', exec_time=0.01, max_fails=1, expect_invocations=1, expect_order=1)
         api.job('j2', exec_time=0.01, max_fails=0, expect_invocations=1, expect_order=1)
 
-        with parallel(api, timeout=70, username=username, password=password, job_name_prefix=api.job_name_prefix, report_interval=3, warn_only=True) as ctrl1:
+        with parallel(api, timeout=70, username=username, password=password, job_name_prefix=api.job_name_prefix, report_interval=3, propagation=Propagation.FAILURE_TO_UNSTABLE) as ctrl1:
             ctrl1.invoke('j1_fail')
             ctrl1.invoke('j2')
 
 
-def test_warn_only_nested_serial_parallel(env_base_url, fake_java, capfd):
+def test_propagation_nested_serial_parallel(env_base_url, fake_java, capfd):
     with mock_api.api(__file__) as api:
         api.flow_job()
         api.job('j11', exec_time=0.01, max_fails=0, expect_invocations=1, expect_order=1)
@@ -44,13 +44,13 @@ def test_warn_only_nested_serial_parallel(env_base_url, fake_java, capfd):
         with serial(api, timeout=70, username=username, password=password, job_name_prefix=api.job_name_prefix, report_interval=3) as ctrl1:
             ctrl1.invoke('j11')
 
-            with ctrl1.parallel(warn_only=True) as ctrl2:
+            with ctrl1.parallel(propagation=Propagation.FAILURE_TO_UNSTABLE) as ctrl2:
                 ctrl2.invoke('j21')
                 ctrl2.invoke('j22_fail')
                 ctrl2.invoke('j23')
 
 
-def test_warn_only_nested_parallel_serial(env_base_url, fake_java, capfd):
+def test_propagation_nested_parallel_serial(env_base_url, fake_java, capfd):
     with mock_api.api(__file__) as api:
         api.flow_job()
         api.job('j11', exec_time=0.01, max_fails=0, expect_invocations=1, expect_order=1)
@@ -61,13 +61,13 @@ def test_warn_only_nested_parallel_serial(env_base_url, fake_java, capfd):
         with parallel(api, timeout=70, username=username, password=password, job_name_prefix=api.job_name_prefix, report_interval=3) as ctrl1:
             ctrl1.invoke('j11')
 
-            with ctrl1.serial(warn_only=True) as ctrl2:
+            with ctrl1.serial(propagation=Propagation.FAILURE_TO_UNSTABLE) as ctrl2:
                 ctrl2.invoke('j21')
                 ctrl2.invoke('j22_fail')
                 ctrl2.invoke('j23')
 
 
-def test_warn_only_nested_serial_serial(env_base_url, fake_java, capfd):
+def test_propagation_nested_serial_serial(env_base_url, fake_java, capfd):
     with mock_api.api(__file__) as api:
         api.flow_job()
         api.job('j11', exec_time=0.01, max_fails=0, expect_invocations=1, expect_order=1)
@@ -78,13 +78,13 @@ def test_warn_only_nested_serial_serial(env_base_url, fake_java, capfd):
         with serial(api, timeout=70, username=username, password=password, job_name_prefix=api.job_name_prefix, report_interval=3) as ctrl1:
             ctrl1.invoke('j11')
 
-            with ctrl1.serial(warn_only=True) as ctrl2:
+            with ctrl1.serial(propagation=Propagation.FAILURE_TO_UNSTABLE) as ctrl2:
                 ctrl2.invoke('j21')
                 ctrl2.invoke('j22_fail')
                 ctrl2.invoke('j23')
 
 
-def test_warn_only_nested_parallel_parallel(env_base_url, fake_java, capfd):
+def test_propagation_nested_parallel_parallel(env_base_url, fake_java, capfd):
     with mock_api.api(__file__) as api:
         api.flow_job()
         api.job('j11', exec_time=0.01, max_fails=0, expect_invocations=1, expect_order=1)
@@ -95,13 +95,13 @@ def test_warn_only_nested_parallel_parallel(env_base_url, fake_java, capfd):
         with parallel(api, timeout=70, username=username, password=password, job_name_prefix=api.job_name_prefix, report_interval=3) as ctrl1:
             ctrl1.invoke('j11')
 
-            with ctrl1.parallel(warn_only=True) as ctrl2:
+            with ctrl1.parallel(propagation=Propagation.FAILURE_TO_UNSTABLE) as ctrl2:
                 ctrl2.invoke('j21')
                 ctrl2.invoke('j22_fail')
                 ctrl2.invoke('j23')
 
 
-def test_warn_only_nested_serial_serial_continue(env_base_url, fake_java, capfd):
+def test_propagation_nested_serial_serial_continue(env_base_url, fake_java, capfd):
     with mock_api.api(__file__) as api:
         api.flow_job()
         api.job('j11', exec_time=0.01, max_fails=0, expect_invocations=1, expect_order=1)
@@ -114,12 +114,12 @@ def test_warn_only_nested_serial_serial_continue(env_base_url, fake_java, capfd)
 
             with ctrl1.serial() as ctrl2:
                 ctrl2.invoke('j21')
-                with ctrl2.serial(warn_only=True) as ctrl3:
+                with ctrl2.serial(propagation=Propagation.FAILURE_TO_UNSTABLE) as ctrl3:
                     ctrl3.invoke('j22_fail')
                 ctrl2.invoke('j23')
 
 
-def test_warn_only_nested_parallel_serial_continue(env_base_url, fake_java, capfd):
+def test_propagation_nested_parallel_serial_continue(env_base_url, fake_java, capfd):
     with mock_api.api(__file__) as api:
         api.flow_job()
         api.job('j11', exec_time=0.01, max_fails=0, expect_invocations=1, expect_order=1)
@@ -132,12 +132,12 @@ def test_warn_only_nested_parallel_serial_continue(env_base_url, fake_java, capf
 
             with ctrl1.serial() as ctrl2:
                 ctrl2.invoke('j21')
-                with ctrl2.serial(warn_only=True) as ctrl3:
+                with ctrl2.serial(propagation=Propagation.FAILURE_TO_UNSTABLE) as ctrl3:
                     ctrl3.invoke('j22_fail')
                 ctrl2.invoke('j23')
 
 
-def test_warn_only_nested_serial_serial_continue_fail():
+def test_propagation_nested_serial_serial_continue_fail():
     with mock_api.api(__file__) as api:
         api.flow_job()
         api.job('j11', exec_time=0.01, max_fails=0, expect_invocations=1, expect_order=1)
@@ -151,12 +151,12 @@ def test_warn_only_nested_serial_serial_continue_fail():
 
                 with ctrl1.serial() as ctrl2:
                     ctrl2.invoke('j21')
-                    with ctrl2.serial(warn_only=True) as ctrl3:
+                    with ctrl2.serial(propagation=Propagation.FAILURE_TO_UNSTABLE) as ctrl3:
                         ctrl3.invoke('j22_fail')
                     ctrl2.invoke('j23_fail')
 
 
-def test_warn_only_nested_parallel_serial_continue_fail():
+def test_propagation_nested_parallel_serial_continue_fail():
     with mock_api.api(__file__) as api:
         api.flow_job()
         api.job('j11', exec_time=0.01, max_fails=0, expect_invocations=1, expect_order=1)
@@ -170,6 +170,6 @@ def test_warn_only_nested_parallel_serial_continue_fail():
 
                 with ctrl1.serial() as ctrl2:
                     ctrl2.invoke('j21')
-                    with ctrl2.serial(warn_only=True) as ctrl3:
+                    with ctrl2.serial(propagation=Propagation.FAILURE_TO_UNSTABLE) as ctrl3:
                         ctrl3.invoke('j22_fail')
                     ctrl2.invoke('j23_fail')

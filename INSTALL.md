@@ -20,7 +20,8 @@ In the following Jenkins also means Hudson unless otherwise stated.
 
 3. Make jenkinsflow files (flow.py and possibly unbuffered.py) available to your Jenkins installation.
 
-4. To use the warn_only (experimental) feature, Jenkins URL must be set in Jenkins configuration.
+4. To use propagation=Propagation.FAILURE_TO_UNSTABLE feature, Jenkins URL must be set in Jenkins configuration.
+   Note that this feature uses the 'cli' which has problems working over a proxy.
 
 5. Read the file demo/demo_security.py for notes about security, if you have enabled security on your Jenkins
 
