@@ -189,12 +189,6 @@ class _JobControl(object):
     def __repr__(self):
         return str(self.sequence())
 
-    @property
-    def propagate_result(self):
-        if self.result == BuildResult.FAILURE and self.propagation == Propagation.FAILURE_TO_UNSTABLE:
-            return BuildResult.UNSTABLE
-        return self.result
-
     @abc.abstractmethod
     def last_jobs_in_flow(self):
         """For json graph calculation"""
@@ -399,6 +393,14 @@ class _Flow(_JobControl):
             self.last_report_time = now
         return report_now
 
+    def set_result(self):
+        self.result = BuildResult.SUCCESS
+        for job in self.jobs:
+            if job.result == BuildResult.FAILURE and self.propagation == Propagation.FAILURE_TO_UNSTABLE:
+                self.result = min(self.result, BuildResult.UNSTABLE)
+            else:
+                self.result = min(self.result, job.result)
+
     def json(self, file_path, indent=None):
         node_to_id = lambda job : job.node_id
         if indent:
@@ -474,9 +476,7 @@ class _Parallel(_Flow):
 
         if self.finished_checking:
             # All jobs have stopped running
-            self.result = BuildResult.SUCCESS
-            for job in self.jobs:
-                self.result = min(self.result, job.propagate_result)
+            self.set_result()
             print(self.result.name, self, self._time_msg())
 
             if self.result == BuildResult.FAILURE:
@@ -588,8 +588,7 @@ class _Serial(_Flow):
 
             # Check if any of the jobs is in warning or we have warning set ourself
             self.result = BuildResult.UNSTABLE if self.has_warning else BuildResult.SUCCESS
-            for job in self.jobs:
-                self.result = min(self.result, job.propagate_result)
+            self.set_result()
             print(self.result.name, self, self._time_msg())
 
     def sequence(self):
