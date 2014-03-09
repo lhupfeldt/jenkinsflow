@@ -14,4 +14,6 @@ exclude_lines =
     main\(sys.argv
     set_build_result\(args
 
-omit = ./*
+omit = 
+     ./*
+     setup.py

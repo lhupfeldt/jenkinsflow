@@ -17,3 +17,4 @@ exclude_lines =
 omit = 
      test/*
      server.py
+     setup.py

@@ -2,7 +2,7 @@
 
 from __future__ import print_function
 
-import sys, os, imp, subprocess
+import sys, os, imp, subprocess, getpass
 from os.path import join as jp
 here = os.path.abspath(os.path.dirname(__file__))
 
@@ -36,17 +36,17 @@ def main():
         print("Failed test installation to. Install script is:", repr(install_script), file=sys.stderr)
         print("Warning: Some tests will fail!", file=sys.stderr)
 
-    print("Running tests")
+    print("\nRunning tests")
     if len(sys.argv) > 1:
         sys.exit(subprocess.call(['py.test', '--capture=sys', '--instafail'] + sys.argv[1:]))
     else:
         rc = subprocess.call(('py.test', '--capture=sys', '--cov=' + here + '/..', '--cov-report=term-missing', '--instafail', '--ff'))
 
-    print("Validating demos")
+    print("\nValidating demos")
     for demo in basic, hide_password, prefix:
         run_demo(demo)
 
-    print("Validating demos with failing jobs")
+    print("\nValidating demos with failing jobs")
     for demo in (errors,):
         try:
             run_demo(demo)
@@ -54,6 +54,15 @@ def main():
             print("Ok, got exception:", ex)
         else:
             raise Exception("Expected exception")
+
+    print("\nTesting setup.py")
+    user = getpass.getuser()
+    install_prefix = '/tmp/' + user
+    tmp_packages_dir = install_prefix + '/lib/python2.7/site-packages'
+    os.environ['PYTHONPATH'] = tmp_packages_dir
+    if not os.path.exists(tmp_packages_dir):
+        os.makedirs(tmp_packages_dir)
+    subprocess.check_call(['python', jp(here, '../setup.py'), 'install', '--prefix', install_prefix])
 
     if rc:
         print('*** ERROR: There were errors! Check output! ***', file=sys.stderr)
