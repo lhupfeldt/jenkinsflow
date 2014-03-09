@@ -121,4 +121,5 @@ class TestJenkins(AbstractApiJenkins):
                     expect_status = BuildResult.SUCCESS if job.final_result is None else job.final_result
                 else:
                     expect_status = BuildResult.FAILURE
-                assert BuildResult[job.get_last_build_or_none().get_status()] == expect_status, "Job: " + job.name + " should have been in state" + repr(expect_status) + " but it is not"
+                result = BuildResult[job.get_last_build_or_none().get_status()]
+                assert result == expect_status, "Job: " + job.name + " expected result " + repr(expect_status) + " but got " + repr(result)
