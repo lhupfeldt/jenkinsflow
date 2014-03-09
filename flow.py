@@ -162,7 +162,7 @@ class _JobControl(object):
             return True
 
         self.invocation_time = hyperspeed_time()
-        print("\nInvoking (%d/%d,%d/%d):" % (self.tried_times + 1, self.max_tries, self.total_tried_times + 1, self.total_max_tries), self)
+        print("\nInvoking %s (%d/%d,%d/%d):" % (self.controller_type_name, self.tried_times + 1, self.max_tries, self.total_tried_times + 1, self.total_max_tries), self)
         return False
 
     @abc.abstractmethod
@@ -176,6 +176,10 @@ class _JobControl(object):
 
     @abc.abstractmethod
     def sequence(self):
+        raise Exception("AbstractNotImplemented")
+
+    @abc.abstractproperty
+    def controller_type_name(self):
         raise Exception("AbstractNotImplemented")
 
     @property
@@ -299,6 +303,10 @@ class _SingleJob(_JobControl):
     def sequence(self):
         return self.name
 
+    @property
+    def controller_type_name(self):
+        return "Job"
+
     def last_jobs_in_flow(self):
         return [self]
 
@@ -363,6 +371,10 @@ class _Flow(_JobControl):
     def invoke_unchecked(self, job_name, **params):
         job = _IgnoredSingleJob(self, self.securitytoken, self.job_name_prefix, job_name, params, self.secret_params_re, self.allow_missing_jobs)
         self.jobs.append(job)
+
+    @property
+    def controller_type_name(self):
+        return "Flow"
 
     def _check_timeout(self):
         now = hyperspeed_time()
