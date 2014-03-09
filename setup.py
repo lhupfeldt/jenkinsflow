@@ -11,7 +11,7 @@ SHORT_DESCRIPTION = 'Python API with high level build flow constructs (parallel/
 
 try:
     DESCRIPTION = open(os.path.join(PROJECT_ROOT, "README.md")).read()
-except IOError, _:
+except IOError:
     DESCRIPTION = SHORT_DESCRIPTION
 
 setup(
