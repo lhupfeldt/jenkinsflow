@@ -3,7 +3,7 @@
 
 from __future__ import print_function
 
-import os, time, re, abc
+import os, time, re, abc, traceback
 from os.path import join as jp
 from enum import IntEnum, Enum
 from collections import OrderedDict
@@ -274,14 +274,16 @@ class _SingleJob(_JobControl):
             build_params = self.params if self.params else None
             self.job.invoke(securitytoken=self.securitytoken, invoke_pre_check_delay=0, block=False, build_params=build_params, cause=self.top_flow.cause)
 
-        for _ in range(1, 20):
-            self.job.poll()
+        for ii in range(1, 20):
             try:
+                self.job.poll()
                 build = self.job.get_last_build_or_none()
                 break
             except KeyError as ex:  # pragma: no cover
                 # Workaround for jenkinsapi timing dependency?
-                print("'get_last_build_or_none' failed: " + str(ex) + ", retrying.")
+                if ii == 1:
+                    print("poll or get_last_build_or_none' failed: " + str(ex) + ", retrying.")
+                    traceback.print_exc()  
                 time.sleep(0.1 / _hyperspeed_speedup)
 
         old_buildno = (self.old_build.buildno if self.old_build else None)
