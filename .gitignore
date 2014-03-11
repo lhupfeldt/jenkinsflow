@@ -51,3 +51,6 @@ __pycache__
 
 # Sphinx
 doc/_build/*
+
+# Jenkins war
+*.war

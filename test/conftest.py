@@ -1,5 +1,6 @@
 import os
 import pytest
+from framework.jenkins_launcher import JenkinsLancher
 
 
 def _set_env_fixture(var_name, value, request):
@@ -97,3 +98,24 @@ def fake_java(request):
             def fin():
                 os.environ['PATH'] = orig_path
             request.addfinalizer(fin)
+
+
+@pytest.fixture(scope='session', autouse=True)
+def jenkins_server(request):
+    """
+    Downloads and starts Jenkins
+    """
+    state = {}
+    def stop_jenkins():
+        state['launcher'].stop()
+
+    jenkins_url = os.environ.get('JENKINS_URL') or os.environ.get('HUDSON_URL')
+    if not jenkins_url:
+        systests_dir, _ = os.path.split(__file__)
+        war_path = os.path.join(systests_dir, 'jenkins.war')
+        state['launcher'] = JenkinsLancher(war_path, [])
+        state['launcher'].start()
+        jenkins_url = state['launcher'].url
+        request.addfinalizer(stop_jenkins)
+
+    return jenkins_url
