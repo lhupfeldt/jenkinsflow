@@ -5,8 +5,8 @@ from jenkinsflow.flow import serial
 from .framework import mock_api
 
 
-def test_boolean_and_int_params():
-    with mock_api.api(__file__) as api:
+def test_boolean_and_int_params(jenkins_server):
+    with mock_api.api(__file__, jenkinsurl=jenkins_server) as api:
         api.flow_job()
         api.job('job-1', exec_time=0.01, max_fails=0, expect_invocations=1, expect_order=1, params=(('b1', False, 'boolean'), ('b2', True, 'boolean')))
         api.job('job-2', exec_time=0.01, max_fails=0, expect_invocations=1, expect_order=2, params=(('i1', 1, 'integer'), ('i2', 2, 'integer')))
