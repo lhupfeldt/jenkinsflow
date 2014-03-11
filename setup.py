@@ -1,4 +1,6 @@
 from setuptools import setup
+from setuptools.command.test import test as TestCommand
+import sys
 import os
 
 PROJECT_ROOT, _ = os.path.split(__file__)
@@ -14,6 +16,19 @@ try:
 except IOError:
     DESCRIPTION = SHORT_DESCRIPTION
 
+
+class PyTest(TestCommand):
+    def finalize_options(self):
+        TestCommand.finalize_options(self)
+        self.test_args = []
+        self.test_suite = True
+
+    def run_tests(self):
+        #import here, cause outside the eggs aren't loaded
+        import pytest
+        errno = pytest.main(self.test_args)
+        sys.exit(errno)
+
 setup(
     name=PROJECT_NAME.lower(),
     version=REVISION,
@@ -24,6 +39,7 @@ setup(
     install_requires=['jenkinsapi', 'enum34', 'tenjin', 'bottle', 'atomicfile'],
     test_suite='pytest',
     tests_require=['pytest', 'pytest-cov', 'pytest-cache', 'pytest-instafail', 'logilab-devtools', 'proxytypes'],
+    cmdclass={'test': PyTest},
     url=PROJECT_URL,
     description=SHORT_DESCRIPTION,
     long_description=DESCRIPTION,
