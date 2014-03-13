@@ -1,11 +1,41 @@
 # Copyright (c) 2012 - 2014 Lars Hupfeldt Nielsen, Hupfeldt IT
 # All rights reserved. This work is under a BSD license, see LICENSE.TXT.
 
-from jenkinsflow.flow import serial
+from jenkinsflow.flow import serial, parallel
 from .framework import mock_api
 
 
-def test_invoke_unchecked():
+def test_invoke_unchecked_serial():
+    with mock_api.api(__file__) as api:
+        api.flow_job()
+        api.job('j11_unchecked', exec_time=20, max_fails=0, expect_invocations=1, expect_order=None, unknown_result=True)
+        api.job('j12', exec_time=0.01, max_fails=0, expect_invocations=1, expect_order=1)
+        api.job('j13_unchecked', exec_time=0.01, max_fails=1, expect_invocations=1, expect_order=None, unknown_result=True)
+        api.job('j14_unchecked', exec_time=0.01, max_fails=0, expect_invocations=1, expect_order=None, unknown_result=True)
+
+        with serial(api, timeout=70, job_name_prefix=api.job_name_prefix, report_interval=1) as ctrl1:
+            ctrl1.invoke_unchecked('j11_unchecked')
+            ctrl1.invoke('j12')
+            ctrl1.invoke_unchecked('j13_unchecked')
+            ctrl1.invoke_unchecked('j14_unchecked')
+
+
+def test_invoke_unchecked_parallel():
+    with mock_api.api(__file__) as api:
+        api.flow_job()
+        api.job('j11_unchecked', exec_time=20, max_fails=0, expect_invocations=1, expect_order=None, unknown_result=True)
+        api.job('j12', exec_time=0.01, max_fails=0, expect_invocations=1, expect_order=1)
+        api.job('j13_unchecked', exec_time=0.01, max_fails=1, expect_invocations=1, expect_order=None, unknown_result=True)
+        api.job('j14_unchecked', exec_time=0.01, max_fails=0, expect_invocations=1, expect_order=None, unknown_result=True)
+
+        with parallel(api, timeout=70, job_name_prefix=api.job_name_prefix, report_interval=1) as ctrl1:
+            ctrl1.invoke_unchecked('j11_unchecked')
+            ctrl1.invoke('j12')
+            ctrl1.invoke_unchecked('j13_unchecked')
+            ctrl1.invoke_unchecked('j14_unchecked')
+
+
+def test_invoke_unchecked_mix():
     with mock_api.api(__file__) as api:
         api.flow_job()
         api.job('j1', exec_time=0.01, max_fails=0, expect_invocations=1, expect_order=None, unknown_result=True)

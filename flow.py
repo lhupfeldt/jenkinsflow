@@ -8,6 +8,7 @@ from os.path import join as jp
 from enum import IntEnum, Enum
 from collections import OrderedDict
 
+from .ordered_enum import OrderedEnum
 from .set_build_result import set_build_result
 
 
@@ -42,11 +43,11 @@ class BuildResult(IntEnum):
     # pylint: disable=no-init
     FAILURE = 0
     UNSTABLE = 1
-    UNCHECKED = 2
-    SUCCESS = 3
+    SUCCESS = 2
+    UNKNOWN = 3
 
     # Jenkins Aliases?
-    PASSED = 3
+    PASSED = 2
     FAILED = 0
 
 
@@ -57,18 +58,18 @@ class BuildProgressState(Enum):
     IDLE = 2
 
 
-class Propagation(Enum):
+class Propagation(OrderedEnum):
     # pylint: disable=no-init
     NORMAL = 0
     FAILURE_TO_UNSTABLE = 1
-    UNCHECKED = 0
+    UNCHECKED = 2
 
 
-class FinishedChecking(IntEnum):
+class Checking(OrderedEnum):
     # pylint: disable=no-init
-    NO = 0
-    CHECKED = 1
-    ALL = 2
+    MUST_CHECK = 0
+    HAS_UNCHECKED = 1
+    FINISHED = 2
 
 
 class JobControlException(Exception):
@@ -132,8 +133,8 @@ class _JobControl(object):
         self.secret_params_re = secret_params_re or self.parent_flow.secret_params_re
         self.allow_missing_jobs = allow_missing_jobs if allow_missing_jobs is not None else self.parent_flow.allow_missing_jobs
 
-        self.finished_checking = FinishedChecking.NO
-        self.result = BuildResult.FAILURE
+        self.checking_status = Checking.MUST_CHECK
+        self.result = BuildResult.UNKNOWN
         self.tried_times = 0
         self.total_tried_times = 0
         self.invocation_time = None
@@ -153,8 +154,8 @@ class _JobControl(object):
 
     def _prepare_to_invoke(self):
         """Must be called before each invocation of a job, as opposed to __init__, which is called once in entire run"""
-        self.finished_checking = FinishedChecking.NO
-        self.result = BuildResult.FAILED
+        self.checking_status = Checking.MUST_CHECK if self.propagation != Propagation.UNCHECKED else Checking.HAS_UNCHECKED
+        self.result = BuildResult.UNKNOWN
         self.invocation_time = 0
 
     def _invoke_if_not_invoked(self):
@@ -189,6 +190,20 @@ class _JobControl(object):
     @property
     def api(self):
         return self.top_flow._api
+
+    @property
+    def propagate_result(self):
+        if self.result == BuildResult.FAILURE and self.propagation == Propagation.FAILURE_TO_UNSTABLE:
+            return BuildResult.UNSTABLE
+        if self.result == BuildResult.UNKNOWN:
+            return BuildResult.FAILURE if self.propagation != Propagation.UNCHECKED else BuildResult.SUCCESS
+        return self.result
+
+    @property
+    def propagate_checking_status(self):
+        if self.propagation == Propagation.UNCHECKED:
+            return max(Checking.HAS_UNCHECKED, self.checking_status)
+        return self.checking_status
 
     def __repr__(self):
         return str(self.sequence())
@@ -234,6 +249,8 @@ class _SingleJob(_JobControl):
             # TODO? stack trace
             self.repr_str = repr(ex)
             if require_job or not self.allow_missing_jobs:
+                self.checking_status = Checking.FINISHED
+                self.result = BuildResult.FAILURE
                 raise MissingJobsException(self.name)
             print(self.indentation + "NOTE: ", self.repr_str)
             return
@@ -267,10 +284,10 @@ class _SingleJob(_JobControl):
         self.old_build = self.job.get_last_build_or_none()
 
     def _check(self, report_now):
-        if not self._invoke_if_not_invoked():
-            if self.job is None:
-                self._prepare_first(require_job=True)
+        if self.job is None:
+            self._prepare_first(require_job=True)
 
+        if not self._invoke_if_not_invoked():
             build_params = self.params if self.params else None
             self.job.invoke(securitytoken=self.securitytoken, invoke_pre_check_delay=0, block=False, build_params=build_params, cause=self.top_flow.cause)
 
@@ -293,13 +310,13 @@ class _SingleJob(_JobControl):
             return
 
         # The job has stopped running
-        self.finished_checking = FinishedChecking.ALL
+        self.checking_status = Checking.FINISHED
         self._print_status_message(build)
         self.result = BuildResult[build.get_status()]
         url = build.get_result_url().replace('testReport/api/python', 'console').replace('testReport/api/json', 'console')
         print(str(build.get_status()) + ":", repr(self.job.name), "- build:", url, self._time_msg())
 
-        if self.result not in (BuildResult.SUCCESS, BuildResult.UNSTABLE):
+        if self.result == BuildResult.FAILURE:
             raise FailedSingleJobException(self.job, self.propagation)
 
     def sequence(self):
@@ -333,10 +350,10 @@ class _IgnoredSingleJob(_SingleJob):
         try:
             super(_IgnoredSingleJob, self)._check(report_now)
         except FailedSingleJobException:
-            pass
+            self.result = BuildResult.FAILURE
         finally:
-            self.finished_checking = True
-            self.result = BuildResult.UNCHECKED
+            self.checking_status = Checking.FINISHED
+            self.result = BuildResult.UNKNOWN
 
     def last_jobs_in_flow(self):
         return []
@@ -358,6 +375,7 @@ class _Flow(_JobControl):
 
         self.jobs = []
         self.last_report_time = 0
+        self._failed_child_jobs = {}
 
     def parallel(self, timeout=0, securitytoken=None, job_name_prefix='', max_tries=1, propagation=Propagation.NORMAL, report_interval=None, secret_params=None, allow_missing_jobs=None):
         return _Parallel(self, timeout, securitytoken, job_name_prefix, max_tries, propagation, report_interval, secret_params, allow_missing_jobs)
@@ -407,14 +425,6 @@ class _Flow(_JobControl):
             self.last_report_time = now
         return report_now
 
-    def set_result(self):
-        self.result = BuildResult.SUCCESS
-        for job in self.jobs:
-            if job.result == BuildResult.FAILURE and self.propagation == Propagation.FAILURE_TO_UNSTABLE:
-                self.result = min(self.result, BuildResult.UNSTABLE)
-            else:
-                self.result = min(self.result, job.result)
-
     def json(self, file_path, indent=None):
         node_to_id = lambda job : job.node_id
         if indent:
@@ -434,12 +444,6 @@ class _Flow(_JobControl):
 
 
 class _Parallel(_Flow):
-    def __init__(self, parent_flow, timeout, securitytoken, job_name_prefix='', max_tries=1, propagation=Propagation.NORMAL,
-                 report_interval=None, secret_params=_default_secret_params_re, allow_missing_jobs=None):
-        super(_Parallel, self).__init__(parent_flow, timeout, securitytoken, job_name_prefix, max_tries, propagation,
-                                        report_interval, secret_params, allow_missing_jobs)
-        self._failed_child_jobs = {}
-
     def _prepare_first(self):
         print(self.indentation + "parallel flow: (")
         self._prepare_to_invoke()
@@ -460,15 +464,14 @@ class _Parallel(_Flow):
     def _check(self, report_now):
         report_now = self._check_invoke_report()
 
-        self.finished_checking = FinishedChecking.ALL
+        self.checking_status = Checking.FINISHED
         for job in self.jobs:
             try:
-                if not job.finished_checking:
+                if job.checking_status != Checking.FINISHED:
                     job._check(report_now)
-                    self.finished_checking = FinishedChecking.NO
-                    continue
-                if id(job) in self._failed_child_jobs:
-                    del self._failed_child_jobs[id(job)]
+                    self.checking_status = min(self.checking_status, job.propagate_checking_status)
+                    if id(job) in self._failed_child_jobs:
+                        del self._failed_child_jobs[id(job)]
             except JobControlFailException:
                 self._failed_child_jobs[id(job)] = job
                 job.tried_times += 1
@@ -476,7 +479,7 @@ class _Parallel(_Flow):
 
                 if job.tried_times < job.max_tries:
                     print("RETRY:", job, "failed but will be retried. Up to", job.max_tries - job.tried_times, "more times in current flow")
-                    self.finished_checking = FinishedChecking.NO
+                    self.checking_status = Checking.MUST_CHECK
                     job._prepare_to_invoke()
                     continue
 
@@ -486,11 +489,12 @@ class _Parallel(_Flow):
                     job.tried_times = 0
                     continue
 
-                job.finished_checking = FinishedChecking.ALL
+                job.checking_status = Checking.FINISHED
 
-        if self.finished_checking:
-            # All jobs have stopped running
-            self.set_result()
+        if self.checking_status != Checking.MUST_CHECK:
+            # All jobs have stopped running or are 'unchecked'
+            for job in self.jobs:
+                self.result = min(self.result, job.propagate_result)
             print(self.result.name, self, self._time_msg())
 
             if self.result == BuildResult.FAILURE:
@@ -528,7 +532,6 @@ class _Serial(_Flow):
         super(_Serial, self).__init__(parent_flow, securitytoken, timeout, job_name_prefix, max_tries, propagation,
                                       report_interval, secret_params, allow_missing_jobs)
         self.job_index = 0
-        self.has_warning = False
 
     def _prepare_first(self):
         print(self.indentation + "serial flow: [")
@@ -554,56 +557,63 @@ class _Serial(_Flow):
     def _check(self, report_now):
         report_now = self._check_invoke_report()
 
-        job = self.jobs[self.job_index]
-        try:
-            if not job.finished_checking:
-                job._check(report_now)
-                self._check_timeout()
+        self.checking_status = Checking.FINISHED
+        self.result = BuildResult.SUCCESS
+        for job in self.jobs[0:self.job_index + 1]:
+            try:
+                if job.checking_status != Checking.FINISHED:
+                    job._check(report_now)
+                    self.checking_status = min(self.checking_status, job.propagate_checking_status)
+                self.result = min(self.result, job.propagate_result)
+            except JobControlFailException:
+                # The job has stopped running
+                self.checking_status = Checking.MUST_CHECK
+
+                num_fail = self.job_index
+                self.job_index = 0
+                job.tried_times += 1
+                job.total_tried_times += 1
+
+                if job.tried_times < job.max_tries:
+                    print("RETRY:", job, "failed, retrying child jobs from beginning. Up to", job.max_tries - job.tried_times, "more times in current flow")
+                    job._prepare_to_invoke()
+                    for pre_job in self.jobs[0:num_fail]:
+                        pre_job._prepare_to_invoke()
+                        pre_job.tried_times += 1
+                        pre_job.total_tried_times += 1
+                    continue
+
+                if job.total_tried_times < job.total_max_tries:
+                    print("RETRY:", job, "failed, retrying child jobs from beginning. Up to", job.total_max_tries - job.total_tried_times, "more times through outer flow")
+                    job._prepare_to_invoke()
+                    job.tried_times = 0
+                    for pre_job in self.jobs[0:num_fail]:
+                        pre_job._prepare_to_invoke()
+                        pre_job.tried_times = 0
+                        pre_job.total_tried_times += 1
+                
+                if self.propagation == Propagation.NORMAL:
+                    # All jobs have stopped running or are 'unchecked'
+                    self.result = BuildResult.FAILURE
+                    print(self.result.name, self, self._time_msg())
+                    # TODO Jobs
+                    raise FailedChildJobException(self, job, self.propagation)
+                
+                self.result = BuildResult.UNSTABLE
+                self.checking_status = Checking.FINISHED
+
+        # pylint: disable=undefined-loop-variable
+        if self.checking_status != Checking.MUST_CHECK:
+            self.job_index += 1
+            if self.job_index != len(self.jobs) and job.result != BuildResult.FAILURE:
+                self.checking_status = Checking.MUST_CHECK
                 return
-        except JobControlFailException:
-            # The job has stopped running
-            num_fail = self.job_index
-            self.job_index = 0
-            job.tried_times += 1
-            job.total_tried_times += 1
 
-            if job.tried_times < job.max_tries:
-                print("RETRY:", job, "failed, retrying child jobs from beginning. Up to", job.max_tries - job.tried_times, "more times in current flow")
-                job._prepare_to_invoke()
-                for pre_job in self.jobs[0:num_fail]:
-                    pre_job._prepare_to_invoke()
-                    pre_job.tried_times += 1
-                    pre_job.total_tried_times += 1
-                return
-
-            if job.total_tried_times < job.total_max_tries:
-                print("RETRY:", job, "failed, retrying child jobs from beginning. Up to", job.total_max_tries - job.total_tried_times, "more times through outer flow")
-                job._prepare_to_invoke()
-                job.tried_times = 0
-                for pre_job in self.jobs[0:num_fail]:
-                    pre_job._prepare_to_invoke()
-                    pre_job.tried_times = 0
-                    pre_job.total_tried_times += 1
-
-            if self.propagation == Propagation.NORMAL:
-                self.finished_checking = FinishedChecking.ALL
-                self.result = BuildResult.FAILURE
-                print(self.result.name, self, self._time_msg())
-                raise FailedChildJobException(self, job, self.propagation)
-
-            # All retries are exhausted
-            self.has_warning = True
-            self.job_index = len(self.jobs) - 1
-
-        self.job_index += 1
-
-        if self.job_index == len(self.jobs):
-            self.finished_checking = FinishedChecking.ALL
-
-            # Check if any of the jobs is in warning or we have warning set ourself
-            self.result = BuildResult.UNSTABLE if self.has_warning else BuildResult.SUCCESS
-            self.set_result()
+            # All jobs have stopped running (unstable) or are 'unchecked'
+            self.result = min(self.result, job.propagate_result)
             print(self.result.name, self, self._time_msg())
+        else:
+            self._check_timeout()
 
     def sequence(self):
         return [job.sequence() for job in self.jobs]
@@ -707,7 +717,7 @@ class _TopLevelControllerMixin(object):
         print()
         print("--- Starting flow ---")
         sleep_time = min(self.poll_interval, self.report_interval) / _hyperspeed_speedup
-        while not self.finished_checking:
+        while self.checking_status == Checking.MUST_CHECK:
             self._check(None)
             time.sleep(sleep_time)
 
