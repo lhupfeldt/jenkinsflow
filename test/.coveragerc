@@ -16,4 +16,5 @@ exclude_lines =
 
 omit = 
      ./*
-     setup.py
+     ../setup.py
+     ../ordered_enum.py

@@ -18,3 +18,4 @@ omit =
      test/*
      server.py
      setup.py
+     ordered_enum.py
