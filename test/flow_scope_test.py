@@ -14,23 +14,23 @@ def test_flow_scope_job():
         api.job('j2', 0.01, max_fails=0, expect_invocations=0, expect_order=None)
 
         with raises(FlowScopeException):
-            with serial(api, 5, job_name_prefix=api.job_name_prefix) as ctrl1:
+            with serial(api, 10, job_name_prefix=api.job_name_prefix) as ctrl1:
                 pass
             ctrl1.invoke('j1')
 
         with raises(FlowScopeException):
-            with parallel(api, 5, job_name_prefix=api.job_name_prefix) as ctrl1:
+            with parallel(api, 10, job_name_prefix=api.job_name_prefix) as ctrl1:
                 pass
             ctrl1.invoke('j1')
 
         with raises(FlowScopeException):
-            with serial(api, 5, job_name_prefix=api.job_name_prefix) as ctrl1:
+            with serial(api, 10, job_name_prefix=api.job_name_prefix) as ctrl1:
                 with ctrl1.parallel() as ctrl2:
                     pass
                 ctrl2.invoke('j2')
 
         with raises(FlowScopeException):
-            with parallel(api, 5, job_name_prefix=api.job_name_prefix) as ctrl1:
+            with parallel(api, 10, job_name_prefix=api.job_name_prefix) as ctrl1:
                 with ctrl1.serial() as ctrl2:
                     ctrl2.invoke('j1')
                 ctrl2.invoke('j2')
@@ -41,25 +41,25 @@ def test_flow_scope_serial():
         api.flow_job()
 
         with raises(FlowScopeException):
-            with serial(api, 5, job_name_prefix=api.job_name_prefix) as ctrl1:
+            with serial(api, 10, job_name_prefix=api.job_name_prefix) as ctrl1:
                 pass
             with ctrl1.serial(1):
                 pass
 
         with raises(FlowScopeException):
-            with serial(api, 5, job_name_prefix=api.job_name_prefix) as ctrl1:
+            with serial(api, 10, job_name_prefix=api.job_name_prefix) as ctrl1:
                 pass
             with ctrl1.parallel(1):
                 pass
 
         with raises(FlowScopeException):
-            with serial(api, 5, job_name_prefix=api.job_name_prefix) as ctrl1:
+            with serial(api, 10, job_name_prefix=api.job_name_prefix) as ctrl1:
                 with ctrl1.serial() as ctrl2:
                     ctrl2.serial(1)
                 ctrl2.serial(1)
 
         with raises(FlowScopeException):
-            with serial(api, 5, job_name_prefix=api.job_name_prefix) as ctrl1:
+            with serial(api, 10, job_name_prefix=api.job_name_prefix) as ctrl1:
                 with ctrl1.serial() as ctrl2:
                     ctrl1.serial(1)
 
@@ -69,24 +69,24 @@ def test_flow_scope_parallel():
         api.flow_job()
 
         with raises(FlowScopeException):
-            with parallel(api, 5, job_name_prefix=api.job_name_prefix) as ctrl1:
+            with parallel(api, 10, job_name_prefix=api.job_name_prefix) as ctrl1:
                 pass
             with ctrl1.parallel(1):
                 pass
 
         with raises(FlowScopeException):
-            with parallel(api, 5, job_name_prefix=api.job_name_prefix) as ctrl1:
+            with parallel(api, 10, job_name_prefix=api.job_name_prefix) as ctrl1:
                 pass
             with ctrl1.serial(1):
                 pass
 
         with raises(FlowScopeException):
-            with parallel(api, 5, job_name_prefix=api.job_name_prefix) as ctrl1:
+            with parallel(api, 10, job_name_prefix=api.job_name_prefix) as ctrl1:
                 with ctrl1.parallel() as ctrl2:
                     ctrl2.parallel(1)
                 ctrl2.parallel(1)
 
         with raises(FlowScopeException):
-            with parallel(api, 5, job_name_prefix=api.job_name_prefix) as ctrl1:
+            with parallel(api, 10, job_name_prefix=api.job_name_prefix) as ctrl1:
                 with ctrl1.parallel() as ctrl2:
                     ctrl1.parallel(1)
