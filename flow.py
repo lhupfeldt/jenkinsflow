@@ -150,7 +150,7 @@ class _JobControl(object):
 
     @abc.abstractmethod
     def _prepare_first(self):
-        raise Exception("AbstractNotImplemented")
+        """Must be called before the first invocation of a job"""
 
     def _prepare_to_invoke(self, reset_tried_times=False):
         """Must be called before each invocation of a job, as opposed to __init__, which is called once in entire run"""
@@ -171,7 +171,6 @@ class _JobControl(object):
     @abc.abstractmethod
     def _check(self, report_now):
         """Polled by flow controller until the job reaches state 'successful' or tried_times == parent.max_tries * self.max_tries"""
-        raise Exception("AbstractNotImplemented")
 
     def _time_msg(self):
         now = hyperspeed_time()
@@ -179,11 +178,11 @@ class _JobControl(object):
 
     @abc.abstractmethod
     def sequence(self):
-        raise Exception("AbstractNotImplemented")
+        """'compact' representaion of flow/job 'name'"""
 
     @abc.abstractproperty
     def controller_type_name(self):
-        raise Exception("AbstractNotImplemented")
+        """Short name for the type of flow/job"""
 
     @property
     def indentation(self):
@@ -213,17 +212,14 @@ class _JobControl(object):
     @abc.abstractmethod
     def last_jobs_in_flow(self):
         """For json graph calculation"""
-        raise Exception("AbstractNotImplemented")
 
     @abc.abstractmethod
     def nodes(self, node_to_id):
         """For json graph calculation"""
-        raise Exception("AbstractNotImplemented")
 
     @abc.abstractmethod
     def links(self, prev_jobs, node_to_id):
         """For json graph calculation"""
-        raise Exception("AbstractNotImplemented")
 
 
 class _SingleJob(_JobControl):
