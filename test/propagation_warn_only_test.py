@@ -13,7 +13,7 @@ def test_propagation_warn_only_serial(env_base_url, fake_java, capfd):
     with mock_api.api(__file__) as api:
         api.flow_job()
         api.job('j11', exec_time=0.01, max_fails=0, expect_invocations=1, expect_order=1)
-        api.job('j12_fail', exec_time=0.01, max_fails=1, expect_invocations=1, expect_order=2)
+        api.job('j12_fail', exec_time=0.01, max_fails=1, expect_invocations=1, expect_order=2, serial=True)
         api.job('j13', exec_time=0.01, max_fails=0, expect_invocations=0, expect_order=None)
 
         with serial(api, timeout=70, username=username, password=password, job_name_prefix=api.job_name_prefix, report_interval=3, propagation=Propagation.FAILURE_TO_UNSTABLE) as ctrl1:
@@ -37,7 +37,7 @@ def test_propagation_warn_only_nested_serial_parallel(env_base_url, fake_java, c
     with mock_api.api(__file__) as api:
         api.flow_job()
         api.job('j11', exec_time=0.01, max_fails=0, expect_invocations=1, expect_order=1)
-        api.job('j21', exec_time=0.01, max_fails=0, expect_invocations=1, expect_order=2)
+        api.job('j21', exec_time=0.01, max_fails=0, expect_invocations=1, expect_order=2, serial=True)
         api.job('j22_fail', exec_time=0.01, max_fails=1, expect_invocations=1, expect_order=2)
         api.job('j23', exec_time=0.01, max_fails=0, expect_invocations=1, expect_order=2)
 
@@ -55,7 +55,7 @@ def test_propagation_warn_only_nested_parallel_serial(env_base_url, fake_java, c
         api.flow_job()
         api.job('j11', exec_time=0.01, max_fails=0, expect_invocations=1, expect_order=1)
         api.job('j21', exec_time=0.01, max_fails=0, expect_invocations=1, expect_order=1)
-        api.job('j22_fail', exec_time=0.01, max_fails=1, expect_invocations=1, expect_order=1)
+        api.job('j22_fail', exec_time=0.01, max_fails=1, expect_invocations=1, expect_order=1, serial=True)
         api.job('j23', exec_time=0.01, max_fails=0, expect_invocations=0, expect_order=None)
 
         with parallel(api, timeout=70, username=username, password=password, job_name_prefix=api.job_name_prefix, report_interval=3) as ctrl1:

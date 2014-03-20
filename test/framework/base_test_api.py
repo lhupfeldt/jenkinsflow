@@ -16,7 +16,7 @@ class TestJob(AbstractApiJob):
 
     _current_order = 1
 
-    def __init__(self, exec_time, max_fails, expect_invocations, expect_order, initial_buildno=None, invocation_delay=0.01, unknown_result=False, final_result=None):
+    def __init__(self, exec_time, max_fails, expect_invocations, expect_order, initial_buildno=None, invocation_delay=0.01, unknown_result=False, final_result=None, serial=False):
         """
         Set unknown_result to True if the result is indeterminate (timeout or invoke_unchecked)
         """
@@ -27,6 +27,7 @@ class TestJob(AbstractApiJob):
         assert initial_buildno is None or initial_buildno >= 1
         assert invocation_delay > 0
         assert unknown_result in (False, True)
+        assert serial in (False, True)
 
         self.exec_time = exec_time
         self.max_fails = max_fails
@@ -35,6 +36,7 @@ class TestJob(AbstractApiJob):
         self.initial_buildno = initial_buildno
         self.invocation_delay = invocation_delay
         self.unknown_result = unknown_result
+        self.serial = serial
         self.final_result = final_result if isinstance(final_result, (BuildResult, type(None))) else BuildResult[final_result.upper()]
 
         self.invocation = 0
@@ -73,7 +75,8 @@ class TestJenkins(AbstractApiJenkins):
         self.test_jobs = OrderedDict()
 
     @abc.abstractmethod
-    def job(self, name, exec_time, max_fails, expect_invocations, expect_order, initial_buildno=None, invocation_delay=0.1, params=None, script=None, unknown_result=False, final_result=None):
+    def job(self, name, exec_time, max_fails, expect_invocations, expect_order, initial_buildno=None, invocation_delay=0.1, params=None,
+            script=None, unknown_result=False, final_result=None, serial=False):
         pass
 
     @abc.abstractmethod
@@ -97,8 +100,9 @@ class TestJenkins(AbstractApiJenkins):
 
         max_actual_order = 0
         last_expected_order = 0
+        last_end_time = 0
 
-        for job in self.test_jobs.values():
+        for job in self.test_jobs.values():            
             if job.expect_order is not None:
                 # Check job invocation order
                 assert last_expected_order <= job.expect_order, "Mock job list must be sorted by expected order, error in test setup."
@@ -108,6 +112,10 @@ class TestJenkins(AbstractApiJenkins):
 
                 if job.expect_order > last_expected_order:
                     assert job.actual_order > max_actual_order
+
+                if job.serial:
+                    assert job.invocation_time >= last_end_time, "Serial job " + job.name + " started before previous job finished"
+                last_end_time = job.end_time
 
                 last_expected_order = job.expect_order
                 max_actual_order = max(job.actual_order, max_actual_order)

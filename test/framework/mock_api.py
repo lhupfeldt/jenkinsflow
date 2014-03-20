@@ -28,8 +28,8 @@ _file_name_subst = re.compile(r'(_jobs|_test)?\.py')
 
 
 class MockJob(TestJob):
-    def __init__(self, name, exec_time, max_fails, expect_invocations, expect_order, initial_buildno=None, invocation_delay=0.01, unknown_result=False, final_result=None):
-        super(MockJob, self).__init__(exec_time, max_fails, expect_invocations, expect_order, initial_buildno, invocation_delay, unknown_result, final_result)
+    def __init__(self, name, exec_time, max_fails, expect_invocations, expect_order, initial_buildno=None, invocation_delay=0.01, unknown_result=False, final_result=None, serial=False):
+        super(MockJob, self).__init__(exec_time, max_fails, expect_invocations, expect_order, initial_buildno, invocation_delay, unknown_result, final_result, serial)
         self.name = name
         self.baseurl = 'http://hupfeldtit.dk/job/' + self.name
         self.build = Build(self, initial_buildno) if initial_buildno is not None else None
@@ -117,9 +117,9 @@ class Build(TestBuild):
 
     def get_status(self):
         if self.job.invocation <= self.job.max_fails:
-            return 'FAILED'
+            return 'FAILURE'
         if self.job.final_result is None:
-            return 'PASSED'
+            return 'SUCCESS'
         return self.job.final_result.name
 
     def get_result_url(self):
@@ -134,10 +134,11 @@ class MockApi(TestJenkins):
         super(MockApi, self).__init__(job_name_prefix)
         self._deleted_jobs = {}
 
-    def job(self, name, exec_time, max_fails, expect_invocations, expect_order, initial_buildno=None, invocation_delay=0.1, params=None, script=None, unknown_result=False, final_result=None):
+    def job(self, name, exec_time, max_fails, expect_invocations, expect_order, initial_buildno=None, invocation_delay=0.1, params=None,
+            script=None, unknown_result=False, final_result=None, serial=False):
         name = self.job_name_prefix + name
         assert not self.test_jobs.get(name)
-        self.test_jobs[name] = MockJob(name, exec_time, max_fails, expect_invocations, expect_order, initial_buildno, invocation_delay, unknown_result, final_result)
+        self.test_jobs[name] = MockJob(name, exec_time, max_fails, expect_invocations, expect_order, initial_buildno, invocation_delay, unknown_result, final_result, serial)
 
     def flow_job(self, name=None, params=None):
         # Don't create flow jobs when mocked
@@ -190,12 +191,13 @@ class JenkinsWrapperApi(jenkins.Jenkins, TestJenkins):
             update_job_from_template(self.job_loader_jenkins, name, self.job_xml_template, pre_delete=pre_delete, context=context)
         return name
 
-    def job(self, name, exec_time, max_fails, expect_invocations, expect_order, initial_buildno=None, invocation_delay=0.1, params=None, script=None, unknown_result=False, final_result=None):
+    def job(self, name, exec_time, max_fails, expect_invocations, expect_order, initial_buildno=None, invocation_delay=0.1, params=None,
+            script=None, unknown_result=False, final_result=None, serial=False):
         if max_fails > 0 or final_result:
             params = list(params) if params else []
             params.append(('force_result', ('SUCCESS', 'FAILURE', 'UNSTABLE'), 'Caller can force job to success, fail or unstable'))
         name = self._jenkins_job(name, exec_time, params, script, self.reload_jobs, pre_delete=True)
-        self.test_jobs[name] = MockJob(name, exec_time, max_fails, expect_invocations, expect_order, initial_buildno, invocation_delay, unknown_result, final_result)
+        self.test_jobs[name] = MockJob(name, exec_time, max_fails, expect_invocations, expect_order, initial_buildno, invocation_delay, unknown_result, final_result, serial)
 
     def flow_job(self, name=None, params=None):
         """

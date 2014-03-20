@@ -1,7 +1,9 @@
 # Copyright (c) 2012 - 2014 Lars Hupfeldt Nielsen, Hupfeldt IT
 # All rights reserved. This work is under a BSD license, see LICENSE.TXT.
 
-from jenkinsflow.flow import parallel, serial
+from pytest import raises
+
+from jenkinsflow.flow import parallel, serial, FailedChildJobException, FailedChildJobsException
 from .framework import mock_api, utils
 
 
@@ -9,13 +11,27 @@ def test_retry_serial_toplevel():
     with mock_api.api(__file__) as api:
         api.flow_job()
         api.job('j11', 0.01, max_fails=0, expect_invocations=2, expect_order=1)
-        api.job('j12_fail', 0.01, max_fails=1, expect_invocations=2, expect_order=2)
-        api.job('j13', 0.01, max_fails=0, expect_invocations=1, expect_order=3)
+        api.job('j12_fail', 0.01, max_fails=1, expect_invocations=2, expect_order=2, serial=True)
+        api.job('j13', 0.01, max_fails=0, expect_invocations=1, expect_order=3, serial=True)
 
         with serial(api, timeout=70, job_name_prefix=api.job_name_prefix, max_tries=2) as ctrl1:
             ctrl1.invoke('j11')
             ctrl1.invoke('j12_fail')
             ctrl1.invoke('j13')
+
+
+def test_retry_serial_toplevel_fail():
+    with mock_api.api(__file__) as api:
+        api.flow_job()
+        api.job('j11', 0.01, max_fails=0, expect_invocations=2, expect_order=1)
+        api.job('j12_fail', 0.01, max_fails=2, expect_invocations=2, expect_order=2, serial=True)
+        api.job('j13', 0.01, max_fails=0, expect_invocations=0, expect_order=None)
+
+        with raises(FailedChildJobException):
+            with serial(api, timeout=70, job_name_prefix=api.job_name_prefix, max_tries=2) as ctrl1:
+                ctrl1.invoke('j11')
+                ctrl1.invoke('j12_fail')
+                ctrl1.invoke('j13')
 
 
 def test_retry_parallel_toplevel():
@@ -31,13 +47,27 @@ def test_retry_parallel_toplevel():
             ctrl1.invoke('j13')
 
 
+def test_retry_parallel_toplevel_fail():
+    with mock_api.api(__file__) as api:
+        api.flow_job()
+        api.job('j11', 0.01, max_fails=0, expect_invocations=1, expect_order=1)
+        api.job('j12_fail', 0.01, max_fails=2, expect_invocations=2, expect_order=1)
+        api.job('j13', 0.01, max_fails=0, expect_invocations=1, expect_order=1)
+
+        with raises(FailedChildJobsException):
+            with parallel(api, timeout=70, job_name_prefix=api.job_name_prefix, max_tries=2) as ctrl1:
+                ctrl1.invoke('j11')
+                ctrl1.invoke('j12_fail')
+                ctrl1.invoke('j13')
+
+
 def test_retry_serial_inner():
     with mock_api.api(__file__) as api:
         api.flow_job()
         api.job('j11', 0.01, max_fails=0, expect_invocations=1, expect_order=1)
-        api.job('j21', 0.01, max_fails=0, expect_invocations=2, expect_order=2)
-        api.job('j22_fail', 0.01, max_fails=1, expect_invocations=2, expect_order=3)
-        api.job('j23', 0.01, max_fails=0, expect_invocations=1, expect_order=4)
+        api.job('j21', 0.01, max_fails=0, expect_invocations=2, expect_order=2, serial=True)
+        api.job('j22_fail', 0.01, max_fails=1, expect_invocations=2, expect_order=3, serial=True)
+        api.job('j23', 0.01, max_fails=0, expect_invocations=1, expect_order=4, serial=True)
 
         with serial(api, timeout=70, job_name_prefix=api.job_name_prefix) as ctrl1:
             ctrl1.invoke('j11')
@@ -67,9 +97,9 @@ def test_retry_serial_through_parent_serial_level():
     with mock_api.api(__file__) as api:
         api.flow_job()
         api.job('j11', 0.01, max_fails=0, expect_invocations=1, expect_order=1)
-        api.job('j21', 0.01, max_fails=0, expect_invocations=2, expect_order=2)
-        api.job('j31_fail', 0.01, max_fails=2, expect_invocations=3, expect_order=3)
-        api.job('j32', 0.01, max_fails=0, expect_invocations=1, expect_order=4)
+        api.job('j21', 0.01, max_fails=0, expect_invocations=2, expect_order=2, serial=True)
+        api.job('j31_fail', 0.01, max_fails=2, expect_invocations=3, expect_order=3, serial=True)
+        api.job('j32', 0.01, max_fails=0, expect_invocations=1, expect_order=4, serial=True)
 
         with serial(api, timeout=70, job_name_prefix=api.job_name_prefix) as ctrl1:
             ctrl1.invoke('j11')
@@ -80,11 +110,25 @@ def test_retry_serial_through_parent_serial_level():
                     ctrl3.invoke('j32')
 
 
+def test_retry_serial_through_parent_serial_level_fail():
+    with mock_api.api(__file__) as api:
+        api.flow_job()
+        api.job('j31_fail', 0.01, max_fails=4, expect_invocations=4, expect_order=1)
+        api.job('j32', 0.01, max_fails=0, expect_invocations=0, expect_order=None)
+
+        with raises(FailedChildJobException):
+            with serial(api, timeout=70, job_name_prefix=api.job_name_prefix) as ctrl1:
+                with ctrl1.serial(timeout=70, max_tries=2) as ctrl2:
+                    with ctrl2.serial(timeout=70, max_tries=2) as ctrl3:
+                        ctrl3.invoke('j31_fail')
+                        ctrl3.invoke('j32')
+
+
 def test_retry_serial_through_parent_parallel_level():
     with mock_api.api(__file__) as api:
         api.flow_job()
         api.job('j11', 0.01, max_fails=0, expect_invocations=1, expect_order=1)
-        api.job('j21', 0.01, max_fails=0, expect_invocations=1, expect_order=2)
+        api.job('j21', 0.01, max_fails=0, expect_invocations=1, expect_order=2, serial=True)
         api.job('j31_fail', 0.01, max_fails=2, expect_invocations=3, expect_order=2)
 
         with serial(api, timeout=70, job_name_prefix=api.job_name_prefix) as ctrl1:
@@ -93,6 +137,18 @@ def test_retry_serial_through_parent_parallel_level():
                 ctrl2.invoke('j21')
                 with ctrl2.serial(timeout=70, max_tries=2) as ctrl3:
                     ctrl3.invoke('j31_fail')
+
+
+def test_retry_serial_through_parent_parallel_level_fail():
+    with mock_api.api(__file__) as api:
+        api.flow_job()
+        api.job('j31_fail', 0.01, max_fails=4, expect_invocations=4, expect_order=1)
+
+        with raises(FailedChildJobException):
+            with serial(api, timeout=70, job_name_prefix=api.job_name_prefix) as ctrl1:
+                with ctrl1.parallel(timeout=70, max_tries=2) as ctrl2:
+                    with ctrl2.serial(timeout=70, max_tries=2) as ctrl3:
+                        ctrl3.invoke('j31_fail')
 
 
 def test_retry_parallel_through_parent_serial_level():
@@ -114,7 +170,7 @@ def test_retry_parallel_through_parent_parallel_level():
     with mock_api.api(__file__) as api:
         api.flow_job()
         api.job('j11', 0.01, max_fails=0, expect_invocations=1, expect_order=1)
-        api.job('j21', 0.01, max_fails=0, expect_invocations=1, expect_order=2)
+        api.job('j21', 0.01, max_fails=0, expect_invocations=1, expect_order=2, serial=True)
         api.job('j22_fail', 0.01, max_fails=1, expect_invocations=2, expect_order=2)
         api.job('j31_fail', 0.01, max_fails=2, expect_invocations=3, expect_order=2)
 
@@ -131,8 +187,8 @@ def test_retry_parallel_through_outer_level(capsys):
     with mock_api.api(__file__) as api:
         api.flow_job()
         api.job('j11', 0.01, max_fails=0, expect_invocations=1, expect_order=1)
-        api.job('j21', 0.01, max_fails=0, expect_invocations=1, expect_order=2)
-        api.job('j31', 0.01, max_fails=0, expect_invocations=1, expect_order=3)
+        api.job('j21', 0.01, max_fails=0, expect_invocations=1, expect_order=2, serial=True)
+        api.job('j31', 0.01, max_fails=0, expect_invocations=1, expect_order=3, serial=True)
         api.job('j41_fail', 0.01, max_fails=2, expect_invocations=3, expect_order=3)
 
         with serial(api, timeout=70, job_name_prefix=api.job_name_prefix) as ctrl1:
@@ -154,11 +210,11 @@ def test_retry_serial_through_outer_level():
     with mock_api.api(__file__) as api:
         api.flow_job()
         api.job('j11', 0.01, max_fails=0, expect_invocations=1, expect_order=1)
-        api.job('j21', 0.01, max_fails=0, expect_invocations=1, expect_order=2)
-        api.job('j31', 0.01, max_fails=0, expect_invocations=1, expect_order=3)
+        api.job('j21', 0.01, max_fails=0, expect_invocations=1, expect_order=2, serial=True)
+        api.job('j31', 0.01, max_fails=0, expect_invocations=1, expect_order=3, serial=True)
         api.job('j41', 0.01, max_fails=0, expect_invocations=4, expect_order=3)
-        api.job('j42_fail', 0.01, max_fails=3, expect_invocations=4, expect_order=3)
-        api.job('j43', 0.01, max_fails=0, expect_invocations=1, expect_order=3)
+        api.job('j42_fail', 0.01, max_fails=3, expect_invocations=4, expect_order=3, serial=True)
+        api.job('j43', 0.01, max_fails=0, expect_invocations=1, expect_order=3, serial=True)
 
         with serial(api, timeout=70, job_name_prefix=api.job_name_prefix, max_tries=2) as ctrl1:
             ctrl1.invoke('j11')
@@ -176,13 +232,13 @@ def test_retry_mix():
     with mock_api.api(__file__) as api:
         api.flow_job()
         api.job('j11_fail', 0.01, max_fails=1, expect_invocations=2, expect_order=1)
-        api.job('j12', 0.01, max_fails=0, expect_invocations=1, expect_order=2)
-        api.job('j21', 0.01, max_fails=0, expect_invocations=1, expect_order=3)
+        api.job('j12', 0.01, max_fails=0, expect_invocations=1, expect_order=2, serial=True)
+        api.job('j21', 0.01, max_fails=0, expect_invocations=1, expect_order=3, serial=True)
         api.job('j22_fail', 0.01, max_fails=2, expect_invocations=3, expect_order=3)
         api.job('j31_fail', 0.01, max_fails=3, expect_invocations=4, expect_order=3)
-        api.job('j32', 0.01, max_fails=0, expect_invocations=1, expect_order=3)
+        api.job('j32', 0.01, max_fails=0, expect_invocations=1, expect_order=3, serial=True)
         api.job('j23', 0.01, max_fails=0, expect_invocations=1, expect_order=3)
-        api.job('j13', 0.01, max_fails=0, expect_invocations=1, expect_order=4)
+        api.job('j13', 0.01, max_fails=0, expect_invocations=1, expect_order=4, serial=True)
 
         with serial(api, timeout=70, job_name_prefix=api.job_name_prefix, max_tries=2) as ctrl1:
             ctrl1.invoke('j11_fail')

@@ -10,7 +10,7 @@ from .framework import mock_api
 def test_timeout_top_level_serial():
     with mock_api.api(__file__) as api:
         api.job('quick', exec_time=0.01, max_fails=0, expect_invocations=1, expect_order=None, params=(('s1', '', 'desc'), ('c1', 'false', 'desc')))
-        api.job('wait10', exec_time=10, max_fails=0, expect_invocations=1, expect_order=None, unknown_result=True)
+        api.job('wait10', exec_time=10, max_fails=0, expect_invocations=1, expect_order=None, unknown_result=True, serial=True)
 
         with raises(FlowTimeoutException):
             with serial(api, timeout=8, job_name_prefix=api.job_name_prefix, report_interval=3) as ctrl:
@@ -33,7 +33,7 @@ def test_timeout_inner_level_serial():
     with mock_api.api(__file__) as api:
         api.job('quick11', exec_time=0.01, max_fails=0, expect_invocations=1, expect_order=None)
         api.job('quick21', exec_time=0.01, max_fails=0, expect_invocations=1, expect_order=None)
-        api.job('wait10', exec_time=10, max_fails=0, expect_invocations=1, expect_order=None, unknown_result=True)
+        api.job('wait10', exec_time=10, max_fails=0, expect_invocations=1, expect_order=None, unknown_result=True, serial=True)
 
         with raises(FlowTimeoutException) as exinfo:
             with parallel(api, timeout=3000, job_name_prefix=api.job_name_prefix, report_interval=3) as ctrl1:

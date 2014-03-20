@@ -25,7 +25,7 @@ def test_empty_flow_serial_parallel():
     with mock_api.api(__file__) as api:
         api.flow_job()
         api.job('j1', exec_time=0.01, max_fails=0, expect_invocations=1, expect_order=1)
-        api.job('j2', exec_time=0.01, max_fails=0, expect_invocations=1, expect_order=2)
+        api.job('j2', exec_time=0.01, max_fails=0, expect_invocations=1, expect_order=2, serial=True)
 
         with serial(api, timeout=70, job_name_prefix=api.job_name_prefix, report_interval=1) as ctrl1:
             ctrl1.invoke('j1')
@@ -52,8 +52,8 @@ def test_empty_flow_mix():
         api.flow_job()
         api.job('j11', exec_time=0.01, max_fails=0, expect_invocations=1, expect_order=1)
         api.job('j31', exec_time=0.01, max_fails=0, expect_invocations=1, expect_order=2)
-        api.job('j32', exec_time=0.01, max_fails=0, expect_invocations=1, expect_order=3)
-        api.job('j12', exec_time=0.01, max_fails=0, expect_invocations=1, expect_order=4)
+        api.job('j32', exec_time=0.01, max_fails=0, expect_invocations=1, expect_order=3, serial=True)
+        api.job('j12', exec_time=0.01, max_fails=0, expect_invocations=1, expect_order=4, serial=True)
 
         with serial(api, timeout=70, job_name_prefix=api.job_name_prefix, report_interval=1) as ctrl1:
             ctrl1.invoke('j11')

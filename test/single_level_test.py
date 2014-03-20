@@ -8,8 +8,8 @@ from .framework import mock_api
 def test_single_level_serial():
     with mock_api.api(__file__) as api:
         api.job('quick', 0.01, max_fails=0, expect_invocations=1, expect_order=1, params=(('s1', 'Hi', 'desc'), ('c1', ('true', 'maybe', 'false'), 'desc')))
-        api.job('wait10', 10, max_fails=0, expect_invocations=1, expect_order=2)
-        api.job('wait5', 5, max_fails=0, expect_invocations=1, expect_order=3)
+        api.job('wait10', 10, max_fails=0, expect_invocations=1, expect_order=2, serial=True)
+        api.job('wait5', 5, max_fails=0, expect_invocations=1, expect_order=3, serial=True)
 
         with serial(api, timeout=40, job_name_prefix=api.job_name_prefix, report_interval=1) as ctrl:
             ctrl.invoke('quick', password='X', s1='HELLO', c1=True)
