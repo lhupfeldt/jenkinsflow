@@ -5,6 +5,7 @@ from pytest import raises
 
 from jenkinsflow.flow import parallel, serial, FlowTimeoutException
 from .framework import mock_api
+from .framework.utils import replace_host_port
 
 
 def test_timeout_top_level_serial():
@@ -42,7 +43,9 @@ def test_timeout_inner_level_serial():
                     ctrl2.invoke('quick21')
                     ctrl2.invoke('wait10')
 
-        assert "Timeout after" in exinfo.value.message
+        assert "Timeout after:" in exinfo.value.message
+        assert ", in flow ['jenkinsflow_test__timeout_inner_level_serial__quick21', 'jenkinsflow_test__timeout_inner_level_serial__wait10']. Unfinished jobs:['http://x.x/job/jenkinsflow_test__timeout_inner_level_serial__wait10 - /build']" in replace_host_port(exinfo.value.message)
+
 
 
 def test_timeout_inner_level_parallel():
@@ -58,4 +61,25 @@ def test_timeout_inner_level_parallel():
                     ctrl2.invoke('quick21')
                     ctrl2.invoke('wait10')
 
-        assert "Timeout after" in exinfo.value.message
+        assert "Timeout after:" in exinfo.value.message
+        assert ", in flow ('jenkinsflow_test__timeout_inner_level_parallel__quick21', 'jenkinsflow_test__timeout_inner_level_parallel__wait10'). Unfinished jobs:['http://x.x/job/jenkinsflow_test__timeout_inner_level_parallel__wait10 - /build']" in replace_host_port(exinfo.value.message)
+
+
+def test_timeout_multi_level_mix():
+    with mock_api.api(__file__) as api:
+        api.job('quick11', exec_time=0.01, max_fails=0, expect_invocations=1, expect_order=None)
+        api.job('quick21', exec_time=0.01, max_fails=0, expect_invocations=1, expect_order=None)
+        api.job('wait10_22', exec_time=10, max_fails=0, expect_invocations=1, expect_order=None, unknown_result=True)
+        api.job('wait10_31', exec_time=10, max_fails=0, expect_invocations=1, expect_order=None, unknown_result=True)
+
+        with raises(FlowTimeoutException) as exinfo:
+            with serial(api, timeout=3000, job_name_prefix=api.job_name_prefix, report_interval=3) as ctrl1:
+                ctrl1.invoke('quick11', s1='', c1=False)
+                with ctrl1.parallel(timeout=8) as ctrl2:
+                    ctrl2.invoke('quick21')
+                    ctrl2.invoke('wait10_22')
+                    with ctrl2.parallel() as ctrl3:
+                        ctrl3.invoke('wait10_31')
+
+        assert "Timeout after:" in exinfo.value.message
+        assert ", in flow ('jenkinsflow_test__timeout_multi_level_mix__quick21', 'jenkinsflow_test__timeout_multi_level_mix__wait10_22', ('jenkinsflow_test__timeout_multi_level_mix__wait10_31',)). Unfinished jobs:['http://x.x/job/jenkinsflow_test__timeout_multi_level_mix__wait10_22 - /build', \"('jenkinsflow_test__timeout_multi_level_mix__wait10_31',)\"]" in replace_host_port(exinfo.value.message)

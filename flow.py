@@ -378,9 +378,8 @@ class _Flow(_JobControl):
     def _check_timeout(self):
         now = hyperspeed_time()
         if self.timeout and now - self.invocation_time > self.timeout:
-            # TODO: These are not the unfinished jobs!
-            unfinished_msg = ". Unfinished jobs:" + str(self)
-            raise FlowTimeoutException("Timeout " + self._time_msg() + unfinished_msg, self.propagation)
+            unfinished_msg = ". Unfinished jobs:" + repr([repr(job) for job in self.jobs if job.checking_status == Checking.MUST_CHECK])
+            raise FlowTimeoutException("Timeout " + self._time_msg() + ", in flow " + str(self) + unfinished_msg, self.propagation)
 
     def __exit__(self, exc_type, exc_value, traceback):
         if exc_type:
