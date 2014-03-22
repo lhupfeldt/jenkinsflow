@@ -5,7 +5,6 @@ from __future__ import print_function
 
 import os, time, re, abc, traceback
 from os.path import join as jp
-from enum import Enum
 from collections import OrderedDict
 
 from .ordered_enum import OrderedEnum
@@ -49,13 +48,6 @@ class BuildResult(OrderedEnum):
     # Jenkins Aliases?
     PASSED = 2
     FAILED = 0
-
-
-class BuildProgressState(Enum):
-    # pylint: disable=no-init
-    RUNNING = 0
-    QUEUED = 1
-    IDLE = 2
 
 
 class Propagation(OrderedEnum):
@@ -282,8 +274,8 @@ class _SingleJob(_JobControl):
         return self.repr_str
 
     def _print_status_message(self, build):
-        state = BuildProgressState.RUNNING if self.job.is_running() else BuildProgressState.QUEUED if self.job.is_queued() else BuildProgressState.IDLE
-        print(repr(self.job.name), "Status", state.name, "- latest build:", '#' + str(build.buildno) if build else None)
+        state = 'RUNNING' if self.job.is_running() else 'QUEUED' if self.job.is_queued() else 'IDLE'
+        print(repr(self.job.name), "Status", state, "- latest build:", '#' + str(build.buildno) if build else None)
 
     def _prepare_to_invoke(self, reset_tried_times=False):
         super(_SingleJob, self)._prepare_to_invoke(reset_tried_times)
