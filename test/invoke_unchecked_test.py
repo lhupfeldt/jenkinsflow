@@ -5,7 +5,7 @@ from jenkinsflow.flow import serial, parallel
 from .framework import mock_api
 
 
-def test_invoke_unchecked2_dont_wait_serial():
+def test_invoke_unchecked_dont_wait_serial():
     with mock_api.api(__file__) as api:
         api.flow_job()
         api.job('j11_slow_unchecked', exec_time=100, max_fails=0, expect_invocations=1, expect_order=1, unknown_result=True)
@@ -16,7 +16,7 @@ def test_invoke_unchecked2_dont_wait_serial():
             ctrl1.invoke('j12')
 
 
-def test_invoke_unchecked2_dont_wait_parallel():
+def test_invoke_unchecked_dont_wait_parallel():
     with mock_api.api(__file__) as api:
         api.flow_job()
         api.job('j11_slow_unchecked', exec_time=100, max_fails=0, expect_invocations=1, expect_order=1, unknown_result=True)
