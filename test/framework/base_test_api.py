@@ -124,7 +124,10 @@ class TestJenkins(AbstractApiJenkins):
                 # Check expected number of job invocations
                 assert job.expect_invocations == job.invocation, "Job: " + job.name + " invoked " + str(job.invocation) + " times, expected " + str(job.expect_invocations) + " invocations"
 
-            if not job.unknown_result and job.expect_invocations != 0:
+            if job.unknown_result:
+                # The job must still be running
+                assert job.is_running(), "Job: " + job.name + " is expected to be running, but state is " + ('QUEUED' if job.is_queued() else 'IDLE')
+            elif job.expect_invocations != 0:
                 if job.invocation > job.max_fails:
                     expect_status = BuildResult.SUCCESS if job.final_result is None else job.final_result
                 else:

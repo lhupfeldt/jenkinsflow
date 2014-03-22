@@ -287,8 +287,10 @@ class _SingleJob(_JobControl):
             self._prepare_first(require_job=True)
 
         if not self._invoke_if_not_invoked():
-            build_params = self.params if self.params else None
-            self.job.invoke(securitytoken=self.securitytoken, invoke_pre_check_delay=0, block=False, build_params=build_params, cause=self.top_flow.cause)
+            # Don't re-invoke unchecked jobs that are still running
+            if self.propagation != Propagation.UNCHECKED or not self.job.is_running():
+                build_params = self.params if self.params else None
+                self.job.invoke(securitytoken=self.securitytoken, invoke_pre_check_delay=0, block=False, build_params=build_params, cause=self.top_flow.cause)
 
         for ii in range(1, 20):
             try:
@@ -466,7 +468,7 @@ class _Parallel(_Flow):
 
                 job.checking_status = Checking.FINISHED
 
-        if self.checking_status != Checking.MUST_CHECK:
+        if self.checking_status != Checking.MUST_CHECK and self.result == BuildResult.UNKNOWN:
             # All jobs have stopped running or are 'unchecked'
             for job in self.jobs:
                 self.result = min(self.result, job.propagate_result)
@@ -541,6 +543,9 @@ class _Serial(_Flow):
             except JobControlFailException:
                 # The job has stopped running
                 if job.tried_times < job.max_tries:
+                    if job.propagation != Propagation.NORMAL:
+                        print("MAY RETRY:", job, job.propagation, " failed, will only retry if checked failures. Up to", job.max_tries - job.tried_times, "more times in current flow")
+                        continue
                     print("RETRY:", job, "failed, retrying child jobs from beginning. Up to", job.max_tries - job.tried_times, "more times in current flow")
                     self.checking_status = Checking.MUST_CHECK
                     for pre_job in self.jobs[0:self.job_index + 1]:
@@ -549,6 +554,9 @@ class _Serial(_Flow):
                     continue
 
                 if job.total_tried_times < job.total_max_tries:
+                    if job.propagation != Propagation.NORMAL:
+                        print("MAY RETRY:", job, job.propagation, " failed, will only retry if checked failures. Up to", job.total_max_tries - job.total_tried_times, "more times through outer flow")
+                        continue
                     print("RETRY:", job, "failed, retrying child jobs from beginning. Up to", job.total_max_tries - job.total_tried_times, "more times through outer flow")
                     for pre_job in self.jobs[0:self.job_index + 1]:
                         pre_job._prepare_to_invoke(reset_tried_times=True)
@@ -558,7 +566,7 @@ class _Serial(_Flow):
                 self.job_index = len(self.jobs)
                 job.checking_status = Checking.FINISHED
 
-        if self.checking_status != Checking.MUST_CHECK:
+        if self.checking_status != Checking.MUST_CHECK and self.result == BuildResult.UNKNOWN:
             for job in self.jobs[0:self.job_index + 1]:
                 self.result = min(self.result, job.propagate_result)
 
@@ -569,6 +577,7 @@ class _Serial(_Flow):
             self.job_index += 1
             if self.job_index < len(self.jobs):
                 self.checking_status = Checking.MUST_CHECK
+                self.result = BuildResult.UNKNOWN
                 return
 
             # All jobs have stopped running or are 'unchecked'
