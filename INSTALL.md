@@ -7,11 +7,11 @@ In the following Jenkins also means Hudson unless otherwise stated.
    # Jenkinsapi can be found here https://github.com/salimfadhley/jenkinsapi
    optional: pip install tenjin (if you want to use the template based job loader)
 
-   Note: If jenkinsapi is placed next to jenkinsflow, that version of jenkinsapi will be used for the tests. 
+   Note: If jenkinsapi is placed next to jenkinsflow, that version of jenkinsapi will be used for the tests.
 
    Note: if you use Hudson (3.x):
       a. You cannot use the pip installed jenkinsapi, instead get it from:
-         https://github.com/henriklynggaard/jenkinsapi.git 
+         https://github.com/henriklynggaard/jenkinsapi.git
          checkout the 'hudson_support' branch
       b. You need to install the REST API plugin and enable REST API
 
@@ -36,7 +36,7 @@ Test
 ----
 
 1. Install pytest and tenjin template engine:
-   pip install -U pytest pytest-cov pytest-cache pytest-instafail logilab-devtools tenjin proxytypes
+   pip install -U pytest pytest-cov pytest-cache pytest-instafail logilab-devtools pytest-xdist tenjin proxytypes
 
 2. Read and update the file demo/demo_security.py if you have enabled security on your Jenkins
 
@@ -48,11 +48,14 @@ Test
 
    The value given to JENKINSFLOW_MOCK_API is the time time speedup for the mocked tests. If you have a reasonably fast computer, try 2000.
    If you get FlowTimeoutException try a lower value.
-   
+   If you get "<job> is expected to be running, but state is IDLE" try a lower value.
+
    # Load test jobs into Jenkins and execute them
    JENKINS_URL=<your Jenkins> python ./test/tests.py
    # Or if you are using Hudson
    HUDSON_URL=<your Hudson> python ./test/tests.py
+
+   To enable the use of xdist to run tests (not mocked) in parallel set JENKINSFLOW_SKIP_JOB_DELETE=true. You should have 32 executors for this.
 
    Important:
    Jenkins is default configured with only two executors on master. To avoid timeouts in the test cases this must be raised to at least 8.

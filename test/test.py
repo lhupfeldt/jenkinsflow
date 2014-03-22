@@ -9,7 +9,7 @@ here = os.path.abspath(os.path.dirname(__file__))
 extra_sys_path = [os.path.normpath(path) for path in [jp(here, '../..'), jp(here, '../demo'), jp(here, '../demo/jobs'), jp(here, '../../jenkinsapi')]]
 sys.path.extend(extra_sys_path)
 os.environ['PYTHONPATH'] = ':'.join(extra_sys_path)
-from jenkinsflow.flow import JobControlFailException
+from jenkinsflow.flow import JobControlFailException, is_mocked
 from jenkinsflow.test.framework import config
 
 import basic, prefix, hide_password, errors
@@ -40,7 +40,11 @@ def main():
     if len(sys.argv) > 1:
         sys.exit(subprocess.call(['py.test', '--capture=sys', '--instafail'] + sys.argv[1:]))
     else:
-        rc = subprocess.call(('py.test', '--capture=sys', '--cov=' + here + '/..', '--cov-report=term-missing', '--instafail', '--ff'))
+        pre_delete_jobs = os.environ.get('JENKINSFLOW_SKIP_JOB_DELETE') != 'true'
+        if is_mocked or pre_delete_jobs:
+            rc = subprocess.call(('py.test', '--capture=sys', '--cov=' + here + '/..', '--cov-report=term-missing', '--instafail', '--ff'))
+        else:
+            rc = subprocess.call(('py.test', '--capture=sys', '--cov=' + here + '/..', '--cov-report=term-missing', '--instafail', '--ff', '-n', '8'))
 
     print("\nValidating demos")
     for demo in basic, hide_password, prefix:

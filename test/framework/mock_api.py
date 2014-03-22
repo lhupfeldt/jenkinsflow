@@ -171,7 +171,7 @@ class MockApi(TestJenkins):
 class JenkinsWrapperApi(jenkins.Jenkins, TestJenkins):
     job_xml_template = jp(here, 'job.xml.tenjin')
 
-    def __init__(self, file_name, func_name, func_num_params, job_name_prefix, reload_jobs, jenkinsurl, username, password, securitytoken):
+    def __init__(self, file_name, func_name, func_num_params, job_name_prefix, reload_jobs, pre_delete_jobs, jenkinsurl, username, password, securitytoken):
         TestJenkins.__init__(self, job_name_prefix=job_name_prefix)
         jenkins.Jenkins.__init__(self, baseurl=jenkinsurl)
         self.job_loader_jenkins = jenkins.Jenkins(baseurl=jenkinsurl, username=username, password=password)
@@ -179,16 +179,17 @@ class JenkinsWrapperApi(jenkins.Jenkins, TestJenkins):
         self.func_name = func_name
         self.func_num_params = func_num_params
         self.reload_jobs = reload_jobs
+        self.pre_delete_jobs = pre_delete_jobs
         self.securitytoken = securitytoken
 
-    def _jenkins_job(self, name, exec_time, params, script, load_job=True, pre_delete=True):
+    def _jenkins_job(self, name, exec_time, params, script):
         name = self.job_name_prefix + name
         assert not self.test_jobs.get(name)
         # Create job in Jenkins
-        if load_job:
+        if self.reload_jobs:
             context = dict(exec_time=exec_time, params=params or (), script=script, pseudo_install_dir=pseudo_install_dir,
                            securitytoken=self.securitytoken, username=security.username, password=security.password)
-            update_job_from_template(self.job_loader_jenkins, name, self.job_xml_template, pre_delete=pre_delete, context=context)
+            update_job_from_template(self.job_loader_jenkins, name, self.job_xml_template, pre_delete=self.pre_delete_jobs, context=context)
         return name
 
     def job(self, name, exec_time, max_fails, expect_invocations, expect_order, initial_buildno=None, invocation_delay=0.1, params=None,
@@ -196,7 +197,7 @@ class JenkinsWrapperApi(jenkins.Jenkins, TestJenkins):
         if max_fails > 0 or final_result:
             params = list(params) if params else []
             params.append(('force_result', ('SUCCESS', 'FAILURE', 'UNSTABLE'), 'Caller can force job to success, fail or unstable'))
-        name = self._jenkins_job(name, exec_time, params, script, self.reload_jobs, pre_delete=True)
+        name = self._jenkins_job(name, exec_time, params, script)
         self.test_jobs[name] = MockJob(name, exec_time, max_fails, expect_invocations, expect_order, initial_buildno, invocation_delay, unknown_result, final_result, serial)
 
     def flow_job(self, name=None, params=None):
@@ -216,7 +217,7 @@ class JenkinsWrapperApi(jenkins.Jenkins, TestJenkins):
         else:
             script = "python -B " + jp(pseudo_install_dir, 'demo', self.file_name)
         name = '0flow_' + name if name else '0flow'
-        self._jenkins_job(name, exec_time=0.5, params=params, script=script, load_job=self.reload_jobs)
+        self._jenkins_job(name, exec_time=0.5, params=params, script=script)
         return (self.job_name_prefix or '') + name
 
     # --- Wrapped API ---
@@ -264,5 +265,6 @@ def api(file_name, jenkinsurl=os.environ.get('JENKINS_URL') or os.environ.get('H
     else:
         print('Using Real Jenkins API with wrapper')
         reload_jobs = os.environ.get('JENKINSFLOW_SKIP_JOB_LOAD') != 'true'
-        return JenkinsWrapperApi(file_name, func_name, func_num_params, job_name_prefix, reload_jobs,
+        pre_delete_jobs = os.environ.get('JENKINSFLOW_SKIP_JOB_DELETE') != 'true'
+        return JenkinsWrapperApi(file_name, func_name, func_num_params, job_name_prefix, reload_jobs, pre_delete_jobs,
                                  jenkinsurl, security.username, security.password, security.securitytoken)
