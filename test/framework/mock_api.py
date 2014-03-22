@@ -130,8 +130,9 @@ class Build(TestBuild):
 
 
 class MockApi(TestJenkins):
-    def __init__(self, job_name_prefix):
+    def __init__(self, job_name_prefix, baseurl):
         super(MockApi, self).__init__(job_name_prefix)
+        self.baseurl = baseurl
         self._deleted_jobs = {}
 
     def job(self, name, exec_time, max_fails, expect_invocations, expect_order, initial_buildno=None, invocation_delay=0.1, params=None,
@@ -261,7 +262,7 @@ def api(file_name, jenkinsurl=os.environ.get('JENKINS_URL') or os.environ.get('H
     print("--- Preparing api for ", repr(job_name_prefix), "---")
     if is_mocked:
         print('Using Mocked API')
-        return MockApi(job_name_prefix)
+        return MockApi(job_name_prefix, jenkinsurl)
     else:
         print('Using Real Jenkins API with wrapper')
         reload_jobs = os.environ.get('JENKINSFLOW_SKIP_JOB_LOAD') != 'true'

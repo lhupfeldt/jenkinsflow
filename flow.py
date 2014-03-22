@@ -232,6 +232,7 @@ class _SingleJob(_JobControl):
         self.old_build = None
         self.name = job_name_prefix + job_name
         self.repr_str = self.name
+        self.jenkins_baseurl = None
 
         print(self.indentation + "job: ", self.name)
 
@@ -265,6 +266,8 @@ class _SingleJob(_JobControl):
 
         print(self.indentation + "job: ", end='')
         self._print_status_message(self.old_build)
+        if self.top_flow.direct_url:
+            self.jenkins_baseurl = self.job.baseurl.replace('/job/' + self.name, '')
 
     def __repr__(self):
         return self.repr_str
@@ -286,6 +289,8 @@ class _SingleJob(_JobControl):
             # Don't re-invoke unchecked jobs that are still running
             if self.propagation != Propagation.UNCHECKED or not self.job.is_running():
                 build_params = self.params if self.params else None
+                if self.top_flow.direct_url:
+                    self.job.baseurl = self.top_flow.direct_url + '/job/' + self.name
                 self.job.invoke(securitytoken=self.securitytoken, invoke_pre_check_delay=0, block=False, build_params=build_params, cause=self.top_flow.cause)
 
         for ii in range(1, 20):
@@ -312,6 +317,8 @@ class _SingleJob(_JobControl):
         self._print_status_message(build)
         self.result = BuildResult[build.get_status()]
         url = build.get_result_url().replace('testReport/api/python', 'console').replace('testReport/api/json', 'console')
+        if self.top_flow.direct_url:
+            url = url.replace(self.top_flow.direct_url, self.jenkins_baseurl)
         print(str(build.get_status()) + ":", repr(self.job.name), "- build:", url, self._time_msg())
 
         if self.result == BuildResult.FAILURE:
@@ -613,7 +620,8 @@ class _Serial(_Flow):
 class _TopLevelControllerMixin(object):
     __metaclass__ = abc.ABCMeta
 
-    def toplevel_init(self, jenkins_api, securitytoken, username, password, top_level_job_name_prefix, poll_interval, json_dir, json_indent, json_strip_top_level_prefix):
+    def toplevel_init(self, jenkins_api, securitytoken, username, password, top_level_job_name_prefix, poll_interval, direct_url,
+                      json_dir, json_indent, json_strip_top_level_prefix):
         self._start_msg()
         # pylint: disable=attribute-defined-outside-init
         # Note: Special handling in top level flow, these atributes will be modified in proper flow init
@@ -641,6 +649,7 @@ class _TopLevelControllerMixin(object):
         self.username = username
         self.password = password
         self.poll_interval = poll_interval
+        self.direct_url = direct_url
 
         self.json_dir = json_dir
         self.json_indent = json_indent
@@ -697,10 +706,10 @@ class _TopLevelControllerMixin(object):
 class parallel(_Parallel, _TopLevelControllerMixin):
     def __init__(self, jenkins_api, timeout, securitytoken=None, username=None, password=None, job_name_prefix='', max_tries=1, propagation=Propagation.NORMAL,
                  report_interval=_default_report_interval, poll_interval=_default_poll_interval, secret_params=_default_secret_params_re, allow_missing_jobs=False,
-                 json_dir=None, json_indent=None, json_strip_top_level_prefix=True):
+                 json_dir=None, json_indent=None, json_strip_top_level_prefix=True, direct_url=None):
         """propagation: causes failure in this job not to fail the parent flow"""
         assert isinstance(propagation, Propagation)
-        securitytoken = self.toplevel_init(jenkins_api, securitytoken, username, password, job_name_prefix, poll_interval,
+        securitytoken = self.toplevel_init(jenkins_api, securitytoken, username, password, job_name_prefix, poll_interval, direct_url,
                                            json_dir, json_indent, json_strip_top_level_prefix)
         super(parallel, self).__init__(self, timeout, securitytoken, job_name_prefix, max_tries, propagation, report_interval, secret_params, allow_missing_jobs)
         self.parent_flow = None
@@ -713,10 +722,10 @@ class parallel(_Parallel, _TopLevelControllerMixin):
 class serial(_Serial, _TopLevelControllerMixin):
     def __init__(self, jenkins_api, timeout, securitytoken=None, username=None, password=None, job_name_prefix='', max_tries=1, propagation=Propagation.NORMAL,
                  report_interval=_default_report_interval, poll_interval=_default_poll_interval, secret_params=_default_secret_params_re, allow_missing_jobs=False,
-                 json_dir=None, json_indent=None, json_strip_top_level_prefix=True):
+                 json_dir=None, json_indent=None, json_strip_top_level_prefix=True, direct_url=None):
         """propagation: causes failure in this job not to fail the parent flow"""
         assert isinstance(propagation, Propagation)
-        securitytoken = self.toplevel_init(jenkins_api, securitytoken, username, password, job_name_prefix, poll_interval,
+        securitytoken = self.toplevel_init(jenkins_api, securitytoken, username, password, job_name_prefix, poll_interval, direct_url,
                                            json_dir, json_indent, json_strip_top_level_prefix)
         super(serial, self).__init__(self, timeout, securitytoken, job_name_prefix, max_tries, propagation, report_interval, secret_params, allow_missing_jobs)
         self.parent_flow = None
