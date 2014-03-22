@@ -45,10 +45,6 @@ class BuildResult(OrderedEnum):
     SUCCESS = 2
     UNKNOWN = 3
 
-    # Jenkins Aliases?
-    PASSED = 2
-    FAILED = 0
-
 
 class Propagation(OrderedEnum):
     # pylint: disable=no-init
@@ -405,10 +401,13 @@ class _Flow(_JobControl):
             self.last_report_time = now
         return report_now
 
+    def report_result(self):
+        print(self.result.name, self, self._time_msg())
+
     def json(self, file_path, indent=None):
-        node_to_id = lambda job : job.node_id
+        node_to_id = lambda job: job.node_id
         if indent:
-            node_to_id = lambda job : job.name
+            node_to_id = lambda job: job.name
 
         nodes = self.nodes(node_to_id)
         links = self.links([], node_to_id)
@@ -472,7 +471,7 @@ class _Parallel(_Flow):
             # All jobs have stopped running or are 'unchecked'
             for job in self.jobs:
                 self.result = min(self.result, job.propagate_result)
-            print(self.result.name, self, self._time_msg())
+            self.report_result()
 
             if self.result == BuildResult.FAILURE:
                 raise FailedChildJobsException(self, self._failed_child_jobs.values(), self.propagation)
@@ -571,7 +570,7 @@ class _Serial(_Flow):
                 self.result = min(self.result, job.propagate_result)
 
             if self.result == BuildResult.FAILURE:
-                print(self.result.name, self, self._time_msg())
+                self.report_result()
                 raise FailedChildJobException(self, job, self.propagation)
 
             self.job_index += 1
@@ -581,7 +580,7 @@ class _Serial(_Flow):
                 return
 
             # All jobs have stopped running or are 'unchecked'
-            print(self.result.name, self, self._time_msg())
+            self.report_result()
         else:
             self._check_timeout()
 
