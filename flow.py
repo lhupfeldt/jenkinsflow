@@ -255,15 +255,12 @@ class _SingleJob(_JobControl):
         self._prepare_to_invoke()
 
         # Build repr string with build-url with secret params replaced by '***'
-        def build_query():
-            query = [key + '=' + (value if not self.secret_params_re.search(key) else '******') for key, value in self.params.iteritems()]
-            return '?' + '&'.join(query) if query else ''
-
         url = self.job.get_build_triggerurl()
         # jenkinsapi returns basic path without any args
         # Insert ' - ' so that the build URL is not directly clickable, but will instead point to the job
         part1 = url.replace(self.job.name, self.job.name + ' - ')
-        self.repr_str = part1 + build_query()
+        query = [key + '=' + (value if not self.secret_params_re.search(key) else '******') for key, value in self.params.iteritems()]
+        self.repr_str = part1 + ('?' + '&'.join(query) if query else '')
 
         print(self.indentation + "job: ", end='')
         self._print_status_message(self.old_build)
