@@ -172,7 +172,7 @@ class MockApi(TestJenkins):
 class JenkinsWrapperApi(jenkins.Jenkins, TestJenkins):
     job_xml_template = jp(here, 'job.xml.tenjin')
 
-    def __init__(self, file_name, func_name, func_num_params, job_name_prefix, reload_jobs, pre_delete_jobs, jenkinsurl, username, password, securitytoken):
+    def __init__(self, file_name, func_name, func_num_params, job_name_prefix, reload_jobs, pre_delete_jobs, jenkinsurl, direct_url, username, password, securitytoken):
         TestJenkins.__init__(self, job_name_prefix=job_name_prefix)
         jenkins.Jenkins.__init__(self, baseurl=jenkinsurl)
         self.job_loader_jenkins = jenkins.Jenkins(baseurl=jenkinsurl, username=username, password=password)
@@ -182,6 +182,7 @@ class JenkinsWrapperApi(jenkins.Jenkins, TestJenkins):
         self.reload_jobs = reload_jobs
         self.pre_delete_jobs = pre_delete_jobs
         self.securitytoken = securitytoken
+        self.direct_url = direct_url
 
     def _jenkins_job(self, name, exec_time, params, script):
         name = self.job_name_prefix + name
@@ -189,7 +190,7 @@ class JenkinsWrapperApi(jenkins.Jenkins, TestJenkins):
         # Create job in Jenkins
         if self.reload_jobs:
             context = dict(exec_time=exec_time, params=params or (), script=script, pseudo_install_dir=pseudo_install_dir,
-                           securitytoken=self.securitytoken, username=security.username, password=security.password)
+                           securitytoken=self.securitytoken, username=security.username, password=security.password, direct_url=self.direct_url)
             update_job_from_template(self.job_loader_jenkins, name, self.job_xml_template, pre_delete=self.pre_delete_jobs, context=context)
         return name
 
@@ -267,5 +268,6 @@ def api(file_name, jenkinsurl=os.environ.get('JENKINS_URL') or os.environ.get('H
         print('Using Real Jenkins API with wrapper')
         reload_jobs = os.environ.get('JENKINSFLOW_SKIP_JOB_LOAD') != 'true'
         pre_delete_jobs = os.environ.get('JENKINSFLOW_SKIP_JOB_DELETE') != 'true'
+        direct_url = os.environ.get('JENKINSFLOW_DIRECT_URL') or 'http://localhost:8080'
         return JenkinsWrapperApi(file_name, func_name, func_num_params, job_name_prefix, reload_jobs, pre_delete_jobs,
-                                 jenkinsurl, security.username, security.password, security.securitytoken)
+                                 jenkinsurl, direct_url, security.username, security.password, security.securitytoken)

@@ -11,7 +11,7 @@ jenkins_cli_jar = 'jenkins-cli.jar'
 hudson_cli_jar = 'hudson-cli.jar'
 
 
-def cli_jar_info():
+def cli_jar_info(direct_url):
     base_url = os.environ.get('JENKINS_URL')
     cli_jar = jenkins_cli_jar
 
@@ -19,7 +19,7 @@ def cli_jar_info():
         base_url = os.environ.get('HUDSON_URL')
         cli_jar = hudson_cli_jar
 
-    return cli_jar, base_url
+    return cli_jar, direct_url or base_url
 
 
 def download_cli(cli_jar, base_url):
@@ -33,13 +33,16 @@ def download_cli(cli_jar, base_url):
     print("INFO: Download finished:", repr(cli_jar))
 
 
-def set_build_result(username, password, result, java='java'):
-    # Note: set-build-result can only be done from within the job
-    # Note: only available if Jenkins URL set in Jenkins system configuration
+def set_build_result(username, password, result, direct_url=None, java='java'):
+    """
+    Note: set-build-result can only be done from within the job
+    Note: only available if Jenkins URL set in Jenkins system configuration
+    To use a URL different from JENKINS_URL (e.g. if Jenkins is behind a proxy) specify direct_url.
+    """
 
     print("INFO: Setting job result to", repr(result))
 
-    cli_jar, base_url = cli_jar_info()
+    cli_jar, base_url = cli_jar_info(direct_url)
     if base_url is None:
         raise Exception("Could not get env variable JENKINS_URL or HUDSON_URL. Don't know whether to use " +
                         jenkins_cli_jar + " or " + hudson_cli_jar + " for setting result! " +
@@ -78,14 +81,15 @@ def set_build_result(username, password, result, java='java'):
 
 
 def main(arguments):
-    parser = argparse.ArgumentParser(description='Change result of JenkinsJob. Must be run from within the job!')
+    parser = argparse.ArgumentParser(description='Change result of a Jenkins Job. Must be run from within the job!')
     parser.add_argument('--username', help='Name of jenkins user with access to the job')
     parser.add_argument('--password', help='Password of jenkins user with access to the job. *** Warning Insecure, will show up in process listing! ***')
     parser.add_argument('--result', default='unstable', help="The result to set. Should probably be 'unstable'")
+    parser.add_argument('--direct-url', default=None, help="Jenkins URL. Default is JENKINS_URL env var value. Use this argument if JENKINS_URL is a proxy.")
     parser.add_argument('--java', default='java', help="Alternative 'java' executable.")
     args = parser.parse_args(arguments)
 
-    set_build_result(args.username, args.password, args.result, args.java)
+    set_build_result(args.username, args.password, args.result, args.direct_url, args.java)
 
 
 if __name__ == '__main__':

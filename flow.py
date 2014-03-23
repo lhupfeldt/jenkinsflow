@@ -700,7 +700,7 @@ class _TopLevelControllerMixin(object):
             time.sleep(sleep_time)
 
         if self.result == BuildResult.UNSTABLE:
-            set_build_result(self.username, self.password, 'unstable')
+            set_build_result(self.username, self.password, 'unstable', direct_url=self.top_flow.direct_url)
 
 
 class parallel(_Parallel, _TopLevelControllerMixin):

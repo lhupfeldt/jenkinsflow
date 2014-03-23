@@ -81,7 +81,9 @@ sleep {==exec_time==}
 <?py if 'force_result' in param_names: ?>
 [[ $force_result == SUCCESS ]] &amp;&amp; exit 0
 [[ $force_result == FAILURE ]] &amp;&amp; exit 1
-[[ $force_result == UNSTABLE ]] &amp;&amp; {==pseudo_install_dir==}/set_build_result.py --username {==username==} --password {==password==} || exit 1
+[[ $force_result == UNSTABLE ]] &amp;&amp; {
+    {==pseudo_install_dir==}/set_build_result.py --username {==username==} --password {==password==} --direct-url {==direct_url==}
+} || exit 1
 <?py #endif ?>
       </command>
     </hudson.tasks.Shell>
