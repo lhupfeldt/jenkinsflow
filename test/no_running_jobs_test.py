@@ -1,0 +1,37 @@
+# Copyright (c) 2012 - 2014 Lars Hupfeldt Nielsen, Hupfeldt IT
+# All rights reserved. This work is under a BSD license, see LICENSE.TXT.
+
+from pytest import raises
+
+from jenkinsflow.flow import serial, JobNotIdleException
+from .framework import mock_api
+
+
+def test_no_running_jobs():
+    with mock_api.api(__file__) as api:
+        api.flow_job()
+        api.job('j1', exec_time=50, max_fails=0, expect_invocations=1, expect_order=None, unknown_result=True)
+
+        with serial(api, timeout=70, job_name_prefix=api.job_name_prefix) as ctrl1:
+            ctrl1.invoke_unchecked('j1')
+
+        with raises(JobNotIdleException) as exinfo:
+            with serial(api, timeout=70, job_name_prefix=api.job_name_prefix) as ctrl1:
+                ctrl1.invoke('j1')
+
+        assert "Job: jenkinsflow_test__no_running_jobs__j1 is in state RUNNING. It must be IDLE." in exinfo.value.message
+
+
+def test_no_running_jobs_unchecked():
+    with mock_api.api(__file__) as api:
+        api.flow_job()
+        api.job('j1', exec_time=50, max_fails=0, expect_invocations=1, expect_order=None, unknown_result=True)
+
+        with serial(api, timeout=70, job_name_prefix=api.job_name_prefix) as ctrl1:
+            ctrl1.invoke_unchecked('j1')
+
+        with raises(JobNotIdleException) as exinfo:
+            with serial(api, timeout=70, job_name_prefix=api.job_name_prefix) as ctrl1:
+                ctrl1.invoke_unchecked('j1')
+
+        assert "Job: jenkinsflow_test__no_running_jobs_unchecked__j1 is in state RUNNING. It must be IDLE." in exinfo.value.message

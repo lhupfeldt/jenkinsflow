@@ -7,6 +7,7 @@ import os, time, re, abc, traceback
 from os.path import join as jp
 from collections import OrderedDict
 
+from enum import Enum
 from .ordered_enum import OrderedEnum
 from .set_build_result import set_build_result
 
@@ -60,6 +61,13 @@ class Checking(OrderedEnum):
     FINISHED = 2
 
 
+class Progress(Enum):
+    # pylint: disable=no-init
+    RUNNING = 1
+    QUEUED = 2
+    IDLE = 3
+
+
 class JobControlException(Exception):
     def __init__(self, message, propagation=Propagation.NORMAL):
         super(JobControlException, self).__init__(message)
@@ -71,6 +79,10 @@ class FlowTimeoutException(JobControlException):
 
 
 class FlowScopeException(JobControlException):
+    pass
+
+
+class JobNotIdleException(JobControlException):
     pass
 
 
@@ -253,6 +265,10 @@ class _SingleJob(_JobControl):
             return
 
         self._prepare_to_invoke()
+        pgstat = self.progress_status()
+        if pgstat != Progress.IDLE:
+            # Pylint does not like Enum pylint: disable=no-member
+            raise JobNotIdleException("Job: " + self.name + " is in state " + pgstat.name + ". It must be " + Progress.IDLE.name + '.')
 
         # Build repr string with build-url with secret params replaced by '***'
         url = self.job.get_build_triggerurl()
@@ -270,9 +286,11 @@ class _SingleJob(_JobControl):
     def __repr__(self):
         return self.repr_str
 
+    def progress_status(self):
+        return Progress.RUNNING if self.job.is_running() else Progress.QUEUED if self.job.is_queued() else Progress.IDLE
+
     def _print_status_message(self, build):
-        state = 'RUNNING' if self.job.is_running() else 'QUEUED' if self.job.is_queued() else 'IDLE'
-        print(repr(self.job.name), "Status", state, "- latest build:", '#' + str(build.buildno) if build else None)
+        print(repr(self.job.name), "Status", self.progress_status().name, "- latest build:", '#' + str(build.buildno) if build else None)
 
     def _prepare_to_invoke(self, reset_tried_times=False):
         super(_SingleJob, self)._prepare_to_invoke(reset_tried_times)
@@ -407,6 +425,7 @@ class _Flow(_JobControl):
         return report_now
 
     def report_result(self):
+        # Pylint does not like Enum pylint: disable=no-member
         print(self.result.name, self, self._time_msg())
 
     def json(self, file_path, indent=None):
