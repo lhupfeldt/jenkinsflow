@@ -237,8 +237,9 @@ class _SingleJob(_JobControl):
         print(self.indentation + "job: ", self.name)
 
     def _prepare_first(self, require_job=False):
-        self.api.poll()
         try:
+            if require_job:
+                self.api.poll()
             self.job = self.api.get_job(self.name)
         except Exception as ex:
             # TODO? stack trace
@@ -683,6 +684,7 @@ class _TopLevelControllerMixin(object):
         # Wait for jobs to finish
         print()
         print("--- Getting initial job status ---")
+        self.api.poll()
         self._prepare_first()
 
         if self.json_file:
