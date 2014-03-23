@@ -19,14 +19,18 @@ def cli_jar_info(direct_url):
         base_url = os.environ.get('HUDSON_URL')
         cli_jar = hudson_cli_jar
 
-    return cli_jar, direct_url or base_url
+    return cli_jar, direct_url or base_url, base_url if base_url != direct_url else None
 
 
-def download_cli(cli_jar, base_url):
+def download_cli(cli_jar, base_url, public_base_url):
     import urllib2
 
     cli_url = base_url + '/jnlpJars/' + cli_jar
-    print("INFO: Downloading cli:", repr(cli_url))
+    if public_base_url:
+        public_cli_url = public_base_url + '/jnlpJars/' + cli_jar
+        print("INFO: Downloading cli:", repr(public_cli_url), " (using direct url: ", cli_url, ')')
+    else:
+        print("INFO: Downloading cli:", repr(cli_url))
     response = urllib2.urlopen(cli_url)
     with open(cli_jar, 'w') as ff:
         ff.write(response.read())
@@ -42,7 +46,7 @@ def set_build_result(username, password, result, direct_url=None, java='java'):
 
     print("INFO: Setting job result to", repr(result))
 
-    cli_jar, base_url = cli_jar_info(direct_url)
+    cli_jar, base_url, public_base_url = cli_jar_info(direct_url)
     if base_url is None:
         raise Exception("Could not get env variable JENKINS_URL or HUDSON_URL. Don't know whether to use " +
                         jenkins_cli_jar + " or " + hudson_cli_jar + " for setting result! " +
@@ -76,7 +80,7 @@ def set_build_result(username, password, result, direct_url=None, java='java'):
         set_res()
     except subprocess.CalledProcessError :
         # We failed for some reason, try again with updated cli_jar
-        download_cli(cli_jar, base_url)
+        download_cli(cli_jar, base_url, public_base_url)
         set_res()
 
 

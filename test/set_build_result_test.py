@@ -22,11 +22,11 @@ here = os.path.dirname(__file__)
 
 @pytest.fixture
 def pre_existing_cli(request):
-    cli_jar, base_url = set_build_result.cli_jar_info(os.environ.get('JENKINSFLOW_DIRECT_URL') or 'http://localhost:8080')
+    cli_jar, base_url, public_base_url = set_build_result.cli_jar_info(os.environ.get('JENKINSFLOW_DIRECT_URL') or 'http://localhost:8080')
     if cli_jar is None:
         cli_jar = set_build_result.jenkins_cli_jar
     if not os.path.exists(cli_jar):
-        set_build_result.download_cli(cli_jar, base_url)
+        set_build_result.download_cli(cli_jar, base_url, public_base_url)
 
 
 @pytest.fixture
