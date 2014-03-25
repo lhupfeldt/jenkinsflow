@@ -19,6 +19,8 @@ setup(
     version=REVISION,
     author=PROJECT_AUTHORS,
     author_email=PROJECT_EMAILS,
+    packages=['jenkinsflow'],
+    package_dir={'jenkinsflow':'.'},
     zip_safe=True,
     include_package_data=False,
     install_requires=['jenkinsapi', 'enum34', 'tenjin', 'bottle', 'atomicfile'],
