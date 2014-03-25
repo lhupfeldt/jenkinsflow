@@ -22,7 +22,9 @@ here = os.path.dirname(__file__)
 
 @pytest.fixture
 def pre_existing_cli(request):
-    cli_jar, base_url, public_base_url = set_build_result.cli_jar_info(os.environ.get('JENKINSFLOW_DIRECT_URL') or 'http://localhost:8080')
+    base_url = os.environ.get('JENKINSFLOW_DIRECT_URL') or 'http://localhost:8080'
+    base_url = base_url + '/' if base_url[-1] != '/' else base_url
+    cli_jar, base_url, public_base_url = set_build_result.cli_jar_info(base_url)
     if cli_jar is None:
         cli_jar = set_build_result.jenkins_cli_jar
     if not os.path.exists(cli_jar):
@@ -124,3 +126,15 @@ def test_set_build_result_call_script_direct_url(pre_existing_cli, capfd):
     assert '[--result' in sout
     assert '[--direct-url' in sout
     assert '[--java' in sout
+
+
+def test_set_build_result_call_script_direct_url_trailing_slash(fake_java, pre_existing_cli, capfd):
+    base_url = os.environ.get('JENKINSFLOW_DIRECT_URL') or 'http://localhost:8080'
+    base_url = base_url + '/' if base_url[-1] != '/' else base_url
+    set_build_result.main(['--direct-url', base_url])
+
+
+def test_set_build_result_call_script_direct_url_no_trailing_slash(fake_java, pre_existing_cli, capfd):
+    base_url = os.environ.get('JENKINSFLOW_DIRECT_URL') or 'http://localhost:8080'
+    base_url = base_url[0:-1] if base_url[-1] == '/' else base_url
+    set_build_result.main(['--direct-url', base_url])

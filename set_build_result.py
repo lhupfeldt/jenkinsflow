@@ -19,15 +19,16 @@ def cli_jar_info(direct_url):
         base_url = os.environ.get('HUDSON_URL')
         cli_jar = hudson_cli_jar
 
+    base_url = base_url + '/' if base_url is not None and base_url[-1] != '/' else base_url
     return cli_jar, direct_url or base_url, base_url if base_url != direct_url else None
 
 
 def download_cli(cli_jar, base_url, public_base_url):
     import urllib2
 
-    cli_url = base_url + '/jnlpJars/' + cli_jar
+    cli_url = base_url + 'jnlpJars/' + cli_jar
     if public_base_url:
-        public_cli_url = public_base_url + '/jnlpJars/' + cli_jar
+        public_cli_url = public_base_url + 'jnlpJars/' + cli_jar
         print("INFO: Downloading cli:", repr(public_cli_url), " (using direct url: ", cli_url, ')')
     else:
         print("INFO: Downloading cli:", repr(cli_url))
@@ -93,7 +94,8 @@ def main(arguments):
     parser.add_argument('--java', default='java', help="Alternative 'java' executable.")
     args = parser.parse_args(arguments)
 
-    set_build_result(args.username, args.password, args.result, args.direct_url, args.java)
+    direct_url = args.direct_url + '/' if args.direct_url is not None and args.direct_url[-1] != '/' else args.direct_url
+    set_build_result(args.username, args.password, args.result, direct_url, args.java)
 
 
 if __name__ == '__main__':

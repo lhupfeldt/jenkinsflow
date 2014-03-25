@@ -281,7 +281,7 @@ class _SingleJob(_JobControl):
         print(self.indentation + "job: ", end='')
         self._print_status_message(self.old_build)
         if self.top_flow.direct_url:
-            self.jenkins_baseurl = self.job.baseurl.replace('/job/' + self.name, '')
+            self.jenkins_baseurl = self.job.baseurl.replace('/job/' + self.name, '/')
 
     def __repr__(self):
         return self.repr_str
@@ -306,7 +306,7 @@ class _SingleJob(_JobControl):
             if self.propagation != Propagation.UNCHECKED or not self.job.is_running():
                 build_params = self.params if self.params else None
                 if self.top_flow.direct_url:
-                    self.job.baseurl = self.top_flow.direct_url + '/job/' + self.name
+                    self.job.baseurl = self.top_flow.direct_url + 'job/' + self.name
                 self.job.invoke(securitytoken=self.securitytoken, invoke_pre_check_delay=0, block=False, build_params=build_params, cause=self.top_flow.cause)
 
         for ii in range(1, 20):
@@ -666,7 +666,7 @@ class _TopLevelControllerMixin(object):
         self.username = username
         self.password = password
         self.poll_interval = poll_interval
-        self.direct_url = direct_url
+        self.direct_url = direct_url + '/' if direct_url is not None and direct_url[-1] != '/' else direct_url
 
         self.json_dir = json_dir
         self.json_indent = json_indent
