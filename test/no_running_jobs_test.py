@@ -40,8 +40,8 @@ def test_no_running_jobs_unchecked():
 def test_no_running_jobs_jobs_allowed():
     with mock_api.api(__file__) as api:
         api.flow_job()
-        #exp_invocations = 2 if not is_mocked else 1
-        api.job('j1', exec_time=50, max_fails=0, expect_invocations=1, expect_order=None, unknown_result=True)
+        exp_invocations = 2 if not is_mocked else 1
+        api.job('j1', exec_time=20, max_fails=0, expect_invocations=exp_invocations, expect_order=None, unknown_result=True)
 
         with serial(api, timeout=70, job_name_prefix=api.job_name_prefix) as ctrl1:
             ctrl1.invoke_unchecked('j1')
