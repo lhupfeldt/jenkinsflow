@@ -7,7 +7,7 @@ from os.path import join as jp
 here = os.path.abspath(os.path.dirname(__file__))
 
 extra_sys_path = [os.path.normpath(path) for path in [jp(here, '../..'), jp(here, '../demo'), jp(here, '../demo/jobs'), jp(here, '../../jenkinsapi')]]
-sys.path.extend(extra_sys_path)
+sys.path = extra_sys_path + sys.path
 os.environ['PYTHONPATH'] = ':'.join(extra_sys_path)
 from jenkinsflow.flow import JobControlFailException, is_mocked
 from jenkinsflow.test.framework import config
