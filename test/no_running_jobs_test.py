@@ -3,7 +3,7 @@
 
 from pytest import raises
 
-from jenkinsflow.flow import serial, JobNotIdleException
+from jenkinsflow.flow import serial, JobNotIdleException, is_mocked
 from .framework import mock_api
 
 
@@ -35,3 +35,18 @@ def test_no_running_jobs_unchecked():
                 ctrl1.invoke_unchecked('j1')
 
         assert "Job: jenkinsflow_test__no_running_jobs_unchecked__j1 is in state RUNNING. It must be IDLE." in exinfo.value.message
+
+
+def test_no_running_jobs_jobs_allowed():
+    with mock_api.api(__file__) as api:
+        api.flow_job()
+        #exp_invocations = 2 if not is_mocked else 1
+        api.job('j1', exec_time=50, max_fails=0, expect_invocations=1, expect_order=None, unknown_result=True)
+
+        with serial(api, timeout=70, job_name_prefix=api.job_name_prefix) as ctrl1:
+            ctrl1.invoke_unchecked('j1')
+
+        # TODO
+        if not is_mocked:
+            with serial(api, timeout=70, job_name_prefix=api.job_name_prefix, require_idle=False) as ctrl1:
+                ctrl1.invoke('j1')

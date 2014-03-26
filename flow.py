@@ -266,7 +266,7 @@ class _SingleJob(_JobControl):
 
         self._prepare_to_invoke()
         pgstat = self.progress_status()
-        if pgstat != Progress.IDLE:
+        if self.top_flow.require_idle and pgstat != Progress.IDLE:
             # Pylint does not like Enum pylint: disable=no-member
             raise JobNotIdleException("Job: " + self.name + " is in state " + pgstat.name + ". It must be " + Progress.IDLE.name + '.')
 
@@ -637,7 +637,7 @@ class _Serial(_Flow):
 class _TopLevelControllerMixin(object):
     __metaclass__ = abc.ABCMeta
 
-    def toplevel_init(self, jenkins_api, securitytoken, username, password, top_level_job_name_prefix, poll_interval, direct_url,
+    def toplevel_init(self, jenkins_api, securitytoken, username, password, top_level_job_name_prefix, poll_interval, direct_url, require_idle,
                       json_dir, json_indent, json_strip_top_level_prefix):
         self._start_msg()
         # pylint: disable=attribute-defined-outside-init
@@ -667,13 +667,14 @@ class _TopLevelControllerMixin(object):
         self.password = password
         self.poll_interval = poll_interval
         self.direct_url = direct_url + '/' if direct_url is not None and direct_url[-1] != '/' else direct_url
+        self.require_idle = require_idle
 
         self.json_dir = json_dir
         self.json_indent = json_indent
         self.json_strip_index = len(top_level_job_name_prefix) if json_strip_top_level_prefix else 0
         self.json_file = jp(self.json_dir, 'flow_graph.json') if json_dir is not None else None
 
-        # Allow test framework to set securitytoken, that we won't have to litter all the testcases with it
+        # Allow test framework to set securitytoken, so that we won't have to litter all the testcases with it
         return self.securitytoken or jenkins_api.securitytoken if hasattr(jenkins_api, 'securitytoken') else None
 
     @staticmethod
@@ -724,10 +725,10 @@ class _TopLevelControllerMixin(object):
 class parallel(_Parallel, _TopLevelControllerMixin):
     def __init__(self, jenkins_api, timeout, securitytoken=None, username=None, password=None, job_name_prefix='', max_tries=1, propagation=Propagation.NORMAL,
                  report_interval=_default_report_interval, poll_interval=_default_poll_interval, secret_params=_default_secret_params_re, allow_missing_jobs=False,
-                 json_dir=None, json_indent=None, json_strip_top_level_prefix=True, direct_url=None):
+                 json_dir=None, json_indent=None, json_strip_top_level_prefix=True, direct_url=None, require_idle=True):
         """propagation: causes failure in this job not to fail the parent flow"""
         assert isinstance(propagation, Propagation)
-        securitytoken = self.toplevel_init(jenkins_api, securitytoken, username, password, job_name_prefix, poll_interval, direct_url,
+        securitytoken = self.toplevel_init(jenkins_api, securitytoken, username, password, job_name_prefix, poll_interval, direct_url, require_idle,
                                            json_dir, json_indent, json_strip_top_level_prefix)
         super(parallel, self).__init__(self, timeout, securitytoken, job_name_prefix, max_tries, propagation, report_interval, secret_params, allow_missing_jobs)
         self.parent_flow = None
@@ -740,10 +741,10 @@ class parallel(_Parallel, _TopLevelControllerMixin):
 class serial(_Serial, _TopLevelControllerMixin):
     def __init__(self, jenkins_api, timeout, securitytoken=None, username=None, password=None, job_name_prefix='', max_tries=1, propagation=Propagation.NORMAL,
                  report_interval=_default_report_interval, poll_interval=_default_poll_interval, secret_params=_default_secret_params_re, allow_missing_jobs=False,
-                 json_dir=None, json_indent=None, json_strip_top_level_prefix=True, direct_url=None):
+                 json_dir=None, json_indent=None, json_strip_top_level_prefix=True, direct_url=None, require_idle=True):
         """propagation: causes failure in this job not to fail the parent flow"""
         assert isinstance(propagation, Propagation)
-        securitytoken = self.toplevel_init(jenkins_api, securitytoken, username, password, job_name_prefix, poll_interval, direct_url,
+        securitytoken = self.toplevel_init(jenkins_api, securitytoken, username, password, job_name_prefix, poll_interval, direct_url, require_idle,
                                            json_dir, json_indent, json_strip_top_level_prefix)
         super(serial, self).__init__(self, timeout, securitytoken, job_name_prefix, max_tries, propagation, report_interval, secret_params, allow_missing_jobs)
         self.parent_flow = None
