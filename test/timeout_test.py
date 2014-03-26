@@ -38,7 +38,7 @@ def test_timeout_inner_level_serial():
 
         with raises(FlowTimeoutException) as exinfo:
             with parallel(api, timeout=3000, job_name_prefix=api.job_name_prefix, report_interval=3) as ctrl1:
-                ctrl1.invoke('quick11', s1='', c1=False)
+                ctrl1.invoke('quick11')
                 with ctrl1.serial(timeout=8) as ctrl2:
                     ctrl2.invoke('quick21')
                     ctrl2.invoke('wait10')
@@ -56,7 +56,7 @@ def test_timeout_inner_level_parallel():
 
         with raises(FlowTimeoutException) as exinfo:
             with serial(api, timeout=3000, job_name_prefix=api.job_name_prefix, report_interval=3) as ctrl1:
-                ctrl1.invoke('quick11', s1='', c1=False)
+                ctrl1.invoke('quick11')
                 with ctrl1.parallel(timeout=8) as ctrl2:
                     ctrl2.invoke('quick21')
                     ctrl2.invoke('wait10')
@@ -74,7 +74,7 @@ def test_timeout_multi_level_mix():
 
         with raises(FlowTimeoutException) as exinfo:
             with serial(api, timeout=3000, job_name_prefix=api.job_name_prefix, report_interval=3) as ctrl1:
-                ctrl1.invoke('quick11', s1='', c1=False)
+                ctrl1.invoke('quick11')
                 with ctrl1.parallel(timeout=8) as ctrl2:
                     ctrl2.invoke('quick21')
                     ctrl2.invoke('wait10_22')
