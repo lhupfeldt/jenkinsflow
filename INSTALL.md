@@ -81,9 +81,9 @@ Demos
 
 4. To see a flow graph of the basic demo in your browser:
    Start 'python ./visual/server.py' --json-dir '/tmp/jenkinsflow-test/graphs/jenkinsflow_demo__basic' before running ./demo/basic.py
-   Open localhost:9090 in your browser
+   Open http://localhost:9090/jenkinsflow/graph in your browser
 
-   The test suite also puts some other graps in subdirectories under '/tmp/jenkinsflow-test/graphs'
+   The test suite also puts some other graphs in subdirectories under '/tmp/jenkinsflow-test/graphs'
    The 'visual' feature is still experimental and does not yet show live info about the running flow/jobs
 
    If you run ...0flow jobs that generate graphs from Jenkins the json graph file will be put in the workspace
