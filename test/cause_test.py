@@ -4,6 +4,7 @@
 from jenkinsflow.flow import serial
 from .framework import mock_api
 
+# TODO: Actually test that cause is set
 
 def test_cause_no_build_number(env_job_name):
     with mock_api.api(__file__) as api:
