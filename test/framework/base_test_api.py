@@ -3,7 +3,7 @@
 
 from __future__ import print_function
 
-import abc, os
+import abc, os, time
 from collections import OrderedDict
 
 from .abstract_api import AbstractApiJob, AbstractApiBuild as TestBuild, AbstractApiJenkins
@@ -125,7 +125,16 @@ class TestJenkins(AbstractApiJenkins):
                 assert job.expect_invocations == job.invocation, "Job: " + job.name + " invoked " + str(job.invocation) + " times, expected " + str(job.expect_invocations) + " invocations"
 
             if job.unknown_result:
-                # The job must still be running
+                # The job must still be running, but maybe it has not been started yet, so wait up to 3 seconds for it to start
+                for _ in range(1, 300):
+                    if job.is_running():
+                        break
+                    if not is_mocked:
+                        time.sleep(0.01)
+                        if hasattr(job, 'jenkins_resource'):
+                            job.jenkins_resource.job_poll(job.name)
+                        else:
+                            job.poll()
                 assert job.is_running(), "Job: " + job.name + " is expected to be running, but state is " + ('QUEUED' if job.is_queued() else 'IDLE')
             elif job.expect_invocations != 0:
                 if job.invocation > job.max_fails:
