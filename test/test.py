@@ -2,7 +2,7 @@
 
 from __future__ import print_function
 
-import sys, os, imp, subprocess, getpass
+import sys, os, imp, subprocess, getpass, shutil
 from os.path import join as jp
 here = os.path.abspath(os.path.dirname(__file__))
 
@@ -40,8 +40,9 @@ def main():
     if len(sys.argv) > 1:
         sys.exit(subprocess.call(['py.test', '--capture=sys', '--instafail'] + sys.argv[1:]))
     else:
-        pre_delete_jobs = os.environ.get('JENKINSFLOW_SKIP_JOB_DELETE') != 'true'
-        if is_mocked or pre_delete_jobs:
+        skip_job_load = os.environ.get('JENKINSFLOW_SKIP_JOB_CREATE') == 'true'
+        skip_job_delete = skip_job_load or os.environ.get('JENKINSFLOW_SKIP_JOB_DELETE') == 'true'
+        if is_mocked or not skip_job_delete:
             rc = subprocess.call(('py.test', '--capture=sys', '--cov=' + here + '/..', '--cov-report=term-missing', '--instafail', '--ff'))
         else:
             rc = subprocess.call(('py.test', '--capture=sys', '--cov=' + here + '/..', '--cov-report=term-missing', '--instafail', '--ff', '-n', '8'))
@@ -64,8 +65,9 @@ def main():
     install_prefix = '/tmp/' + user
     tmp_packages_dir = install_prefix + '/lib/python2.7/site-packages'
     os.environ['PYTHONPATH'] = tmp_packages_dir
-    if not os.path.exists(tmp_packages_dir):
-        os.makedirs(tmp_packages_dir)
+    if os.path.exists(tmp_packages_dir):
+        shutil.rmtree(tmp_packages_dir)
+    os.makedirs(tmp_packages_dir)
     subprocess.check_call(['python', jp(here, '../setup.py'), 'install', '--prefix', install_prefix])
 
     if rc:
