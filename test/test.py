@@ -43,9 +43,11 @@ def main():
         skip_job_load = os.environ.get('JENKINSFLOW_SKIP_JOB_CREATE') == 'true'
         skip_job_delete = skip_job_load or os.environ.get('JENKINSFLOW_SKIP_JOB_DELETE') == 'true'
         if is_mocked or not skip_job_delete:
-            rc = subprocess.call(('py.test', '--capture=sys', '--cov=' + here + '/..', '--cov-report=term-missing', '--instafail', '--ff'))
+            rcfile = here + '/.coverage_mocked_rc'
+            rc = subprocess.call(('py.test', '--capture=sys', '--cov=' + here + '/..', '--cov-report=term-missing', '--cov-config=' + rcfile, '--instafail', '--ff'))
         else:
-            rc = subprocess.call(('py.test', '--capture=sys', '--cov=' + here + '/..', '--cov-report=term-missing', '--instafail', '--ff', '-n', '8'))
+            rcfile = here + '/.coverage_real_rc'
+            rc = subprocess.call(('py.test', '--capture=sys', '--cov=' + here + '/..', '--cov-report=term-missing', '--cov-config=' + rcfile, '--instafail', '--ff', '-n', '8'))
 
     print("\nValidating demos")
     for demo in basic, hide_password, prefix:

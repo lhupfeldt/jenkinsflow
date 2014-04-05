@@ -13,8 +13,13 @@ exclude_lines =
     # set_build_result
     main\(sys.argv
     set_build_result\(args
+    jenkinsapi.custom_exceptions import UnknownJob as UnknownJobException
+    from .specialized_api import UnknownJobException
+    self.api.poll_job(self.name)
+    self.api.poll()
 
 omit = 
-     ./*
-     ../setup.py
-     ../ordered_enum.py
+     test/*
+     server.py
+     setup.py
+     ordered_enum.py
