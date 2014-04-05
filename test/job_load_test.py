@@ -73,11 +73,11 @@ def test_job_load__existing_update():
 
 def test_job_load_non_existing_pre_delete():
     api = mock_api.api(__file__)
-    full_name, short_name = _random_job_name(api)
+    full_name, _ = _random_job_name(api)
     if api.is_mocked:
         # TODO: Since the Mock framework is not suited for testing this we just accept the KeyError, it will still test some code that is not otherwise tested
         with raises(KeyError):
             jobload.update_job_from_template(api, full_name, _job_xml_template, pre_delete=True, context=_context)
     else:
         jobload.update_job_from_template(api, full_name, _job_xml_template, pre_delete=True, context=_context)
-        
+
