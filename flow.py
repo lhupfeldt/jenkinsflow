@@ -586,8 +586,9 @@ class _Serial(_Flow):
                     self.job_index = 0
                     continue
 
-                self.job_index = len(self.jobs)
                 job.checking_status = Checking.FINISHED
+                if job.propagation != Propagation.UNCHECKED:
+                    self.job_index = len(self.jobs)
 
         if self.checking_status != Checking.MUST_CHECK and self.result == BuildResult.UNKNOWN:
             for job in self.jobs[0:self.job_index + 1]:
