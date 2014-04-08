@@ -731,30 +731,34 @@ class _TopLevelControllerMixin(object):
 class parallel(_Parallel, _TopLevelControllerMixin):
     def __init__(self, jenkins_api, timeout, securitytoken=None, username=None, password=None, job_name_prefix='', max_tries=1, propagation=Propagation.NORMAL,
                  report_interval=_default_report_interval, poll_interval=_default_poll_interval, secret_params=_default_secret_params_re, allow_missing_jobs=False,
-                 json_dir=None, json_indent=None, json_strip_top_level_prefix=True, direct_url=None, require_idle=True):
+                 json_dir=None, json_indent=None, json_strip_top_level_prefix=True, direct_url=None, require_idle=True, just_dump=False):
         """propagation: causes failure in this job not to fail the parent flow"""
         assert isinstance(propagation, Propagation)
         securitytoken = self.toplevel_init(jenkins_api, securitytoken, username, password, job_name_prefix, poll_interval, direct_url, require_idle,
                                            json_dir, json_indent, json_strip_top_level_prefix)
         super(parallel, self).__init__(self, timeout, securitytoken, job_name_prefix, max_tries, propagation, report_interval, secret_params, allow_missing_jobs)
         self.parent_flow = None
+        self.just_dump = just_dump
 
     def __exit__(self, exc_type, exc_value, traceback):
         super(parallel, self).__exit__(exc_type, exc_value, traceback)
-        self.wait_for_jobs()
+        if not self.just_dump:
+            self.wait_for_jobs()
 
 
 class serial(_Serial, _TopLevelControllerMixin):
     def __init__(self, jenkins_api, timeout, securitytoken=None, username=None, password=None, job_name_prefix='', max_tries=1, propagation=Propagation.NORMAL,
                  report_interval=_default_report_interval, poll_interval=_default_poll_interval, secret_params=_default_secret_params_re, allow_missing_jobs=False,
-                 json_dir=None, json_indent=None, json_strip_top_level_prefix=True, direct_url=None, require_idle=True):
+                 json_dir=None, json_indent=None, json_strip_top_level_prefix=True, direct_url=None, require_idle=True, just_dump=False):
         """propagation: causes failure in this job not to fail the parent flow"""
         assert isinstance(propagation, Propagation)
         securitytoken = self.toplevel_init(jenkins_api, securitytoken, username, password, job_name_prefix, poll_interval, direct_url, require_idle,
                                            json_dir, json_indent, json_strip_top_level_prefix)
         super(serial, self).__init__(self, timeout, securitytoken, job_name_prefix, max_tries, propagation, report_interval, secret_params, allow_missing_jobs)
         self.parent_flow = None
+        self.just_dump = just_dump
 
     def __exit__(self, exc_type, exc_value, traceback):
         super(serial, self).__exit__(exc_type, exc_value, traceback)
-        self.wait_for_jobs()
+        if not self.just_dump:
+            self.wait_for_jobs()
