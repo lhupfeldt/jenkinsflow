@@ -9,8 +9,12 @@ here = os.path.abspath(os.path.dirname(__file__))
 extra_sys_path = [os.path.normpath(path) for path in [jp(here, '../..'), jp(here, '../demo'), jp(here, '../demo/jobs'), jp(here, '../../jenkinsapi')]]
 sys.path = extra_sys_path + sys.path
 os.environ['PYTHONPATH'] = ':'.join(extra_sys_path)
-from jenkinsflow.flow import JobControlFailException, is_mocked
+
+from jenkinsflow.flow import JobControlFailException
+from jenkinsflow import mocked
+
 from jenkinsflow.test.framework import config
+from jenkinsflow.test import test_cfg
 
 import basic, prefix, hide_password, errors
 
@@ -28,27 +32,7 @@ def run_demo(demo):
     api.test_results()
 
 
-def main():
-    print("Creating temporary test installation in", repr(config.pseudo_install_dir), "to make files available to Jenkins.")
-    install_script = jp(here, 'tmp_install.sh')
-    rc = subprocess.call([install_script])
-    if rc:
-        print("Failed test installation to. Install script is:", repr(install_script), file=sys.stderr)
-        print("Warning: Some tests will fail!", file=sys.stderr)
-
-    print("\nRunning tests")
-    if len(sys.argv) > 1:
-        sys.exit(subprocess.call(['py.test', '--capture=sys', '--instafail'] + sys.argv[1:]))
-    else:
-        skip_job_load = os.environ.get('JENKINSFLOW_SKIP_JOB_CREATE') == 'true'
-        skip_job_delete = skip_job_load or os.environ.get('JENKINSFLOW_SKIP_JOB_DELETE') == 'true'
-        if is_mocked or not skip_job_delete:
-            rcfile = here + '/.coverage_mocked_rc'
-            rc = subprocess.call(('py.test', '--capture=sys', '--cov=' + here + '/..', '--cov-report=term-missing', '--cov-config=' + rcfile, '--instafail', '--ff'))
-        else:
-            rcfile = here + '/.coverage_real_rc'
-            rc = subprocess.call(('py.test', '--capture=sys', '--cov=' + here + '/..', '--cov-report=term-missing', '--cov-config=' + rcfile, '--instafail', '--ff', '-n', '8'))
-
+def validate_all_demos():
     print("\nValidating demos")
     for demo in basic, hide_password, prefix:
         run_demo(demo)
@@ -61,6 +45,35 @@ def main():
             print("Ok, got exception:", ex)
         else:
             raise Exception("Expected exception")
+
+
+def run_tests(parallel, cov_rc_file):
+    cmd = ['py.test', '--capture=sys', '--cov=' + here + '/..', '--cov-report=term-missing', '--cov-config=' + cov_rc_file, '--instafail', '--ff']
+    if not parallel:
+        return subprocess.call(cmd)
+    return subprocess.call(cmd + ['-n', '8'])
+
+
+def main():
+    print("Creating temporary test installation in", repr(config.pseudo_install_dir), "to make files available to Jenkins.")
+    install_script = jp(here, 'tmp_install.sh')
+    rc = subprocess.call([install_script])
+    if rc:
+        print("Failed test installation to. Install script is:", repr(install_script), file=sys.stderr)
+        print("Warning: Some tests will fail!", file=sys.stderr)
+
+    print("\nRunning tests")
+    if len(sys.argv) > 1:
+        sys.exit(subprocess.call(['py.test', '--capture=sys', '--instafail'] + sys.argv[1:]))
+
+    test_cfg.mock_default()
+    rc |= run_tests(False, here + '/.coverage_mocked_rc')
+    validate_all_demos()
+
+    test_cfg.unmock()
+    parallel = test_cfg.skip_job_load() | test_cfg.skip_job_delete()
+    rc |= run_tests(parallel, here + '/.coverage_real_rc')
+    validate_all_demos()
 
     print("\nTesting setup.py")
     user = getpass.getuser()

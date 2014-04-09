@@ -10,9 +10,15 @@ from peak.util.proxies import ObjectWrapper
 
 here = os.path.abspath(os.path.dirname(__file__))
 sys.path.extend([jp(here, '../../..'), jp(here, '../../demo')])
+
+from jenkinsflow.jobload import update_job_from_template
+from jenkinsflow.flow import is_mocked, hyperspeed_time
+
 import demo_security as security
 
-use_jenkinsapi = os.environ.get('JENKINSFLOW_USE_JENKINSAPI') == 'true'
+from jenkinsflow.test import test_cfg
+
+use_jenkinsapi = test_cfg.use_jenkinsapi()
 if use_jenkinsapi:
     from jenkinsapi import jenkins
     from jenkinsapi.custom_exceptions import UnknownJob as UnknownJobException
@@ -22,9 +28,6 @@ else:
 
 from jenkinsflow.unbuffered import UnBuffered
 sys.stdout = UnBuffered(sys.stdout)
-
-from jenkinsflow.jobload import update_job_from_template
-from jenkinsflow.flow import is_mocked, hyperspeed_time
 
 from .base_test_api import TestJob, TestBuild, TestJenkins
 from .config import test_tmp_dir, pseudo_install_dir
@@ -41,7 +44,7 @@ class MockJob(TestJob):
         self.just_invoked = False
 
     def get_build_triggerurl(self):
-        return self.baseurl + ( '/buildWithParameters' if self.build_params or self.has_force_result_param else '/build' )
+        return self.baseurl + ('/buildWithParameters' if self.build_params or self.has_force_result_param else '/build')
 
     def is_running(self):
         return self.start_time <= hyperspeed_time() < self.end_time
@@ -226,8 +229,8 @@ class JenkinsWrapperApi(jenkins.Jenkins, TestJenkins):
         """
         #  Note: Use -B to avoid permission problems with .pyc files created from commandline test
         if self.func_name:
-            script  = "export PYTHONPATH=" + test_tmp_dir + "\n"
-            script += "export JENKINSFLOW_SKIP_JOB_LOAD=true\n"
+            script = "export PYTHONPATH=" + test_tmp_dir + "\n"
+            script += test_cfg.skip_job_load_sh_export_str() + "\n"
             # Supply dummy args for the py.test fixtures
             dummy_args = ','.join(['0' for _ in range(self.func_num_params)])
             script += "python -Bc &quot;from jenkinsflow.test." + self.file_name.replace('.py', '') + " import *; test_" + self.func_name + "(" + dummy_args + ")&quot;"
@@ -283,8 +286,8 @@ def api(file_name, jenkinsurl=os.environ.get('JENKINS_URL') or os.environ.get('H
         return MockApi(job_name_prefix, jenkinsurl)
     else:
         print('Using Real Jenkins API with wrapper')
-        reload_jobs = os.environ.get('JENKINSFLOW_SKIP_JOB_CREATE') != 'true'
-        pre_delete_jobs = os.environ.get('JENKINSFLOW_SKIP_JOB_DELETE') != 'true'
-        direct_url = os.environ.get('JENKINSFLOW_DIRECT_URL') or 'http://localhost:8080'
+        reload_jobs = not test_cfg.skip_job_load()
+        pre_delete_jobs = not test_cfg.skip_job_delete()
+        direct_url = test_cfg.direct_url()
         return JenkinsWrapperApi(file_name, func_name, func_num_params, job_name_prefix, reload_jobs, pre_delete_jobs,
                                  jenkinsurl, direct_url, security.username, security.password, security.securitytoken)

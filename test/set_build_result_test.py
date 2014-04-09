@@ -14,6 +14,7 @@ from pytest import raises, xfail
 from jenkinsflow import set_build_result
 from jenkinsflow.flow import serial, Propagation
 from .framework import mock_api
+from . import test_cfg
 
 from demo_security import username, password
 
@@ -22,8 +23,7 @@ here = os.path.dirname(__file__)
 
 @pytest.fixture
 def pre_existing_cli(request):
-    base_url = os.environ.get('JENKINSFLOW_DIRECT_URL') or 'http://localhost:8080'
-    base_url = base_url + '/' if base_url[-1] != '/' else base_url
+    base_url = test_cfg.direct_url() + '/'
     cli_jar, base_url, public_base_url = set_build_result.cli_jar_info(base_url)
     if cli_jar is None:
         cli_jar = set_build_result.jenkins_cli_jar
@@ -78,7 +78,7 @@ def test_set_build_result_direct_url(fake_java, pre_existing_cli, env_base_url, 
             api.job('j1_fail', exec_time=0.01, max_fails=1, expect_invocations=1, expect_order=1)
 
             with serial(api, timeout=70, username=username, password=password, job_name_prefix=api.job_name_prefix, report_interval=3,
-                        propagation=Propagation.FAILURE_TO_UNSTABLE, direct_url=os.environ.get('JENKINSFLOW_DIRECT_URL') or 'http://localhost:8080') as ctrl1:
+                        propagation=Propagation.FAILURE_TO_UNSTABLE, direct_url=test_cfg.direct_url()) as ctrl1:
                 ctrl1.invoke('j1_fail')
 
         except urllib2.URLError:
@@ -129,12 +129,10 @@ def test_set_build_result_call_script_direct_url(pre_existing_cli, capfd):
 
 
 def test_set_build_result_call_script_direct_url_trailing_slash(fake_java, pre_existing_cli, capfd):
-    base_url = os.environ.get('JENKINSFLOW_DIRECT_URL') or 'http://localhost:8080'
-    base_url = base_url + '/' if base_url[-1] != '/' else base_url
+    base_url = test_cfg.direct_url() + '/'
     set_build_result.main(['--direct-url', base_url])
 
 
 def test_set_build_result_call_script_direct_url_no_trailing_slash(fake_java, pre_existing_cli, capfd):
-    base_url = os.environ.get('JENKINSFLOW_DIRECT_URL') or 'http://localhost:8080'
-    base_url = base_url[0:-1] if base_url[-1] == '/' else base_url
+    base_url = test_cfg.direct_url().rstrip('/')
     set_build_result.main(['--direct-url', base_url])
