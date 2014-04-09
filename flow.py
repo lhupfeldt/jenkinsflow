@@ -688,8 +688,8 @@ class _TopLevelControllerMixin(object):
         print("--- Calculating flow graph ---")
 
     def wait_for_jobs(self):
-        if self.json_dir:
-            self.json(jp(self.json_dir, 'flow_graph.json'), self.json_indent)
+        if self.json_file:
+            self.json(self.json_file, self.json_indent)
 
         if self.just_dump:
             return
