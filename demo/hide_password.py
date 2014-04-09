@@ -3,10 +3,7 @@
 # Copyright (c) 2012 - 2014 Lars Hupfeldt Nielsen, Hupfeldt IT
 # All rights reserved. This work is under a BSD license, see LICENSE.TXT.
 
-import os
 import demo_setup
-import logging
-
 from jenkinsapi import jenkins
 
 from jenkinsflow.flow import serial
@@ -14,9 +11,6 @@ from jenkinsflow.flow import serial
 import demo_security as security
 
 def main(api):
-    logging.basicConfig()
-    logging.getLogger("").setLevel(logging.WARNING)
-
     with serial(api, timeout=70, securitytoken=security.securitytoken, job_name_prefix='jenkinsflow_demo__hide_password__', report_interval=3, secret_params='.*PASS.*|.*pass.*') as ctrl:
         # NOTE: In order to ensure that passwords are not displayed in a stacktrace you must never put a literal password
         # In the last line in the with statement, or in any statement that may raise an exception. You shold not really
@@ -26,5 +20,6 @@ def main(api):
 
 
 if __name__ == '__main__':
+    import os
     jenkins = jenkins.Jenkins(os.environ.get('JENKINS_URL') or os.environ.get('HUDSON_URL') or "http://localhost:8080")
     main(jenkins)
