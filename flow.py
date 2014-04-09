@@ -19,8 +19,7 @@ def hyperspeed_time():
     return time.time() * _hyperspeed_speedup
 
 
-# Note: Mock poll interval must be higher than the shortest exec_time (0.01) or some og the tests will break
-_default_poll_interval = 0.5 if not is_mocked else 0.02
+_default_poll_interval = 0.5 if not is_mocked else 0.001
 _default_report_interval = 5
 _default_secret_params = '.*passw.*|.*PASSW.*'
 _default_secret_params_re = re.compile(_default_secret_params)
