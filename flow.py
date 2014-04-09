@@ -131,6 +131,7 @@ class _JobControl(object):
 
     def __enter__(self):
         self.top_flow.current_nesting_level += 1
+        return self
 
     def __exit__(self, exc_type, exc_value, traceback):
         self.top_flow.current_nesting_level -= 1
@@ -326,6 +327,7 @@ class _SingleJob(_JobControl):
         if self.top_flow.direct_url:
             url = url.replace(self.top_flow.direct_url, self.jenkins_baseurl)
         print(str(build.get_status()) + ":", repr(self.job.name), "- build:", url, self._time_msg())
+        self.old_build_num = build.buildno
 
         if self.result == BuildResult.FAILURE:
             raise FailedSingleJobException(self.job, self.propagation)
@@ -336,6 +338,16 @@ class _SingleJob(_JobControl):
     @property
     def controller_type_name(self):
         return "Job"
+
+    def _final_status(self):
+        if self.job:
+            progress = ""
+            if self.progress_status() != Progress.IDLE:
+                progress = "Job is not " + Progress.IDLE.name  # Pylint does not like Enum pylint: disable=no-member
+            # Pylint does not like Enum pylint: disable=maybe-no-member
+            print(self.indentation + self.result.name, repr(self), "- latest build:", '#' + str(self.old_build_num), progress)
+        else:
+            print(self.indentation + repr(self), " - MISSING JOB")
 
     def last_jobs_in_flow(self):
         return [self] if self.propagation != Propagation.UNCHECKED else []
@@ -355,6 +367,8 @@ class _SingleJob(_JobControl):
 
 class _Flow(_JobControl):
     __metaclass__ = abc.ABCMeta
+    _enter_str = None
+    _exit_str = None
 
     def __init__(self, parent_flow, timeout, securitytoken, job_name_prefix, max_tries, propagation, report_interval, secret_params, allow_missing_jobs):
         secret_params_re = re.compile(secret_params) if isinstance(secret_params, str) else secret_params
@@ -386,16 +400,35 @@ class _Flow(_JobControl):
     def controller_type_name(self):
         return "Flow"
 
+    def _prepare_first(self):
+        print(self.indentation + self._enter_str)
+        self._prepare_to_invoke()
+        for job in self.jobs:
+            job._prepare_first()
+        print(self.indentation + self._exit_str)
+
+    def _final_status(self):
+        print(self.indentation + self._enter_str)
+        for job in self.jobs:
+            job._final_status()
+        print(self.indentation + self._exit_str)
+
     def _check_timeout(self):
         now = hyperspeed_time()
         if self.timeout and now - self.invocation_time > self.timeout:
             unfinished_msg = ". Unfinished jobs:" + repr([repr(job) for job in self.jobs if job.checking_status == Checking.MUST_CHECK])
             raise FlowTimeoutException("Timeout " + self._time_msg() + ", in flow " + str(self) + unfinished_msg, self.propagation)
 
+    def __enter__(self):
+        print(self.indentation + self._enter_str)
+        super(_Flow, self).__enter__()
+        return self
+
     def __exit__(self, exc_type, exc_value, traceback):
         if exc_type:
             return None
 
+        print(self.indentation + self._exit_str)
         super(_Flow, self).__exit__(exc_type, exc_value, traceback)
         if self.parent_flow:
             # Insert myself in parent if I'm not empty
@@ -404,6 +437,7 @@ class _Flow(_JobControl):
                 return
 
             print(self.indentation + "INFO: Ignoring empty flow")
+        print()
 
     def _check_invoke_report(self):
         self._invoke_if_not_invoked()
@@ -437,22 +471,8 @@ class _Flow(_JobControl):
 
 
 class _Parallel(_Flow):
-    def _prepare_first(self):
-        print(self.indentation + "parallel flow: (")
-        self._prepare_to_invoke()
-        for job in self.jobs:
-            job._prepare_first()
-        print(self.indentation + ")\n")
-
-    def __enter__(self):
-        print(self.indentation + "parallel flow: (")
-        super(_Parallel, self).__enter__()
-        return self
-
-    def __exit__(self, exc_type, exc_value, traceback):
-        print(self.indentation + ")")
-        super(_Parallel, self).__exit__(exc_type, exc_value, traceback)
-        print()
+    _enter_str = "parallel flow: ("
+    _exit_str = ")\n"
 
     def _check(self, report_now):
         report_now = self._check_invoke_report()
@@ -517,32 +537,18 @@ class _Parallel(_Flow):
 
 
 class _Serial(_Flow):
+    _enter_str = "serial flow: ["
+    _exit_str = "]\n"
+
     def __init__(self, parent_flow, securitytoken, timeout, job_name_prefix='', max_tries=1, propagation=Propagation.NORMAL,
                  report_interval=None, secret_params=_default_secret_params_re, allow_missing_jobs=None):
         super(_Serial, self).__init__(parent_flow, securitytoken, timeout, job_name_prefix, max_tries, propagation,
                                       report_interval, secret_params, allow_missing_jobs)
         self.job_index = 0
 
-    def _prepare_first(self):
-        print(self.indentation + "serial flow: [")
-        self._prepare_to_invoke()
-        for job in self.jobs:
-            job._prepare_first()
-        print(self.indentation + "]\n")
-
     def _prepare_to_invoke(self, reset_tried_times=False):
         super(_Serial, self)._prepare_to_invoke(reset_tried_times)
         self.job_index = 0
-
-    def __enter__(self):
-        print(self.indentation + "serial flow: [")
-        super(_Serial, self).__enter__()
-        return self
-
-    def __exit__(self, exc_type, exc_value, traceback):
-        print(self.indentation + "]")
-        super(_Serial, self).__exit__(exc_type, exc_value, traceback)
-        print()
 
     def _check(self, report_now):
         report_now = self._check_invoke_report()
@@ -705,11 +711,16 @@ class _TopLevelControllerMixin(object):
         print()
         print("--- Starting flow ---")
         sleep_time = min(self.poll_interval, self.report_interval) / _hyperspeed_speedup
-        while self.checking_status == Checking.MUST_CHECK:
-            if hasattr(self.api, 'quick_poll'):
-                self.api.quick_poll()
-            self._check(None)
-            time.sleep(sleep_time)
+        try:
+            while self.checking_status == Checking.MUST_CHECK:
+                if hasattr(self.api, 'quick_poll'):
+                    self.api.quick_poll()
+                self._check(None)
+                time.sleep(sleep_time)
+        finally:
+            print()
+            print("--- Finished flow ---")
+            self._final_status()
 
         if self.result == BuildResult.UNSTABLE:
             set_build_result(self.username, self.password, 'unstable', direct_url=self.top_flow.direct_url)
