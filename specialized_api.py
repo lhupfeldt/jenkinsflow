@@ -29,7 +29,7 @@ class ApiJob(object):
         else:
             self.build_trigger_path = "/job/" + self.name + "/build"
 
-    def invoke(self, securitytoken, block, skip_if_running, invoke_pre_check_delay, invoke_block_delay, build_params, cause, files):
+    def invoke(self, securitytoken, block, invoke_pre_check_delay, build_params, cause):
         try:
             params = {}
             if cause:

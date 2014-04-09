@@ -63,8 +63,8 @@ class MockJob(TestJob):
     def get_last_build_or_none(self):
         return self.build
 
-    def invoke(self, securitytoken=None, block=False, skip_if_running=False, invoke_pre_check_delay=3, invoke_block_delay=15, build_params=None, cause=None, files=None):
-        super(MockJob, self).invoke(securitytoken, block, skip_if_running, invoke_pre_check_delay, invoke_block_delay, build_params, cause, files)
+    def invoke(self, securitytoken=None, block=False, invoke_pre_check_delay=3, build_params=None, cause=None):
+        super(MockJob, self).invoke(securitytoken, block, invoke_pre_check_delay, build_params, cause)
         assert not self.is_running()
         self.invocation_time = hyperspeed_time()
         self.start_time = self.invocation_time + self.invocation_delay
@@ -109,8 +109,8 @@ class WrapperJob(ObjectWrapper, TestJob):
             if self.invocation >= self.max_fails:
                 build_params['force_result'] = 'SUCCESS' if self.final_result is None else self.final_result.name
 
-        self.__subject__.invoke(securitytoken, block, skip_if_running, invoke_pre_check_delay, invoke_block_delay, build_params, cause, files) # pylint: disable=no-member
-        TestJob.invoke(self, securitytoken, block, skip_if_running, invoke_pre_check_delay, invoke_block_delay, build_params, cause, files)
+        self.__subject__.invoke(securitytoken, block, invoke_pre_check_delay, build_params, cause) # pylint: disable=no-member
+        TestJob.invoke(self, securitytoken, block, invoke_pre_check_delay, build_params, cause)
 
 
 

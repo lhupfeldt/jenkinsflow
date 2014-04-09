@@ -11,7 +11,7 @@ class AbstractApiJob(object):
     __metaclass__ = abc.ABCMeta
 
     @abc.abstractmethod
-    def invoke(self, securitytoken=None, block=False, skip_if_running=False, invoke_pre_check_delay=3, invoke_block_delay=15, build_params=None, cause=None, files=None):
+    def invoke(self, securitytoken=None, block=False, invoke_pre_check_delay=3, build_params=None, cause=None):
         raise Exception("AbstractNotImplemented")
 
     # The following should be declare abstract, but since they are 'implemented' by proxy we can't do that (conveniently)
