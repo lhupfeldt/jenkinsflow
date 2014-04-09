@@ -11,15 +11,14 @@ sys.path = extra_sys_path + sys.path
 os.environ['PYTHONPATH'] = ':'.join(extra_sys_path)
 
 from jenkinsflow.flow import JobControlFailException
-from jenkinsflow import mocked
 
 from jenkinsflow.test.framework import config
 from jenkinsflow.test import test_cfg
 
-import basic, prefix, hide_password, errors
+import basic, calculated_flow, prefix, hide_password, errors
 
 
-def run_demo(demo):
+def run_demo(demo, execute_script=False):
     print("\n\n")
     print("==== Demo:", demo.__name__, "====")
     job_load_module_name = demo.__name__ + '_jobs'
@@ -27,21 +26,25 @@ def run_demo(demo):
     print("-- loading jobs --")
     api = job_load.create_jobs()
     print()
-    print("-- running jobs --")
-    demo.main(api)
-    api.test_results()
+    if not execute_script:
+        print("-- running jobs --")
+        demo.main(api)
+        api.test_results()
+    else:
+        print("-- running demo script --")
+        subprocess.check_call([sys.executable, demo.__file__.replace('.pyc', '.py')])
 
 
-def validate_all_demos():
+def validate_all_demos(execute_script=False):
     print("\nValidating demos")
-    for demo in basic, hide_password, prefix:
-        run_demo(demo)
+    for demo in basic, calculated_flow, hide_password, prefix:
+        run_demo(demo, execute_script)
 
     print("\nValidating demos with failing jobs")
     for demo in (errors,):
         try:
-            run_demo(demo)
-        except JobControlFailException as ex:
+            run_demo(demo, execute_script)
+        except (JobControlFailException, subprocess.CalledProcessError) as ex:
             print("Ok, got exception:", ex)
         else:
             raise Exception("Expected exception")
@@ -73,7 +76,7 @@ def main():
     test_cfg.unmock()
     parallel = test_cfg.skip_job_load() | test_cfg.skip_job_delete()
     rc |= run_tests(parallel, here + '/.coverage_real_rc')
-    validate_all_demos()
+    validate_all_demos(execute_script=True)
 
     print("\nTesting setup.py")
     user = getpass.getuser()
@@ -83,7 +86,7 @@ def main():
     if os.path.exists(tmp_packages_dir):
         shutil.rmtree(tmp_packages_dir)
     os.makedirs(tmp_packages_dir)
-    subprocess.check_call(['python', jp(here, '../setup.py'), 'install', '--prefix', install_prefix])
+    subprocess.check_call([sys.executable, jp(here, '../setup.py'), 'install', '--prefix', install_prefix])
 
     if rc:
         print('*** ERROR: There were errors! Check output! ***', file=sys.stderr)

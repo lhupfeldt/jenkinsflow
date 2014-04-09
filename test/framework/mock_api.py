@@ -12,7 +12,8 @@ here = os.path.abspath(os.path.dirname(__file__))
 sys.path.extend([jp(here, '../../..'), jp(here, '../../demo')])
 
 from jenkinsflow.jobload import update_job_from_template
-from jenkinsflow.flow import is_mocked, hyperspeed_time
+from jenkinsflow.flow import hyperspeed_time
+from jenkinsflow.mocked import mocked
 
 import demo_security as security
 
@@ -262,6 +263,8 @@ class JenkinsWrapperApi(jenkins.Jenkins, TestJenkins):
 
 
 def api(file_name, jenkinsurl=os.environ.get('JENKINS_URL') or os.environ.get('HUDSON_URL') or "http://localhost:8080"):
+    is_mocked, _ = mocked()
+
     """Factory to create either Mock or Wrap api"""
     base_name = os.path.basename(file_name).replace('.pyc', '.py')
     job_name_prefix = _file_name_subst.sub('', base_name)
