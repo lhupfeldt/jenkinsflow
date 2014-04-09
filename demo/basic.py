@@ -10,7 +10,8 @@ import sys, os
 import logging
 from collections import OrderedDict
 
-from jenkinsapi import jenkins
+# Use the specialized API instead of 'jenkinsapi'
+from jenkinsflow.specialized_api import Jenkins
 
 from jenkinsflow.flow import serial
 from jenkinsflow.unbuffered import UnBuffered
@@ -71,5 +72,5 @@ def main(api):
 
 
 if __name__ == '__main__':
-    jenkins = jenkins.Jenkins(os.environ.get('JENKINS_URL') or os.environ.get('HUDSON_URL') or "http://localhost:8080")
+    jenkins = Jenkins(os.environ.get('JENKINS_URL') or os.environ.get('HUDSON_URL') or "http://localhost:8080")
     main(jenkins)
