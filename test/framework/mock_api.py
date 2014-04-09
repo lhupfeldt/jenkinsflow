@@ -102,7 +102,7 @@ class WrapperJob(ObjectWrapper, TestJob):
         TestJob.__init__(self, exec_time=exec_time, max_fails=max_fails, expect_invocations=expect_invocations, expect_order=expect_order,
                          initial_buildno=None, invocation_delay=0.01, unknown_result=unknown_result, final_result=final_result, serial=serial)
 
-    def invoke(self, securitytoken=None, block=False, skip_if_running=False, invoke_pre_check_delay=3, invoke_block_delay=15, build_params=None, cause=None, files=None):
+    def invoke(self, securitytoken=None, block=False, invoke_pre_check_delay=3, build_params=None, cause=None):
         self.invocation_time = time.time()
 
         if self.has_force_result_param:
@@ -112,7 +112,7 @@ class WrapperJob(ObjectWrapper, TestJob):
             if self.invocation >= self.max_fails:
                 build_params['force_result'] = 'SUCCESS' if self.final_result is None else self.final_result.name
 
-        self.__subject__.invoke(securitytoken, block, invoke_pre_check_delay, build_params, cause) # pylint: disable=no-member
+        self.__subject__.invoke(securitytoken, block, invoke_pre_check_delay=invoke_pre_check_delay, build_params=build_params, cause=cause)  # pylint: disable=no-member
         TestJob.invoke(self, securitytoken, block, invoke_pre_check_delay, build_params, cause)
 
 
