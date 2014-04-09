@@ -1,0 +1,1 @@
+{"nodes": [{"id": 1, "name": "j1", "url": null}, {"id": 4, "name": "j2", "url": null}, {"id": 5, "name": "j3_unchecked", "url": null}, {"id": 7, "name": "j4", "url": null}, {"id": 8, "name": "j5", "url": null}], "links": [{"source": 1, "target": 4}, {"source": 4, "target": 5}, {"source": 1, "target": 7}, {"source": 7, "target": 8}]}
