@@ -3,23 +3,19 @@
 
 from __future__ import print_function
 
-import os, time, re, abc, traceback
+import os, re, abc, traceback
 from os.path import join as jp
 from collections import OrderedDict
 
 from enum import Enum
 from .ordered_enum import OrderedEnum
 from .set_build_result import set_build_result
-from .mocked import mocked
-
-is_mocked, _hyperspeed_speedup = mocked()
+from .mocked import HyperSpeed
 
 
-def hyperspeed_time():
-    return time.time() * _hyperspeed_speedup
+hyperspeed = HyperSpeed()
 
-
-_default_poll_interval = 0.5 if not is_mocked else 0.001
+_default_poll_interval = 0.5 if not hyperspeed.is_mocked else 0.001
 _default_report_interval = 5
 _default_secret_params = '.*passw.*|.*PASSW.*'
 _default_secret_params_re = re.compile(_default_secret_params)
@@ -151,7 +147,7 @@ class _JobControl(object):
         if self.invocation_time:
             return True
 
-        self.invocation_time = hyperspeed_time()
+        self.invocation_time = hyperspeed.time()
         print("\nInvoking %s (%d/%d,%d/%d):" % (self.controller_type_name, self.tried_times, self.max_tries, self.total_tried_times, self.total_max_tries), self)
         return False
 
@@ -160,7 +156,7 @@ class _JobControl(object):
         """Polled by flow controller until the job reaches state 'successful' or tried_times == parent.max_tries * self.max_tries"""
 
     def _time_msg(self):
-        now = hyperspeed_time()
+        now = hyperspeed.time()
         return "after: %.3fs/%.3fs" % (now - self.invocation_time, now - self.top_flow.start_time)
 
     @abc.abstractmethod
@@ -310,7 +306,7 @@ class _SingleJob(_JobControl):
                 if ii == 1:
                     print("poll or get_last_build_or_none' failed: " + str(ex) + ", retrying.")
                     traceback.print_exc()
-                time.sleep(0.1 / _hyperspeed_speedup)
+                hyperspeed.sleep(0.1)
 
         if build is None or build.buildno == self.old_build_num or build.is_running():
             if report_now:
@@ -413,7 +409,7 @@ class _Flow(_JobControl):
         print(self.indentation + self._exit_str)
 
     def _check_timeout(self):
-        now = hyperspeed_time()
+        now = hyperspeed.time()
         if self.timeout and now - self.invocation_time > self.timeout:
             unfinished_msg = ". Unfinished jobs:" + repr([repr(job) for job in self.jobs if job.checking_status == Checking.MUST_CHECK])
             raise FlowTimeoutException("Timeout " + self._time_msg() + ", in flow " + str(self) + unfinished_msg, self.propagation)
@@ -441,7 +437,7 @@ class _Flow(_JobControl):
     def _check_invoke_report(self):
         self._invoke_if_not_invoked()
 
-        now = hyperspeed_time()
+        now = hyperspeed.time()
         report_now = now - self.last_report_time >= self.report_interval
         if report_now:
             self.last_report_time = now
@@ -707,18 +703,18 @@ class _TopLevelControllerMixin(object):
             self.json(self.json_file, self.json_indent)
 
         # pylint: disable=attribute-defined-outside-init
-        self.start_time = hyperspeed_time()
+        self.start_time = hyperspeed.time()
         self.last_report_time = self.start_time
 
         print()
         print("--- Starting flow ---")
-        sleep_time = min(self.poll_interval, self.report_interval) / _hyperspeed_speedup
+        sleep_time = min(self.poll_interval, self.report_interval)
         try:
             while self.checking_status == Checking.MUST_CHECK:
                 if hasattr(self.api, 'quick_poll'):
                     self.api.quick_poll()
                 self._check(None)
-                time.sleep(sleep_time)
+                hyperspeed.sleep(sleep_time)
         finally:
             print()
             print("--- Finished flow ---")

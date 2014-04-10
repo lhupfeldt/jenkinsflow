@@ -3,12 +3,16 @@
 
 from __future__ import print_function
 
-import abc, os, time
+import abc, os
 from collections import OrderedDict
 
 from .abstract_api import AbstractApiJob, AbstractApiBuild as TestBuild, AbstractApiJenkins
 
-from jenkinsflow.flow import BuildResult, is_mocked
+from jenkinsflow.flow import BuildResult
+from jenkinsflow.mocked import HyperSpeed
+
+
+hyperspeed = HyperSpeed()
 
 
 class TestJob(AbstractApiJob):
@@ -67,7 +71,7 @@ class TestJob(AbstractApiJob):
 class TestJenkins(AbstractApiJenkins):
     __metaclass__ = abc.ABCMeta
 
-    is_mocked = is_mocked
+    is_mocked = hyperspeed.is_mocked
 
     def __init__(self, job_name_prefix):
         self.job_name_prefix = job_name_prefix
@@ -129,12 +133,11 @@ class TestJenkins(AbstractApiJenkins):
                 for _ in range(1, 300):
                     if job.is_running():
                         break
-                    if not is_mocked:
-                        time.sleep(0.01)
-                        if hasattr(job, 'jenkins_resource'):
-                            job.jenkins_resource.job_poll(job.name)
-                        else:
-                            job.poll()
+                    hyperspeed.sleep(0.01)
+                    if hasattr(job, 'jenkins_resource'):
+                        job.jenkins_resource.job_poll(job.name)
+                    else:
+                        job.poll()
                 assert job.is_running(), "Job: " + job.name + " is expected to be running, but state is " + ('QUEUED' if job.is_queued() else 'IDLE')
             elif job.expect_invocations != 0:
                 if job.invocation > job.max_fails:

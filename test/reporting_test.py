@@ -1,9 +1,12 @@
 # Copyright (c) 2012 - 2014 Lars Hupfeldt Nielsen, Hupfeldt IT
 # All rights reserved. This work is under a BSD license, see LICENSE.TXT.
 
-from jenkinsflow.flow import serial, parallel, _hyperspeed_speedup
+from jenkinsflow.flow import serial, parallel
+from jenkinsflow.mocked import HyperSpeed
 from .framework import mock_api
 from .framework.utils import assert_lines_in
+
+hyperspeed = HyperSpeed()
 
 
 def test_reporting_job_status(capsys):
@@ -12,7 +15,7 @@ def test_reporting_job_status(capsys):
         api.job('j11', 0.1, max_fails=0, expect_invocations=1, expect_order=1)
         api.job('j12', 1.5, max_fails=0, expect_invocations=1, invocation_delay=1.0, initial_buildno=7, expect_order=2, serial=True)
 
-        with serial(api, timeout=70, job_name_prefix=api.job_name_prefix, report_interval=0.5/_hyperspeed_speedup) as ctrl1:
+        with serial(api, timeout=70, job_name_prefix=api.job_name_prefix, report_interval=0.5/hyperspeed.speedup) as ctrl1:
             ctrl1.invoke('j11')
             ctrl1.invoke('j12')
 
@@ -37,7 +40,7 @@ def test_reporting_invocation_serial(capsys):
         api.job('j11', 0.1, max_fails=0, expect_invocations=1, expect_order=1)
         api.job('j12', 1.5, max_fails=0, expect_invocations=1, invocation_delay=1.0, initial_buildno=7, expect_order=2, serial=True)
 
-        with serial(api, timeout=70, job_name_prefix=api.job_name_prefix, report_interval=0.5/_hyperspeed_speedup) as ctrl1:
+        with serial(api, timeout=70, job_name_prefix=api.job_name_prefix, report_interval=0.5/hyperspeed.speedup) as ctrl1:
             ctrl1.invoke('j11')
             ctrl1.invoke('j12')
 
@@ -56,7 +59,7 @@ def test_reporting_invocation_parallel(capsys):
         api.job('j11', 0.1, max_fails=0, expect_invocations=1, expect_order=1)
         api.job('j12', 1.5, max_fails=0, expect_invocations=1, invocation_delay=1.0, initial_buildno=7, expect_order=2)
 
-        with parallel(api, timeout=70, job_name_prefix=api.job_name_prefix, report_interval=0.5/_hyperspeed_speedup) as ctrl1:
+        with parallel(api, timeout=70, job_name_prefix=api.job_name_prefix, report_interval=0.5/hyperspeed.speedup) as ctrl1:
             ctrl1.invoke('j11')
             ctrl1.invoke('j12')
 
@@ -143,7 +146,7 @@ def test_reporting_job_status_unchecked(capsys):
         api.job('j23', 1.5, max_fails=0, expect_invocations=1, invocation_delay=0.0001, initial_buildno=7, expect_order=4)
         api.job('j12', 5, max_fails=0, expect_invocations=1, invocation_delay=0.0001, initial_buildno=7, expect_order=5)
 
-        with serial(api, timeout=70, job_name_prefix=api.job_name_prefix, report_interval=0.5/_hyperspeed_speedup) as ctrl1:
+        with serial(api, timeout=70, job_name_prefix=api.job_name_prefix, report_interval=0.5/hyperspeed.speedup) as ctrl1:
             ctrl1.invoke('j11')
             with ctrl1.serial() as ctrl2:
                 ctrl2.invoke_unchecked('j21_unchecked')

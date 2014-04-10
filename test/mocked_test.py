@@ -4,7 +4,7 @@
 import os
 from pytest import raises
 
-from jenkinsflow.flow import mocked
+from jenkinsflow.mocked import mocked
 
 
 def test_mocked_bad_env_val(mock_api_bad_value):

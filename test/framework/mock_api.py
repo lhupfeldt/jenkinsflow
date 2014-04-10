@@ -4,7 +4,6 @@
 from __future__ import print_function
 
 import os, sys, re
-import time
 from os.path import join as jp
 from peak.util.proxies import ObjectWrapper
 
@@ -12,8 +11,7 @@ here = os.path.abspath(os.path.dirname(__file__))
 sys.path.extend([jp(here, '../../..'), jp(here, '../../demo')])
 
 from jenkinsflow.jobload import update_job_from_template
-from jenkinsflow.flow import hyperspeed_time
-from jenkinsflow.mocked import mocked
+from jenkinsflow.mocked import HyperSpeed
 
 import demo_security as security
 
@@ -34,6 +32,8 @@ from .base_test_api import TestJob, TestBuild, TestJenkins
 from .config import test_tmp_dir, pseudo_install_dir
 
 _file_name_subst = re.compile(r'(_jobs|_test)?\.py')
+hyperspeed = HyperSpeed()
+
 
 
 class MockJob(TestJob):
@@ -48,14 +48,14 @@ class MockJob(TestJob):
         return self.baseurl + ('/buildWithParameters' if self.build_params or self.has_force_result_param else '/build')
 
     def is_running(self):
-        return self.start_time <= hyperspeed_time() < self.end_time
+        return self.start_time <= hyperspeed.time() < self.end_time
 
     def is_queued(self):
-        return self.invocation_time <= hyperspeed_time() < self.start_time
+        return self.invocation_time <= hyperspeed.time() < self.start_time
 
     def poll(self):
         # If has been invoked and started running or already (supposed to be) finished
-        if self.just_invoked and self.end_time and hyperspeed_time() >= self.start_time:
+        if self.just_invoked and self.end_time and hyperspeed.time() >= self.start_time:
             self.just_invoked = False
 
             if self.build is None:
@@ -70,7 +70,7 @@ class MockJob(TestJob):
     def invoke(self, securitytoken=None, block=False, invoke_pre_check_delay=3, build_params=None, cause=None):
         super(MockJob, self).invoke(securitytoken, block, invoke_pre_check_delay, build_params, cause)
         assert not self.is_running()
-        self.invocation_time = hyperspeed_time()
+        self.invocation_time = hyperspeed.time()
         self.start_time = self.invocation_time + self.invocation_delay
         self.end_time = self.start_time + self.exec_time
         self.just_invoked = True
@@ -104,7 +104,7 @@ class WrapperJob(ObjectWrapper, TestJob):
                          initial_buildno=None, invocation_delay=0.01, unknown_result=unknown_result, final_result=final_result, serial=serial)
 
     def invoke(self, securitytoken=None, block=False, invoke_pre_check_delay=3, build_params=None, cause=None):
-        self.invocation_time = time.time()
+        self.invocation_time = hyperspeed.time()
 
         if self.has_force_result_param:
             build_params = build_params or {}
@@ -263,8 +263,6 @@ class JenkinsWrapperApi(jenkins.Jenkins, TestJenkins):
 
 
 def api(file_name, jenkinsurl=os.environ.get('JENKINS_URL') or os.environ.get('HUDSON_URL') or "http://localhost:8080"):
-    is_mocked, _ = mocked()
-
     """Factory to create either Mock or Wrap api"""
     base_name = os.path.basename(file_name).replace('.pyc', '.py')
     job_name_prefix = _file_name_subst.sub('', base_name)
@@ -284,7 +282,7 @@ def api(file_name, jenkinsurl=os.environ.get('JENKINS_URL') or os.environ.get('H
 
     print()
     print("--- Preparing api for ", repr(job_name_prefix), "---")
-    if is_mocked:
+    if hyperspeed.is_mocked:
         print('Using Mocked API')
         return MockApi(job_name_prefix, jenkinsurl)
     else:
