@@ -183,7 +183,7 @@ class MockApi(TestJenkins):
             raise UnknownJobException(name)
 
 
-class JenkinsWrapperApi(jenkins.Jenkins, TestJenkins):
+class JenkinsTestWrapperApi(jenkins.Jenkins, TestJenkins):
     job_xml_template = jp(here, 'job.xml.tenjin')
 
     def __init__(self, file_name, func_name, func_num_params, job_name_prefix, reload_jobs, pre_delete_jobs, jenkinsurl, direct_url,
@@ -252,7 +252,7 @@ class JenkinsWrapperApi(jenkins.Jenkins, TestJenkins):
     def get_job(self, name):
         try:
             job = self.test_jobs[name]
-            jenkins_job = super(JenkinsWrapperApi, self).get_job(name)
+            jenkins_job = super(JenkinsTestWrapperApi, self).get_job(name)
             if isinstance(job, MockJob):
                 self.test_jobs[name] = job = WrapperJob(jenkins_job, job.exec_time, job.max_fails, job.expect_invocations, job.expect_order, job.unknown_result, job.final_result, job.serial)
             assert isinstance(job, WrapperJob)
@@ -292,5 +292,5 @@ def api(file_name, jenkinsurl=os.environ.get('JENKINS_URL') or os.environ.get('H
         reload_jobs = not test_cfg.skip_job_load()
         pre_delete_jobs = not test_cfg.skip_job_delete()
         direct_url = test_cfg.direct_url()
-        return JenkinsWrapperApi(file_name, func_name, func_num_params, job_name_prefix, reload_jobs, pre_delete_jobs,
-                                 jenkinsurl, direct_url, security.username, security.password, security.securitytoken)
+        return JenkinsTestWrapperApi(file_name, func_name, func_num_params, job_name_prefix, reload_jobs, pre_delete_jobs,
+                                     jenkinsurl, direct_url, security.username, security.password, security.securitytoken)
