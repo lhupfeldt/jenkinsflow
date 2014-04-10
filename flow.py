@@ -229,8 +229,9 @@ class _SingleJob(_JobControl):
         self.repr_str = self.name
         self.jenkins_baseurl = None
 
-        print(self.indentation + self.repr_name())
+        print(self.indentation + self.repr_name)
 
+    @property
     def repr_name(self):
         return ("unchecked " if self.propagation == Propagation.UNCHECKED else "") + "job: " + repr(self.name)
 
@@ -257,7 +258,7 @@ class _SingleJob(_JobControl):
         pgstat = self.progress_status()
         if self.top_flow.require_idle and pgstat != Progress.IDLE:
             # Pylint does not like Enum pylint: disable=no-member
-            raise JobNotIdleException(self.repr_name() + " is in state " + pgstat.name + ". It must be " + Progress.IDLE.name + '.')
+            raise JobNotIdleException(self.repr_name + " is in state " + pgstat.name + ". It must be " + Progress.IDLE.name + '.')
 
         # Build repr string with build-url with secret params replaced by '***'
         url = self.job.get_build_triggerurl()
@@ -278,7 +279,7 @@ class _SingleJob(_JobControl):
         return Progress.RUNNING if self.job.is_running() else Progress.QUEUED if self.job.is_queued() else Progress.IDLE
 
     def _status_message(self, build_num):
-        return self.repr_name() + " Status " + self.progress_status().name + " - latest build: " + '#' + str(build_num if build_num else None)
+        return self.repr_name + " Status " + self.progress_status().name + " - latest build: " + '#' + str(build_num if build_num else None)
 
     def _prepare_to_invoke(self, reset_tried_times=False):
         super(_SingleJob, self)._prepare_to_invoke(reset_tried_times)
@@ -324,7 +325,6 @@ class _SingleJob(_JobControl):
         if self.top_flow.direct_url:
             url = url.replace(self.top_flow.direct_url, self.jenkins_baseurl)
         print(str(build.get_status()) + ":", repr(self.job.name), "- build:", url, self._time_msg())
-        self.old_build_num = build.buildno
 
         if self.result == BuildResult.FAILURE:
             raise FailedSingleJobException(self.job, self.propagation)
@@ -338,13 +338,18 @@ class _SingleJob(_JobControl):
 
     def _final_status(self):
         if self.job is not None:
+            # Pylint does not like Enum pylint: disable=maybe-no-member
+            if self.result == BuildResult.SUCCESS:
+                print(self.indentation + self.repr_name, self.result.name)
+                return
+
             progress = ""
             if self.progress_status() != Progress.IDLE:
-                progress = "Job is not " + Progress.IDLE.name  # Pylint does not like Enum pylint: disable=no-member
-            # Pylint does not like Enum pylint: disable=maybe-no-member
-            print(self.indentation + self.result.name, repr(self), "- latest build:", '#' + str(self.old_build_num), progress)
-        else:
-            print(self.indentation + repr(self), " - MISSING JOB")
+                progress = "- " + self.progress_status().name
+            print(self.indentation + self.repr_name, self.result.name, progress)
+            return
+
+        print(self.indentation + repr(self), " - MISSING JOB")
 
     def last_jobs_in_flow(self):
         return [self] if self.propagation != Propagation.UNCHECKED else []
