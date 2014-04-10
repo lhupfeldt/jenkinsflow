@@ -339,7 +339,7 @@ class _SingleJob(_JobControl):
         return "Job"
 
     def _final_status(self):
-        if self.job:
+        if self.job is not None:
             progress = ""
             if self.progress_status() != Progress.IDLE:
                 progress = "Job is not " + Progress.IDLE.name  # Pylint does not like Enum pylint: disable=no-member
