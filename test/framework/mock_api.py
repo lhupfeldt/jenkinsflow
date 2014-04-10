@@ -37,15 +37,17 @@ hyperspeed = HyperSpeed()
 
 
 class MockJob(TestJob):
-    def __init__(self, name, exec_time, max_fails, expect_invocations, expect_order, initial_buildno=None, invocation_delay=0.01, unknown_result=False, final_result=None, serial=False):
+    def __init__(self, name, exec_time, max_fails, expect_invocations, expect_order, initial_buildno=None, invocation_delay=0.01, unknown_result=False, final_result=None,
+                 serial=False, params=None):
         super(MockJob, self).__init__(exec_time, max_fails, expect_invocations, expect_order, initial_buildno, invocation_delay, unknown_result, final_result, serial)
         self.name = name
         self.baseurl = 'http://hupfeldtit.dk/job/' + self.name
         self.build = Build(self, initial_buildno) if initial_buildno is not None else None
+        self.params = params
         self.just_invoked = False
 
     def get_build_triggerurl(self):
-        return self.baseurl + ('/buildWithParameters' if self.build_params or self.has_force_result_param else '/build')
+        return self.baseurl + ('/buildWithParameters' if self.params or self.has_force_result_param else '/build')
 
     def is_running(self):
         return self.start_time <= hyperspeed.time() < self.end_time
@@ -150,7 +152,7 @@ class MockApi(TestJenkins):
             script=None, unknown_result=False, final_result=None, serial=False):
         name = self.job_name_prefix + name
         assert not self.test_jobs.get(name)
-        self.test_jobs[name] = MockJob(name, exec_time, max_fails, expect_invocations, expect_order, initial_buildno, invocation_delay, unknown_result, final_result, serial)
+        self.test_jobs[name] = MockJob(name, exec_time, max_fails, expect_invocations, expect_order, initial_buildno, invocation_delay, unknown_result, final_result, serial, params)
 
     def flow_job(self, name=None, params=None):
         # Don't create flow jobs when mocked
@@ -219,7 +221,7 @@ class JenkinsTestWrapperApi(jenkins.Jenkins, TestJenkins):
             params = list(params) if params else []
             params.append(('force_result', ('SUCCESS', 'FAILURE', 'UNSTABLE'), 'Caller can force job to success, fail or unstable'))
         name = self._jenkins_job(name, exec_time, params, script)
-        self.test_jobs[name] = MockJob(name, exec_time, max_fails, expect_invocations, expect_order, initial_buildno, invocation_delay, unknown_result, final_result, serial)
+        self.test_jobs[name] = MockJob(name, exec_time, max_fails, expect_invocations, expect_order, initial_buildno, invocation_delay, unknown_result, final_result, serial, params)
 
     def flow_job(self, name=None, params=None):
         """

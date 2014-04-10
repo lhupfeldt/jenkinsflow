@@ -143,13 +143,15 @@ class _JobControl(object):
         self.total_tried_times += 1
         self.invocation_time = 0
 
-    def _invoke_if_not_invoked(self):
+    def _invocation_message(self, controller_type_name, invocation_repr):
+        print("\nInvoking %s (%d/%d,%d/%d):" % (controller_type_name, self.tried_times, self.max_tries, self.total_tried_times, self.total_max_tries), invocation_repr)
+
+    def _must_invoke_set_invocation_time(self):
         if self.invocation_time:
-            return True
+            return False
 
         self.invocation_time = hyperspeed.time()
-        print("\nInvoking %s (%d/%d,%d/%d):" % (self.controller_type_name, self.tried_times, self.max_tries, self.total_tried_times, self.total_max_tries), self)
-        return False
+        return True
 
     @abc.abstractmethod
     def _check(self, report_now):
@@ -162,10 +164,6 @@ class _JobControl(object):
     @abc.abstractmethod
     def sequence(self):
         """'compact' representaion of flow/job 'name'"""
-
-    @abc.abstractproperty
-    def controller_type_name(self):
-        """Short name for the type of flow/job"""
 
     @property
     def indentation(self):
@@ -226,14 +224,12 @@ class _SingleJob(_JobControl):
         self.job = None
         self.old_build_num = None
         self.name = job_name_prefix + job_name
-        self.repr_str = self.name
+        self.repr_str = ("unchecked " if self.propagation == Propagation.UNCHECKED else "") + "job: " + repr(self.name)
+        self.non_clickable_build_trigger_url = None
+        self.display_params = ((key, (value if not self.secret_params_re.search(key) else '******')) for key, value in self.params.iteritems())
         self.jenkins_baseurl = None
 
-        print(self.indentation + self.repr_name)
-
-    @property
-    def repr_name(self):
-        return ("unchecked " if self.propagation == Propagation.UNCHECKED else "") + "job: " + repr(self.name)
+        print(self.indentation + repr(self))
 
     def _prepare_first(self, require_job=False):
         try:
@@ -245,12 +241,11 @@ class _SingleJob(_JobControl):
             self.job = self.api.get_job(self.name)
         except Exception as ex:
             # TODO? stack trace
-            self.repr_str = repr(ex)
             if require_job or not self.allow_missing_jobs:
                 self.checking_status = Checking.FINISHED
                 self.result = BuildResult.FAILURE
                 raise MissingJobsException(self.name)
-            print(self.indentation + "NOTE: ", self.repr_str)
+            print(self.indentation + repr(self), "NOTE: ", repr(ex))
             super(_SingleJob, self)._prepare_to_invoke(reset_tried_times=False)
             return
 
@@ -258,15 +253,11 @@ class _SingleJob(_JobControl):
         pgstat = self.progress_status()
         if self.top_flow.require_idle and pgstat != Progress.IDLE:
             # Pylint does not like Enum pylint: disable=no-member
-            raise JobNotIdleException(self.repr_name + " is in state " + pgstat.name + ". It must be " + Progress.IDLE.name + '.')
+            raise JobNotIdleException(repr(self) + " is in state " + pgstat.name + ". It must be " + Progress.IDLE.name + '.')
 
-        # Build repr string with build-url with secret params replaced by '***'
         url = self.job.get_build_triggerurl()
-        # jenkinsapi returns basic path without any args
         # Insert ' - ' so that the build URL is not directly clickable, but will instead point to the job
-        part1 = url.replace(self.job.name, self.job.name + ' - ')
-        query = [key + '=' + (value if not self.secret_params_re.search(key) else '******') for key, value in self.params.iteritems()]
-        self.repr_str = part1 + ('?' + '&'.join(query) if query else '')
+        self.non_clickable_build_trigger_url = url.replace(self.job.name, self.job.name + ' - ')
 
         print(self.indentation + self._status_message(self.old_build_num))
         if self.top_flow.direct_url:
@@ -279,7 +270,7 @@ class _SingleJob(_JobControl):
         return Progress.RUNNING if self.job.is_running() else Progress.QUEUED if self.job.is_queued() else Progress.IDLE
 
     def _status_message(self, build_num):
-        return self.repr_name + " Status " + self.progress_status().name + " - latest build: " + '#' + str(build_num if build_num else None)
+        return repr(self) + " Status " + self.progress_status().name + " - latest build: " + '#' + str(build_num if build_num else None)
 
     def _prepare_to_invoke(self, reset_tried_times=False):
         super(_SingleJob, self)._prepare_to_invoke(reset_tried_times)
@@ -291,10 +282,16 @@ class _SingleJob(_JobControl):
         if self.job is None:
             self._prepare_first(require_job=True)
 
-        if not self._invoke_if_not_invoked():
+        if self._must_invoke_set_invocation_time():
             # Don't re-invoke unchecked jobs that are still running
             if self.propagation != Propagation.UNCHECKED or not self.job.is_running():
+                self._invocation_message('Job', self.non_clickable_build_trigger_url)
                 build_params = self.params if self.params else None
+                for key, value in self.display_params:
+                    print("    ", key, '=', repr(value))
+                if build_params:
+                    print("")
+
                 if self.top_flow.direct_url:
                     self.job.baseurl = self.top_flow.direct_url + '/job/' + self.name
                 self.job.invoke(securitytoken=self.securitytoken, invoke_pre_check_delay=0, block=False, build_params=build_params, cause=self.top_flow.cause)
@@ -317,7 +314,7 @@ class _SingleJob(_JobControl):
             return
 
         # The job has stopped running
-        print ("job", self, "stopped running")
+        print (self, "stopped running")
         self.checking_status = Checking.FINISHED
         print(self._status_message(build.buildno))
         self.result = BuildResult[build.get_status()]
@@ -332,21 +329,17 @@ class _SingleJob(_JobControl):
     def sequence(self):
         return self.name
 
-    @property
-    def controller_type_name(self):
-        return "Job"
-
     def _final_status(self):
         if self.job is not None:
             # Pylint does not like Enum pylint: disable=maybe-no-member
             if self.result == BuildResult.SUCCESS:
-                print(self.indentation + self.repr_name, self.result.name)
+                print(self.indentation + repr(self), self.result.name)
                 return
 
             progress = ""
             if self.progress_status() != Progress.IDLE:
                 progress = "- " + self.progress_status().name
-            print(self.indentation + self.repr_name, self.result.name, progress)
+            print(self.indentation + repr(self), self.result.name, progress)
             return
 
         print(self.indentation + repr(self), " - MISSING JOB")
@@ -398,10 +391,6 @@ class _Flow(_JobControl):
         job = _SingleJob(self, self.securitytoken, self.job_name_prefix, self.max_tries, job_name, params, Propagation.UNCHECKED, self.secret_params_re, self.allow_missing_jobs)
         self.jobs.append(job)
 
-    @property
-    def controller_type_name(self):
-        return "Flow"
-
     def _prepare_first(self):
         print(self.indentation + self._enter_str)
         self._prepare_to_invoke()
@@ -418,7 +407,7 @@ class _Flow(_JobControl):
     def _check_timeout(self):
         now = hyperspeed.time()
         if self.timeout and now - self.invocation_time > self.timeout:
-            unfinished_msg = ". Unfinished jobs:" + repr([repr(job) for job in self.jobs if job.checking_status == Checking.MUST_CHECK])
+            unfinished_msg = ". Unfinished jobs:" + repr([job.sequence() for job in self.jobs if job.checking_status == Checking.MUST_CHECK])
             raise FlowTimeoutException("Timeout " + self._time_msg() + ", in flow " + str(self) + unfinished_msg, self.propagation)
 
     def __enter__(self):
@@ -442,7 +431,8 @@ class _Flow(_JobControl):
         print()
 
     def _check_invoke_report(self):
-        self._invoke_if_not_invoked()
+        if self._must_invoke_set_invocation_time():
+            self._invocation_message('Flow', self)
 
         now = hyperspeed.time()
         report_now = now - self.last_report_time >= self.report_interval
@@ -724,7 +714,7 @@ class _TopLevelControllerMixin(object):
                 hyperspeed.sleep(sleep_time)
         finally:
             print()
-            print("--- Finished flow ---")
+            print("--- Final status ---")
             self._final_status()
 
         if self.result == BuildResult.UNSTABLE:

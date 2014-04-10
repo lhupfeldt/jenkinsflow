@@ -7,7 +7,7 @@ from .framework import mock_api
 from jenkinsflow.flow import serial, FailedChildJobException
 
 
-def test_hide_password_failed_job():
+def test_hide_password_failed_job(capsys):
     with mock_api.api(__file__) as api:
         api.flow_job()
         api.job('passwd_args', exec_time=0.01, max_fails=1, expect_invocations=1, expect_order=1,
@@ -21,7 +21,13 @@ def test_hide_password_failed_job():
                 p1, p2, p3 = 'SECRET', 'hemmeligt', 'not_security'
                 ctrl.invoke('passwd_args', password=p1, s1='no-secret', passwd=p2, PASS=p3)
 
-        assert '******' in exinfo.value.message
+        sout, _ = capsys.readouterr()
+        assert '******' in sout
+        assert 'no-secret' in sout
+        assert p1 not in sout
+        assert p2 not in sout
+        assert p3 not in sout
+
         assert p1 not in exinfo.value.message
         assert p2 not in exinfo.value.message
         assert p3 not in exinfo.value.message

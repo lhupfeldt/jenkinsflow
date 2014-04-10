@@ -202,8 +202,8 @@ def test_retry_parallel_through_outer_level(capsys):
 
         sout, _ = capsys.readouterr()
         sout = utils.replace_host_port(sout)
-        assert 'RETRY: http://x.x/job/jenkinsflow_test__retry_parallel_through_outer_level__j41_fail - /buildWithParameters failed but will be retried. Up to 1 more times in current flow' in sout, 'SOUT:' + sout
-        assert 'RETRY: http://x.x/job/jenkinsflow_test__retry_parallel_through_outer_level__j41_fail - /buildWithParameters failed but will be retried. Up to 2 more times through outer flow' in sout, 'SOUT:' + sout
+        assert "RETRY: job: 'jenkinsflow_test__retry_parallel_through_outer_level__j41_fail' failed but will be retried. Up to 1 more times in current flow" in sout, 'SOUT:' + sout
+        assert "RETRY: job: 'jenkinsflow_test__retry_parallel_through_outer_level__j41_fail' failed but will be retried. Up to 2 more times through outer flow" in sout, 'SOUT:' + sout
 
 
 def test_retry_serial_through_outer_level():

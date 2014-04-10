@@ -5,7 +5,6 @@ from pytest import raises
 
 from jenkinsflow.flow import parallel, serial, FlowTimeoutException
 from .framework import mock_api
-from .framework.utils import replace_host_port
 
 
 def test_timeout_top_level_serial():
@@ -44,7 +43,8 @@ def test_timeout_inner_level_serial():
                     ctrl2.invoke('wait20')
 
         assert "Timeout after:" in exinfo.value.message
-        assert ", in flow ['jenkinsflow_test__timeout_inner_level_serial__quick21', 'jenkinsflow_test__timeout_inner_level_serial__wait20']. Unfinished jobs:['http://x.x/job/jenkinsflow_test__timeout_inner_level_serial__wait20 - /build']" in replace_host_port(exinfo.value.message)
+        print "HELLO", exinfo.value.message
+        assert ", in flow ['jenkinsflow_test__timeout_inner_level_serial__quick21', 'jenkinsflow_test__timeout_inner_level_serial__wait20']. Unfinished jobs:['jenkinsflow_test__timeout_inner_level_serial__wait20']" in exinfo.value.message
 
 
 
@@ -62,7 +62,7 @@ def test_timeout_inner_level_parallel():
                     ctrl2.invoke('wait20')
 
         assert "Timeout after:" in exinfo.value.message
-        assert ", in flow ('jenkinsflow_test__timeout_inner_level_parallel__quick21', 'jenkinsflow_test__timeout_inner_level_parallel__wait20'). Unfinished jobs:['http://x.x/job/jenkinsflow_test__timeout_inner_level_parallel__wait20 - /build']" in replace_host_port(exinfo.value.message)
+        assert ", in flow ('jenkinsflow_test__timeout_inner_level_parallel__quick21', 'jenkinsflow_test__timeout_inner_level_parallel__wait20'). Unfinished jobs:['jenkinsflow_test__timeout_inner_level_parallel__wait20']" in exinfo.value.message
 
 
 def test_timeout_multi_level_mix():
@@ -82,4 +82,4 @@ def test_timeout_multi_level_mix():
                         ctrl3.invoke('wait20_31')
 
         assert "Timeout after:" in exinfo.value.message
-        assert ", in flow ('jenkinsflow_test__timeout_multi_level_mix__quick21', 'jenkinsflow_test__timeout_multi_level_mix__wait20_22', ('jenkinsflow_test__timeout_multi_level_mix__wait20_31',)). Unfinished jobs:['http://x.x/job/jenkinsflow_test__timeout_multi_level_mix__wait20_22 - /build', \"('jenkinsflow_test__timeout_multi_level_mix__wait20_31',)\"]" in replace_host_port(exinfo.value.message)
+        assert ", in flow ('jenkinsflow_test__timeout_multi_level_mix__quick21', 'jenkinsflow_test__timeout_multi_level_mix__wait20_22', ('jenkinsflow_test__timeout_multi_level_mix__wait20_31',)). Unfinished jobs:['jenkinsflow_test__timeout_multi_level_mix__wait20_22', ('jenkinsflow_test__timeout_multi_level_mix__wait20_31',)]" in exinfo.value.message
