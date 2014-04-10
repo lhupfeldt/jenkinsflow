@@ -229,7 +229,10 @@ class _SingleJob(_JobControl):
         self.repr_str = self.name
         self.jenkins_baseurl = None
 
-        print(self.indentation + "job: ", self.name)
+        print(self.indentation + self.repr_name())
+
+    def repr_name(self):
+        return ("unchecked " if self.propagation == Propagation.UNCHECKED else "") + "job: " + repr(self.name)
 
     def _prepare_first(self, require_job=False):
         try:
@@ -254,7 +257,7 @@ class _SingleJob(_JobControl):
         pgstat = self.progress_status()
         if self.top_flow.require_idle and pgstat != Progress.IDLE:
             # Pylint does not like Enum pylint: disable=no-member
-            raise JobNotIdleException("Job: " + self.name + " is in state " + pgstat.name + ". It must be " + Progress.IDLE.name + '.')
+            raise JobNotIdleException(self.repr_name() + " is in state " + pgstat.name + ". It must be " + Progress.IDLE.name + '.')
 
         # Build repr string with build-url with secret params replaced by '***'
         url = self.job.get_build_triggerurl()
@@ -264,8 +267,7 @@ class _SingleJob(_JobControl):
         query = [key + '=' + (value if not self.secret_params_re.search(key) else '******') for key, value in self.params.iteritems()]
         self.repr_str = part1 + ('?' + '&'.join(query) if query else '')
 
-        print(self.indentation + "job: ", end='')
-        self._print_status_message(self.old_build_num)
+        print(self.indentation + self._status_message(self.old_build_num))
         if self.top_flow.direct_url:
             self.jenkins_baseurl = self.job.baseurl.replace('/job/' + self.name, '')
 
@@ -275,8 +277,8 @@ class _SingleJob(_JobControl):
     def progress_status(self):
         return Progress.RUNNING if self.job.is_running() else Progress.QUEUED if self.job.is_queued() else Progress.IDLE
 
-    def _print_status_message(self, build_num):
-        print(repr(self.job.name), "Status", self.progress_status().name, "- latest build:", '#' + str(build_num) if build_num else None)
+    def _status_message(self, build_num):
+        return self.repr_name() + " Status " + self.progress_status().name + " - latest build: " + '#' + str(build_num if build_num else None)
 
     def _prepare_to_invoke(self, reset_tried_times=False):
         super(_SingleJob, self)._prepare_to_invoke(reset_tried_times)
@@ -310,13 +312,13 @@ class _SingleJob(_JobControl):
 
         if build is None or build.buildno == self.old_build_num or build.is_running():
             if report_now:
-                self._print_status_message(build.buildno if build else self.old_build_num)
+                print(self._status_message(build.buildno if build else self.old_build_num))
             return
 
         # The job has stopped running
         print ("job", self, "stopped running")
         self.checking_status = Checking.FINISHED
-        self._print_status_message(build.buildno)
+        print(self._status_message(build.buildno))
         self.result = BuildResult[build.get_status()]
         url = build.get_result_url().replace('testReport/api/python', 'console').replace('testReport/api/json', 'console')
         if self.top_flow.direct_url:

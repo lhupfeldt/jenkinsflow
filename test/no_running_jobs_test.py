@@ -19,7 +19,7 @@ def test_no_running_jobs():
             with serial(api, timeout=70, job_name_prefix=api.job_name_prefix) as ctrl1:
                 ctrl1.invoke('j1')
 
-        assert "Job: jenkinsflow_test__no_running_jobs__j1 is in state RUNNING. It must be IDLE." in exinfo.value.message
+        assert "job: 'jenkinsflow_test__no_running_jobs__j1' is in state RUNNING. It must be IDLE." in exinfo.value.message
 
 
 def test_no_running_jobs_unchecked():
@@ -34,7 +34,7 @@ def test_no_running_jobs_unchecked():
             with serial(api, timeout=70, job_name_prefix=api.job_name_prefix) as ctrl1:
                 ctrl1.invoke_unchecked('j1')
 
-        assert "Job: jenkinsflow_test__no_running_jobs_unchecked__j1 is in state RUNNING. It must be IDLE." in exinfo.value.message
+        assert "unchecked job: 'jenkinsflow_test__no_running_jobs_unchecked__j1' is in state RUNNING. It must be IDLE." in exinfo.value.message
 
 
 def test_no_running_jobs_jobs_allowed():

@@ -134,7 +134,7 @@ class Build(TestBuild):
         return self.job.final_result.name
 
     def get_result_url(self):
-        return self.job.baseurl + '/mock/build/status'
+        return self.job.baseurl + '/' + str(self.buildno) + '/console'
 
     def __repr__(self):
         return self.job.name + " #" + repr(self.buildno) + " " + self.get_status()
