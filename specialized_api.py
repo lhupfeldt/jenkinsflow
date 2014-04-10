@@ -86,7 +86,7 @@ class ApiBuild(object):
         return self.dct['result']
 
     def get_result_url(self):
-        return self.job.public_uri + '/' + str(self.buildno)
+        return self.job.public_uri + '/' + str(self.buildno) + '/console'
 
     @property
     def buildno(self):
