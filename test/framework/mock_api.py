@@ -282,6 +282,8 @@ def api(file_name, jenkinsurl=os.environ.get('JENKINS_URL') or os.environ.get('H
 
     print()
     print("--- Preparing api for ", repr(job_name_prefix), "---")
+    global hyperspeed
+    hyperspeed = HyperSpeed()
     if hyperspeed.is_mocked:
         print('Using Mocked API')
         return MockApi(job_name_prefix, jenkinsurl)
