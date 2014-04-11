@@ -53,8 +53,8 @@ def validate_all_demos(execute_script=False):
 def run_tests(parallel, cov_rc_file):
     cmd = ['py.test', '--capture=sys', '--cov=' + here + '/..', '--cov-report=term-missing', '--cov-config=' + cov_rc_file, '--instafail', '--ff']
     if not parallel:
-        return subprocess.call(cmd)
-    return subprocess.call(cmd + ['-n', '8'])
+        return subprocess.check_call(cmd)
+    return subprocess.check_call(cmd + ['-n', '16'])
 
 
 def main():
@@ -66,30 +66,35 @@ def main():
         print("Warning: Some tests will fail!", file=sys.stderr)
 
     print("\nRunning tests")
-    if len(sys.argv) > 1:
-        sys.exit(subprocess.call(['py.test', '--capture=sys', '--instafail'] + sys.argv[1:]))
-
-    test_cfg.mock_default()
-    rc |= run_tests(False, here + '/.coverage_mocked_rc')
-    validate_all_demos()
-
-    test_cfg.unmock()
-    parallel = test_cfg.skip_job_load() | test_cfg.skip_job_delete()
-    rc |= run_tests(parallel, here + '/.coverage_real_rc')
-    validate_all_demos(execute_script=True)
-
-    print("\nTesting setup.py")
-    user = getpass.getuser()
-    install_prefix = '/tmp/' + user
-    tmp_packages_dir = install_prefix + '/lib/python2.7/site-packages'
-    os.environ['PYTHONPATH'] = tmp_packages_dir
-    if os.path.exists(tmp_packages_dir):
-        shutil.rmtree(tmp_packages_dir)
-    os.makedirs(tmp_packages_dir)
-    subprocess.check_call([sys.executable, jp(here, '../setup.py'), 'install', '--prefix', install_prefix])
-
-    if rc:
+    try:
+        if len(sys.argv) > 1:
+            sys.exit(subprocess.call(['py.test', '--capture=sys', '--instafail'] + sys.argv[1:]))
+        
+        test_cfg.mock_default()
+        run_tests(False, here + '/.coverage_mocked_rc')
+        validate_all_demos()
+        
+        test_cfg.unmock()
+        parallel = test_cfg.skip_job_load() | test_cfg.skip_job_delete()
+        if test_cfg.use_jenkinsapi():
+            run_tests(parallel, here + '/.coverage_jenkinsapi_rc')
+        else:
+            run_tests(parallel, here + '/.coverage_real_rc')
+        validate_all_demos(execute_script=True)
+        
+        print("\nTesting setup.py")
+        user = getpass.getuser()
+        install_prefix = '/tmp/' + user
+        tmp_packages_dir = install_prefix + '/lib/python2.7/site-packages'
+        os.environ['PYTHONPATH'] = tmp_packages_dir
+        if os.path.exists(tmp_packages_dir):
+            shutil.rmtree(tmp_packages_dir)
+        os.makedirs(tmp_packages_dir)
+        subprocess.check_call([sys.executable, jp(here, '../setup.py'), 'install', '--prefix', install_prefix])
+    except:
         print('*** ERROR: There were errors! Check output! ***', file=sys.stderr)
+        raise
+
     sys.exit(rc)
 
 

@@ -2,6 +2,7 @@
 # All rights reserved. This work is under a BSD license, see LICENSE.TXT.
 
 from __future__ import print_function
+from .specialized_api import UnknownJobException
 
 try:
     import tenjin
@@ -14,15 +15,9 @@ except ImportError:  # pragma: no cover
 def update_job(jenkins, job_name, config_xml, pre_delete=False, async=False):
     """config_xml: The config xml as a string"""
 
-    is_flow_rest_api = hasattr(jenkins, 'quick_poll')
-    if is_flow_rest_api:
-        from .specialized_api import UnknownJobException
-    else:
-        from jenkinsapi.custom_exceptions import UnknownJob as UnknownJobException
-
     try:
         if not pre_delete:
-            if is_flow_rest_api:  # TODO
+            if hasattr(jenkins, 'quick_poll'):  # TODO
                 jenkins.poll()
             job = jenkins.get_job(job_name)
             print('Updating job:', job_name)

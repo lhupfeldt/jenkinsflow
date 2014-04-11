@@ -24,4 +24,3 @@ omit =
      setup.py
      ordered_enum.py
      specialized_api.py
-     jenkinsapi_wrapper.py

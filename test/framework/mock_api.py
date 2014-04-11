@@ -16,14 +16,11 @@ from jenkinsflow.mocked import HyperSpeed
 import demo_security as security
 
 from jenkinsflow.test import test_cfg
-
-use_jenkinsapi = test_cfg.use_jenkinsapi()
-if use_jenkinsapi:
-    from jenkinsapi import jenkins
-    from jenkinsapi.custom_exceptions import UnknownJob as UnknownJobException
+if test_cfg.use_jenkinsapi():
+    from jenkinsflow import jenkinsapi_wrapper as jenkins
 else:
     from jenkinsflow import specialized_api as jenkins
-    from jenkinsflow.specialized_api import UnknownJobException
+from jenkinsflow.specialized_api import UnknownJobException
 
 from jenkinsflow.unbuffered import UnBuffered
 sys.stdout = UnBuffered(sys.stdout)
@@ -189,14 +186,14 @@ class JenkinsTestWrapperApi(jenkins.Jenkins, TestJenkins):
     job_xml_template = jp(here, 'job.xml.tenjin')
 
     def __init__(self, file_name, func_name, func_num_params, job_name_prefix, reload_jobs, pre_delete_jobs, jenkinsurl, direct_url,
-                 username, password, securitytoken):
+                 username, password, securitytoken, login):
         TestJenkins.__init__(self, job_name_prefix=job_name_prefix)
-        if use_jenkinsapi:
-            jenkins.Jenkins.__init__(self, jenkinsurl)
-            self.job_loader_jenkins = jenkins.Jenkins(jenkinsurl, username=username, password=password)
+        if login:
+            jenkins.Jenkins.__init__(self, direct_uri=direct_url, job_prefix_filter=job_name_prefix, username=username, password=password)
         else:
             jenkins.Jenkins.__init__(self, direct_uri=direct_url, job_prefix_filter=job_name_prefix)
-            self.job_loader_jenkins = jenkins.Jenkins(direct_uri=direct_url, job_prefix_filter=job_name_prefix, username=username, password=password)
+        self.job_loader_jenkins = jenkins.Jenkins(direct_uri=direct_url, job_prefix_filter=job_name_prefix, username=username, password=password)
+
         self.file_name = file_name
         self.func_name = func_name
         self.func_num_params = func_num_params
@@ -264,7 +261,7 @@ class JenkinsTestWrapperApi(jenkins.Jenkins, TestJenkins):
             raise UnknownJobException(name)
 
 
-def api(file_name, jenkinsurl=os.environ.get('JENKINS_URL') or os.environ.get('HUDSON_URL') or "http://localhost:8080"):
+def api(file_name, jenkinsurl=os.environ.get('JENKINS_URL') or os.environ.get('HUDSON_URL') or "http://localhost:8080", login=False):
     """Factory to create either Mock or Wrap api"""
     base_name = os.path.basename(file_name).replace('.pyc', '.py')
     job_name_prefix = _file_name_subst.sub('', base_name)
@@ -295,4 +292,4 @@ def api(file_name, jenkinsurl=os.environ.get('JENKINS_URL') or os.environ.get('H
         pre_delete_jobs = not test_cfg.skip_job_delete()
         direct_url = test_cfg.direct_url()
         return JenkinsTestWrapperApi(file_name, func_name, func_num_params, job_name_prefix, reload_jobs, pre_delete_jobs,
-                                     jenkinsurl, direct_url, security.username, security.password, security.securitytoken)
+                                     jenkinsurl, direct_url, security.username, security.password, security.securitytoken, login=login)
