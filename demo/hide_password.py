@@ -4,11 +4,11 @@
 # All rights reserved. This work is under a BSD license, see LICENSE.TXT.
 
 import demo_setup
-from jenkinsapi import jenkins
+demo_setup.sys_path()
 
 from jenkinsflow.flow import serial
-
 import demo_security as security
+
 
 def main(api):
     with serial(api, timeout=70, securitytoken=security.securitytoken, job_name_prefix='jenkinsflow_demo__hide_password__', report_interval=3, secret_params='.*PASS.*|.*pass.*') as ctrl:
@@ -21,5 +21,6 @@ def main(api):
 
 if __name__ == '__main__':
     import os
-    jenkins = jenkins.Jenkins(os.environ.get('JENKINS_URL') or os.environ.get('HUDSON_URL') or "http://localhost:8080")
+    from jenkinsflow.specialized_api import Jenkins
+    jenkins = Jenkins(os.environ.get('JENKINS_URL') or os.environ.get('HUDSON_URL') or "http://localhost:8080")
     main(jenkins)

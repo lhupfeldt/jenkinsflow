@@ -3,5 +3,7 @@
 import sys
 import os.path
 from os.path import join as jp
-here = os.path.dirname(__file__)
-sys.path.append(jp(here, '../..'))
+
+def sys_path():
+    here = os.path.dirname(__file__)
+    sys.path.append(jp(here, '../..'))

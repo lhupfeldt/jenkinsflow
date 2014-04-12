@@ -4,12 +4,9 @@
 # All rights reserved. This work is under a BSD license, see LICENSE.TXT.
 
 import demo_setup
-import os
-
-from jenkinsapi import jenkins
+demo_setup.sys_path()
 
 from jenkinsflow.flow import serial
-
 import demo_security as security
 
 def main(api):
@@ -35,5 +32,7 @@ def main(api):
 
 
 if __name__ == '__main__':
-    jenkins = jenkins.Jenkins(os.environ.get('JENKINS_URL') or os.environ.get('HUDSON_URL') or "http://localhost:8080")
+    import os
+    from jenkinsflow.specialized_api import Jenkins
+    jenkins = Jenkins(os.environ.get('JENKINS_URL') or os.environ.get('HUDSON_URL') or "http://localhost:8080")
     main(jenkins)

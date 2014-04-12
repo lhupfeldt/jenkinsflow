@@ -7,6 +7,7 @@
 
 from __future__ import print_function
 import demo_setup
+demo_setup.sys_path()
 
 from jenkinsflow.flow import serial
 import demo_security as security
