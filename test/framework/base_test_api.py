@@ -53,7 +53,7 @@ class TestJob(AbstractApiJob):
     def has_force_result_param(self):
         return self.max_fails > 0 or self.final_result
 
-    def invoke(self, securitytoken=None, block=False, invoke_pre_check_delay=3, build_params=None, cause=None):
+    def invoke(self, securitytoken=None, build_params=None, cause=None):
         self.build_params = build_params
         self.invocation += 1
         self.actual_order = TestJob._current_order
@@ -135,7 +135,7 @@ class TestJenkins(AbstractApiJenkins):
                         break
                     hyperspeed.sleep(0.01)
                     if hasattr(job, 'jenkins_resource'):
-                        job.jenkins_resource.job_poll(job.name)
+                        job.jenkins_resource.quick_poll()
                     else:
                         job.poll()
                 assert job.is_running(), "Job: " + job.name + " is expected to be running, but state is " + ('QUEUED' if job.is_queued() else 'IDLE')

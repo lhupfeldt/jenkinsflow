@@ -25,11 +25,14 @@ class ApiJob(object):
         for action in actions:
             if action.get('parameterDefinitions'):
                 self.build_trigger_path = "/job/" + self.name + "/buildWithParameters"
+                self.non_clickable_build_trigger_url = self.public_uri + " - /buildWithParameters"
                 break
         else:
             self.build_trigger_path = "/job/" + self.name + "/build"
+            self.non_clickable_build_trigger_url = self.public_uri + " - /build"
 
-    def invoke(self, securitytoken, block, invoke_pre_check_delay, build_params, cause):
+
+    def invoke(self, securitytoken, build_params, cause):
         try:
             params = {}
             if cause:
@@ -61,9 +64,6 @@ class ApiJob(object):
         self.build = ApiBuild(self, bld_dct)
         return self.build
 
-    def get_build_triggerurl(self):
-        return self.jenkins_resource.public_uri + self.build_trigger_path
-
     def update_config(self, config_xml):
         self.jenkins_resource.post("/job/" + self.name + "/config.xml", payload=config_xml)
 
@@ -85,7 +85,7 @@ class ApiBuild(object):
     def get_status(self):
         return self.dct['result']
 
-    def get_result_url(self):
+    def console_url(self):
         return self.job.public_uri + '/' + str(self.buildno) + '/console'
 
     @property
@@ -118,10 +118,6 @@ class Jenkins(Resource):
     def baseurl(self):
         return self.public_uri
 
-    @baseurl.setter
-    def baseurl(self, value):
-        self._public_uri = self._baseurl = value
-
     @property
     def public_uri(self):
         if not self._public_uri:
@@ -131,10 +127,6 @@ class Jenkins(Resource):
             print "dct:", dct
             self._public_uri = self._baseurl = dct['primaryView']['url'].rstrip('/')
         return self._public_uri
-
-    @public_uri.setter
-    def public_uri(self, value):
-        self._public_uri = self._baseurl = value
 
     def public_job_url(self, job_name):
         return self.public_uri + '/job/' + job_name
@@ -176,18 +168,11 @@ class Jenkins(Resource):
             if job:
                 job.dct = job_dct
             else:
-                # A new job was created while flow was running
-                self.job_poll(job_name)
-
-    def job_poll(self, job_name):
-        query = "lastBuild[number,building,result],inQueue,queueItem[why],actions[parameterDefinitions[name,type]]"
-        response = self.get("/job/" + job_name + "/api/json", tree=query)
-        job_dct = json.loads(response.body_string())
-        job = self.jobs.get(job_name)
-        if job:
-            job.dct = job_dct
-        else:
-            self._new_job(job_name, job_dct)
+                # A new job was created while flow was running, get the remaining properties
+                query = "lastBuild[number,building,result],inQueue,queueItem[why],actions[parameterDefinitions[name,type]]"
+                response = self.get("/job/" + job_name + "/api/json", tree=query)
+                job_dct = json.loads(response.body_string())
+                self._new_job(job_name, job_dct)
 
     def get_job(self, name):
         try:

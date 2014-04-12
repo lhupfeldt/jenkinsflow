@@ -13,7 +13,7 @@ os.environ['PYTHONPATH'] = ':'.join(extra_sys_path)
 from jenkinsflow.flow import JobControlFailException
 
 from jenkinsflow.test.framework import config
-from jenkinsflow.test import test_cfg
+from jenkinsflow.test import cfg as test_cfg
 
 import basic, calculated_flow, prefix, hide_password, errors
 
@@ -77,8 +77,10 @@ def main():
         test_cfg.unmock()
         parallel = test_cfg.skip_job_load() | test_cfg.skip_job_delete()
         if test_cfg.use_jenkinsapi():
+            print("Using jenkinsapi_wrapper")
             run_tests(parallel, here + '/.coverage_jenkinsapi_rc')
         else:
+            print("Using specialized_api")
             run_tests(parallel, here + '/.coverage_real_rc')
         validate_all_demos(execute_script=True)
         

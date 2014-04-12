@@ -14,7 +14,7 @@ from pytest import raises, xfail
 from jenkinsflow import set_build_result
 from jenkinsflow.flow import serial, Propagation
 from .framework import mock_api
-from . import test_cfg
+from . import cfg as test_cfg
 
 from demo_security import username, password
 

@@ -15,7 +15,7 @@ from jenkinsflow.mocked import HyperSpeed
 
 import demo_security as security
 
-from jenkinsflow.test import test_cfg
+from jenkinsflow.test import cfg as test_cfg
 if test_cfg.use_jenkinsapi():
     from jenkinsflow import jenkinsapi_wrapper as jenkins
 else:
@@ -43,8 +43,9 @@ class MockJob(TestJob):
         self.params = params
         self.just_invoked = False
 
-    def get_build_triggerurl(self):
-        return self.baseurl + ('/buildWithParameters' if self.params or self.has_force_result_param else '/build')
+    @property
+    def non_clickable_build_trigger_url(self):
+        return self.baseurl + (' - /buildWithParameters' if self.params or self.has_force_result_param else ' - /build')
 
     def is_running(self):
         return self.start_time <= hyperspeed.time() < self.end_time
@@ -64,10 +65,11 @@ class MockJob(TestJob):
             self.build = Build(self, self.build.buildno + 1)
 
     def get_last_build_or_none(self):
+        self.poll()
         return self.build
 
-    def invoke(self, securitytoken=None, block=False, invoke_pre_check_delay=3, build_params=None, cause=None):
-        super(MockJob, self).invoke(securitytoken, block, invoke_pre_check_delay, build_params, cause)
+    def invoke(self, securitytoken=None, build_params=None, cause=None):
+        super(MockJob, self).invoke(securitytoken, build_params, cause)
         assert not self.is_running()
         self.invocation_time = hyperspeed.time()
         self.start_time = self.invocation_time + self.invocation_delay
@@ -102,7 +104,7 @@ class WrapperJob(ObjectWrapper, TestJob):
         TestJob.__init__(self, exec_time=exec_time, max_fails=max_fails, expect_invocations=expect_invocations, expect_order=expect_order,
                          initial_buildno=None, invocation_delay=0.01, unknown_result=unknown_result, final_result=final_result, serial=serial)
 
-    def invoke(self, securitytoken=None, block=False, invoke_pre_check_delay=3, build_params=None, cause=None):
+    def invoke(self, securitytoken=None, build_params=None, cause=None):
         self.invocation_time = hyperspeed.time()
 
         if self.has_force_result_param:
@@ -112,8 +114,8 @@ class WrapperJob(ObjectWrapper, TestJob):
             if self.invocation >= self.max_fails:
                 build_params['force_result'] = 'SUCCESS' if self.final_result is None else self.final_result.name
 
-        self.__subject__.invoke(securitytoken, block, invoke_pre_check_delay=invoke_pre_check_delay, build_params=build_params, cause=cause)  # pylint: disable=no-member
-        TestJob.invoke(self, securitytoken, block, invoke_pre_check_delay, build_params, cause)
+        self.__subject__.invoke(securitytoken, build_params=build_params, cause=cause)  # pylint: disable=no-member
+        TestJob.invoke(self, securitytoken, build_params, cause)
 
 
 
@@ -132,7 +134,7 @@ class Build(TestBuild):
             return 'SUCCESS'
         return self.job.final_result.name
 
-    def get_result_url(self):
+    def console_url(self):
         return self.job.baseurl + '/' + str(self.buildno) + '/console'
 
     def __repr__(self):

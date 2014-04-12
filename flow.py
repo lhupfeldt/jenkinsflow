@@ -10,6 +10,7 @@ from collections import OrderedDict
 from enum import Enum
 from .ordered_enum import OrderedEnum
 from .set_build_result import set_build_result
+from .specialized_api import UnknownJobException
 from .mocked import HyperSpeed
 
 
@@ -225,7 +226,6 @@ class _SingleJob(_JobControl):
         self.old_build_num = None
         self.name = job_name_prefix + job_name
         self.repr_str = ("unchecked " if self.propagation == Propagation.UNCHECKED else "") + "job: " + repr(self.name)
-        self.non_clickable_build_trigger_url = None
         self.display_params = ((key, (value if not self.secret_params_re.search(key) else '******')) for key, value in self.params.iteritems())
         self.jenkins_baseurl = None
 
@@ -233,13 +233,8 @@ class _SingleJob(_JobControl):
 
     def _prepare_first(self, require_job=False):
         try:
-            if require_job:
-                if hasattr(self.api, 'job_poll'):
-                    self.api.poll_job(self.name)
-                else:
-                    self.api.poll()
             self.job = self.api.get_job(self.name)
-        except Exception as ex:
+        except UnknownJobException as ex:
             # TODO? stack trace
             if require_job or not self.allow_missing_jobs:
                 self.checking_status = Checking.FINISHED
@@ -255,13 +250,7 @@ class _SingleJob(_JobControl):
             # Pylint does not like Enum pylint: disable=no-member
             raise JobNotIdleException(repr(self) + " is in state " + pgstat.name + ". It must be " + Progress.IDLE.name + '.')
 
-        url = self.job.get_build_triggerurl()
-        # Insert ' - ' so that the build URL is not directly clickable, but will instead point to the job
-        self.non_clickable_build_trigger_url = url.replace(self.job.name, self.job.name + ' - ')
-
         print(self.indentation + self._status_message(self.old_build_num))
-        if self.top_flow.direct_url:
-            self.jenkins_baseurl = self.job.baseurl.replace('/job/' + self.name, '')
 
     def __repr__(self):
         return self.repr_str
@@ -285,29 +274,15 @@ class _SingleJob(_JobControl):
         if self._must_invoke_set_invocation_time():
             # Don't re-invoke unchecked jobs that are still running
             if self.propagation != Propagation.UNCHECKED or not self.job.is_running():
-                self._invocation_message('Job', self.non_clickable_build_trigger_url)
+                self._invocation_message('Job', self.job.non_clickable_build_trigger_url)
                 build_params = self.params if self.params else None
                 for key, value in self.display_params:
                     print("    ", key, '=', repr(value))
                 if build_params:
                     print("")
+                self.job.invoke(securitytoken=self.securitytoken, build_params=build_params, cause=self.top_flow.cause)
 
-                if self.top_flow.direct_url:
-                    self.job.baseurl = self.top_flow.direct_url + '/job/' + self.name
-                self.job.invoke(securitytoken=self.securitytoken, invoke_pre_check_delay=0, block=False, build_params=build_params, cause=self.top_flow.cause)
-
-        for ii in range(1, 20):
-            try:
-                self.job.poll()
-                build = self.job.get_last_build_or_none()
-                break
-            except KeyError as ex:  # pragma: no cover
-                # Workaround for jenkinsapi timing dependency?
-                if ii == 1:
-                    print("poll or get_last_build_or_none' failed: " + str(ex) + ", retrying.")
-                    traceback.print_exc()
-                hyperspeed.sleep(0.1)
-
+        build = self.job.get_last_build_or_none()
         if build is None or build.buildno == self.old_build_num or build.is_running():
             if report_now:
                 print(self._status_message(build.buildno if build else self.old_build_num))
@@ -318,10 +293,7 @@ class _SingleJob(_JobControl):
         self.checking_status = Checking.FINISHED
         print(self._status_message(build.buildno))
         self.result = BuildResult[build.get_status()]
-        url = build.get_result_url().replace('testReport/api/python', 'console').replace('testReport/api/json', 'console')
-        if self.top_flow.direct_url:
-            url = url.replace(self.top_flow.direct_url, self.jenkins_baseurl)
-        print(str(build.get_status()) + ":", repr(self.job.name), "- build:", url, self._time_msg())
+        print(str(build.get_status()) + ":", repr(self.job.name), "- build:", build.console_url(), self._time_msg())
 
         if self.result == BuildResult.FAILURE:
             raise FailedSingleJobException(self.job, self.propagation)
@@ -708,8 +680,7 @@ class _TopLevelControllerMixin(object):
         sleep_time = min(self.poll_interval, self.report_interval)
         try:
             while self.checking_status == Checking.MUST_CHECK:
-                if hasattr(self.api, 'quick_poll'):
-                    self.api.quick_poll()
+                self.api.quick_poll()
                 self._check(None)
                 hyperspeed.sleep(sleep_time)
         finally:
