@@ -91,6 +91,7 @@ def main():
             shutil.rmtree(tmp_packages_dir)
         os.makedirs(tmp_packages_dir)
         subprocess.check_call([sys.executable, jp(here, '../setup.py'), 'install', '--prefix', install_prefix])
+        shutil.rmtree(jp(here, '../build'))
     except:
         print('*** ERROR: There were errors! Check output! ***', file=sys.stderr)
         raise
