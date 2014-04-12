@@ -252,6 +252,14 @@ class _SingleJob(_JobControl):
 
         print(self.indentation + self._status_message(self.old_build_num))
 
+    def _show_job_definition(self):
+        print('Defined Job', self.job.non_clickable_build_trigger_url if self.job else (repr(self.name) + " - MISSING JOB"))
+        build_params = self.params if self.params else None
+        for key, value in self.display_params:
+            print("    ", key, '=', repr(value))
+        if build_params:
+            print("")
+
     def __repr__(self):
         return self.repr_str
 
@@ -274,13 +282,8 @@ class _SingleJob(_JobControl):
         if self._must_invoke_set_invocation_time():
             # Don't re-invoke unchecked jobs that are still running
             if self.propagation != Propagation.UNCHECKED or not self.job.is_running():
-                self._invocation_message('Job', self.job.non_clickable_build_trigger_url)
-                build_params = self.params if self.params else None
-                for key, value in self.display_params:
-                    print("    ", key, '=', repr(value))
-                if build_params:
-                    print("")
-                self.job.invoke(securitytoken=self.securitytoken, build_params=build_params, cause=self.top_flow.cause)
+                self._invocation_message('Job', repr(self.name))
+                self.job.invoke(securitytoken=self.securitytoken, build_params=self.params if self.params else None, cause=self.top_flow.cause)
 
         build = self.job.get_last_build_or_none()
         if build is None or build.buildno == self.old_build_num or build.is_running():
@@ -369,6 +372,10 @@ class _Flow(_JobControl):
         for job in self.jobs:
             job._prepare_first()
         print(self.indentation + self._exit_str)
+
+    def _show_job_definition(self):
+        for job in self.jobs:
+            job._show_job_definition()
 
     def _final_status(self):
         print(self.indentation + self._enter_str)
@@ -667,6 +674,8 @@ class _TopLevelControllerMixin(object):
         print("--- Getting initial job status ---")
         self.api.poll()
         self._prepare_first()
+
+        self._show_job_definition()
 
         if self.json_file:
             self.json(self.json_file, self.json_indent)

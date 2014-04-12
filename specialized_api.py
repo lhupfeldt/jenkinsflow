@@ -25,11 +25,11 @@ class ApiJob(object):
         for action in actions:
             if action.get('parameterDefinitions'):
                 self.build_trigger_path = "/job/" + self.name + "/buildWithParameters"
-                self.non_clickable_build_trigger_url = self.public_uri + " - /buildWithParameters"
+                self.non_clickable_build_trigger_url = self.public_uri + " - parameters:"
                 break
         else:
             self.build_trigger_path = "/job/" + self.name + "/build"
-            self.non_clickable_build_trigger_url = self.public_uri + " - /build"
+            self.non_clickable_build_trigger_url = self.public_uri
 
 
     def invoke(self, securitytoken, build_params, cause):

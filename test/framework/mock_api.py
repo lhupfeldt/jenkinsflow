@@ -45,7 +45,7 @@ class MockJob(TestJob):
 
     @property
     def non_clickable_build_trigger_url(self):
-        return self.baseurl + (' - /buildWithParameters' if self.params or self.has_force_result_param else ' - /build')
+        return self.baseurl + (' - parameters:' if self.params or self.has_force_result_param else '')
 
     def is_running(self):
         return self.start_time <= hyperspeed.time() < self.end_time

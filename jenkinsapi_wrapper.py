@@ -36,9 +36,8 @@ class ApiJob(ObjectWrapper, jenkinsapi.job.Job):
 
     def __init__(self, jenkins_job):
         ObjectWrapper.__init__(self, jenkins_job)
-        url = jenkins_job.get_build_triggerurl()
-        # Insert ' - ' so that the build URL is not directly clickable, but will instead point to the job
-        self.non_clickable_build_trigger_url = url.replace(jenkins_job.name, jenkins_job.name + ' - ')
+        params = jenkins_job.get_params_list()
+        self.non_clickable_build_trigger_url = self.baseurl if not params else self.baseurl + " - parameters:"
 
     def invoke(self, securitytoken, build_params, cause):
         self.__subject__.invoke(securitytoken=securitytoken, invoke_pre_check_delay=0, block=False, build_params=build_params, cause=cause)
