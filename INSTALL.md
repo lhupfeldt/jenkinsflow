@@ -2,11 +2,25 @@ Installation
 ------------
 In the following Jenkins also means Hudson unless otherwise stated.
 
-1. Install jenkinsapi python library and other dependencies:
-   pip install jenkinsapi enum34
-   # Jenkinsapi can be found here https://github.com/salimfadhley/jenkinsapi
+1. The easy way:
+   python setup.py install
+
+   To uninstall:
+   pip uninstall jenkinsflow
+
+Jenkinsflow can use it's own 'specialized_api' or the generic 'jenkinsapi' (through the jenkinsapi_wrapper)
+to access jenkins. For most use cases the specialized_api should perform better and put less load on Jenkins.
+There may be some setups (e.g. thusands of jobs and few builds per job) where jenkinsapi will perform better.
+
+2. Manually:
+2.1. Install dependencies:
+   To use 'specialized_api':
+   pip install enum34 restkit
    optional: pip install tenjin (if you want to use the template based job loader)
 
+   To use 'jenkinsapi':
+   pip install enum34 jenkinsapi proxytypes
+   # Jenkinsapi can be found here https://github.com/salimfadhley/jenkinsapi
    Note: If jenkinsapi is placed next to jenkinsflow, that version of jenkinsapi will be used for the tests.
 
    Note: if you use Hudson (3.x):
@@ -15,22 +29,24 @@ In the following Jenkins also means Hudson unless otherwise stated.
          checkout the 'hudson_support' branch
       b. You need to install the REST API plugin and enable REST API
 
-2. To use the experimental visualisation feature:
+2.2. To use the experimental visualisation feature:
    pip install bottle atomicfile
 
-3. Make jenkinsflow files (flow.py and possibly unbuffered.py) available to your Jenkins installation.
+2.3. Make jenkinsflow files (flow.py and possibly unbuffered.py) available to your Jenkins installation.
 
-4. To use propagation=Propagation.FAILURE_TO_UNSTABLE feature, Jenkins URL must be set in Jenkins configuration.
+2.4. To use propagation=Propagation.FAILURE_TO_UNSTABLE feature, Jenkins URL must be set in Jenkins configuration.
    Note that this feature uses the 'cli' which has problems working over a proxy.
 
-5. Read the file demo/demo_security.py for notes about security, if you have enabled security on your Jenkins
+2.5. Read the file demo/demo_security.py for notes about security, if you have enabled security on your Jenkins
 
-6. All set! You can now create jobs that have a shell execution step, which will a use this library to control the running of other jobs.
+2.6. All set! You can now create jobs that have a shell execution step, which will a use this library to control the running of other jobs.
    See the demo directory for example flows. The demo jobs can be loaded by running tests, see below.
+
 
 Note: I think jenkinsflow should work on Windows, but it has not been tested.
    I'm SURE the test/test.py script will fail on Windows. There are a few Linux/Unix bits in the test setup. Check test/framework/config.py and
    test/tmp_install.sh. Patches are welcome:)
+
 
 Test
 ----
