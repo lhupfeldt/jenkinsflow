@@ -1,9 +1,14 @@
 # Copyright (c) 2012 - 2014 Lars Hupfeldt Nielsen, Hupfeldt IT
 # All rights reserved. This work is under a BSD license, see LICENSE.TXT.
 
+import traceback
 import jenkinsapi
 from peak.util.proxies import ObjectWrapper
 from .specialized_api import UnknownJobException
+from .mocked import HyperSpeed
+
+
+hyperspeed = HyperSpeed()
 
 
 class Jenkins(jenkinsapi.jenkins.Jenkins):
