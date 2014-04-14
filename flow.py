@@ -3,7 +3,7 @@
 
 from __future__ import print_function
 
-import os, re, abc, traceback
+import os, re, abc
 from os.path import join as jp
 from collections import OrderedDict
 
