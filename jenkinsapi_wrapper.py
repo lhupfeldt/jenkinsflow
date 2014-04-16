@@ -1,6 +1,8 @@
 # Copyright (c) 2012 - 2014 Lars Hupfeldt Nielsen, Hupfeldt IT
 # All rights reserved. This work is under a BSD license, see LICENSE.TXT.
 
+from __future__ import print_function
+
 import traceback
 import jenkinsapi
 from peak.util.proxies import ObjectWrapper
@@ -45,13 +47,13 @@ class ApiJob(ObjectWrapper, jenkinsapi.job.Job):
         self.non_clickable_build_trigger_url = self.baseurl if not params else self.baseurl + " - parameters:"
 
     def invoke(self, securitytoken, build_params, cause):
-        self.__subject__.invoke(securitytoken=securitytoken, invoke_pre_check_delay=0, block=False, build_params=build_params, cause=cause)
+        self.__subject__.invoke(securitytoken=securitytoken, invoke_pre_check_delay=0, block=False, build_params=build_params, cause=cause)  # pylint: disable=no-member
 
     def get_last_build_or_none(self):
         for ii in range(1, 20):
             try:
-                self.__subject__.poll()
-                build = self.__subject__.get_last_build_or_none()
+                self.__subject__.poll()  # pylint: disable=no-member
+                build = self.__subject__.get_last_build_or_none()  # pylint: disable=no-member
                 return ApiBuild(build, self) if build is not None else build
             except KeyError as ex:  # pragma: no cover
                 # Workaround for jenkinsapi timing dependency?
