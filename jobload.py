@@ -13,7 +13,14 @@ except ImportError:  # pragma: no cover
 
 
 def update_job(jenkins, job_name, config_xml, pre_delete=False, async=False):
-    """config_xml: The config xml as a string"""
+    """Update or create a job in Jenkins.
+
+    Args:
+        jenkins (specialized_api.Jenkins): Jenkins Api instance used for accessing jenkins.
+        job_name (str): The name of the job.
+        config_xml (str): The Jenkins job config xml.
+        pre_delete (boolean): I the job exists it will be deleted and re-created instead of being updated.
+    """
 
     try:
         if not pre_delete:
@@ -36,11 +43,15 @@ def update_job(jenkins, job_name, config_xml, pre_delete=False, async=False):
 
 
 def update_job_from_template(jenkins, job_name, config_xml_template, pre_delete=False, async=False, context=None):
+    """Create or update a job based on a Tenjin config.xml template.
+
+    Args:
+        config_xml_template (str): Filename of tenjin config.xml template.
+        context (dict): Values to be used for template substitution.
+
+    See :py:func:`.update_job` for other parameters.
     """
-    Create or update a job based on a Tenjin template
-    config_xml_template: filename of tenjin xml template
-    params: tuple of tuples (name, value, description)
-    """
+
     assert engine, "You must install tenjin (e.g.: pip install tenjin)"
     config_xml = engine.render(config_xml_template, context or {})
     update_job(jenkins, job_name, config_xml, pre_delete, async)

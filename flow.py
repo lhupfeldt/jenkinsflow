@@ -352,17 +352,95 @@ class _Flow(_JobControl):
         self._failed_child_jobs = {}
 
     def parallel(self, timeout=0, securitytoken=None, job_name_prefix='', max_tries=1, propagation=Propagation.NORMAL, report_interval=None, secret_params=None, allow_missing_jobs=None):
+        """Defines a parallel flow where nested jobs or flows are executed simultaneously.
+
+        Only differences to :py:meth:`.serial` are described.
+
+        Args:
+            max_tries (int): Maximum number of times to invoke the jobs in the flow. Default is 1, meaning no retry will be attempted in case jobs fails.
+                If a job fails it is immediately retried::
+
+                    with parallel(..., max_tries=3) as sf:
+                        sf.invoke('a', ...)
+                        sf.invoke('b', ...)  # fail -> restart job 'b'
+                        sf.invoke('c', ...)
+
+        Returns:
+            parallel flow object
+        """
+
         return _Parallel(self, timeout, securitytoken, job_name_prefix, max_tries, propagation, report_interval, secret_params, allow_missing_jobs)
 
     def serial(self, timeout=0, securitytoken=None, job_name_prefix='', max_tries=1, propagation=Propagation.NORMAL, report_interval=None, secret_params=None, allow_missing_jobs=None):
+        """Defines a serial flow where nested jobs or flows are executed in order.
+
+        Args:
+            timeout (float): Maximun time in seconds to wait for flow jobs to finish. 0 means infinite, however, this flow can not run longer than the minimum timeout of any parent flows.
+                Note that jenkins jobs are NOT terminated when the flow times out.
+            securitytoken (str): Token to use on security enabled Jenkins instead of username/password. The Jenkins job must have the token configured.
+                If None, the parent flow securitytoken is used.
+            job_name_prefix (str): All jobs defined in flow will automatically be prefixed with the parent flow job_name_prefix + this job_name_prefix before invoking Jenkins job.
+            max_tries (int): Maximum number of times to invoke the flow. Default is 1, meaning no retry will be attempted in case a job fails.
+                If a job fails, jobs are retried from start of the parallel flow::
+
+                    with serial(..., max_tries=3) as sf:
+                        sf.invoke('a', ...)
+                        sf.invoke('b', ...)  # fail -> restart flow from job 'a'
+                        sf.invoke('c', ...)
+
+                Retries may be nested::
+
+                    with parallel(..., max_tries=2) as sf:
+                        with sf.serial(..., max_tries=3) as sf:
+                            sf.invoke('a', ...)  # If a fails it could be invoked up to 6 times
+
+            propagation (Propagation): How to propagate errors from failed Jenkins jobs. This will not change the result of the failed job itself,
+                but only the result of the Jenkins job running the flow (if it is being run from a Jenkins job).
+            report_interval (float): The interval in seconds between reporting the status of polled Jenkins jobs.
+                If None the parent flow report_interval is used.
+            secret_params (re.RegexObject): Regex of Jenkins job invocation parameter names, for which the value will be masked out with '******' when parameters are printed.
+                If None the parent flow secret_params is used.
+            allow_missing_jobs (boolean): If true it is not considered an error if Jenkins jobs are missing when the flow starts.
+                It is assumed that the missing jobs are created by jobs in the flow, prior to the missing jobs being invoked.
+                If None the parent flow allow_missing_jobs is used.
+
+        Returns:
+            serial flow object
+
+        Raises:
+            JobControlException
+        """
+
         assert isinstance(propagation, Propagation)
         return _Serial(self, timeout, securitytoken, job_name_prefix, max_tries, propagation, report_interval, secret_params, allow_missing_jobs)
 
     def invoke(self, job_name, **params):
+        """Define a Jenkins job that will be invoked under control of the surrounding flow.
+        
+        This does not create the job in Jenkins. It defines how the job will be invoked by ``jenkinsflow``.
+
+        Args:
+            job_name (str): The last part of the name of the job in jenkins.
+                If the surrounding flow sets the :py:obj:`job_name_prefix` the actual name of the invoked job will be the parent flow job_name_prefix + job_name.
+            **params (str, int, boolean): Arguments passed to Jenkins when invoking the job. Strings are passed as they are,
+                booleans are automatically converted to strings and lowercased, integers are automatically converted to strings.
+        """
+
         job = _SingleJob(self, self.securitytoken, self.job_name_prefix, self.max_tries, job_name, params, self.propagation, self.secret_params_re, self.allow_missing_jobs)
         self.jobs.append(job)
 
     def invoke_unchecked(self, job_name, **params):
+        """Define a Jenkins job that will be invoked under control of the surrounding flow, but will never cause the flow to fail.
+
+        The job is always run in parallel with other jobs in the flow, even when invoked in a serial flow.
+        It is not started out of order, but following jobs will be started immediately after this is started.
+        The job will be monitored and reported on, only as long as regular "checked" jobs are still running.
+        If it fails, it may be retried (depending on surrounding flows max_tries option), but only as long as regular jobs are still running.
+        If the job is still running when all normal jobs are finished, the flow will exit, and the job is left running.
+
+        See :py:meth:`invoke` for parameter description.
+        """
+
         job = _SingleJob(self, self.securitytoken, self.job_name_prefix, self.max_tries, job_name, params, Propagation.UNCHECKED, self.secret_params_re, self.allow_missing_jobs)
         self.jobs.append(job)
 
@@ -702,6 +780,11 @@ class _TopLevelControllerMixin(object):
 
 
 class parallel(_Parallel, _TopLevelControllerMixin):
+    """Defines a parallel flow where nested jobs or flows are executed simultaneously.
+
+    See :py:class:`serial` and :py:meth:`_Flow.parallel` for a description.
+    """
+
     def __init__(self, jenkins_api, timeout, securitytoken=None, username=None, password=None, job_name_prefix='', max_tries=1, propagation=Propagation.NORMAL,
                  report_interval=_default_report_interval, poll_interval=_default_poll_interval, secret_params=_default_secret_params_re, allow_missing_jobs=False,
                  json_dir=None, json_indent=None, json_strip_top_level_prefix=True, direct_url=None, require_idle=True, just_dump=False):
@@ -718,6 +801,35 @@ class parallel(_Parallel, _TopLevelControllerMixin):
 
 
 class serial(_Serial, _TopLevelControllerMixin):
+    """Defines a serial flow where nested jobs or flows are executed in order.
+
+    Only differences to  :py:meth:`_Flow.serial` are described.
+
+    Args:
+        jenkins_api (specialized_api.Jenkins or compatible): Jenkins Api instance used for accessing jenkins.
+        securitytoken (str): Token to use on security enabled Jenkins instead of username/password. The Jenkins job must have the token configured.
+        username (str): Name of user authorized to run Jenkins 'cli' and change job status.
+        password (str): Password of user.
+            The username/password here is are not used for running the jobs. See specialized_api for that.
+        job_name_prefix (str): All jobs defined in flow will automatically be prefixed with this string before invoking Jenkins job.
+        poll_interval (float): The interval in seconds between polling the status of unfinished Jenkins jobs.
+        allow_missing_jobs (boolean): If true it is not considered an error if Jenkins jobs are missing when the flow starts.
+            It is assumed that the missing jobs are created by other jobs in the flow
+        json_dir (str): Directory in which to generate flow graph json file. If None, no flow graph is generated.
+        json_indent (int): If not None json graph file is pretty printed with this indentation level.
+        json_strip_top_level_prefix (boolean): If True, the job_name_prefix will be stripped from job names when generating json graph file
+        direct_url (str): Non proxied url for accessing Jenkins
+            Propagation.WARNING requires this as it uses the Jenkins cli, which will not work through a proxy, to set the build result
+        require_idle (boolean): If True it is considered an error if any of the jobs in the flow are running when the flow starts
+        just_dump (boolean): If True, the flow is just printed, no jobs are invoked.
+
+    Returns:
+        serial flow object
+
+    Raises:
+        JobControlException
+    """
+
     def __init__(self, jenkins_api, timeout, securitytoken=None, username=None, password=None, job_name_prefix='', max_tries=1, propagation=Propagation.NORMAL,
                  report_interval=_default_report_interval, poll_interval=_default_poll_interval, secret_params=_default_secret_params_re, allow_missing_jobs=False,
                  json_dir=None, json_indent=None, json_strip_top_level_prefix=True, direct_url=None, require_idle=True, just_dump=False):

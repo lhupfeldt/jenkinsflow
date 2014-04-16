@@ -97,11 +97,19 @@ class ApiBuild(object):
 
 
 class Jenkins(Resource):
+    """Optimized minimal set of methods needed for jenkinsflow to access Jenkins jobs.
+
+    Args:
+        direct_uri (str): Should be a non-proxied uri if possible (e.g. http://localhost:<port> if flow job is running on master)
+            The public URI will be retrieved from Jenkins and used in output.
+        job_prefix_filter (str): Jobs with names that don't start with this string, will be skpped when polling Jenkins.
+            If you are using Hudson and have many jobs, it might be a good idea to enable Team support and create a job-runner user,
+            which only has access to the jobs in the flow that it is executing. That way the job list will be filtered serverside.
+        username (str): Name of user authorized to execute all jobs in flow.
+        password (str): Password of user.
+    """
+
     def __init__(self, direct_uri, job_prefix_filter=None, username=None, password=None, **kwargs):
-        """
-        direct_uri should be a non-proxied uri if possible (e.g. http://localhost:<port> if flow job is running on master)
-        The public_uri will be retrieved from Jenkins and used in output
-        """
         if username or password:
             if not (username and password):
                 raise Exception("You must specify both username and password or neither")

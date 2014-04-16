@@ -14,6 +14,11 @@ hyperspeed = HyperSpeed()
 
 
 class Jenkins(jenkinsapi.jenkins.Jenkins):
+    """Wrapper around ``jenkinsapi.Jenkins`` which may be used for jenkinsflow to access Jenkins jobs.
+
+    For parameters see :py:class:`specialized_api.Jenkins`.
+    """
+
     job_prefix_filter = direct_uri = None
 
     def __init__(self, direct_uri, job_prefix_filter=None, username=None, password=None):
