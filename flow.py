@@ -806,7 +806,7 @@ class serial(_Serial, _TopLevelControllerMixin):
     Only differences to  :py:meth:`_Flow.serial` are described.
 
     Args:
-        jenkins_api (specialized_api.Jenkins or compatible): Jenkins Api instance used for accessing jenkins.
+        jenkins_api (:py:class:`.specialized_api.Jenkins` or :py:class:`.jenkinsapi_wrapper.Jenkins`): Jenkins Api instance used for accessing jenkins.
         securitytoken (str): Token to use on security enabled Jenkins instead of username/password. The Jenkins job must have the token configured.
         username (str): Name of user authorized to run Jenkins 'cli' and change job status.
         password (str): Password of user.

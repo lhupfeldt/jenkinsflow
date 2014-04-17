@@ -6,9 +6,9 @@
 Welcome to jenkinsflow's documentation!
 =======================================
 
-The jenkinsflow package is used for controlling the invocation of Jenkins jobs in complex parallel and serial "flows".
+The jenkinsflow package is used for controlling the invocation of `Jenkins <http://jenkins-ci.org/>`_ jobs in complex parallel and serial "flows".
 This effectively replaces the upstream/downstream dependencies in Jenkins with a fully scripted flow.
-Despite the name, this package may also be used with Hudson.
+Despite the name, this package may also be used with `Hudson <http://hudson-ci.org/>`_.
 
 Module contents
 ---------------
