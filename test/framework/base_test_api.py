@@ -3,7 +3,7 @@
 
 from __future__ import print_function
 
-import abc, os
+import abc
 from collections import OrderedDict
 
 from .abstract_api import AbstractApiJob, AbstractApiBuild as TestBuild, AbstractApiJenkins
