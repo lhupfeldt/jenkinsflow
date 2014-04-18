@@ -104,3 +104,13 @@ Demos
    The 'visual' feature is still experimental and does not yet show live info about the running flow/jobs
 
    If you run ...0flow jobs that generate graphs from Jenkins the json graph file will be put in the workspace
+
+
+Documentation
+----
+
+1. Install sphinx and extensions
+   pip install sphinx sphinxcontrib-napoleon sphinx-argparse
+
+2. cd doc/source
+   make html (or some other format supported by sphinx)
