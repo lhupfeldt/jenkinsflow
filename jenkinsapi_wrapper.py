@@ -14,7 +14,7 @@ hyperspeed = HyperSpeed()
 
 
 class Jenkins(jenkinsapi.jenkins.Jenkins):
-    """Wrapper around ``jenkinsapi.Jenkins`` which may be used for jenkinsflow to access Jenkins jobs.
+    """Wrapper around `jenkinsapi.jenkins.Jenkins <https://pypi.python.org/pypi/jenkinsapi>`_ which may be used for jenkinsflow to access Jenkins jobs.
 
     For parameters see :py:class:`.specialized_api.Jenkins`.
     """
