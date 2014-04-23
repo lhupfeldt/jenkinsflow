@@ -11,6 +11,10 @@ from .framework.utils import assert_lines_in
 hyperspeed = HyperSpeed()
 
 
+def num_console(num, api):
+    return str(num) + "/console" if api.is_mocked else ""
+
+
 def test_reporting_job_status(capsys):
     with mock_api.api(__file__) as api:
         api.flow_job()
@@ -53,10 +57,10 @@ def test_reporting_invocation_serial(capsys):
             "Defined Job http://x.x/job/jenkinsflow_test__reporting_invocation_serial__j12",
             "",
             "--- Starting flow ---",
-            "",           
+            "",
             "Invoking Flow (1/1,1/1): ['jenkinsflow_test__reporting_invocation_serial__j11', 'jenkinsflow_test__reporting_invocation_serial__j12']",
-            "Invoking Job (1/1,1/1): 'jenkinsflow_test__reporting_invocation_serial__j11'",
-            "Invoking Job (1/1,1/1): 'jenkinsflow_test__reporting_invocation_serial__j12'"
+            "Invoking Job (1/1,1/1): http://x.x/job/jenkinsflow_test__reporting_invocation_serial__j11/" + num_console(1, api),
+            "Invoking Job (1/1,1/1): http://x.x/job/jenkinsflow_test__reporting_invocation_serial__j12/" + num_console(8, api),
         )
 
 
@@ -74,8 +78,8 @@ def test_reporting_invocation_parallel(capsys):
         assert_lines_in(
             sout,
             "Invoking Flow (1/1,1/1): ('jenkinsflow_test__reporting_invocation_parallel__j11', 'jenkinsflow_test__reporting_invocation_parallel__j12')",
-            "Invoking Job (1/1,1/1): 'jenkinsflow_test__reporting_invocation_parallel__j11'",
-            "Invoking Job (1/1,1/1): 'jenkinsflow_test__reporting_invocation_parallel__j12'"
+            "Invoking Job (1/1,1/1): http://x.x/job/jenkinsflow_test__reporting_invocation_parallel__j11/" + num_console(1, api),
+            "Invoking Job (1/1,1/1): http://x.x/job/jenkinsflow_test__reporting_invocation_parallel__j12/" + num_console(8, api)
         )
 
 
@@ -113,29 +117,29 @@ def test_reporting_retry(capsys):
         assert_lines_in(
             sout,
             "Invoking Flow (1/2,1/2): " + outer_flow_repr,
-            "Invoking Job (1/2,1/2): 'jenkinsflow_test__reporting_retry__j11_fail'",
+            "Invoking Job (1/2,1/2): http://x.x/job/jenkinsflow_test__reporting_retry__j11_fail/" + num_console(1, api),
             "FAILURE: 'jenkinsflow_test__reporting_retry__j11_fail'",
             "RETRY: job: 'jenkinsflow_test__reporting_retry__j11_fail' failed, retrying child jobs from beginning. Up to 1 more times in current flow",
-            "Invoking Job (2/2,2/2): 'jenkinsflow_test__reporting_retry__j11_fail'",
+            "Invoking Job (2/2,2/2): http://x.x/job/jenkinsflow_test__reporting_retry__j11_fail/" + num_console(2, api),
             "SUCCESS: 'jenkinsflow_test__reporting_retry__j11_fail'",
-            "Invoking Job (1/3,1/6): 'jenkinsflow_test__reporting_retry__j23'",
+            "Invoking Job (1/3,1/6): http://x.x/job/jenkinsflow_test__reporting_retry__j23/" + num_console(1, api),
             "SUCCESS: 'jenkinsflow_test__reporting_retry__j23'",
-            "Invoking Job (1/2,1/2): 'jenkinsflow_test__reporting_retry__j13'",
+            "Invoking Job (1/2,1/2): http://x.x/job/jenkinsflow_test__reporting_retry__j13/" + num_console(1, api),
             "SUCCESS " + outer_flow_repr
         )
 
         assert_lines_in(
             sout,
-            "Invoking Job (1/2,1/12): 'jenkinsflow_test__reporting_retry__j31_fail'",
+            "Invoking Job (1/2,1/12): http://x.x/job/jenkinsflow_test__reporting_retry__j31_fail/" + num_console(1, api),
             "FAILURE: 'jenkinsflow_test__reporting_retry__j31_fail'",
             "RETRY: job: 'jenkinsflow_test__reporting_retry__j31_fail' failed, retrying child jobs from beginning. Up to 1 more times in current flow",
-            "Invoking Job (2/2,2/12): 'jenkinsflow_test__reporting_retry__j31_fail'",
+            "Invoking Job (2/2,2/12): http://x.x/job/jenkinsflow_test__reporting_retry__j31_fail/" + num_console(2, api),
             "FAILURE: 'jenkinsflow_test__reporting_retry__j31_fail'",
             "RETRY: job: 'jenkinsflow_test__reporting_retry__j31_fail' failed, retrying child jobs from beginning. Up to 10 more times through outer flow",
-            "Invoking Job (1/2,3/12): 'jenkinsflow_test__reporting_retry__j31_fail'",
+            "Invoking Job (1/2,3/12): http://x.x/job/jenkinsflow_test__reporting_retry__j31_fail/" + num_console(3, api),
             "FAILURE: 'jenkinsflow_test__reporting_retry__j31_fail'",
             "RETRY: job: 'jenkinsflow_test__reporting_retry__j31_fail' failed, retrying child jobs from beginning. Up to 1 more times in current flow",
-            "Invoking Job (2/2,4/12): 'jenkinsflow_test__reporting_retry__j31_fail'",
+            "Invoking Job (2/2,4/12): http://x.x/job/jenkinsflow_test__reporting_retry__j31_fail/" + num_console(4, api),
             "SUCCESS: 'jenkinsflow_test__reporting_retry__j31_fail'"
         )
 

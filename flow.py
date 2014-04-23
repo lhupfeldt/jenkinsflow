@@ -282,7 +282,7 @@ class _SingleJob(_JobControl):
         if self._must_invoke_set_invocation_time():
             # Don't re-invoke unchecked jobs that are still running
             if self.propagation != Propagation.UNCHECKED or not self.job.is_running():
-                self._invocation_message('Job', repr(self.name))
+                self._invocation_message('Job', self.job.console_url(self.old_build_num + 1 if self.old_build_num else 1))
                 self.job.invoke(securitytoken=self.securitytoken, build_params=self.params if self.params else None, cause=self.top_flow.cause)
 
         build = self.job.get_last_build_or_none()
@@ -314,7 +314,10 @@ class _SingleJob(_JobControl):
             progress = ""
             if self.progress_status() != Progress.IDLE:
                 progress = "- " + self.progress_status().name
-            print(self.indentation + repr(self), self.result.name, progress)
+            console_url = ""
+            if self.result != BuildResult.UNKNOWN:
+                console_url = self.job.console_url(self.old_build_num + 1 if self.old_build_num else 1)
+            print(self.indentation + repr(self), self.result.name, progress, console_url)
             return
 
         print(self.indentation + repr(self), " - MISSING JOB")

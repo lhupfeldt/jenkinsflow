@@ -67,6 +67,9 @@ class ApiJob(ObjectWrapper, jenkinsapi.job.Job):
                     traceback.print_exc()
                 hyperspeed.sleep(0.1)
 
+    def console_url(self, buildno):
+        return self.baseurl + '/' + str(buildno) + '/console'
+
 
 class ApiBuild(ObjectWrapper, jenkinsapi.build.Build):
     job = None
@@ -76,7 +79,7 @@ class ApiBuild(ObjectWrapper, jenkinsapi.build.Build):
         self.job = job
 
     def console_url(self):
-        return self.job.baseurl + '/' + str(self.buildno) + '/console'
+        return self.job.console_url(self.buildno)
 
     def __repr__(self):
         return self.job.name + " #" + repr(self.buildno)

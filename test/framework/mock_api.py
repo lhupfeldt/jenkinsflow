@@ -68,6 +68,9 @@ class MockJob(TestJob):
         self.poll()
         return self.build
 
+    def console_url(self, buildno):
+        return self.baseurl + '/' + str(buildno) + '/console'
+
     def invoke(self, securitytoken=None, build_params=None, cause=None):
         super(MockJob, self).invoke(securitytoken, build_params, cause)
         assert not self.is_running()
@@ -135,7 +138,7 @@ class Build(TestBuild):
         return self.job.final_result.name
 
     def console_url(self):
-        return self.job.baseurl + '/' + str(self.buildno) + '/console'
+        return self.job.console_url(self.buildno)
 
     def __repr__(self):
         return self.job.name + " #" + repr(self.buildno) + " " + self.get_status()

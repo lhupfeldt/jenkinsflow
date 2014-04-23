@@ -64,6 +64,9 @@ class ApiJob(object):
         self.build = ApiBuild(self, bld_dct)
         return self.build
 
+    def console_url(self, buildno):
+        return self.public_uri + '/' + str(buildno) + '/console'
+
     def update_config(self, config_xml):
         self.jenkins_resource.post("/job/" + self.name + "/config.xml", payload=config_xml)
 
@@ -86,7 +89,7 @@ class ApiBuild(object):
         return self.dct['result']
 
     def console_url(self):
-        return self.job.public_uri + '/' + str(self.buildno) + '/console'
+        return self.job.console_url(self.buildno)
 
     @property
     def buildno(self):
