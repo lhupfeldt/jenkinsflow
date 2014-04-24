@@ -12,8 +12,8 @@ def unmock():
 
 
 def direct_url():
-    du = os.environ.get(_env_var_prefix + 'DIRECT_URL')
-    return 'http://localhost:8080' if du is None else du.rstrip('/')
+    durl = os.environ.get(_env_var_prefix + 'DIRECT_URL')
+    return 'http://localhost:8080' if durl is None else durl.rstrip('/')
 
 
 def use_jenkinsapi():
