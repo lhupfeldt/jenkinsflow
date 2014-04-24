@@ -190,7 +190,7 @@ class MockApi(TestJenkins):
 class JenkinsTestWrapperApi(jenkins.Jenkins, TestJenkins):
     job_xml_template = jp(here, 'job.xml.tenjin')
 
-    def __init__(self, file_name, func_name, func_num_params, job_name_prefix, reload_jobs, pre_delete_jobs, jenkinsurl, direct_url,
+    def __init__(self, file_name, func_name, func_num_params, job_name_prefix, reload_jobs, pre_delete_jobs, direct_url,
                  username, password, securitytoken, login):
         TestJenkins.__init__(self, job_name_prefix=job_name_prefix)
         if login:
@@ -266,7 +266,7 @@ class JenkinsTestWrapperApi(jenkins.Jenkins, TestJenkins):
             raise UnknownJobException(name)
 
 
-def api(file_name, jenkinsurl=os.environ.get('JENKINS_URL') or os.environ.get('HUDSON_URL') or "http://localhost:8080", login=False):
+def api(file_name, login=False):
     """Factory to create either Mock or Wrap api"""
     base_name = os.path.basename(file_name).replace('.pyc', '.py')
     job_name_prefix = _file_name_subst.sub('', base_name)
@@ -290,11 +290,10 @@ def api(file_name, jenkinsurl=os.environ.get('JENKINS_URL') or os.environ.get('H
     hyperspeed = HyperSpeed()
     if hyperspeed.is_mocked:
         print('Using Mocked API')
-        return MockApi(job_name_prefix, jenkinsurl)
+        return MockApi(job_name_prefix, test_cfg.direct_url())
     else:
         print('Using Real Jenkins API with wrapper')
         reload_jobs = not test_cfg.skip_job_load()
         pre_delete_jobs = not test_cfg.skip_job_delete()
-        direct_url = test_cfg.direct_url()
         return JenkinsTestWrapperApi(file_name, func_name, func_num_params, job_name_prefix, reload_jobs, pre_delete_jobs,
-                                     jenkinsurl, direct_url, security.username, security.password, security.securitytoken, login=login)
+                                     test_cfg.direct_url(), security.username, security.password, security.securitytoken, login=login)
