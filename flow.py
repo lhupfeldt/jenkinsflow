@@ -292,7 +292,7 @@ class _SingleJob(_JobControl):
             return
 
         # The job has stopped running
-        print (self, "stopped running")
+        print(self, "stopped running")
         self.checking_status = Checking.FINISHED
         print(self._status_message(build.buildno))
         self.result = BuildResult[build.get_status()]
