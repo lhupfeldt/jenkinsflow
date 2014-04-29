@@ -58,21 +58,21 @@ Test
 
 3. Run the tests:
    You should use ./test/test.py to run the tests.
-   I will first run the test suite with mocked jenkins api, not actually invoking any jenkins jobs, this tests the flow logic vey fast.
+   I will first run the test suite with mocked jenkins api, not actually invoking any jenkins jobs, this tests the flow logic very fast.
    If the mock test passes, the same testsuite is run with the real jenkins api invokin jenkins jobs. The test jobs are automatically created.
+   Mocked tests do not require Jenkins (but there will be a couple of xfails if jenkins is not running)
 
-   # Mocked tests do not require Jenkins (but there will be a couple of xfails if jenkins is not running)
-   JENKINSFLOW_MOCK_API=100 JENKINS_URL=<your Jenkins> python ./test/test.py
+   JENKINS_URL=<your Jenkins> python ./test/test.py --mock-speedup=100
    # Or if you are using Hudson
-   JENKINSFLOW_MOCK_API=100 HUDSON_URL=<your Hudson> python ./test/tests.py
+   HUDSON_URL=<your Hudson> python ./test/tests.py --mock-speedup=100
 
    Note: you may omit JENKINS_URL if your jenkins is on localhot:8080, but you have to specify HUDSON_URL if you are running hudson!
 
-   The value given to JENKINSFLOW_MOCK_API is the time time speedup for the mocked tests. If you have a reasonably fast computer, try 2000.
+   The value given to --mock-speedup is the time time speedup for the mocked tests. If you have a reasonably fast computer, try 2000.
    If you get FlowTimeoutException try a lower value.
    If you get "<job> is expected to be running, but state is IDLE" try a lower value.
 
-   To enable the use of xdist to run tests (not mocked) in parallel set JENKINSFLOW_SKIP_JOB_DELETE=true. You should have 32 executors or more for this.
+   To enable the use of xdist to run tests (not mocked) in parallel use --skip-job-delete. You should have 32 executors or more for this.
 
    Important:
    Jenkins is default configured with only two executors on master. To avoid timeouts in the test cases this must be raised to at least 8.
@@ -84,6 +84,8 @@ Test
 
    The test suite creates jobs called ..._0flow. These jobs are not executed by the test suite, by you can run them to see what the flows look like in a Jenkins job.
    If your Jenkins is not secured, you must set username and password to '' in demo_security,  in order to be able to run all the ..._0flow jobs.
+
+   To see more test options, run ./test/test.py ---help
 
 Demos
 ----

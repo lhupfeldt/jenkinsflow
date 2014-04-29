@@ -1,11 +1,13 @@
 import os
 import pytest
 
+# Note: You can't import stuff from jenkinsflow here, it messes up the coverage
+
 
 def _set_env_fixture(var_name, value, request):
     """
     Ensure env var_name is set to the value <value>
-    Set back to original value, if any, or unset it, after test
+    Set back to original value, if any, or unset it, after test.
     """
     has_var = os.environ.get(var_name)
     os.environ[var_name] = value
@@ -20,8 +22,8 @@ def _set_env_fixture(var_name, value, request):
 
 def _set_env_if_not_set_fixture(var_name, not_set_value, request):
     """
-    Ensure env var_name is set to the value 'not_set_value' IFF it was not already set
-    Set back to original value, if any, or unset it, after test
+    Ensure env var_name is set to the value 'not_set_value' IFF it was not already set.
+    Unset it after test.
     """
     has_var = os.environ.get(var_name)
     if not has_var:
@@ -34,7 +36,7 @@ def _set_env_if_not_set_fixture(var_name, not_set_value, request):
 def _unset_env_fixture(var_name, request):
     """
     Ensure env var_name is NOT set
-    Set back to original value, if any, after test
+    Set back to original value, if any, after test.
     """
     has_var = os.environ.get(var_name)
     if has_var:
@@ -46,17 +48,17 @@ def _unset_env_fixture(var_name, request):
 
 @pytest.fixture
 def mock_api_bad_value(request):
-    _set_env_fixture('JENKINSFLOW_MOCK_API', 'true', request)
+    _set_env_fixture("JENKINSFLOW_MOCK_SPEEDUP", 'true', request)
 
 
 @pytest.fixture
 def mock_api_307(request):
-    _set_env_fixture('JENKINSFLOW_MOCK_API', '307', request)
+    _set_env_fixture("JENKINSFLOW_MOCK_SPEEDUP", '307', request)
 
 
 @pytest.fixture
 def mock_api_none(request):
-    _unset_env_fixture('JENKINSFLOW_MOCK_API', request)
+    _unset_env_fixture("JENKINSFLOW_MOCK_SPEEDUP", request)
 
 
 @pytest.fixture
