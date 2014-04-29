@@ -135,7 +135,6 @@ class Jenkins(Resource):
             query = "primaryView[url]"
             response = self.get("/api/json", tree=query)
             dct = json.loads(response.body_string())
-            print "dct:", dct
             self._public_uri = self._baseurl = dct['primaryView']['url'].rstrip('/')
         return self._public_uri
 
