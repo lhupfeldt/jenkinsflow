@@ -59,6 +59,9 @@ def run_tests(parallel, cov_rc_file):
 
 
 def args_parser():
+    speedup_default = 1000
+    test_cfg.mock(speedup_default)
+
     class EnvAction(argparse.Action):
         def __call__(self, parser, namespace, values, option_string=None):
             name = env_var_prefix + self.dest.replace('-', '_').upper()
@@ -71,7 +74,7 @@ def args_parser():
 
     parser = argparse.ArgumentParser(formatter_class=argparse.ArgumentDefaultsHelpFormatter,
                                      description='Test jenkinsflow. First runs all tests mocked in hyperspeed, then runs against Jenkins.')
-    parser.add_argument('--mock-speedup', type=int, default=2000, action=EnvAction, help='Time speedup when running mocked tests')
+    parser.add_argument('--mock-speedup', type=int, default=speedup_default, action=EnvAction, help='Time speedup when running mocked tests')
     parser.add_argument('--direct-url', default=test_cfg.direct_url(), action=EnvAction,
                         help='Direct Jenkins URL. Must be different from the URL set in Jenkins (and preferably non proxied)')
     parser.add_argument('--use-jenkinsapi', nargs=0, action=EnvAction,

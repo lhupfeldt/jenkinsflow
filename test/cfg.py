@@ -3,6 +3,11 @@ import os
 from .. mocked import env_var_prefix, mock_api_env_var_name
 
 
+def mock(speedup):
+    assert isinstance(speedup, (int, float))
+    os.environ[mock_api_env_var_name] = str(speedup)
+
+
 def unmock():
     del os.environ[mock_api_env_var_name]
 
