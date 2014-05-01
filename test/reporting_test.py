@@ -6,7 +6,7 @@ from pytest import raises
 from jenkinsflow.flow import serial, parallel, FailedChildJobException
 from jenkinsflow.mocked import HyperSpeed
 from .framework import mock_api
-from .framework.utils import assert_lines_in
+from .framework.utils import assert_lines_in, replace_host_port
 
 hyperspeed = HyperSpeed()
 
@@ -205,6 +205,36 @@ def test_reporting_defined_job_parameters(capsys):
         assert "    s1 = 'hi'" in sout
         assert "    c1 = 'why?'" in sout
         assert "    b1 = 'true'" in sout
+
+
+ordered_params_output = """
+Defined Job http://x.x/job/jenkinsflow_test__reporting_ordered_job_parameters__j1 - parameters:
+     s1 = 'hi'
+     s2 = 'not-last'
+     c1 = 'why?'
+     i1 = '2'
+     b1 = 'true'
+     s4 = 'was last'
+     aaa = '3'
+     unknown1 = 'Hello'
+     unknown2 = 'true'
+     s3 = 'last'
+"""
+
+def test_reporting_ordered_job_parameters(capsys):
+    with mock_api.api(__file__) as api:
+        api.flow_job()
+        api.job('j1', 1.5, max_fails=0, expect_invocations=1, invocation_delay=1.0, initial_buildno=7, expect_order=1, serial=True,
+                params=(('s1', '', 'desc'), ('c1', 'what', 'desc'), ('i1', 1, 'integer'), ('b1', False, 'boolean'), ('s2', 't', 'd'), ('s3', 't2', 'd2'),
+                        ('unknown1', 'Hello', 'd'), ('aaa', 17, 'd'), ('unknown2', False, 'd')))
+
+        order = ['s1', 's2', 'c1', 'i1', 'b1', 's4', '*', 's3']
+        with serial(api, timeout=70, job_name_prefix=api.job_name_prefix, report_interval=0.5/hyperspeed.speedup, params_display_order=order) as ctrl1:
+            ctrl1.invoke('j1', s1="hi", c1='why?', i1=2, b1=True, s2='not-last', s3='last', unknown1='Hello', aaa=3, unknown2=True, s4='was last')
+
+        sout, _ = capsys.readouterr()
+        print sout
+        assert ordered_params_output.strip() in replace_host_port(sout)
 
 
 def test_reporting_defined_non_existing(capsys):

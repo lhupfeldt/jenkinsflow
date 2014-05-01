@@ -6,6 +6,7 @@ from __future__ import print_function
 import os, re, abc
 from os.path import join as jp
 from collections import OrderedDict
+from itertools import chain
 
 from enum import Enum
 from .ordered_enum import OrderedEnum
@@ -226,7 +227,6 @@ class _SingleJob(_JobControl):
         self.old_build_num = None
         self.name = job_name_prefix + job_name
         self.repr_str = ("unchecked " if self.propagation == Propagation.UNCHECKED else "") + "job: " + repr(self.name)
-        self.display_params = ((key, (value if not self.secret_params_re.search(key) else '******')) for key, value in self.params.iteritems())
         self.jenkins_baseurl = None
 
         print(self.indentation + repr(self))
@@ -254,10 +254,20 @@ class _SingleJob(_JobControl):
 
     def _show_job_definition(self):
         print('Defined Job', self.job.non_clickable_build_trigger_url if self.job else (repr(self.name) + " - MISSING JOB"))
-        build_params = self.params if self.params else None
-        for key, value in self.display_params:
+        first = current = OrderedDict()
+        last = OrderedDict()
+
+        display_params = dict((key, (value if not self.secret_params_re.search(key) else '******')) for key, value in self.params.iteritems())
+        for name in self.top_flow.params_display_order:
+            if name == '*':
+                current = last
+            if name in display_params:
+                current[name] = display_params[name]
+                del display_params[name]
+
+        for key, value in chain(first.iteritems(), sorted(display_params.iteritems()), last.iteritems()):
             print("    ", key, '=', repr(value))
-        if build_params:
+        if self.params:
             print("")
 
     def __repr__(self):
@@ -687,7 +697,7 @@ class _TopLevelControllerMixin(object):
     __metaclass__ = abc.ABCMeta
 
     def toplevel_init(self, jenkins_api, securitytoken, username, password, top_level_job_name_prefix, poll_interval, direct_url, require_idle,
-                      json_dir, json_indent, json_strip_top_level_prefix):
+                      json_dir, json_indent, json_strip_top_level_prefix, params_display_order):
         self._start_msg()
         # pylint: disable=attribute-defined-outside-init
         # Note: Special handling in top level flow, these atributes will be modified in proper flow init
@@ -722,6 +732,8 @@ class _TopLevelControllerMixin(object):
         self.json_indent = json_indent
         self.json_strip_index = len(top_level_job_name_prefix) if json_strip_top_level_prefix else 0
         self.json_file = jp(self.json_dir, 'flow_graph.json') if json_dir is not None else None
+
+        self.params_display_order = params_display_order
 
         # Allow test framework to set securitytoken, so that we won't have to litter all the testcases with it
         return self.securitytoken or jenkins_api.securitytoken if hasattr(jenkins_api, 'securitytoken') else None
@@ -790,10 +802,10 @@ class parallel(_Parallel, _TopLevelControllerMixin):
 
     def __init__(self, jenkins_api, timeout, securitytoken=None, username=None, password=None, job_name_prefix='', max_tries=1, propagation=Propagation.NORMAL,
                  report_interval=_default_report_interval, poll_interval=_default_poll_interval, secret_params=_default_secret_params_re, allow_missing_jobs=False,
-                 json_dir=None, json_indent=None, json_strip_top_level_prefix=True, direct_url=None, require_idle=True, just_dump=False):
+                 json_dir=None, json_indent=None, json_strip_top_level_prefix=True, direct_url=None, require_idle=True, just_dump=False, params_display_order=()):
         assert isinstance(propagation, Propagation)
         securitytoken = self.toplevel_init(jenkins_api, securitytoken, username, password, job_name_prefix, poll_interval, direct_url, require_idle,
-                                           json_dir, json_indent, json_strip_top_level_prefix)
+                                           json_dir, json_indent, json_strip_top_level_prefix, params_display_order)
         super(parallel, self).__init__(self, timeout, securitytoken, job_name_prefix, max_tries, propagation, report_interval, secret_params, allow_missing_jobs)
         self.parent_flow = None
         self.just_dump = just_dump
@@ -825,6 +837,11 @@ class serial(_Serial, _TopLevelControllerMixin):
             Propagation.WARNING requires this as it uses the Jenkins cli, which will not work through a proxy, to set the build result
         require_idle (boolean): If True it is considered an error if any of the jobs in the flow are running when the flow starts
         just_dump (boolean): If True, the flow is just printed, no jobs are invoked.
+        params_display_order (list): List of job parameter names used for ordering the parameters in the output.
+            The format is [first1, ..., firstN, '*', last1, ..., lastN], where first..., last... are names that will be matched against the
+            invoke **param names.
+            Any of first..., '*', last... may be omitted
+            Any parameters that are not matched will be displayes at the place of the '*', if specified, otherwise they will be displayed last.
 
     Returns:
         serial flow object
@@ -835,10 +852,10 @@ class serial(_Serial, _TopLevelControllerMixin):
 
     def __init__(self, jenkins_api, timeout, securitytoken=None, username=None, password=None, job_name_prefix='', max_tries=1, propagation=Propagation.NORMAL,
                  report_interval=_default_report_interval, poll_interval=_default_poll_interval, secret_params=_default_secret_params_re, allow_missing_jobs=False,
-                 json_dir=None, json_indent=None, json_strip_top_level_prefix=True, direct_url=None, require_idle=True, just_dump=False):
+                 json_dir=None, json_indent=None, json_strip_top_level_prefix=True, direct_url=None, require_idle=True, just_dump=False, params_display_order=()):
         assert isinstance(propagation, Propagation)
         securitytoken = self.toplevel_init(jenkins_api, securitytoken, username, password, job_name_prefix, poll_interval, direct_url, require_idle,
-                                           json_dir, json_indent, json_strip_top_level_prefix)
+                                           json_dir, json_indent, json_strip_top_level_prefix, params_display_order)
         super(serial, self).__init__(self, timeout, securitytoken, job_name_prefix, max_tries, propagation, report_interval, secret_params, allow_missing_jobs)
         self.parent_flow = None
         self.just_dump = just_dump
