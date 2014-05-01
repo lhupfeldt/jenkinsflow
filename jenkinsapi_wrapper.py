@@ -6,7 +6,8 @@ from __future__ import print_function
 import traceback
 import jenkinsapi
 from peak.util.proxies import ObjectWrapper
-from .specialized_api import UnknownJobException
+
+from .api_base import UnknownJobException, ApiJobMixin, ApiBuildMixin
 from .mocked import HyperSpeed
 
 
@@ -43,12 +44,14 @@ class Jenkins(jenkinsapi.jenkins.Jenkins):
         pass
 
 
-class ApiJob(ObjectWrapper, jenkinsapi.job.Job):
+class ApiJob(ObjectWrapper, jenkinsapi.job.Job, ApiJobMixin):
     non_clickable_build_trigger_url = None
+    public_uri = None
 
     def __init__(self, jenkins_job):
         ObjectWrapper.__init__(self, jenkins_job)
         params = jenkins_job.get_params_list()
+        self.public_uri = self.baseurl
         self.non_clickable_build_trigger_url = self.baseurl if not params else self.baseurl + " - parameters:"
 
     def invoke(self, securitytoken, build_params, cause):
@@ -67,19 +70,13 @@ class ApiJob(ObjectWrapper, jenkinsapi.job.Job):
                     traceback.print_exc()
                 hyperspeed.sleep(0.1)
 
-    def console_url(self, buildno):
-        return self.baseurl + '/' + str(buildno) + '/console'
 
-
-class ApiBuild(ObjectWrapper, jenkinsapi.build.Build):
+class ApiBuild(ObjectWrapper, jenkinsapi.build.Build, ApiBuildMixin):
     job = None
 
     def __init__(self, jenkins_build, job):
         ObjectWrapper.__init__(self, jenkins_build)
         self.job = job
-
-    def console_url(self):
-        return self.job.console_url(self.buildno)
 
     def __repr__(self):
         return self.job.name + " #" + repr(self.buildno)

@@ -4,13 +4,10 @@
 import json
 from restkit import Resource, BasicAuth, errors
 
-
-class UnknownJobException(Exception):
-    def __init__(self, job_url):
-        super(UnknownJobException, self).__init__("Job not found: " + job_url)
+from .api_base import UnknownJobException, ApiJobMixin, ApiBuildMixin
 
 
-class ApiJob(object):
+class ApiJob(ApiJobMixin):
     def __init__(self, jenkins_resource, dct, name, parameter_definitions_dct, que_item_why):
         self.jenkins_resource = jenkins_resource
         self.dct = dct.copy()
@@ -64,9 +61,6 @@ class ApiJob(object):
         self.build = ApiBuild(self, bld_dct)
         return self.build
 
-    def console_url(self, buildno):
-        return self.public_uri + '/' + str(buildno) + '/console'
-
     def update_config(self, config_xml):
         self.jenkins_resource.post("/job/" + self.name + "/config.xml", payload=config_xml)
 
@@ -77,7 +71,7 @@ class ApiJob(object):
         return str(dict(name=self.name, dct=self.dct))
 
 
-class ApiBuild(object):
+class ApiBuild(ApiBuildMixin):
     def __init__(self, job, dct):
         self.job = job
         self.dct = dct
@@ -87,9 +81,6 @@ class ApiBuild(object):
 
     def get_status(self):
         return self.dct['result']
-
-    def console_url(self):
-        return self.job.console_url(self.buildno)
 
     @property
     def buildno(self):
