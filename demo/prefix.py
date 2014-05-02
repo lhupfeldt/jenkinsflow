@@ -29,7 +29,7 @@ def main(api):
 if __name__ == '__main__':
     # Note: This flow uses username/password instead of securitytoken, to demonstrate that feature, it could have used securitytoken.
     # See demo_security.py
-    # Note: This flow 'jenkinsapi' (through the wrapper) to demonstrate that feature, it could have used 'specialized_api'.
+    # Note: This flow uses 'jenkinsapi' (through the wrapper) to demonstrate that feature, it could have used 'specialized_api'.
     import os
     from jenkinsflow.jenkinsapi_wrapper import Jenkins
     jenkins = Jenkins(os.environ.get('JENKINS_URL') or os.environ.get('HUDSON_URL') or "http://localhost:8080",
