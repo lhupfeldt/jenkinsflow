@@ -15,7 +15,6 @@ def test_direct_url(capsys):
             ctrl.invoke('j2')
 
     sout, _ = capsys.readouterr()
-    print sout
     if api.baseurl == "http://localhost:8080":
         assert api.baseurl not in sout
     assert '//job' not in sout
@@ -32,7 +31,6 @@ def test_direct_url_trailing_slash(capsys):
             ctrl.invoke('j2')
 
     sout, _ = capsys.readouterr()
-    print sout
     if api.baseurl == "http://localhost:8080":
         assert api.baseurl not in sout
     assert '//job' not in sout

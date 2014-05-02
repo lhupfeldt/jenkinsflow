@@ -43,7 +43,6 @@ def test_timeout_inner_level_serial():
                     ctrl2.invoke('wait20')
 
         assert "Timeout after:" in exinfo.value.message
-        print "HELLO", exinfo.value.message
         assert ", in flow ['jenkinsflow_test__timeout_inner_level_serial__quick21', 'jenkinsflow_test__timeout_inner_level_serial__wait20']. Unfinished jobs:['jenkinsflow_test__timeout_inner_level_serial__wait20']" in exinfo.value.message
 
 

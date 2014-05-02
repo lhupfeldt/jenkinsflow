@@ -4,8 +4,6 @@
 # NOTE: the tests here all raise exceptions because they can not really be run outside of a jenkinsjob
 # TODO: Test that the script actually does what expected! The test here just assure that the script can be run :(
 
-from __future__ import print_function
-
 import os
 import urllib2
 import pytest
