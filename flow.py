@@ -357,7 +357,7 @@ class _Flow(_JobControl):
         secret_params_re = re.compile(secret_params) if isinstance(secret_params, str) else secret_params
         super(_Flow, self).__init__(parent_flow, securitytoken, max_tries, propagation, secret_params_re, allow_missing_jobs)
         self.timeout = timeout
-        self.job_name_prefix = self.parent_flow.job_name_prefix + job_name_prefix
+        self.job_name_prefix = self.parent_flow.job_name_prefix + job_name_prefix if job_name_prefix is not None else ""
         self.report_interval = report_interval or self.parent_flow.report_interval
 
         self.jobs = []
