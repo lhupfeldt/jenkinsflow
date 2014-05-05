@@ -70,6 +70,10 @@ class JobNotIdleException(JobControlException):
     pass
 
 
+class MessageRedefinedException(JobControlException):
+    pass
+
+
 class JobControlFailException(JobControlException):
     __metaclass__ = abc.ABCMeta
 
@@ -122,6 +126,7 @@ class _JobControl(object):
         self.tried_times = 0
         self.total_tried_times = 0
         self.invocation_time = None
+        self.msg = None
 
         self.node_id = self.top_flow.next_node_id
         self.top_flow.next_node_id += 1
@@ -146,6 +151,8 @@ class _JobControl(object):
         self.invocation_time = 0
 
     def _invocation_message(self, controller_type_name, invocation_repr):
+        if self.msg is not None:
+            print(self.msg)
         print("\nInvoking %s (%d/%d,%d/%d):" % (controller_type_name, self.tried_times, self.max_tries, self.total_tried_times, self.total_max_tries), invocation_repr)
 
     def _must_invoke_set_invocation_time(self):
@@ -196,6 +203,17 @@ class _JobControl(object):
     @property
     def remaining_total_tries(self):
         return self.total_max_tries - self.total_tried_times
+
+    def message(self, msg):
+        """Define a message that will be printed before the invocation of the job or on which it is defined.
+
+        Args:
+            msg (object): The message that will be printed.
+        """
+
+        if self.msg is not None:
+            raise MessageRedefinedException("Existing message: " + repr(self.msg) + ", new message: " + repr(msg))
+        self.msg = msg
 
     def __repr__(self):
         return str(self.sequence())
