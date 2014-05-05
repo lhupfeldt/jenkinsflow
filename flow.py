@@ -138,7 +138,7 @@ class _JobControl(object):
         """Must be called before the first invocation of a job"""
 
     def _prepare_to_invoke(self, reset_tried_times=False):
-        """Must be called before each invocation of a job, as opposed to __init__, which is called once in entire run"""
+        """Must be called before each invocation of a job, as opposed to _prepare_first, which is called once in entire run"""
         self.checking_status = Checking.MUST_CHECK if self.propagation != Propagation.UNCHECKED else Checking.HAS_UNCHECKED
         self.result = BuildResult.UNKNOWN
         self.tried_times = 1 if reset_tried_times else self.tried_times + 1
