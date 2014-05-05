@@ -205,7 +205,7 @@ class _JobControl(object):
         return self.total_max_tries - self.total_tried_times
 
     def message(self, msg):
-        """Define a message that will be printed before the invocation of the job or on which it is defined.
+        """Define a message that will be printed before the invocation of the job or flow on which it is defined.
 
         Args:
             msg (object): The message that will be printed.
@@ -400,13 +400,14 @@ class _Flow(_JobControl):
             parallel flow object
         """
 
+        assert isinstance(propagation, Propagation)
         return _Parallel(self, timeout, securitytoken, job_name_prefix, max_tries, propagation, report_interval, secret_params, allow_missing_jobs)
 
     def serial(self, timeout=0, securitytoken=None, job_name_prefix='', max_tries=1, propagation=Propagation.NORMAL, report_interval=None, secret_params=None, allow_missing_jobs=None):
         """Defines a serial flow where nested jobs or flows are executed in order.
 
         Args:
-            timeout (float): Maximun time in seconds to wait for flow jobs to finish. 0 means infinite, however, this flow can not run longer than the minimum timeout of any parent flows.
+            timeout (float): Maximum time in seconds to wait for flow jobs to finish. 0 means infinite, however, this flow can not run longer than the minimum timeout of any parent flows.
                 Note that jenkins jobs are NOT terminated when the flow times out.
             securitytoken (str): Token to use on security enabled Jenkins instead of username/password. The Jenkins job must have the token configured.
                 If None, the parent flow securitytoken is used.
@@ -459,6 +460,7 @@ class _Flow(_JobControl):
 
         job = _SingleJob(self, self.securitytoken, self.job_name_prefix, self.max_tries, job_name, params, self.propagation, self.secret_params_re, self.allow_missing_jobs)
         self.jobs.append(job)
+        return job
 
     def invoke_unchecked(self, job_name, **params):
         """Define a Jenkins job that will be invoked under control of the surrounding flow, but will never cause the flow to fail.
@@ -474,6 +476,7 @@ class _Flow(_JobControl):
 
         job = _SingleJob(self, self.securitytoken, self.job_name_prefix, self.max_tries, job_name, params, Propagation.UNCHECKED, self.secret_params_re, self.allow_missing_jobs)
         self.jobs.append(job)
+        return job
 
     def _prepare_first(self):
         print(self.indentation + self._enter_str)

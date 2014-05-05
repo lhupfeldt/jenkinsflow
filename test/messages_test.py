@@ -54,6 +54,33 @@ def test_messages(capsys):
         )
 
 
+def test_messages_on_job(capsys):
+    with mock_api.api(__file__) as api:
+        api.flow_job()
+        api.job('j21', 0.01, max_fails=0, expect_invocations=1, invocation_delay=1.0, expect_order=1, serial=True)
+        api.job('j12', 0.01, max_fails=0, expect_invocations=1, invocation_delay=1.0, expect_order=2, serial=True)
+
+        with serial(api, timeout=70, job_name_prefix=api.job_name_prefix) as ctrl1:
+            with ctrl1.serial() as sctrl2:
+                with sctrl2.invoke('j21') as j21:
+                    j21.message("*** Calling j21 ***")
+            ctrl1.invoke('j12')
+
+        sout, _ = capsys.readouterr()
+        print sout
+        assert_lines_in(
+            sout,
+            "--- Starting flow ---",
+            "Invoking Flow (1/1,1/1): [['jenkinsflow_test__messages_on_job__j21'], 'jenkinsflow_test__messages_on_job__j12'",
+            "Invoking Flow (1/1,1/1): ['jenkinsflow_test__messages_on_job__j21']",
+            "*** Calling j21 ***",
+            "Invoking Job (1/1,1/1): http://x.x/job/jenkinsflow_test__messages_on_job__j21/",
+            "SUCCESS: 'jenkinsflow_test__messages_on_job__j21' - build: http://x.x/job/jenkinsflow_test__messages_on_job__j21/",
+            "SUCCESS ['jenkinsflow_test__messages_on_job__j21'] after: ",
+            "Invoking Job (1/1,1/1): http://x.x/job/jenkinsflow_test__messages_on_job__j12/",
+            "SUCCESS: 'jenkinsflow_test__messages_on_job__j12' - build: http://x.x/job/jenkinsflow_test__messages_on_job__j12/",
+        )
+
 
 def test_messages_redefined():
     with mock_api.api(__file__) as api:

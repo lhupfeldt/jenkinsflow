@@ -7,4 +7,6 @@ jenkinsflow.flow module
 
 .. autoclass:: _Flow()
     :members:
-               
+
+.. autoclass:: _JobControl()
+    :members: message
