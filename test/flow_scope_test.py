@@ -10,7 +10,7 @@ from .framework import mock_api
 def test_flow_scope_job():
     with mock_api.api(__file__) as api:
         api.flow_job()
-        api.job('j1', 0.01, max_fails=0, expect_invocations=1, expect_order=1)
+        api.job('j1', 0.01, max_fails=0, expect_invocations=0, expect_order=None)
         api.job('j2', 0.01, max_fails=0, expect_invocations=0, expect_order=None)
 
         with raises(FlowScopeException):

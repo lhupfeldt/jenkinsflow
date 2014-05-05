@@ -811,6 +811,9 @@ class parallel(_Parallel, _TopLevelControllerMixin):
         self.just_dump = just_dump
 
     def __exit__(self, exc_type, exc_value, traceback):
+        if exc_type:
+            return None
+
         super(parallel, self).__exit__(exc_type, exc_value, traceback)
         self.wait_for_jobs()
 
@@ -861,5 +864,8 @@ class serial(_Serial, _TopLevelControllerMixin):
         self.just_dump = just_dump
 
     def __exit__(self, exc_type, exc_value, traceback):
+        if exc_type:
+            return None
+
         super(serial, self).__exit__(exc_type, exc_value, traceback)
         self.wait_for_jobs()
