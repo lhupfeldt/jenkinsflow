@@ -324,7 +324,9 @@ class _SingleJob(_JobControl):
         self.checking_status = Checking.FINISHED
         print(self._status_message(build.buildno))
         self.result = BuildResult[build.get_status()]
-        print(str(build.get_status()) + ":", repr(self.job.name), "- build:", build.console_url(), self._time_msg())
+        # Pylint does not like Enum pylint: disable=no-member
+        unchecked = (Propagation.UNCHECKED.name + ' ') if self.propagation == Propagation.UNCHECKED else ''
+        print(unchecked + str(build.get_status()) + ":", repr(self.job.name), "- build:", build.console_url(), self._time_msg())
 
         if self.result == BuildResult.FAILURE:
             raise FailedSingleJobException(self.job, self.propagation)
@@ -533,7 +535,8 @@ class _Flow(_JobControl):
 
     def report_result(self):
         # Pylint does not like Enum pylint: disable=no-member
-        print(self.result.name, self, self._time_msg())
+        unchecked = (Propagation.UNCHECKED.name + ' ') if self.propagation == Propagation.UNCHECKED else ''
+        print(unchecked + self.result.name, self, self._time_msg())
 
     def json(self, file_path, indent=None):
         node_to_id = lambda job: job.node_id

@@ -14,23 +14,49 @@ def replace_host_port(contains_url):
 
 
 def assert_lines_in(text, *expected_lines):
-    expected = expected_lines  # [replace_host_port(line) for line in expected_lines]
-    max_index = len(expected) - 1
+    """Assert that `*expected_lines` occur in order in the lines of `text`.
+
+    Args:
+        *expected_lines (str or RegexObject (hasattr `match`)): For each `expected_line` in expected_lines:
+            If `expected_line` has a match method it is called and must return True for a line in `text`.
+            Otherwise, if the `expected_line` starts with '^', a line in `text` must start with `expected_line[1:]`
+            Otherwise `expected line` must simply occur in a line in `text`
+    """
+    max_index = len(expected_lines) - 1
     index = 0
     for line in text.split('\n'):
         line = replace_host_port(line)
-        if expected[index] in line:
-            if index == max_index:
-                break
+        expected = expected_lines[index]
+
+        if hasattr(expected, 'match'):
+            if expected.match(line):
+                index += 1
+                if index == max_index:
+                    return
+            continue
+
+        if expected.startswith('^'):
+            if line.startswith(expected[1:]):
+                index += 1
+                if index == max_index:
+                    return
+            continue
+
+        if expected in line:
             index += 1
-    else:
-        pytest.fail(repr(expected[index:]) + "\n    --- NOT FOUND OR OUT OF ORDER IN ---\n" + text)
+            if index == max_index:
+                return
+
+    # pylint: disable=no-member
+    pytest.fail("The text:\n\n" + repr(expected) + "\n\n    --- NOT FOUND OR OUT OF ORDER IN ---\n\n" + text)
 
 
 def flow_graph_dir(flow_name):
-    """
-    Put the generated graph in the workspace root if running from Jenkins
+    """Control which directory to put flow graph in.
+
+    Put the generated graph in the workspace root if running from Jenkins.
     If running from commandline put it under config.flow_graph_root_dir/flow_name
-    return: dir-name
+
+    Return: dir-name
     """
     return '.' if os.environ.get('JOB_NAME') else jp(flow_graph_root_dir, flow_name)

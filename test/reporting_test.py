@@ -1,6 +1,7 @@
 # Copyright (c) 2012 - 2014 Lars Hupfeldt Nielsen, Hupfeldt IT
 # All rights reserved. This work is under a BSD license, see LICENSE.TXT.
 
+import re
 from pytest import raises
 
 from jenkinsflow.flow import serial, parallel, FailedChildJobException
@@ -53,14 +54,14 @@ def test_reporting_invocation_serial(capsys):
         sout, _ = capsys.readouterr()
         assert_lines_in(
             sout,
-            "Defined Job http://x.x/job/jenkinsflow_test__reporting_invocation_serial__j11",
-            "Defined Job http://x.x/job/jenkinsflow_test__reporting_invocation_serial__j12",
-            "",
+            "^Defined Job http://x.x/job/jenkinsflow_test__reporting_invocation_serial__j11",
+            "^Defined Job http://x.x/job/jenkinsflow_test__reporting_invocation_serial__j12",
+            re.compile("^$"),
             "--- Starting flow ---",
-            "",
-            "Invoking Flow (1/1,1/1): ['jenkinsflow_test__reporting_invocation_serial__j11', 'jenkinsflow_test__reporting_invocation_serial__j12']",
-            "Invoking Job (1/1,1/1): http://x.x/job/jenkinsflow_test__reporting_invocation_serial__j11/" + num_console(1, api),
-            "Invoking Job (1/1,1/1): http://x.x/job/jenkinsflow_test__reporting_invocation_serial__j12/" + num_console(8, api),
+            re.compile("^$"),
+            "^Invoking Flow (1/1,1/1): ['jenkinsflow_test__reporting_invocation_serial__j11', 'jenkinsflow_test__reporting_invocation_serial__j12']",
+            "^Invoking Job (1/1,1/1): http://x.x/job/jenkinsflow_test__reporting_invocation_serial__j11/" + num_console(1, api),
+            "^Invoking Job (1/1,1/1): http://x.x/job/jenkinsflow_test__reporting_invocation_serial__j12/" + num_console(8, api),
         )
 
 
@@ -77,9 +78,9 @@ def test_reporting_invocation_parallel(capsys):
         sout, _ = capsys.readouterr()
         assert_lines_in(
             sout,
-            "Invoking Flow (1/1,1/1): ('jenkinsflow_test__reporting_invocation_parallel__j11', 'jenkinsflow_test__reporting_invocation_parallel__j12')",
-            "Invoking Job (1/1,1/1): http://x.x/job/jenkinsflow_test__reporting_invocation_parallel__j11/" + num_console(1, api),
-            "Invoking Job (1/1,1/1): http://x.x/job/jenkinsflow_test__reporting_invocation_parallel__j12/" + num_console(8, api)
+            "^Invoking Flow (1/1,1/1): ('jenkinsflow_test__reporting_invocation_parallel__j11', 'jenkinsflow_test__reporting_invocation_parallel__j12')",
+            "^Invoking Job (1/1,1/1): http://x.x/job/jenkinsflow_test__reporting_invocation_parallel__j11/" + num_console(1, api),
+            "^Invoking Job (1/1,1/1): http://x.x/job/jenkinsflow_test__reporting_invocation_parallel__j12/" + num_console(8, api)
         )
 
 
@@ -116,42 +117,42 @@ def test_reporting_retry(capsys):
                           "'jenkinsflow_test__reporting_retry__j23'), 'jenkinsflow_test__reporting_retry__j13']"
         assert_lines_in(
             sout,
-            "Invoking Flow (1/2,1/2): " + outer_flow_repr,
-            "Invoking Job (1/2,1/2): http://x.x/job/jenkinsflow_test__reporting_retry__j11_fail/" + num_console(1, api),
-            "FAILURE: 'jenkinsflow_test__reporting_retry__j11_fail'",
-            "RETRY: job: 'jenkinsflow_test__reporting_retry__j11_fail' failed, retrying child jobs from beginning. Up to 1 more times in current flow",
-            "Invoking Job (2/2,2/2): http://x.x/job/jenkinsflow_test__reporting_retry__j11_fail/" + num_console(2, api),
-            "SUCCESS: 'jenkinsflow_test__reporting_retry__j11_fail'",
-            "Invoking Job (1/3,1/6): http://x.x/job/jenkinsflow_test__reporting_retry__j23/" + num_console(1, api),
-            "SUCCESS: 'jenkinsflow_test__reporting_retry__j23'",
-            "Invoking Job (1/2,1/2): http://x.x/job/jenkinsflow_test__reporting_retry__j13/" + num_console(1, api),
-            "SUCCESS " + outer_flow_repr
+            "^Invoking Flow (1/2,1/2): " + outer_flow_repr,
+            "^Invoking Job (1/2,1/2): http://x.x/job/jenkinsflow_test__reporting_retry__j11_fail/" + num_console(1, api),
+            "^FAILURE: 'jenkinsflow_test__reporting_retry__j11_fail'",
+            "^RETRY: job: 'jenkinsflow_test__reporting_retry__j11_fail' failed, retrying child jobs from beginning. Up to 1 more times in current flow",
+            "^Invoking Job (2/2,2/2): http://x.x/job/jenkinsflow_test__reporting_retry__j11_fail/" + num_console(2, api),
+            "^SUCCESS: 'jenkinsflow_test__reporting_retry__j11_fail'",
+            "^Invoking Job (1/3,1/6): http://x.x/job/jenkinsflow_test__reporting_retry__j23/" + num_console(1, api),
+            "^SUCCESS: 'jenkinsflow_test__reporting_retry__j23'",
+            "^Invoking Job (1/2,1/2): http://x.x/job/jenkinsflow_test__reporting_retry__j13/" + num_console(1, api),
+            "^SUCCESS " + outer_flow_repr
         )
 
         assert_lines_in(
             sout,
-            "Invoking Job (1/2,1/12): http://x.x/job/jenkinsflow_test__reporting_retry__j31_fail/" + num_console(1, api),
-            "FAILURE: 'jenkinsflow_test__reporting_retry__j31_fail'",
-            "RETRY: job: 'jenkinsflow_test__reporting_retry__j31_fail' failed, retrying child jobs from beginning. Up to 1 more times in current flow",
-            "Invoking Job (2/2,2/12): http://x.x/job/jenkinsflow_test__reporting_retry__j31_fail/" + num_console(2, api),
-            "FAILURE: 'jenkinsflow_test__reporting_retry__j31_fail'",
-            "RETRY: job: 'jenkinsflow_test__reporting_retry__j31_fail' failed, retrying child jobs from beginning. Up to 10 more times through outer flow",
-            "Invoking Job (1/2,3/12): http://x.x/job/jenkinsflow_test__reporting_retry__j31_fail/" + num_console(3, api),
-            "FAILURE: 'jenkinsflow_test__reporting_retry__j31_fail'",
-            "RETRY: job: 'jenkinsflow_test__reporting_retry__j31_fail' failed, retrying child jobs from beginning. Up to 1 more times in current flow",
-            "Invoking Job (2/2,4/12): http://x.x/job/jenkinsflow_test__reporting_retry__j31_fail/" + num_console(4, api),
-            "SUCCESS: 'jenkinsflow_test__reporting_retry__j31_fail'"
+            "^Invoking Job (1/2,1/12): http://x.x/job/jenkinsflow_test__reporting_retry__j31_fail/" + num_console(1, api),
+            "^FAILURE: 'jenkinsflow_test__reporting_retry__j31_fail'",
+            "^RETRY: job: 'jenkinsflow_test__reporting_retry__j31_fail' failed, retrying child jobs from beginning. Up to 1 more times in current flow",
+            "^Invoking Job (2/2,2/12): http://x.x/job/jenkinsflow_test__reporting_retry__j31_fail/" + num_console(2, api),
+            "^FAILURE: 'jenkinsflow_test__reporting_retry__j31_fail'",
+            "^RETRY: job: 'jenkinsflow_test__reporting_retry__j31_fail' failed, retrying child jobs from beginning. Up to 10 more times through outer flow",
+            "^Invoking Job (1/2,3/12): http://x.x/job/jenkinsflow_test__reporting_retry__j31_fail/" + num_console(3, api),
+            "^FAILURE: 'jenkinsflow_test__reporting_retry__j31_fail'",
+            "^RETRY: job: 'jenkinsflow_test__reporting_retry__j31_fail' failed, retrying child jobs from beginning. Up to 1 more times in current flow",
+            "^Invoking Job (2/2,4/12): http://x.x/job/jenkinsflow_test__reporting_retry__j31_fail/" + num_console(4, api),
+            "^SUCCESS: 'jenkinsflow_test__reporting_retry__j31_fail'"
         )
 
-# TODO
-def test_reporting_job_status_unchecked(capsys):
+
+def test_reporting_result_unchecked(capsys):
     with mock_api.api(__file__) as api:
         api.flow_job()
         api.job('j11', 0.1, max_fails=0, expect_invocations=1, expect_order=1)
         api.job('j21_unchecked', 50, max_fails=0, expect_invocations=1, invocation_delay=0.0001, initial_buildno=7, expect_order=None, unknown_result=True, serial=True)
         api.job('j22', 1.5, max_fails=0, expect_invocations=1, invocation_delay=0.0001, initial_buildno=7, expect_order=2)
         api.job('j31', 1.5, max_fails=0, expect_invocations=1, invocation_delay=0.0001, initial_buildno=7, expect_order=3)
-        api.job('j32_unchecked', 1.5, max_fails=1, expect_invocations=1, invocation_delay=0.0001, initial_buildno=7, expect_order=3)
+        api.job('j32_unchecked_fail', 1.5, max_fails=1, expect_invocations=1, invocation_delay=0.0001, initial_buildno=7, expect_order=3)
         api.job('j41', 1.5, max_fails=0, expect_invocations=1, invocation_delay=0.0001, initial_buildno=7, expect_order=3)
         api.job('j42_unchecked', 1.5, max_fails=0, expect_invocations=1, invocation_delay=0.0001, initial_buildno=7, expect_order=3, serial=True)
         api.job('j23', 1.5, max_fails=0, expect_invocations=1, invocation_delay=0.0001, initial_buildno=7, expect_order=4)
@@ -164,7 +165,7 @@ def test_reporting_job_status_unchecked(capsys):
                 ctrl2.invoke('j22')
                 with ctrl2.parallel() as ctrl3:
                     ctrl3.invoke('j31')
-                    ctrl3.invoke_unchecked('j32_unchecked')
+                    ctrl3.invoke_unchecked('j32_unchecked_fail')
                     with ctrl3.serial() as ctrl4:
                         ctrl4.invoke('j41')
                         ctrl4.invoke_unchecked('j42_unchecked')
@@ -173,18 +174,11 @@ def test_reporting_job_status_unchecked(capsys):
 
         sout, _ = capsys.readouterr()
 
-        #if api.is_mocked:
-        #    repr_not_invoked = "job: 'jenkinsflow_test__reporting_job_status_unchecked__j11' Status IDLE - latest build: "
-        #    assert repr_not_invoked in sout, repr_not_invoked + "\n - NOT FOUND IN:\n" + sout
-        #    assert "job: 'jenkinsflow_test__reporting_job_status_unchecked__j12' Status IDLE - latest build: #7" in sout
-        #    assert "'jenkinsflow_test__reporting_job_status_unchecked__j12' Status QUEUED - latest build: #7" in sout
-        #    assert "'jenkinsflow_test__reporting_job_status_unchecked__j12' Status RUNNING - latest build: #8" in sout
-        #    assert "'jenkinsflow_test__reporting_job_status_unchecked__j12' Status IDLE - latest build: #8" in sout
-        #else:
-        #    # TODO: know if we cleaned jobs and check the 'repr_not_invoked' above
-        #    assert "'jenkinsflow_test__reporting_job_status_unchecked__j12' Status RUNNING - latest build: " in sout
-        #    # assert "'jenkinsflow_test__reporting_job_status_unchecked__j12' Status IDLE - latest build: " in sout
-
+        assert_lines_in(
+            sout,
+            "^UNCHECKED FAILURE: 'jenkinsflow_test__reporting_result_unchecked__j32_unchecked_fail' - build: http://x.x/job/jenkinsflow_test__reporting_result_unchecked__j32_unchecked_fail/",
+            "^UNCHECKED SUCCESS: 'jenkinsflow_test__reporting_result_unchecked__j42_unchecked' - build: http://x.x/job/jenkinsflow_test__reporting_result_unchecked__j42_unchecked/" + num_console(8, api)
+        )
 
 def test_reporting_defined_job_parameters(capsys):
     with mock_api.api(__file__) as api:
@@ -198,7 +192,7 @@ def test_reporting_defined_job_parameters(capsys):
         sout, _ = capsys.readouterr()
         assert_lines_in(
             sout,
-            "Defined Job http://x.x/job/jenkinsflow_test__reporting_defined_job_parameters__j1 - parameters:",
+            "^Defined Job http://x.x/job/jenkinsflow_test__reporting_defined_job_parameters__j1 - parameters:",
             "    i1 = '2'",
         )
 
