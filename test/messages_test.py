@@ -40,7 +40,7 @@ def test_messages(capsys):
             "^Invoking Flow (1/1,1/1): ['jenkinsflow_test__messages__j21']",
             "^Invoking Job (1/1,1/1): http://x.x/job/jenkinsflow_test__messages__j21/",
             "^SUCCESS: 'jenkinsflow_test__messages__j21' - build: http://x.x/job/jenkinsflow_test__messages__j21/",
-            "^SUCCESS ['jenkinsflow_test__messages__j21'] after: ",
+            "^Flow SUCCESS ['jenkinsflow_test__messages__j21'] after: ",
             "^Invoking Job (1/1,1/1): http://x.x/job/jenkinsflow_test__messages__j12/",
             "^SUCCESS: 'jenkinsflow_test__messages__j12' - build: http://x.x/job/jenkinsflow_test__messages__j12/",
             "^==== Message 2 ====",
@@ -49,8 +49,8 @@ def test_messages(capsys):
             "^Invoking Job (1/1,1/1): http://x.x/job/jenkinsflow_test__messages__j23/",
             "^SUCCESS: 'jenkinsflow_test__messages__j22' - build: http://x.x/job/jenkinsflow_test__messages__j22/",
             "^SUCCESS: 'jenkinsflow_test__messages__j23' - build: http://x.x/job/jenkinsflow_test__messages__j23/",
-            "^SUCCESS ('jenkinsflow_test__messages__j22', 'jenkinsflow_test__messages__j23') after: ",
-            "^SUCCESS ['jenkinsflow_test__messages__j11', ['jenkinsflow_test__messages__j21'], 'jenkinsflow_test__messages__j12', ('jenkinsflow_test__messages__j22', 'jenkinsflow_test__messages__j23')]",
+            "^Flow SUCCESS ('jenkinsflow_test__messages__j22', 'jenkinsflow_test__messages__j23') after: ",
+            "^Flow SUCCESS ['jenkinsflow_test__messages__j11', ['jenkinsflow_test__messages__j21'], 'jenkinsflow_test__messages__j12', ('jenkinsflow_test__messages__j22', 'jenkinsflow_test__messages__j23')]",
         )
 
 
@@ -76,7 +76,7 @@ def test_messages_on_job(capsys):
             "^*** Calling j21 ***",
             "^Invoking Job (1/1,1/1): http://x.x/job/jenkinsflow_test__messages_on_job__j21/",
             "^SUCCESS: 'jenkinsflow_test__messages_on_job__j21' - build: http://x.x/job/jenkinsflow_test__messages_on_job__j21/",
-            "^SUCCESS ['jenkinsflow_test__messages_on_job__j21'] after: ",
+            "^Flow SUCCESS ['jenkinsflow_test__messages_on_job__j21'] after: ",
             "^Invoking Job (1/1,1/1): http://x.x/job/jenkinsflow_test__messages_on_job__j12/",
             "^SUCCESS: 'jenkinsflow_test__messages_on_job__j12' - build: http://x.x/job/jenkinsflow_test__messages_on_job__j12/",
         )

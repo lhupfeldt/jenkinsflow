@@ -536,7 +536,7 @@ class _Flow(_JobControl):
     def report_result(self):
         # Pylint does not like Enum pylint: disable=no-member
         unchecked = (Propagation.UNCHECKED.name + ' ') if self.propagation == Propagation.UNCHECKED else ''
-        print(unchecked + self.result.name, self, self._time_msg())
+        print('Flow ' + unchecked + self.result.name, self, self._time_msg())
 
     def json(self, file_path, indent=None):
         node_to_id = lambda job: job.node_id

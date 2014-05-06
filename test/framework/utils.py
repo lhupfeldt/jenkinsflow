@@ -47,8 +47,13 @@ def assert_lines_in(text, *expected_lines):
             if index == max_index:
                 return
 
-    # pylint: disable=no-member
-    pytest.fail("The text:\n\n" + repr(expected) + "\n\n    --- NOT FOUND OR OUT OF ORDER IN ---\n\n" + text)
+    if hasattr(expected, 'match'):
+        pytest.fail("\n\nThe regex:\n\n" + repr(expected.pattern) + "\n\n    --- NOT MATCHED or OUT OF ORDER in ---\n\n" + text)  # pylint: disable=no-member
+
+    if expected.startswith('^'):
+        pytest.fail("\n\nThe text:\n\n" + repr(expected[1:]) + "\n\n    --- NOT FOUND, OUT OF ORDER or NOT AT START OF LINE in ---\n\n" + text)  # pylint: disable=no-member
+
+    pytest.fail("\n\nThe text:\n\n" + repr(expected) + "\n\n    --- NOT FOUND OR OUT OF ORDER IN ---\n\n" + text)  # pylint: disable=no-member
 
 
 def flow_graph_dir(flow_name):

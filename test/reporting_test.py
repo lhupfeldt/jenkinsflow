@@ -52,13 +52,14 @@ def test_reporting_invocation_serial(capsys):
             ctrl1.invoke('j12')
 
         sout, _ = capsys.readouterr()
+        empty_re = re.compile("^$")
         assert_lines_in(
             sout,
             "^Defined Job http://x.x/job/jenkinsflow_test__reporting_invocation_serial__j11",
             "^Defined Job http://x.x/job/jenkinsflow_test__reporting_invocation_serial__j12",
-            re.compile("^$"),
+            empty_re,
             "--- Starting flow ---",
-            re.compile("^$"),
+            empty_re,
             "^Invoking Flow (1/1,1/1): ['jenkinsflow_test__reporting_invocation_serial__j11', 'jenkinsflow_test__reporting_invocation_serial__j12']",
             "^Invoking Job (1/1,1/1): http://x.x/job/jenkinsflow_test__reporting_invocation_serial__j11/" + num_console(1, api),
             "^Invoking Job (1/1,1/1): http://x.x/job/jenkinsflow_test__reporting_invocation_serial__j12/" + num_console(8, api),
@@ -126,7 +127,7 @@ def test_reporting_retry(capsys):
             "^Invoking Job (1/3,1/6): http://x.x/job/jenkinsflow_test__reporting_retry__j23/" + num_console(1, api),
             "^SUCCESS: 'jenkinsflow_test__reporting_retry__j23'",
             "^Invoking Job (1/2,1/2): http://x.x/job/jenkinsflow_test__reporting_retry__j13/" + num_console(1, api),
-            "^SUCCESS " + outer_flow_repr
+            "^Flow SUCCESS " + outer_flow_repr
         )
 
         assert_lines_in(
