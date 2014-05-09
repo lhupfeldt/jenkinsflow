@@ -260,13 +260,16 @@ class JenkinsTestWrapperApi(jenkins.Jenkins, TestJenkins):
             raise UnknownJobException(name)
 
 
-def api(file_name, login=False):
+def api(file_name, login=False, fixed_prefix=None):
     """Factory to create either Mock or Wrap api"""
     base_name = os.path.basename(file_name).replace('.pyc', '.py')
     job_name_prefix = _file_name_subst.sub('', base_name)
     func_name = None
     func_num_params = 0
-    if '_test' in file_name:
+    if fixed_prefix:
+        job_name_prefix = fixed_prefix
+        file_name = base_name
+    elif '_test' in file_name:
         func_name = sys._getframe().f_back.f_code.co_name  # pylint: disable=protected-access
         func_num_params = sys._getframe().f_back.f_code.co_argcount  # pylint: disable=protected-access
         file_name = base_name
@@ -287,7 +290,7 @@ def api(file_name, login=False):
         return MockApi(job_name_prefix, test_cfg.direct_url())
     else:
         print('Using Real Jenkins API with wrapper')
-        reload_jobs = not test_cfg.skip_job_load()
+        reload_jobs = not test_cfg.skip_job_load() and not fixed_prefix
         pre_delete_jobs = not test_cfg.skip_job_delete()
         return JenkinsTestWrapperApi(file_name, func_name, func_num_params, job_name_prefix, reload_jobs, pre_delete_jobs,
                                      test_cfg.direct_url(), security.username, security.password, security.securitytoken, login=login)

@@ -6,7 +6,7 @@ import sys, os, imp, subprocess, getpass, shutil, argparse
 from os.path import join as jp
 here = os.path.abspath(os.path.dirname(__file__))
 
-extra_sys_path = [os.path.normpath(path) for path in [jp(here, '../..'), jp(here, '../demo'), jp(here, '../demo/jobs'), jp(here, '../../jenkinsapi')]]
+extra_sys_path = [os.path.normpath(path) for path in [here, jp(here, '../..'), jp(here, '../demo'), jp(here, '../demo/jobs'), jp(here, '../../jenkinsapi')]]
 sys.path = extra_sys_path + sys.path
 os.environ['PYTHONPATH'] = ':'.join(extra_sys_path)
 
@@ -15,40 +15,6 @@ from jenkinsflow.flow import JobControlFailException
 from jenkinsflow.test.framework import config
 from jenkinsflow.test import cfg as test_cfg
 from jenkinsflow.test.cfg import env_var_prefix
-
-import basic, calculated_flow, prefix, hide_password, errors
-
-
-def run_demo(demo, execute_script=False):
-    print("\n\n")
-    print("==== Demo:", demo.__name__, "====")
-    job_load_module_name = demo.__name__ + '_jobs'
-    job_load = imp.load_source(job_load_module_name, jp(here, '../demo/jobs', job_load_module_name + '.py'))
-    print("-- loading jobs --")
-    api = job_load.create_jobs()
-    print()
-    if not execute_script:
-        print("-- running jobs --")
-        demo.main(api)
-        api.test_results()
-    else:
-        print("-- running demo script --")
-        subprocess.check_call([sys.executable, demo.__file__.replace('.pyc', '.py')])
-
-
-def validate_all_demos(execute_script=False):
-    print("\nValidating demos")
-    for demo in basic, calculated_flow, hide_password, prefix:
-        run_demo(demo, execute_script)
-
-    print("\nValidating demos with failing jobs")
-    for demo in (errors,):
-        try:
-            run_demo(demo, execute_script)
-        except (JobControlFailException, subprocess.CalledProcessError) as ex:
-            print("Ok, got exception:", ex)
-        else:
-            raise Exception("Expected exception")
 
 
 def run_tests(parallel, cov_rc_file):
@@ -107,7 +73,6 @@ def main():
             sys.exit(subprocess.call(['py.test', '--capture=sys', '--instafail'] + extra_args))
 
         run_tests(False, here + '/.coverage_mocked_rc')
-        validate_all_demos()
 
         test_cfg.unmock()
         parallel = test_cfg.skip_job_load() | test_cfg.skip_job_delete()
@@ -117,7 +82,6 @@ def main():
         else:
             print("Using specialized_api")
             run_tests(parallel, here + '/.coverage_real_rc')
-        validate_all_demos(execute_script=True)
 
         print("\nTesting setup.py")
         user = getpass.getuser()
