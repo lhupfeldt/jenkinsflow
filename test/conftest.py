@@ -47,17 +47,17 @@ def _unset_env_fixture(var_name, request):
 
 
 @pytest.fixture
-def mock_api_bad_value(request):
+def mock_speedup_bad_value(request):
     _set_env_fixture("JENKINSFLOW_MOCK_SPEEDUP", 'true', request)
 
 
 @pytest.fixture
-def mock_api_307(request):
+def mock_speedup_307(request):
     _set_env_fixture("JENKINSFLOW_MOCK_SPEEDUP", '307', request)
 
 
 @pytest.fixture
-def mock_api_none(request):
+def mock_speedup_none(request):
     _unset_env_fixture("JENKINSFLOW_MOCK_SPEEDUP", request)
 
 

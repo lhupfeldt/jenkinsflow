@@ -25,7 +25,7 @@ setup(
     include_package_data=False,
     install_requires=['restkit', 'jenkinsapi', 'enum34', 'tenjin', 'bottle', 'atomicfile', 'proxytypes'],
     test_suite='pytest',
-    tests_require=['pytest', 'pytest-cov', 'pytest-cache', 'pytest-instafail', 'pytest-xdist', 'logilab-devtools', 'proxytypes'],
+    tests_require=['pytest', 'pytest-cov', 'pytest-cache', 'pytest-instafail', 'pytest-xdist', 'logilab-devtools', 'proxytypes', 'docopt'],
     url=PROJECT_URL,
     description=SHORT_DESCRIPTION,
     long_description=DESCRIPTION,
