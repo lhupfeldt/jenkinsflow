@@ -7,89 +7,6 @@ from restkit import Resource, BasicAuth, errors
 from .api_base import UnknownJobException, ApiJobMixin, ApiBuildMixin
 
 
-class ApiJob(ApiJobMixin):
-    def __init__(self, jenkins_resource, dct, name, parameter_definitions_dct, que_item_why):
-        self.jenkins_resource = jenkins_resource
-        self.dct = dct.copy()
-        self.name = name
-        self.parameter_definitions_dct = parameter_definitions_dct
-        self.que_item_why = que_item_why
-
-        self.build = None
-        self.public_uri = self.baseurl = self.jenkins_resource.public_job_url(self.name)
-
-        actions = self.dct.get('actions') or []
-        for action in actions:
-            if action.get('parameterDefinitions'):
-                self.build_trigger_path = "/job/" + self.name + "/buildWithParameters"
-                self.non_clickable_build_trigger_url = self.public_uri + " - parameters:"
-                break
-        else:
-            self.build_trigger_path = "/job/" + self.name + "/build"
-            self.non_clickable_build_trigger_url = self.public_uri
-
-
-    def invoke(self, securitytoken, build_params, cause):
-        try:
-            params = {}
-            if cause:
-                build_params = build_params or {}
-                build_params['cause'] = cause
-            if build_params:
-                params['headers'] = {'Content-Type': 'application/x-www-form-urlencoded'}
-                params['payload'] = build_params
-            if securitytoken:
-                params['token'] = securitytoken
-            self.jenkins_resource.post(self.build_trigger_path, **params)
-        except errors.ResourceNotFound:
-            raise UnknownJobException(self.jenkins_resource.public_job_url(self.name))
-
-    def is_running(self):
-        build = self.get_last_build_or_none()
-        return build.is_running() if build else False
-
-    def is_queued(self):
-        return self.dct['inQueue'] and not self.is_running()
-
-    def get_last_build_or_none(self):
-        bld_dct = self.dct.get('lastBuild')
-        if bld_dct is None:
-            return None
-        if self.build:
-            self.build.dct = bld_dct
-            return self.build
-        self.build = ApiBuild(self, bld_dct)
-        return self.build
-
-    def update_config(self, config_xml):
-        self.jenkins_resource.post("/job/" + self.name + "/config.xml", payload=config_xml)
-
-    def poll(self):
-        pass
-
-    def __repr__(self):
-        return str(dict(name=self.name, dct=self.dct))
-
-
-class ApiBuild(ApiBuildMixin):
-    def __init__(self, job, dct):
-        self.job = job
-        self.dct = dct
-
-    def is_running(self):
-        return self.dct['building']
-
-    def get_status(self):
-        return self.dct['result']
-
-    @property
-    def buildno(self):
-        return self.dct['number']
-
-    def __repr__(self):
-        return self.job.name + " #" + repr(self.buildno)
-
-
 class Jenkins(Resource):
     """Optimized minimal set of methods needed for jenkinsflow to access Jenkins jobs.
 
@@ -189,3 +106,86 @@ class Jenkins(Resource):
             self.post('/job/' + job_name + '/doDelete')
         except errors.ResourceNotFound:
             raise UnknownJobException(self.public_job_url(job_name))
+
+
+class ApiJob(ApiJobMixin):
+    def __init__(self, jenkins_resource, dct, name, parameter_definitions_dct, que_item_why):
+        self.jenkins_resource = jenkins_resource
+        self.dct = dct.copy()
+        self.name = name
+        self.parameter_definitions_dct = parameter_definitions_dct
+        self.que_item_why = que_item_why
+
+        self.build = None
+        self.public_uri = self.baseurl = self.jenkins_resource.public_job_url(self.name)
+
+        actions = self.dct.get('actions') or []
+        for action in actions:
+            if action.get('parameterDefinitions'):
+                self.build_trigger_path = "/job/" + self.name + "/buildWithParameters"
+                self.non_clickable_build_trigger_url = self.public_uri + " - parameters:"
+                break
+        else:
+            self.build_trigger_path = "/job/" + self.name + "/build"
+            self.non_clickable_build_trigger_url = self.public_uri
+
+
+    def invoke(self, securitytoken, build_params, cause):
+        try:
+            params = {}
+            if cause:
+                build_params = build_params or {}
+                build_params['cause'] = cause
+            if build_params:
+                params['headers'] = {'Content-Type': 'application/x-www-form-urlencoded'}
+                params['payload'] = build_params
+            if securitytoken:
+                params['token'] = securitytoken
+            self.jenkins_resource.post(self.build_trigger_path, **params)
+        except errors.ResourceNotFound:
+            raise UnknownJobException(self.jenkins_resource.public_job_url(self.name))
+
+    def is_running(self):
+        build = self.get_last_build_or_none()
+        return build.is_running() if build else False
+
+    def is_queued(self):
+        return self.dct['inQueue'] and not self.is_running()
+
+    def get_last_build_or_none(self):
+        bld_dct = self.dct.get('lastBuild')
+        if bld_dct is None:
+            return None
+        if self.build:
+            self.build.dct = bld_dct
+            return self.build
+        self.build = ApiBuild(self, bld_dct)
+        return self.build
+
+    def update_config(self, config_xml):
+        self.jenkins_resource.post("/job/" + self.name + "/config.xml", payload=config_xml)
+
+    def poll(self):
+        pass
+
+    def __repr__(self):
+        return str(dict(name=self.name, dct=self.dct))
+
+
+class ApiBuild(ApiBuildMixin):
+    def __init__(self, job, dct):
+        self.job = job
+        self.dct = dct
+
+    def is_running(self):
+        return self.dct['building']
+
+    def get_status(self):
+        return self.dct['result']
+
+    @property
+    def buildno(self):
+        return self.dct['number']
+
+    def __repr__(self):
+        return self.job.name + " #" + repr(self.buildno)
