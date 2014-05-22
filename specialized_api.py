@@ -46,19 +46,8 @@ class Jenkins(Resource):
             self._public_uri = self._baseurl = dct['primaryView']['url'].rstrip('/')
         return self._public_uri
 
-    def public_job_url(self, job_name):
+    def _public_job_url(self, job_name):
         return self.public_uri + '/job/' + job_name
-
-    def _new_job(self, job_name, job_dct):
-        que_item = job_dct.get('queueItem')
-        que_item_why = que_item.get('why') if que_item else None
-
-        parameter_definitions_dct = None
-        actions = job_dct.get('actions') or []
-        for action in actions:
-            parameter_definitions_dct = action.get('parameterDefinitions')
-
-        self.jobs[job_name] = ApiJob(self, job_dct, job_name, parameter_definitions_dct, que_item_why)
 
     def poll(self):
         query = "jobs[name,lastBuild[number,building,result],inQueue,queueItem[why],actions[parameterDefinitions[name,type]]],primaryView[url]"
@@ -71,7 +60,7 @@ class Jenkins(Resource):
             job_name = str(job_dct['name'])
             if self.job_prefix_filter and not job_name.startswith(self.job_prefix_filter):
                 continue
-            self._new_job(job_name, job_dct)
+            self.jobs[job_name] = ApiJob(self, job_dct, job_name)
 
     def quick_poll(self):
         query = "jobs[name,lastBuild[number,building,result],inQueue]"
@@ -90,13 +79,13 @@ class Jenkins(Resource):
                 query = "lastBuild[number,building,result],inQueue,queueItem[why],actions[parameterDefinitions[name,type]]"
                 response = self.get("/job/" + job_name + "/api/json", tree=query)
                 job_dct = json.loads(response.body_string())
-                self._new_job(job_name, job_dct)
+                self.jobs[job_name] = ApiJob(self, job_dct, job_name)
 
     def get_job(self, name):
         try:
             return self.jobs[name]
         except KeyError:
-            raise UnknownJobException(self.public_job_url(name))
+            raise UnknownJobException(self._public_job_url(name))
 
     def create_job(self, job_name, config_xml):
         self.post('/createItem', name=job_name, headers={'Content-Type': 'application/xml header'}, payload=config_xml)
@@ -105,19 +94,20 @@ class Jenkins(Resource):
         try:
             self.post('/job/' + job_name + '/doDelete')
         except errors.ResourceNotFound:
-            raise UnknownJobException(self.public_job_url(job_name))
+            raise UnknownJobException(self._public_job_url(job_name))
 
 
 class ApiJob(ApiJobMixin):
-    def __init__(self, jenkins_resource, dct, name, parameter_definitions_dct, que_item_why):
+    def __init__(self, jenkins_resource, dct, name):
         self.jenkins_resource = jenkins_resource
         self.dct = dct.copy()
         self.name = name
-        self.parameter_definitions_dct = parameter_definitions_dct
-        self.que_item_why = que_item_why
 
         self.build = None
-        self.public_uri = self.baseurl = self.jenkins_resource.public_job_url(self.name)
+        self.public_uri = self.baseurl = self.jenkins_resource._public_job_url(self.name)  # pylint: disable=protected-access
+
+        que_item = self.dct.get('queueItem')
+        self.que_item_why = que_item.get('why') if que_item else None
 
         actions = self.dct.get('actions') or []
         for action in actions:
@@ -128,7 +118,6 @@ class ApiJob(ApiJobMixin):
         else:
             self.build_trigger_path = "/job/" + self.name + "/build"
             self.non_clickable_build_trigger_url = self.public_uri
-
 
     def invoke(self, securitytoken, build_params, cause):
         try:
@@ -143,7 +132,7 @@ class ApiJob(ApiJobMixin):
                 params['token'] = securitytoken
             self.jenkins_resource.post(self.build_trigger_path, **params)
         except errors.ResourceNotFound:
-            raise UnknownJobException(self.jenkins_resource.public_job_url(self.name))
+            raise UnknownJobException(self.jenkins_resource._public_job_url(self.name))  # pylint: disable=protected-access
 
     def is_running(self):
         build = self.get_last_build_or_none()
