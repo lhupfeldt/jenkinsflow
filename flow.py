@@ -82,10 +82,9 @@ class FailedSingleJobException(JobControlFailException):
         super(FailedSingleJobException, self).__init__(msg, propagation)
 
 
-class MissingJobsException(FailedSingleJobException):
-    def __init__(self, job_name):
-        msg = "Could not get job info for: " + repr(job_name)
-        super(MissingJobsException, self).__init__(msg, propagation=Propagation.NORMAL)
+class MissingJobsException(JobControlFailException):
+    def __init__(self, ex):
+        super(MissingJobsException, self).__init__(ex.message, propagation=Propagation.NORMAL)
 
 
 class FailedChildJobException(JobControlFailException):
@@ -255,7 +254,7 @@ class _SingleJob(_JobControl):
             if require_job or not self.allow_missing_jobs:
                 self.checking_status = Checking.FINISHED
                 self.result = BuildResult.FAILURE
-                raise MissingJobsException(self.name)
+                raise MissingJobsException(ex)
             print(self.indentation + repr(self), "NOTE: ", repr(ex))
             super(_SingleJob, self)._prepare_to_invoke(reset_tried_times=False)
             return

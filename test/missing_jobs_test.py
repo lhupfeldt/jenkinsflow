@@ -13,11 +13,14 @@ def test_missing_jobs_not_allowed():
         api.job('j1', 0.01, max_fails=0, expect_invocations=0, expect_order=None)
         api.job('j2', 0.01, max_fails=0, expect_invocations=0, expect_order=None)
 
-        with raises(MissingJobsException):
+        with raises(MissingJobsException) as exinfo:
             with serial(api, 20, job_name_prefix=api.job_name_prefix) as ctrl1:
                 ctrl1.invoke('j1')
                 ctrl1.invoke('missingA')
                 ctrl1.invoke('j2')
+
+        print exinfo.value
+        assert "Job not found: jenkinsflow_test__missing_jobs_not_allowed__missingA" in exinfo.value.message
 
         with raises(MissingJobsException):
             with serial(api, 20, job_name_prefix=api.job_name_prefix) as ctrl1:
