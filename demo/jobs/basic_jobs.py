@@ -1,11 +1,11 @@
 # Copyright (c) 2012 - 2014 Lars Hupfeldt Nielsen, Hupfeldt IT
 # All rights reserved. This work is under a BSD license, see LICENSE.TXT.
 
-from framework import mock_api
+from framework import api_select
 
 
 def create_jobs():
-    api = mock_api.api(__file__)
+    api = api_select.api(__file__)
     def job(name, expect_order, params=None):
         api.job(name, exec_time=0.5, max_fails=0, expect_invocations=1, expect_order=expect_order, params=params)
 

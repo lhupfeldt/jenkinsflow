@@ -8,10 +8,7 @@ import jenkinsapi
 from peak.util.proxies import ObjectWrapper
 
 from .api_base import UnknownJobException, ApiJobMixin, ApiBuildMixin
-from .mocked import HyperSpeed
-
-
-hyperspeed = HyperSpeed()
+from .mocked import hyperspeed
 
 
 class Jenkins(jenkinsapi.jenkins.Jenkins):

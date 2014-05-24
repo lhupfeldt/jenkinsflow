@@ -4,12 +4,12 @@
 from pytest import raises
 
 from jenkinsflow.flow import serial, MessageRedefinedException
-from .framework import mock_api
+from .framework import api_select
 from .framework.utils import assert_lines_in
 
 
 def test_messages(capsys):
-    with mock_api.api(__file__) as api:
+    with api_select.api(__file__) as api:
         api.flow_job()
         api.job('j11', 0.01, max_fails=0, expect_invocations=1, invocation_delay=1.0, expect_order=1, serial=True)
         api.job('j21', 0.01, max_fails=0, expect_invocations=1, invocation_delay=1.0, expect_order=2, serial=True)
@@ -55,7 +55,7 @@ def test_messages(capsys):
 
 
 def test_messages_on_job(capsys):
-    with mock_api.api(__file__) as api:
+    with api_select.api(__file__) as api:
         api.flow_job()
         api.job('j21', 0.01, max_fails=0, expect_invocations=1, invocation_delay=1.0, expect_order=1, serial=True)
         api.job('j12', 0.01, max_fails=0, expect_invocations=1, invocation_delay=1.0, expect_order=2, serial=True)
@@ -83,7 +83,7 @@ def test_messages_on_job(capsys):
 
 
 def test_messages_redefined():
-    with mock_api.api(__file__) as api:
+    with api_select.api(__file__) as api:
         api.flow_job()
         api.job('j11', 0.01, max_fails=0, expect_invocations=0, invocation_delay=1.0, expect_order=None)
         api.job('j21', 0.01, max_fails=0, expect_invocations=0, invocation_delay=1.0, expect_order=None)

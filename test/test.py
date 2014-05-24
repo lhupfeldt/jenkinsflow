@@ -53,7 +53,7 @@ def args_parser():
     if speedup and speedup != 1:
         test_cfg.mock(speedup)
     os.environ[test_cfg.DIRECT_URL_NAME] = args['--direct-url']
-    os.environ[test_cfg.USE_JENKINSAPI_NAME] = 'true' if args['--use-jenkinsapi'] else 'false'
+    os.environ[test_cfg.USE_JENKINS_API_NAME] = 'true' if args['--use-jenkinsapi'] else 'false'
     os.environ[test_cfg.SKIP_JOB_DELETE_NAME] = 'true' if args['--skip-job-delete'] else 'false'
     os.environ[test_cfg.SKIP_JOB_LOAD_NAME] = 'true' if args['--skip-job-load'] else 'false'
 
@@ -89,6 +89,7 @@ def main():
         parallel = test_cfg.skip_job_load() | test_cfg.skip_job_delete()
         if not test_cfg.use_jenkinsapi():
             start_msg("Using specialized_api")
+            os.environ[test_cfg.USE_SPECIALIZED_API_NAME] = 'true'
             run_tests(parallel, here + '/.coverage_real_rc')
         else:
             start_msg("Using jenkinsapi_wrapper")

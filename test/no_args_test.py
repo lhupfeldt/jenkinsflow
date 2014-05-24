@@ -2,11 +2,11 @@
 # All rights reserved. This work is under a BSD license, see LICENSE.TXT.
 
 from jenkinsflow.flow import serial
-from .framework import mock_api
+from .framework import api_select
 
 
 def test_no_args():
-    with mock_api.api(__file__) as api:
+    with api_select.api(__file__) as api:
         api.flow_job()
         api.job('job-1', exec_time=0.01, max_fails=0, expect_invocations=1, expect_order=1)
 

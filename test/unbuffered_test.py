@@ -3,14 +3,14 @@
 
 import sys
 
-from .framework import mock_api
+from .framework import api_select
 from jenkinsflow.flow import serial
 from jenkinsflow.unbuffered import UnBuffered
 
 
 def test_unbuffered():
     sys.stdout = UnBuffered(sys.stdout)
-    with mock_api.api(__file__) as api:
+    with api_select.api(__file__) as api:
         api.flow_job()
         api.job('unbuf', exec_time=0.01, max_fails=0, expect_invocations=1, expect_order=1)
 

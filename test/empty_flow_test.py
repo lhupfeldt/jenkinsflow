@@ -2,11 +2,11 @@
 # All rights reserved. This work is under a BSD license, see LICENSE.TXT.
 
 from jenkinsflow.flow import serial, parallel
-from .framework import mock_api
+from .framework import api_select
 
 
 def test_empty_flow_top_level_serial():
-    with mock_api.api(__file__) as api:
+    with api_select.api(__file__) as api:
         api.flow_job()
 
         with serial(api, timeout=70):
@@ -14,7 +14,7 @@ def test_empty_flow_top_level_serial():
 
 
 def test_empty_flow_top_level_parallel():
-    with mock_api.api(__file__) as api:
+    with api_select.api(__file__) as api:
         api.flow_job()
 
         with parallel(api, timeout=70):
@@ -22,7 +22,7 @@ def test_empty_flow_top_level_parallel():
 
 
 def test_empty_flow_serial_parallel():
-    with mock_api.api(__file__) as api:
+    with api_select.api(__file__) as api:
         api.flow_job()
         api.job('j1', exec_time=0.01, max_fails=0, expect_invocations=1, expect_order=1)
         api.job('j2', exec_time=0.01, max_fails=0, expect_invocations=1, expect_order=2, serial=True)
@@ -35,7 +35,7 @@ def test_empty_flow_serial_parallel():
 
 
 def test_empty_flow_parallel_serial():
-    with mock_api.api(__file__) as api:
+    with api_select.api(__file__) as api:
         api.flow_job()
         api.job('j1', exec_time=0.01, max_fails=0, expect_invocations=1, expect_order=1)
         api.job('j2', exec_time=0.01, max_fails=0, expect_invocations=1, expect_order=1)
@@ -48,7 +48,7 @@ def test_empty_flow_parallel_serial():
 
 
 def test_empty_flow_mix():
-    with mock_api.api(__file__) as api:
+    with api_select.api(__file__) as api:
         api.flow_job()
         api.job('j11', exec_time=0.01, max_fails=0, expect_invocations=1, expect_order=1)
         api.job('j31', exec_time=0.01, max_fails=0, expect_invocations=1, expect_order=2)

@@ -2,11 +2,11 @@
 # All rights reserved. This work is under a BSD license, see LICENSE.TXT.
 
 from jenkinsflow.flow import serial, parallel
-from .framework import mock_api
+from .framework import api_select
 
 
 def test_invoke_unchecked_dont_wait_serial():
-    with mock_api.api(__file__) as api:
+    with api_select.api(__file__) as api:
         api.flow_job()
         api.job('j11_slow_unchecked', exec_time=100, max_fails=0, expect_invocations=1, expect_order=1, unknown_result=True)
         api.job('j12', exec_time=0.01, max_fails=0, expect_invocations=1, expect_order=2)
@@ -17,7 +17,7 @@ def test_invoke_unchecked_dont_wait_serial():
 
 
 def test_invoke_unchecked_dont_wait_parallel():
-    with mock_api.api(__file__) as api:
+    with api_select.api(__file__) as api:
         api.flow_job()
         api.job('j11_slow_unchecked', exec_time=100, max_fails=0, expect_invocations=1, expect_order=1, unknown_result=True)
         api.job('j12', exec_time=5, max_fails=0, expect_invocations=1, expect_order=2)
@@ -28,7 +28,7 @@ def test_invoke_unchecked_dont_wait_parallel():
 
 
 def test_invoke_unchecked_serial():
-    with mock_api.api(__file__) as api:
+    with api_select.api(__file__) as api:
         api.job('j11_unchecked', exec_time=30, max_fails=0, expect_invocations=1, expect_order=None, unknown_result=True)
         api.job('j12', exec_time=5, max_fails=0, expect_invocations=1, expect_order=1)
         api.job('j13_unchecked', exec_time=30, max_fails=0, expect_invocations=1, expect_order=2, invocation_delay=0.0000000000001, unknown_result=True)
@@ -40,7 +40,7 @@ def test_invoke_unchecked_serial():
 
 
 def test_invoke_unchecked_parallel():
-    with mock_api.api(__file__) as api:
+    with api_select.api(__file__) as api:
         api.job('j11_unchecked', exec_time=30, max_fails=0, expect_invocations=1, expect_order=None, unknown_result=True)
         api.job('j12', exec_time=5, max_fails=0, expect_invocations=1, expect_order=1)
         api.job('j13_unchecked', exec_time=0.01, max_fails=0, expect_invocations=1, expect_order=1)
@@ -52,7 +52,7 @@ def test_invoke_unchecked_parallel():
 
 
 def test_invoke_unchecked_serial_fails():
-    with mock_api.api(__file__) as api:
+    with api_select.api(__file__) as api:
         api.job('j11_unchecked', exec_time=30, max_fails=0, expect_invocations=1, expect_order=None, unknown_result=True)
         api.job('j12', exec_time=0.01, max_fails=0, expect_invocations=1, expect_order=1)
         api.job('j13_fail_unchecked', exec_time=0.01, max_fails=1, expect_invocations=1, expect_order=2)
@@ -68,7 +68,7 @@ def test_invoke_unchecked_serial_fails():
 
 
 def test_invoke_unchecked_parallel_fails():
-    with mock_api.api(__file__) as api:
+    with api_select.api(__file__) as api:
         api.job('j11_unchecked', exec_time=30, max_fails=0, expect_invocations=1, expect_order=None, unknown_result=True)
         api.job('j12', exec_time=0.01, max_fails=0, expect_invocations=1, expect_order=1)
         api.job('j13_fail_unchecked', exec_time=0.01, max_fails=1, expect_invocations=1, expect_order=1)
@@ -84,7 +84,7 @@ def test_invoke_unchecked_parallel_fails():
 
 
 def test_invoke_unchecked_mix_fails():
-    with mock_api.api(__file__) as api:
+    with api_select.api(__file__) as api:
         api.flow_job()
         api.job('j11_unchecked', exec_time=0.01, max_fails=0, expect_invocations=1, expect_order=None)
         api.job('j12', exec_time=0.01, max_fails=0, expect_invocations=1, expect_order=2)
@@ -114,7 +114,7 @@ def test_invoke_unchecked_mix_fails():
 
 
 def test_invoke_unchecked_mix_no_fails():
-    with mock_api.api(__file__) as api:
+    with api_select.api(__file__) as api:
         api.job('j31_unchecked', exec_time=30, max_fails=0, expect_invocations=1, expect_order=1, unknown_result=True)
         api.job('j32_unchecked', exec_time=30, max_fails=0, expect_invocations=1, expect_order=1, unknown_result=True)
         api.job('j11', exec_time=0.01, max_fails=0, expect_invocations=1, expect_order=2)

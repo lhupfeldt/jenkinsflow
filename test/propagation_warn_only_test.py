@@ -4,13 +4,13 @@
 from pytest import raises
 
 from jenkinsflow.flow import serial, parallel, FailedChildJobException, FailedChildJobsException, Propagation
-from .framework import mock_api
+from .framework import api_select
 
 from demo_security import username, password
 
 
 def test_propagation_warn_only_serial(env_base_url, fake_java, capfd):
-    with mock_api.api(__file__) as api:
+    with api_select.api(__file__) as api:
         api.flow_job()
         api.job('j11', exec_time=0.01, max_fails=0, expect_invocations=1, expect_order=1)
         api.job('j12_fail', exec_time=0.01, max_fails=1, expect_invocations=1, expect_order=2, serial=True)
@@ -23,7 +23,7 @@ def test_propagation_warn_only_serial(env_base_url, fake_java, capfd):
 
 
 def test_propagation_warn_only_parallel(env_base_url, fake_java, capfd):
-    with mock_api.api(__file__) as api:
+    with api_select.api(__file__) as api:
         api.flow_job()
         api.job('j1_fail', exec_time=0.01, max_fails=1, expect_invocations=1, expect_order=1)
         api.job('j2', exec_time=0.01, max_fails=0, expect_invocations=1, expect_order=1)
@@ -34,7 +34,7 @@ def test_propagation_warn_only_parallel(env_base_url, fake_java, capfd):
 
 
 def test_propagation_warn_only_nested_serial_parallel(env_base_url, fake_java, capfd):
-    with mock_api.api(__file__) as api:
+    with api_select.api(__file__) as api:
         api.flow_job()
         api.job('j11', exec_time=0.01, max_fails=0, expect_invocations=1, expect_order=1)
         api.job('j21', exec_time=0.01, max_fails=0, expect_invocations=1, expect_order=2, serial=True)
@@ -51,7 +51,7 @@ def test_propagation_warn_only_nested_serial_parallel(env_base_url, fake_java, c
 
 
 def test_propagation_warn_only_nested_parallel_serial(env_base_url, fake_java, capfd):
-    with mock_api.api(__file__) as api:
+    with api_select.api(__file__) as api:
         api.flow_job()
         api.job('j11', exec_time=0.01, max_fails=0, expect_invocations=1, expect_order=1)
         api.job('j21', exec_time=0.01, max_fails=0, expect_invocations=1, expect_order=1)
@@ -68,7 +68,7 @@ def test_propagation_warn_only_nested_parallel_serial(env_base_url, fake_java, c
 
 
 def test_propagation_warn_only_nested_serial_serial(env_base_url, fake_java, capfd):
-    with mock_api.api(__file__) as api:
+    with api_select.api(__file__) as api:
         api.flow_job()
         api.job('j11', exec_time=0.01, max_fails=0, expect_invocations=1, expect_order=1)
         api.job('j21', exec_time=0.01, max_fails=0, expect_invocations=1, expect_order=2)
@@ -85,7 +85,7 @@ def test_propagation_warn_only_nested_serial_serial(env_base_url, fake_java, cap
 
 
 def test_propagation_warn_only_nested_parallel_parallel(env_base_url, fake_java, capfd):
-    with mock_api.api(__file__) as api:
+    with api_select.api(__file__) as api:
         api.flow_job()
         api.job('j11', exec_time=0.01, max_fails=0, expect_invocations=1, expect_order=1)
         api.job('j21', exec_time=0.01, max_fails=0, expect_invocations=1, expect_order=1)
@@ -102,7 +102,7 @@ def test_propagation_warn_only_nested_parallel_parallel(env_base_url, fake_java,
 
 
 def test_propagation_warn_only_nested_serial_serial_continue(env_base_url, fake_java, capfd):
-    with mock_api.api(__file__) as api:
+    with api_select.api(__file__) as api:
         api.flow_job()
         api.job('j11', exec_time=0.01, max_fails=0, expect_invocations=1, expect_order=1)
         api.job('j21', exec_time=0.01, max_fails=0, expect_invocations=1, expect_order=2)
@@ -120,7 +120,7 @@ def test_propagation_warn_only_nested_serial_serial_continue(env_base_url, fake_
 
 
 def test_propagation_warn_only_nested_parallel_serial_continue(env_base_url, fake_java, capfd):
-    with mock_api.api(__file__) as api:
+    with api_select.api(__file__) as api:
         api.flow_job()
         api.job('j11', exec_time=0.01, max_fails=0, expect_invocations=1, expect_order=1)
         api.job('j21', exec_time=0.01, max_fails=0, expect_invocations=1, expect_order=1)
@@ -138,7 +138,7 @@ def test_propagation_warn_only_nested_parallel_serial_continue(env_base_url, fak
 
 
 def test_propagation_warn_only_nested_serial_serial_continue_fail():
-    with mock_api.api(__file__) as api:
+    with api_select.api(__file__) as api:
         api.flow_job()
         api.job('j11', exec_time=0.01, max_fails=0, expect_invocations=1, expect_order=1)
         api.job('j21', exec_time=0.01, max_fails=0, expect_invocations=1, expect_order=2)
@@ -157,7 +157,7 @@ def test_propagation_warn_only_nested_serial_serial_continue_fail():
 
 
 def test_propagation_warn_only_nested_parallel_serial_continue_fail():
-    with mock_api.api(__file__) as api:
+    with api_select.api(__file__) as api:
         api.flow_job()
         api.job('j11', exec_time=0.01, max_fails=0, expect_invocations=1, expect_order=1)
         api.job('j21', exec_time=0.01, max_fails=0, expect_invocations=1, expect_order=1)

@@ -11,7 +11,7 @@ from pytest import raises, xfail
 
 from jenkinsflow import set_build_result
 from jenkinsflow.flow import serial, Propagation
-from .framework import mock_api
+from .framework import api_select
 from . import cfg as test_cfg
 
 from demo_security import username, password
@@ -38,7 +38,7 @@ def no_pre_existing_cli(request):
 
 
 def test_set_build_result_no_cli_jar(fake_java, no_pre_existing_cli, env_base_url, capfd):
-    with mock_api.api(__file__) as api:
+    with api_select.api(__file__) as api:
         try:
             api.flow_job()
             api.job('j1_fail', exec_time=0.01, max_fails=1, expect_invocations=1, expect_order=1)
@@ -54,7 +54,7 @@ def test_set_build_result_no_cli_jar(fake_java, no_pre_existing_cli, env_base_ur
 
 
 def test_set_build_result(fake_java, pre_existing_cli, env_base_url, capfd):
-    with mock_api.api(__file__) as api:
+    with api_select.api(__file__) as api:
         try:
             api.flow_job()
             api.job('j1_fail', exec_time=0.01, max_fails=1, expect_invocations=1, expect_order=1)
@@ -70,7 +70,7 @@ def test_set_build_result(fake_java, pre_existing_cli, env_base_url, capfd):
 
 
 def test_set_build_result_direct_url(fake_java, pre_existing_cli, env_base_url, capfd):
-    with mock_api.api(__file__) as api:
+    with api_select.api(__file__) as api:
         try:
             api.flow_job()
             api.job('j1_fail', exec_time=0.01, max_fails=1, expect_invocations=1, expect_order=1)
@@ -87,7 +87,7 @@ def test_set_build_result_direct_url(fake_java, pre_existing_cli, env_base_url, 
 
 
 def test_set_build_result_no_auth(fake_java, pre_existing_cli, env_base_url, capfd):
-    with mock_api.api(__file__) as api:
+    with api_select.api(__file__) as api:
         try:
             api.flow_job()
             api.job('j1_fail', exec_time=0.01, max_fails=1, expect_invocations=1, expect_order=1)
@@ -104,7 +104,7 @@ def test_set_build_result_no_auth(fake_java, pre_existing_cli, env_base_url, cap
 
 def test_set_build_result_no_jenkinsurl(pre_existing_cli, env_no_base_url, capfd):
     with raises(Exception) as exinfo:
-        with mock_api.api(__file__) as api:
+        with api_select.api(__file__) as api:
             api.flow_job()
             api.job('j1_fail', exec_time=0.01, max_fails=1, expect_invocations=1, expect_order=1)
 

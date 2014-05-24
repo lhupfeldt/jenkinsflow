@@ -7,7 +7,7 @@ from os.path import join as jp
 from pytest import raises
 
 from jenkinsflow import jobload
-from .framework import mock_api
+from .framework import api_select
 
 
 here = os.path.abspath(os.path.dirname(__file__))
@@ -36,7 +36,7 @@ def _assert_job(api, job_name, cleanup=False):
 
 
 def test_job_load_new_no_pre_delete():
-    api = mock_api.api(__file__, login=True)
+    api = api_select.api(__file__, login=True)
     full_name, short_name = _random_job_name(api)
     api.job(short_name, 1, 1, 1, 1)
     jobload.update_job_from_template(api, full_name, _job_xml_template, pre_delete=False, context=_context)
@@ -44,7 +44,7 @@ def test_job_load_new_no_pre_delete():
 
 
 def test_job_load_new_pre_delete():
-    api = mock_api.api(__file__, login=True)
+    api = api_select.api(__file__, login=True)
     full_name, short_name = _random_job_name(api)
     api.job(short_name, 1, 1, 1, 1)
     jobload.update_job_from_template(api, full_name, _job_xml_template, pre_delete=True, context=_context)
@@ -52,7 +52,7 @@ def test_job_load_new_pre_delete():
 
 
 def test_job_load_existing_pre_delete():
-    api = mock_api.api(__file__, login=True)
+    api = api_select.api(__file__, login=True)
     full_name, short_name = _random_job_name(api)
     api.job(short_name, 1, 1, 1, 1)
     jobload.update_job_from_template(api, full_name, _job_xml_template, pre_delete=True, context=_context)
@@ -62,7 +62,7 @@ def test_job_load_existing_pre_delete():
 
 
 def test_job_load__existing_update():
-    api = mock_api.api(__file__, login=True)
+    api = api_select.api(__file__, login=True)
     full_name, short_name = _random_job_name(api)
     api.job(short_name, 1, 1, 1, 1)
     jobload.update_job_from_template(api, full_name, _job_xml_template, pre_delete=True, context=_context)
@@ -72,7 +72,7 @@ def test_job_load__existing_update():
 
 
 def test_job_load_non_existing_pre_delete():
-    api = mock_api.api(__file__, login=True)
+    api = api_select.api(__file__, login=True)
     full_name, _ = _random_job_name(api)
     if api.is_mocked:
         # TODO: Since the Mock framework is not suited for testing this we just accept the KeyError, it will still test some code that is not otherwise tested

@@ -2,11 +2,11 @@
 # All rights reserved. This work is under a BSD license, see LICENSE.TXT.
 
 from jenkinsflow.flow import serial
-from .framework import mock_api
+from .framework import api_select
 
 
 def test_multiple_invocations_same_flow():
-    with mock_api.api(__file__) as api:
+    with api_select.api(__file__) as api:
         api.flow_job()
         _params = (('password', '', 'Some password'), ('s1', '', 'Some string argument'))
         api.job('j1', exec_time=0.01, max_fails=0, expect_invocations=2, expect_order=1, params=_params)
@@ -17,7 +17,7 @@ def test_multiple_invocations_same_flow():
 
 
 def test_multiple_invocations_same_flow_same_args():
-    with mock_api.api(__file__) as api:
+    with api_select.api(__file__) as api:
         api.flow_job()
         _params = (('password', '', 'Some password'), ('s1', '', 'Some string argument'))
         api.job('j1', exec_time=0.01, max_fails=0, expect_invocations=2, expect_order=1, params=_params)
@@ -28,7 +28,7 @@ def test_multiple_invocations_same_flow_same_args():
 
 
 def test_multiple_invocations_new_flow():
-    with mock_api.api(__file__) as api:
+    with api_select.api(__file__) as api:
         api.flow_job()
         _params = (('password', '', 'Some password'), ('s1', '', 'Some string argument'))
         api.job('j1', exec_time=0.01, max_fails=0, expect_invocations=2, expect_order=1, params=_params)
@@ -41,7 +41,7 @@ def test_multiple_invocations_new_flow():
 
 
 def test_multiple_invocations_new_flow_same_args():
-    with mock_api.api(__file__) as api:
+    with api_select.api(__file__) as api:
         api.flow_job()
         _params = (('password', '', 'Some password'), ('s1', '', 'Some string argument'))
         api.job('j1', exec_time=0.01, max_fails=0, expect_invocations=2, expect_order=1, params=_params)

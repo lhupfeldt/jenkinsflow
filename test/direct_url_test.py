@@ -2,11 +2,11 @@
 # All rights reserved. This work is under a BSD license, see LICENSE.TXT.
 
 from jenkinsflow.flow import serial
-from .framework import mock_api
+from .framework import api_select
 
 
 def test_direct_url(capsys):
-    with mock_api.api(__file__) as api:
+    with api_select.api(__file__) as api:
         api.job('j1', 0.01, max_fails=0, expect_invocations=1, expect_order=1, params=(('s1', 'Hi', 'desc'), ('c1', ('true', 'maybe', 'false'), 'desc')))
         api.job('j2', 0.01, max_fails=0, expect_invocations=1, expect_order=2, serial=True)
 
@@ -22,7 +22,7 @@ def test_direct_url(capsys):
 
 
 def test_direct_url_trailing_slash(capsys):
-    with mock_api.api(__file__) as api:
+    with api_select.api(__file__) as api:
         api.job('j1', 0.01, max_fails=0, expect_invocations=1, expect_order=1, params=(('s1', 'Hi', 'desc'),))
         api.job('j2', 0.01, max_fails=0, expect_invocations=1, expect_order=2, serial=True)
 

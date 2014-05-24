@@ -4,11 +4,11 @@
 from pytest import raises
 
 from jenkinsflow.flow import parallel, serial, FlowScopeException
-from .framework import mock_api
+from .framework import api_select
 
 
 def test_flow_scope_job():
-    with mock_api.api(__file__) as api:
+    with api_select.api(__file__) as api:
         api.flow_job()
         api.job('j1', 0.01, max_fails=0, expect_invocations=0, expect_order=None)
         api.job('j2', 0.01, max_fails=0, expect_invocations=0, expect_order=None)
@@ -37,7 +37,7 @@ def test_flow_scope_job():
 
 
 def test_flow_scope_serial():
-    with mock_api.api(__file__) as api:
+    with api_select.api(__file__) as api:
         api.flow_job()
 
         with raises(FlowScopeException):
@@ -65,7 +65,7 @@ def test_flow_scope_serial():
 
 
 def test_flow_scope_parallel():
-    with mock_api.api(__file__) as api:
+    with api_select.api(__file__) as api:
         api.flow_job()
 
         with raises(FlowScopeException):

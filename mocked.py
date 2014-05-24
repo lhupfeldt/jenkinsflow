@@ -4,7 +4,7 @@ env_var_prefix = "JENKINSFLOW_"
 mock_speedup_env_var_name = env_var_prefix + 'MOCK_SPEEDUP'
 
 
-def mocked():
+def _mocked():
     mock_val = os.environ.get(mock_speedup_env_var_name)
     if mock_val is None:
         return False, 1.0
@@ -17,12 +17,16 @@ def mocked():
         raise ValueError(str(ex) + ". " + msg)
 
 
-class HyperSpeed(object):
-    def __init__(self):
-        self.is_mocked, self.speedup = mocked()
+class _HyperSpeed(object):
+    def __init__(self, speedup):
+        self.speedup = speedup
 
     def time(self):
         return time.time() * self.speedup
 
     def sleep(self, seconds):
         return time.sleep(seconds / self.speedup)
+
+
+mocked, speedup = _mocked()
+hyperspeed = _HyperSpeed(speedup) if mocked else time

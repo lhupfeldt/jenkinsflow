@@ -4,13 +4,13 @@
 from pytest import raises
 
 from jenkinsflow.flow import parallel, serial, BuildResult, FailedChildJobException
-from jenkinsflow.test.framework import mock_api
+from .framework import api_select
 
 from demo_security import username, password
 
 
 def test_propagate_unstable_serial_single_unstable(env_base_url, fake_java, capfd):
-    with mock_api.api(__file__) as api:
+    with api_select.api(__file__) as api:
         api.flow_job()
         api.job('j11_unstable', 0.01, max_fails=0, expect_invocations=1, expect_order=1, final_result='unstable')
 
@@ -21,7 +21,7 @@ def test_propagate_unstable_serial_single_unstable(env_base_url, fake_java, capf
 
 
 def test_propagate_unstable_parallel_single_unstable(env_base_url, fake_java, capfd):
-    with mock_api.api(__file__) as api:
+    with api_select.api(__file__) as api:
         api.flow_job()
         api.job('j11_unstable', 0.01, max_fails=0, expect_invocations=1, expect_order=1, final_result='unstable')
 
@@ -32,7 +32,7 @@ def test_propagate_unstable_parallel_single_unstable(env_base_url, fake_java, ca
 
 
 def test_propagate_unstable_serial_toplevel(env_base_url, fake_java, capfd):
-    with mock_api.api(__file__) as api:
+    with api_select.api(__file__) as api:
         api.flow_job()
         api.job('j11', 0.01, max_fails=0, expect_invocations=1, expect_order=1)
         api.job('j12_unstable', 0.01, max_fails=0, expect_invocations=1, expect_order=2, final_result='unstable', serial=True)
@@ -47,7 +47,7 @@ def test_propagate_unstable_serial_toplevel(env_base_url, fake_java, capfd):
 
 
 def test_propagate_unstable_parallel_toplevel(env_base_url, fake_java, capfd):
-    with mock_api.api(__file__) as api:
+    with api_select.api(__file__) as api:
         api.flow_job()
         api.job('j11', 0.01, max_fails=0, expect_invocations=1, expect_order=1)
         api.job('j12_unstable', 0.01, max_fails=0, expect_invocations=1, expect_order=1, final_result='unstable')
@@ -62,7 +62,7 @@ def test_propagate_unstable_parallel_toplevel(env_base_url, fake_java, capfd):
 
 
 def test_propagate_unstable_serial_inner(env_base_url, fake_java, capfd):
-    with mock_api.api(__file__) as api:
+    with api_select.api(__file__) as api:
         api.flow_job()
         api.job('j11', 0.01, max_fails=0, expect_invocations=1, expect_order=1)
         api.job('j21', 0.01, max_fails=0, expect_invocations=1, expect_order=2, serial=True)
@@ -81,7 +81,7 @@ def test_propagate_unstable_serial_inner(env_base_url, fake_java, capfd):
 
 
 def test_propagate_unstable_parallel_inner(env_base_url, fake_java, capfd):
-    with mock_api.api(__file__) as api:
+    with api_select.api(__file__) as api:
         api.flow_job()
         api.job('j11', 0.01, max_fails=0, expect_invocations=1, expect_order=1)
         api.job('j21', 0.01, max_fails=0, expect_invocations=1, expect_order=2, serial=True)
@@ -100,7 +100,7 @@ def test_propagate_unstable_parallel_inner(env_base_url, fake_java, capfd):
 
 
 def test_propagate_unstable_serial_inner_fail_after(env_base_url, fake_java, capfd):
-    with mock_api.api(__file__) as api:
+    with api_select.api(__file__) as api:
         api.flow_job()
         api.job('j11', 0.01, max_fails=0, expect_invocations=1, expect_order=1)
         api.job('j21', 0.01, max_fails=0, expect_invocations=1, expect_order=2)
@@ -117,7 +117,7 @@ def test_propagate_unstable_serial_inner_fail_after(env_base_url, fake_java, cap
 
 
 def test_propagate_unstable_parallel_inner_fail_before(env_base_url, fake_java, capfd):
-    with mock_api.api(__file__) as api:
+    with api_select.api(__file__) as api:
         api.flow_job()
         api.job('j11', 0.01, max_fails=0, expect_invocations=1, expect_order=1)
         api.job('j21_fail', 0.01, max_fails=1, expect_invocations=1, expect_order=2, serial=True)

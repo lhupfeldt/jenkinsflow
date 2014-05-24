@@ -4,7 +4,11 @@ from .. mocked import env_var_prefix, mock_speedup_env_var_name
 
 MOCK_SPEEDUP_NAME = mock_speedup_env_var_name
 DIRECT_URL_NAME = env_var_prefix + 'DIRECT_URL'
-USE_JENKINSAPI_NAME = env_var_prefix + 'USE_JENKINSAPI'
+
+USE_SPECIALIZED_API_NAME = env_var_prefix + 'USE_SPECIALIZED_API'
+USE_JENKINS_API_NAME = env_var_prefix + 'USE_JENKINS_API'
+USE_SCRIPT_API_NAME = env_var_prefix + 'USE_SCRIPT_API'
+
 SKIP_JOB_LOAD_NAME = env_var_prefix + 'SKIP_JOB_LOAD'
 SKIP_JOB_DELETE_NAME = env_var_prefix + 'SKIP_JOB_DELETE'
 
@@ -23,8 +27,16 @@ def direct_url():
     return 'http://localhost:8080' if durl is None else durl.rstrip('/')
 
 
+def use_specialized_api():
+    return os.environ.get(USE_SPECIALIZED_API_NAME) == 'true'
+
+
 def use_jenkinsapi():
-    return os.environ.get(USE_JENKINSAPI_NAME) == 'true'
+    return os.environ.get(USE_JENKINS_API_NAME) == 'true'
+
+
+def use_script_api():
+    return os.environ.get(USE_SCRIPT_API_NAME) == 'true'
 
 
 def skip_job_delete():

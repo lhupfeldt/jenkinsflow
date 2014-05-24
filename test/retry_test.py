@@ -4,11 +4,11 @@
 from pytest import raises
 
 from jenkinsflow.flow import parallel, serial, FailedChildJobException, FailedChildJobsException
-from .framework import mock_api, utils
+from .framework import api_select, utils
 
 
 def test_retry_serial_toplevel():
-    with mock_api.api(__file__) as api:
+    with api_select.api(__file__) as api:
         api.flow_job()
         api.job('j11', 0.01, max_fails=0, expect_invocations=2, expect_order=1)
         api.job('j12_fail', 0.01, max_fails=1, expect_invocations=2, expect_order=2, serial=True)
@@ -21,7 +21,7 @@ def test_retry_serial_toplevel():
 
 
 def test_retry_serial_toplevel_fail():
-    with mock_api.api(__file__) as api:
+    with api_select.api(__file__) as api:
         api.flow_job()
         api.job('j11', 0.01, max_fails=0, expect_invocations=2, expect_order=1)
         api.job('j12_fail', 0.01, max_fails=2, expect_invocations=2, expect_order=2, serial=True)
@@ -35,7 +35,7 @@ def test_retry_serial_toplevel_fail():
 
 
 def test_retry_parallel_toplevel():
-    with mock_api.api(__file__) as api:
+    with api_select.api(__file__) as api:
         api.flow_job()
         api.job('j11', 0.01, max_fails=0, expect_invocations=1, expect_order=1)
         api.job('j12_fail', 0.01, max_fails=1, expect_invocations=2, expect_order=1)
@@ -48,7 +48,7 @@ def test_retry_parallel_toplevel():
 
 
 def test_retry_parallel_toplevel_fail():
-    with mock_api.api(__file__) as api:
+    with api_select.api(__file__) as api:
         api.flow_job()
         api.job('j11', 0.01, max_fails=0, expect_invocations=1, expect_order=1)
         api.job('j12_fail', 0.01, max_fails=2, expect_invocations=2, expect_order=1)
@@ -62,7 +62,7 @@ def test_retry_parallel_toplevel_fail():
 
 
 def test_retry_serial_inner():
-    with mock_api.api(__file__) as api:
+    with api_select.api(__file__) as api:
         api.flow_job()
         api.job('j11', 0.01, max_fails=0, expect_invocations=1, expect_order=1)
         api.job('j21', 0.01, max_fails=0, expect_invocations=2, expect_order=2, serial=True)
@@ -78,7 +78,7 @@ def test_retry_serial_inner():
 
 
 def test_retry_parallel_inner():
-    with mock_api.api(__file__) as api:
+    with api_select.api(__file__) as api:
         api.flow_job()
         api.job('j11', 0.01, max_fails=0, expect_invocations=1, expect_order=1)
         api.job('j21', 0.01, max_fails=0, expect_invocations=1, expect_order=2)
@@ -94,7 +94,7 @@ def test_retry_parallel_inner():
 
 
 def test_retry_serial_through_parent_serial_level():
-    with mock_api.api(__file__) as api:
+    with api_select.api(__file__) as api:
         api.flow_job()
         api.job('j11', 0.01, max_fails=0, expect_invocations=1, expect_order=1)
         api.job('j21', 0.01, max_fails=0, expect_invocations=2, expect_order=2, serial=True)
@@ -111,7 +111,7 @@ def test_retry_serial_through_parent_serial_level():
 
 
 def test_retry_serial_through_parent_serial_level_fail():
-    with mock_api.api(__file__) as api:
+    with api_select.api(__file__) as api:
         api.flow_job()
         api.job('j31_fail', 0.01, max_fails=4, expect_invocations=4, expect_order=1)
         api.job('j32', 0.01, max_fails=0, expect_invocations=0, expect_order=None)
@@ -125,7 +125,7 @@ def test_retry_serial_through_parent_serial_level_fail():
 
 
 def test_retry_serial_through_parent_parallel_level():
-    with mock_api.api(__file__) as api:
+    with api_select.api(__file__) as api:
         api.flow_job()
         api.job('j11', 0.01, max_fails=0, expect_invocations=1, expect_order=1)
         api.job('j21', 0.01, max_fails=0, expect_invocations=1, expect_order=2, serial=True)
@@ -140,7 +140,7 @@ def test_retry_serial_through_parent_parallel_level():
 
 
 def test_retry_serial_through_parent_parallel_level_fail():
-    with mock_api.api(__file__) as api:
+    with api_select.api(__file__) as api:
         api.flow_job()
         api.job('j31_fail', 0.01, max_fails=4, expect_invocations=4, expect_order=1)
 
@@ -152,7 +152,7 @@ def test_retry_serial_through_parent_parallel_level_fail():
 
 
 def test_retry_parallel_through_parent_serial_level():
-    with mock_api.api(__file__) as api:
+    with api_select.api(__file__) as api:
         api.flow_job()
         api.job('j11', 0.01, max_fails=0, expect_invocations=1, expect_order=1)
         api.job('j21', 0.01, max_fails=0, expect_invocations=2, expect_order=2)
@@ -167,7 +167,7 @@ def test_retry_parallel_through_parent_serial_level():
 
 
 def test_retry_parallel_through_parent_parallel_level():
-    with mock_api.api(__file__) as api:
+    with api_select.api(__file__) as api:
         api.flow_job()
         api.job('j11', 0.01, max_fails=0, expect_invocations=1, expect_order=1)
         api.job('j21', 0.01, max_fails=0, expect_invocations=1, expect_order=2, serial=True)
@@ -184,7 +184,7 @@ def test_retry_parallel_through_parent_parallel_level():
 
 
 def test_retry_parallel_through_outer_level(capsys):
-    with mock_api.api(__file__) as api:
+    with api_select.api(__file__) as api:
         api.flow_job()
         api.job('j11', 0.01, max_fails=0, expect_invocations=1, expect_order=1)
         api.job('j21', 0.01, max_fails=0, expect_invocations=1, expect_order=2, serial=True)
@@ -207,7 +207,7 @@ def test_retry_parallel_through_outer_level(capsys):
 
 
 def test_retry_serial_through_outer_level():
-    with mock_api.api(__file__) as api:
+    with api_select.api(__file__) as api:
         api.flow_job()
         api.job('j11', 0.01, max_fails=0, expect_invocations=1, expect_order=1)
         api.job('j21', 0.01, max_fails=0, expect_invocations=1, expect_order=2, serial=True)
@@ -229,7 +229,7 @@ def test_retry_serial_through_outer_level():
 
 
 def test_retry_mix():
-    with mock_api.api(__file__) as api:
+    with api_select.api(__file__) as api:
         api.flow_job()
         api.job('j11_fail', 0.01, max_fails=1, expect_invocations=2, expect_order=1)
         api.job('j12', 0.01, max_fails=0, expect_invocations=1, expect_order=2, serial=True)

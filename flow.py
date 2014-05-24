@@ -12,12 +12,10 @@ from enum import Enum
 from .ordered_enum import OrderedEnum
 from .set_build_result import set_build_result
 from .specialized_api import UnknownJobException
-from .mocked import HyperSpeed
+from .mocked import hyperspeed, mocked
 
 
-hyperspeed = HyperSpeed()
-
-_default_poll_interval = 0.5 if not hyperspeed.is_mocked else 0.001
+_default_poll_interval = 0.5 if not mocked else 0.001
 _default_report_interval = 5
 _default_secret_params = '.*passw.*|.*PASSW.*'
 _default_secret_params_re = re.compile(_default_secret_params)

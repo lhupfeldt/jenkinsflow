@@ -4,8 +4,8 @@
 import os
 from os.path import join as jp
 from jenkinsflow.flow import serial
-from jenkinsflow.test.framework import mock_api
-from jenkinsflow.test.framework.utils import flow_graph_dir
+from .framework import api_select
+from .framework.utils import flow_graph_dir
 
 from .json_test import _assert_json
 
@@ -37,7 +37,7 @@ def _flow(api, json_dir):
 
 
 def test_just_dump_no_json():
-    with mock_api.api(__file__) as api:
+    with api_select.api(__file__) as api:
         api.flow_job()
         api.job('j1', exec_time=0.01, max_fails=0, expect_invocations=0, expect_order=None)
         api.job('j2', exec_time=0.01, max_fails=0, expect_invocations=0, expect_order=None)
@@ -49,7 +49,7 @@ def test_just_dump_no_json():
 
 
 def test_just_dump_with_json():
-    with mock_api.api(__file__) as api:
+    with api_select.api(__file__) as api:
         flow_name = api.flow_job()
         api.job('j1', exec_time=0.01, max_fails=0, expect_invocations=0, expect_order=None)
         api.job('j2', exec_time=0.01, max_fails=0, expect_invocations=0, expect_order=None)

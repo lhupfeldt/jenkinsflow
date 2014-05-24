@@ -4,23 +4,23 @@
 import os
 from pytest import raises
 
-from jenkinsflow.mocked import mocked, mock_speedup_env_var_name
+from jenkinsflow.mocked import _mocked, mock_speedup_env_var_name
 
 
 def test_mocked_bad_env_val(mock_speedup_bad_value):
     with raises(ValueError) as exinfo:
-        mocked()
+        _mocked()
 
     assert exinfo.value.message == "could not convert string to float: true. If " + mock_speedup_env_var_name + " is specied, the value must be set to the mock speedup, e.g. 2000 if you have a reasonably fast computer. If you experience FlowTimeoutException in tests, try lowering the value."
 
 
 def test_mocked_good_env_val(mock_speedup_307):
-    is_mocked, speedup = mocked()
+    is_mocked, speedup = _mocked()
     assert is_mocked == True
     assert speedup == 307
 
 
 def test_mocked_no_env_val(mock_speedup_none):
-    is_mocked, speedup = mocked()
+    is_mocked, speedup = _mocked()
     assert is_mocked == False
     assert speedup == 1

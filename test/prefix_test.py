@@ -3,7 +3,7 @@
 
 from jenkinsflow.flow import serial
 
-from .framework import mock_api
+from .framework import api_select
 
 
 prefixed_jobs = """
@@ -38,7 +38,7 @@ serial flow: [
 """
 
 def test_prefix(capsys):
-    with mock_api.api(__file__) as api:
+    with api_select.api(__file__) as api:
         def job(name):
             api.job(name, exec_time=0.5, max_fails=0, expect_invocations=0, expect_order=None, params=None)
     

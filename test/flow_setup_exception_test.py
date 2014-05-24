@@ -4,11 +4,11 @@
 from pytest import raises
 
 from jenkinsflow.flow import parallel, serial
-from .framework import mock_api
+from .framework import api_select
 
 
 def test_flow_setup_exception_job():
-    with mock_api.api(__file__) as api:
+    with api_select.api(__file__) as api:
         api.flow_job()
         api.job('j1', 0.01, max_fails=0, expect_invocations=0, expect_order=None)
 

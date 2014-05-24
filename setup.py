@@ -23,7 +23,7 @@ setup(
     package_dir={'jenkinsflow':'.'},
     zip_safe=True,
     include_package_data=False,
-    install_requires=['restkit', 'jenkinsapi', 'enum34', 'tenjin', 'bottle', 'atomicfile', 'proxytypes'],
+    install_requires=['restkit', 'jenkinsapi', 'enum34', 'tenjin', 'bottle', 'atomicfile', 'proxytypes', 'subprocess32'],
     test_suite='pytest',
     tests_require=['pytest', 'pytest-cov', 'pytest-cache', 'pytest-instafail', 'pytest-xdist', 'logilab-devtools', 'proxytypes', 'docopt'],
     url=PROJECT_URL,

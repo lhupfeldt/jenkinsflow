@@ -13,7 +13,7 @@ sys.path = extra_sys_path + sys.path
 from pytest import raises
 
 from jenkinsflow.flow import parallel, JobControlFailException
-from .framework import mock_api, utils
+from .framework import api_select, utils
 
 
 import basic, calculated_flow, prefix, hide_password, errors
@@ -32,7 +32,7 @@ def test_demos_good():
     for demo in demos:
         load_demo_jobs(demo)
 
-    with mock_api.api(__file__, fixed_prefix="jenkinsflow_demo__") as api:
+    with api_select.api(__file__, fixed_prefix="jenkinsflow_demo__") as api:
         for demo in demos:
             api.job(demo.__name__ + "__0flow", 0.01, max_fails=0, expect_invocations=1, expect_order=1)
 
@@ -46,7 +46,7 @@ def test_demos_with_errors():
     for demo in demos:
         load_demo_jobs(demo)
 
-    with mock_api.api(__file__, fixed_prefix="jenkinsflow_demo__") as api:
+    with api_select.api(__file__, fixed_prefix="jenkinsflow_demo__") as api:
         for demo in demos:
             api.job(demo.__name__ + "__0flow", 0.01, max_fails=1, expect_invocations=1, expect_order=1)
 

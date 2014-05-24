@@ -4,11 +4,11 @@
 from pytest import raises
 
 from jenkinsflow.flow import parallel, serial, FailedChildJobException, FailedChildJobsException
-from .framework import mock_api
+from .framework import api_select
 
 
 def test_single_level_errors_parallel(capsys):
-    with mock_api.api(__file__) as api:
+    with api_select.api(__file__) as api:
         api.flow_job()
         api.job('quick', exec_time=0.01, max_fails=0, expect_invocations=1, expect_order=1, params=(('s1', '', 'desc'), ('c1', 'false', 'desc')))
         api.job('quick_fail', exec_time=0.01, max_fails=1, expect_invocations=1, expect_order=1)
@@ -37,7 +37,7 @@ def test_single_level_errors_parallel(capsys):
 
 
 def test_single_level_errors_serial():
-    with mock_api.api(__file__) as api:
+    with api_select.api(__file__) as api:
         api.job('quick', exec_time=0.01, max_fails=0, expect_invocations=1, expect_order=1, params=(('s1', '', 'desc'), ('c1', 'false', 'desc')))
         api.job('quick_fail', exec_time=0.01, max_fails=1, expect_invocations=1, expect_order=2, serial=True)
         api.job('wait5', exec_time=5, max_fails=0, expect_invocations=0, expect_order=None)

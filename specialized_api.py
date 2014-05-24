@@ -112,11 +112,11 @@ class ApiJob(ApiJobMixin):
         actions = self.dct.get('actions') or []
         for action in actions:
             if action.get('parameterDefinitions'):
-                self.build_trigger_path = "/job/" + self.name + "/buildWithParameters"
+                self._build_trigger_path = "/job/" + self.name + "/buildWithParameters"
                 self.non_clickable_build_trigger_url = self.public_uri + " - parameters:"
                 break
         else:
-            self.build_trigger_path = "/job/" + self.name + "/build"
+            self._build_trigger_path = "/job/" + self.name + "/build"
             self.non_clickable_build_trigger_url = self.public_uri
 
     def invoke(self, securitytoken, build_params, cause):
@@ -130,7 +130,7 @@ class ApiJob(ApiJobMixin):
                 params['payload'] = build_params
             if securitytoken:
                 params['token'] = securitytoken
-            self.jenkins_resource.post(self.build_trigger_path, **params)
+            self.jenkins_resource.post(self._build_trigger_path, **params)
         except errors.ResourceNotFound:
             raise UnknownJobException(self.jenkins_resource._public_job_url(self.name))  # pylint: disable=protected-access
 
