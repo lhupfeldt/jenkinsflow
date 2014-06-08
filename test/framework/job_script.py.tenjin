@@ -1,0 +1,22 @@
+from __future__ import print_function
+
+import time
+
+
+def run_job(job_name, job_prefix_filter, username, password, securitytoken, cause, build_params):
+<?py if script is not None: ?>
+<?py     raise Exception("Script is not supported: " + script) ?>
+<?py else: ?>
+    print('sleeping=', {==exec_time==})
+    time.sleep({==exec_time==})
+<?py #endif ?>
+
+    force_result = build_params.get('force_result')
+    print('force_result:', force_result)
+    if not force_result or force_result == 'SUCCESS':
+        return 0
+    if force_result == 'FAILURE':
+        raise Exception('Something went wrong')
+    if force_result == 'UNSTABLE':
+        return 2
+    raise Exception("Unknown force_result: " + repr(force_result))

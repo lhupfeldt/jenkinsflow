@@ -46,16 +46,18 @@ def api(file_name, login=False, fixed_prefix=None):
         from .mock_api import MockApi
         return MockApi(job_name_prefix, test_cfg.direct_url())
     else:
+        url_or_dir = test_cfg.direct_url()
         if test_cfg.use_specialized_api():
             print('Using Specialized Jenkins API with wrapper')
         elif test_cfg.use_jenkinsapi():
             print('Using JenkinsAPI with wrapper')
         elif test_cfg.use_script_api():
             print('Using Script API with wrapper')
+            url_or_dir = test_cfg.script_dir()
 
         reload_jobs = not test_cfg.skip_job_load() and not fixed_prefix
         pre_delete_jobs = not test_cfg.skip_job_delete()
         import demo_security as security
         from .api_wrapper import JenkinsTestWrapperApi
         return JenkinsTestWrapperApi(file_name, func_name, func_num_params, job_name_prefix, reload_jobs, pre_delete_jobs,
-                                     test_cfg.direct_url(), security.username, security.password, security.securitytoken, login=login)
+                                     url_or_dir, security.username, security.password, security.securitytoken, login=login)

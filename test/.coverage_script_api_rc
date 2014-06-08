@@ -28,5 +28,5 @@ omit =
      server.py
      setup.py
      ordered_enum.py
+     jenkinsapi_wrapper.py
      specialized_api.py
-     script_api.py

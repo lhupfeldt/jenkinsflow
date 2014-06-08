@@ -2,11 +2,15 @@
 # All rights reserved. This work is under a BSD license, see LICENSE.TXT.
 
 from __future__ import print_function
+import os
+from os.path import join as jp
 
 from jenkinsflow.api_base import UnknownJobException, ApiJobMixin, ApiBuildMixin
 from jenkinsflow.mocked import hyperspeed
 
 from .base_test_api import TestJob, TestBuild, TestJenkins
+
+here = os.path.abspath(os.path.dirname(__file__))
 
 
 class MockJob(TestJob, ApiJobMixin):
@@ -21,7 +25,7 @@ class MockJob(TestJob, ApiJobMixin):
 
     @property
     def non_clickable_build_trigger_url(self):
-        return self.baseurl + (' - parameters:' if self.params or self.has_force_result_param else '')
+        return self.baseurl
 
     def is_running(self):
         return self.start_time <= hyperspeed.time() < self.end_time
@@ -79,6 +83,8 @@ class Build(ApiBuildMixin, TestBuild):
 
 
 class MockApi(TestJenkins):
+    job_xml_template = jp(here, 'job.xml.tenjin')
+
     def __init__(self, job_name_prefix, baseurl):
         super(MockApi, self).__init__(job_name_prefix)
         self.baseurl = baseurl

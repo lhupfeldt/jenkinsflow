@@ -23,6 +23,7 @@ with open(jp(here, "json_test_pretty.json")) as _jf:
 
 def _assert_json(got_json, expected_json):
     got_json = utils.replace_host_port(got_json)
+    expected_json = utils.replace_host_port(expected_json)
     if not os.environ.get('JOB_NAME'):
         print("--- expected json ---")
         print(expected_json)

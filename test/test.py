@@ -2,7 +2,7 @@
 
 from __future__ import print_function
 
-import sys, os, imp, subprocess, getpass, shutil
+import sys, os, subprocess32 as subprocess, getpass, shutil
 from docopt import docopt
 from os.path import join as jp
 here = os.path.abspath(os.path.dirname(__file__))
@@ -34,9 +34,9 @@ test.py [--mock-speedup <speedup> --direct-url <direct_url> --use-jenkinsapi --p
 
 General Options:
 -s, --mock-speedup <speedup>     Time speedup when running mocked tests. int. [default: %(speedup_default)i]
--d, --direct-url <direct_url>    Direct Jenkins URL. Must be different from the URL set in Jenkins (and preferably non proxied) [default: %(direct_url)s]
--j, --use-jenkinsapi             Use 'jenkinsapi_wrapper' module for Jenkins access, instead of 'specialized_api'.
--p, --pytest-args <pytest_args>  py.test arguments. str.
+--direct-url <direct_url>    Direct Jenkins URL. Must be different from the URL set in Jenkins (and preferably non proxied) [default: %(direct_url)s]
+--use-jenkinsapi             Use 'jenkinsapi_wrapper' module for Jenkins access, instead of 'specialized_api'.
+--pytest-args <pytest_args>  py.test arguments. str.
 
 Job Load Options:  Control job loading and parallel test run. Specifying any of these options enables running of tests in parallel.
 --skip-job-delete  Don't delete and re-load jobs into Jenkins (assumes that re-loading generates correct job config).
@@ -52,7 +52,9 @@ def args_parser():
     speedup = float(args['--mock-speedup'])
     if speedup and speedup != 1:
         test_cfg.mock(speedup)
-    os.environ[test_cfg.DIRECT_URL_NAME] = args['--direct-url']
+    if args['--direct-url']:
+        os.environ[test_cfg.DIRECT_URL_NAME] = args['--direct-url']
+    os.environ[test_cfg.SCRIPT_DIR_NAME] = test_cfg.script_dir()
     os.environ[test_cfg.USE_JENKINS_API_NAME] = 'true' if args['--use-jenkinsapi'] else 'false'
     os.environ[test_cfg.SKIP_JOB_DELETE_NAME] = 'true' if args['--skip-job-delete'] else 'false'
     os.environ[test_cfg.SKIP_JOB_LOAD_NAME] = 'true' if args['--skip-job-load'] else 'false'
@@ -94,6 +96,12 @@ def main():
         else:
             start_msg("Using jenkinsapi_wrapper")
             run_tests(parallel, here + '/.coverage_jenkinsapi_rc')
+
+        start_msg("Using script_api")
+        os.environ[test_cfg.USE_SPECIALIZED_API_NAME] = 'false'
+        os.environ[test_cfg.USE_JENKINS_API_NAME] = 'false'
+        os.environ[test_cfg.USE_SCRIPT_API_NAME] = 'true'
+        run_tests(parallel, here + '/.coverage_script_api_rc')
 
         start_msg("Testing setup.py")
         user = getpass.getuser()

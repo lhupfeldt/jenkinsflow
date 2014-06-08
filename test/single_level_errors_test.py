@@ -1,10 +1,12 @@
 # Copyright (c) 2012 - 2014 Lars Hupfeldt Nielsen, Hupfeldt IT
 # All rights reserved. This work is under a BSD license, see LICENSE.TXT.
 
+import re
 from pytest import raises
 
 from jenkinsflow.flow import parallel, serial, FailedChildJobException, FailedChildJobsException
 from .framework import api_select
+from .framework.utils import assert_lines_in
 
 
 def test_single_level_errors_parallel(capsys):
@@ -31,9 +33,11 @@ def test_single_level_errors_parallel(capsys):
         assert "wait5_fail" in exinfo.value.message
 
         sout, _ = capsys.readouterr()
-        assert "FAILURE: 'jenkinsflow_test__single_level_errors_parallel__quick_fail' - build: " in sout
-        assert "job/jenkinsflow_test__single_level_errors_parallel__quick_fail/" in sout
-        assert "/console after:" in sout
+        assert_lines_in(
+            sout,
+            "^FAILURE: 'jenkinsflow_test__single_level_errors_parallel__quick_fail' - build: ",
+            re.compile("http://x.x/job/jenkinsflow_test__single_level_errors_parallel__quick_fail.*/console after:"),
+        )
 
 
 def test_single_level_errors_serial():

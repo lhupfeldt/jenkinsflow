@@ -17,16 +17,9 @@ def _mocked():
         raise ValueError(str(ex) + ". " + msg)
 
 
-class _HyperSpeed(object):
-    def __init__(self, speedup):
-        self.speedup = speedup
-
-    def time(self):
-        return time.time() * self.speedup
-
-    def sleep(self, seconds):
-        return time.sleep(seconds / self.speedup)
-
-
 mocked, speedup = _mocked()
-hyperspeed = _HyperSpeed(speedup) if mocked else time
+if mocked:
+    from .test.framework.hyperspeed import _HyperSpeed
+    hyperspeed = _HyperSpeed(speedup)
+else:
+    hyperspeed = time

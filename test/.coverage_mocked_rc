@@ -18,6 +18,9 @@ exclude_lines =
     self.api.poll_job(self.name)
     self.api.poll()
 
+    # Parts of 'mocked' not used when not mocked
+    hyperspeed = time
+
 omit = 
      test/*
      demo/*
@@ -26,3 +29,4 @@ omit =
      ordered_enum.py
      specialized_api.py
      jenkinsapi_wrapper.py
+     script_api.py

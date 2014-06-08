@@ -226,7 +226,7 @@ def test_reporting_ordered_job_parameters(capsys):
             ctrl1.invoke('j1', s1="hi", c1='why?', i1=2, b1=True, s2='not-last', s3='last', unknown1='Hello', aaa=3, unknown2=True, s4='was last')
 
         sout, _ = capsys.readouterr()
-        assert ordered_params_output.strip() in replace_host_port(sout)
+        assert replace_host_port(ordered_params_output.strip()) in replace_host_port(sout)
 
 
 def test_reporting_defined_non_existing(capsys):

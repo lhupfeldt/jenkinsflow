@@ -7,3 +7,4 @@ from os.path import join as jp
 test_tmp_dir = "/tmp/jenkinsflow-test"
 pseudo_install_dir = jp(test_tmp_dir, "jenkinsflow")
 flow_graph_root_dir = jp(test_tmp_dir, "graphs")
+job_script_dir = jp(test_tmp_dir, 'job')

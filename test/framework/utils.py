@@ -6,11 +6,16 @@ from os.path import join as jp
 import pytest
 
 from .config import flow_graph_root_dir
+from jenkinsflow.test import cfg as test_cfg
 
 
-_http_re = re.compile(r'https?://.*?/job/')
-def replace_host_port(contains_url):
-    return _http_re.sub('http://x.x/job/', contains_url)
+_http_re = re.compile(r'https?://.*?/job/([^/" ]*)')
+if not test_cfg.use_script_api():
+    def replace_host_port(contains_url):
+        return _http_re.sub(r'http://x.x/job/\1', contains_url)
+else:
+    def replace_host_port(contains_url):
+        return _http_re.sub(r'/tmp/jenkinsflow-test/job/\1.py', contains_url)
 
 
 def assert_lines_in(text, *expected_lines):
@@ -22,11 +27,17 @@ def assert_lines_in(text, *expected_lines):
             Otherwise, if the `expected_line` starts with '^', a line in `text` must start with `expected_line[1:]`
             Otherwise `expected line` must simply occur in a line in `text`
     """
-    max_index = len(expected_lines) - 1
+
+    fixed_expected = []
+    for expected in expected_lines:
+        fixed_expected.append(replace_host_port(expected) if not hasattr(expected, 'match') else expected)
+
+    max_index = len(fixed_expected) - 1
     index = 0
+
     for line in text.split('\n'):
         line = replace_host_port(line)
-        expected = expected_lines[index]
+        expected = fixed_expected[index]
 
         if hasattr(expected, 'match'):
             if expected.match(line):

@@ -1,11 +1,8 @@
 # Copyright (c) 2012 - 2014 Lars Hupfeldt Nielsen, Hupfeldt IT
 # All rights reserved. This work is under a BSD license, see LICENSE.TXT.
 
-from __future__ import print_function
-
 import os, sys, time
 from os.path import join as jp
-here = os.path.abspath(os.path.dirname(__file__))
 
 from peak.util.proxies import ObjectWrapper
 
@@ -13,13 +10,19 @@ from jenkinsflow.jobload import update_job_from_template
 
 import demo_security as security
 
+here = os.path.abspath(os.path.dirname(__file__))
+
+
 from jenkinsflow.test import cfg as test_cfg
 if test_cfg.use_specialized_api():
     from jenkinsflow import specialized_api as jenkins
+    _job_xml_template = jp(here, 'job.xml.tenjin')
 elif test_cfg.use_jenkinsapi():
     from jenkinsflow import jenkinsapi_wrapper as jenkins
+    _job_xml_template = jp(here, 'job.xml.tenjin')
 elif test_cfg.use_script_api():
     from jenkinsflow import script_api as jenkins
+    _job_xml_template = jp(here, 'job_script.py.tenjin')
 else:
     raise Exception("Don't know which API to use!")
 
@@ -66,7 +69,7 @@ class WrapperJob(ObjectWrapper, TestJob, ApiJobMixin):
 
 
 class JenkinsTestWrapperApi(jenkins.Jenkins, TestJenkins):
-    job_xml_template = jp(here, 'job.xml.tenjin')
+    job_xml_template = _job_xml_template
 
     def __init__(self, file_name, func_name, func_num_params, job_name_prefix, reload_jobs, pre_delete_jobs, direct_url,
                  username, password, securitytoken, login):
@@ -110,6 +113,12 @@ class JenkinsTestWrapperApi(jenkins.Jenkins, TestJenkins):
         Requires jenkinsflow to be copied to 'pseudo_install_dir' and all jobs to be loaded beforehand (e.g. test.py has been run)
         Returns job name
         """
+        name = '0flow_' + name if name else '0flow'
+        job_name = (self.job_name_prefix or '') + name
+        # TODO Handle script api
+        if test_cfg.use_script_api():
+            return job_name
+
         #  Note: Use -B to avoid permission problems with .pyc files created from commandline test
         if self.func_name:
             script = "export PYTHONPATH=" + test_tmp_dir + "\n"
@@ -119,9 +128,8 @@ class JenkinsTestWrapperApi(jenkins.Jenkins, TestJenkins):
             script += "python -Bc &quot;from jenkinsflow.test." + self.file_name.replace('.py', '') + " import *; test_" + self.func_name + "(" + dummy_args + ")&quot;"
         else:
             script = "python -B " + jp(pseudo_install_dir, 'demo', self.file_name)
-        name = '0flow_' + name if name else '0flow'
         self._jenkins_job(name, exec_time=0.5, params=params, script=script)
-        return (self.job_name_prefix or '') + name
+        return job_name
 
     # --- Wrapped API ---
 

@@ -268,7 +268,6 @@ class _SingleJob(_JobControl):
         print(self.indentation + self._status_message(self.old_build_num))
 
     def _show_job_definition(self):
-        print('Defined Job', self.job.non_clickable_build_trigger_url if self.job else (repr(self.name) + " - MISSING JOB"))
         first = current = OrderedDict()
         last = OrderedDict()
 
@@ -280,6 +279,10 @@ class _SingleJob(_JobControl):
                 current[name] = display_params[name]
                 del display_params[name]
 
+        if self.job:
+            print('Defined Job', self.job.non_clickable_build_trigger_url + (' - parameters:' if display_params else ''))
+        else:
+            print('Defined Job', repr(self.name) + " - MISSING JOB")
         for key, value in chain(first.iteritems(), sorted(display_params.iteritems()), last.iteritems()):
             print("    ", key, '=', repr(value))
         if self.params:
