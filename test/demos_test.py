@@ -15,7 +15,7 @@ from pytest import raises
 from jenkinsflow.flow import parallel, JobControlFailException
 from .framework import api_select, utils
 from . import cfg as test_cfg
-
+from .cfg import ApiType
 
 import basic, calculated_flow, prefix, hide_password, errors
 
@@ -30,7 +30,7 @@ def load_demo_jobs(demo):
 
 def test_demos_good():
     # TODO: script api is not configured to run demos
-    if test_cfg.use_script_api():
+    if test_cfg.selected_api() == ApiType.SCRIPT:
         return
 
     demos = (basic, calculated_flow, hide_password, prefix)
@@ -48,7 +48,7 @@ def test_demos_good():
 
 def test_demos_with_errors():
     # TODO
-    if test_cfg.use_script_api():
+    if test_cfg.selected_api() == ApiType.SCRIPT:
         return
 
     demos = (errors,)

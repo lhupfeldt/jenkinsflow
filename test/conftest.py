@@ -1,7 +1,9 @@
 import os
 import pytest
 
-# Note: You can't import stuff from jenkinsflow here, it messes up the coverage
+from . import cfg as test_cfg
+
+# Note: You can't (indirectly) import stuff from jenkinsflow here, it messes up the coverage
 
 
 def _set_env_fixture(var_name, value, request):
@@ -65,7 +67,7 @@ def mock_speedup_none(request):
 def env_base_url(request):
     # Fake that we are running from inside jenkins job
     if os.environ.get('HUDSON_URL') is None:
-        _set_env_if_not_set_fixture('JENKINS_URL', 'http://localhost:8080', request)
+        _set_env_if_not_set_fixture('JENKINS_URL', test_cfg.direct_url(), request)
 
 
 @pytest.fixture

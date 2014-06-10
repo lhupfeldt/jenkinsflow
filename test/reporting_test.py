@@ -6,12 +6,13 @@ from pytest import raises
 
 from jenkinsflow.flow import serial, parallel, FailedChildJobException
 from jenkinsflow.mocked import speedup
+from .cfg import ApiType
 from .framework import api_select
 from .framework.utils import assert_lines_in, replace_host_port
 
 
 def num_console(num, api):
-    return str(num) + "/console" if api.is_mocked else ""
+    return str(num) + "/console" if api.api_type == ApiType.MOCK else ""
 
 
 def test_reporting_job_status(capsys):
@@ -26,7 +27,7 @@ def test_reporting_job_status(capsys):
 
         sout, _ = capsys.readouterr()
 
-        if api.is_mocked:
+        if api.api_type == ApiType.MOCK:
             repr_not_invoked = "job: 'jenkinsflow_test__reporting_job_status__j11' Status IDLE - latest build: "
             assert repr_not_invoked in sout, repr_not_invoked + "\n - NOT FOUND IN:\n" + sout
             assert "job: 'jenkinsflow_test__reporting_job_status__j12' Status IDLE - latest build: #7" in sout

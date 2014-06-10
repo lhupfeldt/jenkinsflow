@@ -5,6 +5,7 @@ from pytest import raises
 
 from jenkinsflow.flow import serial, JobNotIdleException
 from jenkinsflow.mocked import hyperspeed
+from .cfg import ApiType
 from .framework import api_select
 
 
@@ -46,8 +47,8 @@ def test_no_running_jobs_unchecked():
 def test_no_running_jobs_jobs_allowed():
     with api_select.api(__file__) as api:
         api.flow_job()
-        exp_invocations = 2 if not api.is_mocked else 1
-        unknown_result = False if not api.is_mocked else True
+        exp_invocations = 2 if api.api_type != ApiType.MOCK else 1
+        unknown_result = False if api.api_type != ApiType.MOCK else True
         api.job('j1', exec_time=20, max_fails=0, expect_invocations=exp_invocations, expect_order=None, unknown_result=unknown_result)
 
         with serial(api, timeout=70, job_name_prefix=api.job_name_prefix) as ctrl1:
@@ -56,6 +57,6 @@ def test_no_running_jobs_jobs_allowed():
         hyperspeed.sleep(1)
 
         # TODO
-        if not api.is_mocked:
+        if api.api_type != ApiType.MOCK:
             with serial(api, timeout=70, job_name_prefix=api.job_name_prefix, require_idle=False) as ctrl1:
                 ctrl1.invoke('j1')

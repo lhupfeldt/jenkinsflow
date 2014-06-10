@@ -13,6 +13,7 @@ from jenkinsflow import set_build_result
 from jenkinsflow.flow import serial, Propagation
 from .framework import api_select
 from . import cfg as test_cfg
+from .cfg import ApiType
 
 from demo_security import username, password
 
@@ -21,6 +22,9 @@ here = os.path.dirname(__file__)
 
 @pytest.fixture
 def pre_existing_cli(request):
+    if test_cfg.selected_api() == ApiType.SCRIPT:
+        return
+
     base_url = test_cfg.direct_url() + '/'
     cli_jar, base_url, public_base_url = set_build_result.cli_jar_info(base_url)
     if cli_jar is None:
@@ -31,6 +35,9 @@ def pre_existing_cli(request):
 
 @pytest.fixture
 def no_pre_existing_cli(request):
+    if test_cfg.selected_api() == ApiType.SCRIPT:
+        return
+
     if os.path.exists(set_build_result.jenkins_cli_jar):
         os.remove(set_build_result.jenkins_cli_jar)
     if os.path.exists(set_build_result.hudson_cli_jar):
@@ -48,7 +55,7 @@ def test_set_build_result_no_cli_jar(fake_java, no_pre_existing_cli, env_base_ur
 
         except urllib2.URLError:
             # Jenkins is not running, so we cant test this
-            if not api.is_mocked:
+            if api.api_type != ApiType.MOCK:
                 raise
             xfail()
 
@@ -64,7 +71,7 @@ def test_set_build_result(fake_java, pre_existing_cli, env_base_url, capfd):
 
         except urllib2.URLError:
             # Jenkins is not running, so we cant test this
-            if not api.is_mocked:
+            if api.api_type != ApiType.MOCK:
                 raise
             xfail()
 
@@ -81,7 +88,7 @@ def test_set_build_result_direct_url(fake_java, pre_existing_cli, env_base_url, 
 
         except urllib2.URLError:
             # Jenkins is not running, so we cant test this
-            if not api.is_mocked:
+            if api.api_type != ApiType.MOCK:
                 raise
             xfail()
 
@@ -97,7 +104,7 @@ def test_set_build_result_no_auth(fake_java, pre_existing_cli, env_base_url, cap
 
         except urllib2.URLError:
             # Jenkins is not running, so we cant test this
-            if not api.is_mocked:
+            if api.api_type != ApiType.MOCK:
                 raise
             xfail()
 

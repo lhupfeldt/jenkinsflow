@@ -7,20 +7,21 @@ from os.path import join as jp
 from peak.util.proxies import ObjectWrapper
 
 from jenkinsflow.jobload import update_job_from_template
-
 import demo_security as security
+from jenkinsflow.test import cfg as test_cfg
+from jenkinsflow.test.cfg import ApiType
 
+
+api_type = test_cfg.selected_api()
 here = os.path.abspath(os.path.dirname(__file__))
 
-
-from jenkinsflow.test import cfg as test_cfg
-if test_cfg.use_specialized_api():
+if api_type == ApiType.SPECIALIZED:
     from jenkinsflow import specialized_api as jenkins
     _job_xml_template = jp(here, 'job.xml.tenjin')
-elif test_cfg.use_jenkinsapi():
+elif api_type == ApiType.JENKINSAPI:
     from jenkinsflow import jenkinsapi_wrapper as jenkins
     _job_xml_template = jp(here, 'job.xml.tenjin')
-elif test_cfg.use_script_api():
+elif api_type == ApiType.SCRIPT:
     from jenkinsflow import script_api as jenkins
     _job_xml_template = jp(here, 'job_script.py.tenjin')
 else:
@@ -70,6 +71,7 @@ class WrapperJob(ObjectWrapper, TestJob, ApiJobMixin):
 
 class JenkinsTestWrapperApi(jenkins.Jenkins, TestJenkins):
     job_xml_template = _job_xml_template
+    api_type = api_type
 
     def __init__(self, file_name, func_name, func_num_params, job_name_prefix, reload_jobs, pre_delete_jobs, direct_url,
                  username, password, securitytoken, login):
@@ -116,7 +118,7 @@ class JenkinsTestWrapperApi(jenkins.Jenkins, TestJenkins):
         name = '0flow_' + name if name else '0flow'
         job_name = (self.job_name_prefix or '') + name
         # TODO Handle script api
-        if test_cfg.use_script_api():
+        if api_type == ApiType.SCRIPT:
             return job_name
 
         #  Note: Use -B to avoid permission problems with .pyc files created from commandline test

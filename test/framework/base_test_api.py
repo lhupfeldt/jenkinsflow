@@ -9,7 +9,7 @@ from collections import OrderedDict
 from .abstract_api import AbstractApiJob, AbstractApiBuild as TestBuild, AbstractApiJenkins
 
 from jenkinsflow.flow import BuildResult
-from jenkinsflow.mocked import hyperspeed, mocked
+from jenkinsflow.mocked import hyperspeed
 
 
 class TestJob(AbstractApiJob):
@@ -67,7 +67,6 @@ class TestJob(AbstractApiJob):
 
 class TestJenkins(AbstractApiJenkins):
     __metaclass__ = abc.ABCMeta
-    is_mocked = mocked
 
     def __init__(self, job_name_prefix):
         self.job_name_prefix = job_name_prefix

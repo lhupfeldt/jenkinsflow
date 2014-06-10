@@ -1,7 +1,7 @@
 import os, time
 
-env_var_prefix = "JENKINSFLOW_"
-mock_speedup_env_var_name = env_var_prefix + 'MOCK_SPEEDUP'
+# Duplicated in test.cfg, can't import this module there because of coverage test issues
+mock_speedup_env_var_name = "JENKINSFLOW_MOCK_SPEEDUP"
 
 
 def _mocked():

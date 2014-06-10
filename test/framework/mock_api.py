@@ -9,6 +9,7 @@ from jenkinsflow.api_base import UnknownJobException, ApiJobMixin, ApiBuildMixin
 from jenkinsflow.mocked import hyperspeed
 
 from .base_test_api import TestJob, TestBuild, TestJenkins
+from jenkinsflow.test.cfg import ApiType
 
 here = os.path.abspath(os.path.dirname(__file__))
 
@@ -84,6 +85,7 @@ class Build(ApiBuildMixin, TestBuild):
 
 class MockApi(TestJenkins):
     job_xml_template = jp(here, 'job.xml.tenjin')
+    api_type = ApiType.MOCK
 
     def __init__(self, job_name_prefix, baseurl):
         super(MockApi, self).__init__(job_name_prefix)

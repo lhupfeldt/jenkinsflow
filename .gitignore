@@ -22,8 +22,8 @@ lib64
 pip-log.txt
 
 # Unit test / coverage reports
-.coverage
-.coverage.gw*
+.coverage*
+coverage_rc.tenjin.cache*
 .tox
 nosetests.xml
 

@@ -1,19 +1,29 @@
 import os
+from enum import Enum
 
-from .. mocked import env_var_prefix, mock_speedup_env_var_name
+# Duplicated from .. mocked, can't import that here because of coverage test issues
+env_var_prefix = "JENKINSFLOW_"
+mock_speedup_env_var_name = env_var_prefix + 'MOCK_SPEEDUP'
+
 from .framework import config
 
 MOCK_SPEEDUP_NAME = mock_speedup_env_var_name
 DIRECT_URL_NAME = env_var_prefix + 'DIRECT_URL'
 SCRIPT_DIR_NAME = env_var_prefix + 'SCRIPT_DIR'
 
-USE_SPECIALIZED_API_NAME = env_var_prefix + 'USE_SPECIALIZED_API'
-USE_JENKINS_API_NAME = env_var_prefix + 'USE_JENKINS_API'
-USE_SCRIPT_API_NAME = env_var_prefix + 'USE_SCRIPT_API'
-
 SKIP_JOB_LOAD_NAME = env_var_prefix + 'SKIP_JOB_LOAD'
 SKIP_JOB_DELETE_NAME = env_var_prefix + 'SKIP_JOB_DELETE'
 
+
+class ApiType(Enum):
+    SPECIALIZED = 0
+    SCRIPT = 1
+    JENKINSAPI = 2
+    MOCK = 3
+
+    def env_name(self):
+        return str(self).replace('.', '_')
+    
 
 def mock(speedup):
     assert isinstance(speedup, (int, float))
@@ -25,8 +35,11 @@ def unmock():
 
 
 def direct_url():
-    durl = os.environ.get(DIRECT_URL_NAME)
-    return 'http://localhost:8080' if durl is None else durl.rstrip('/')
+    if selected_api() != ApiType.SCRIPT:
+        durl = os.environ.get(DIRECT_URL_NAME)
+        return 'http://localhost:8080' if durl is None else durl.rstrip('/')
+    else:
+        return script_dir()
 
 
 def script_dir():
@@ -34,16 +47,22 @@ def script_dir():
     return config.job_script_dir if sdir is None else sdir.rstrip('/')
 
 
-def use_specialized_api():
-    return os.environ.get(USE_SPECIALIZED_API_NAME) == 'true'
+def select_api(api):
+    for aa in ApiType:
+        os.environ[aa.env_name()] = 'false'
+    os.environ[api.env_name()] = 'true'
 
 
-def use_jenkinsapi():
-    return os.environ.get(USE_JENKINS_API_NAME) == 'true'
-
-
-def use_script_api():
-    return os.environ.get(USE_SCRIPT_API_NAME) == 'true'
+def selected_api():
+    count = 0
+    found_api = None
+    for api in ApiType:
+        if os.environ.get(api.env_name()) == 'true':
+            found_api = api
+            count += 1
+    if count == 1:
+        return found_api
+    raise Exception("Error: " + ("No api selected" if not count else repr(count) + " apis selected"))
 
 
 def skip_job_delete():

@@ -5,24 +5,36 @@ from __future__ import print_function
 import sys, os, subprocess32 as subprocess, getpass, shutil
 from docopt import docopt
 from os.path import join as jp
+
+import tenjin
+from tenjin.helpers import *
+
 here = os.path.abspath(os.path.dirname(__file__))
 
 extra_sys_path = [os.path.normpath(path) for path in [here, jp(here, '../..'), jp(here, '../demo'), jp(here, '../demo/jobs'), jp(here, '../../jenkinsapi')]]
 sys.path = extra_sys_path + sys.path
 os.environ['PYTHONPATH'] = ':'.join(extra_sys_path)
 
-from jenkinsflow.flow import JobControlFailException
 
 from jenkinsflow.test.framework import config
 from jenkinsflow.test import cfg as test_cfg
-from jenkinsflow.test.cfg import env_var_prefix
+from jenkinsflow.test.cfg import ApiType
 
 
-def run_tests(parallel, cov_rc_file):
-    cmd = ['py.test', '--capture=sys', '--cov=' + here + '/..', '--cov-report=term-missing', '--cov-config=' + cov_rc_file, '--instafail', '--ff']
+def run_tests(parallel, api_type):
+    start_msg("Using " + str(api_type))
+    test_cfg.select_api(api_type)
+
+    engine = tenjin.Engine()
+    cov_rc_file_name = jp(here, '.coverage_rc_' +  api_type.env_name().lower())
+    with open(cov_rc_file_name, 'w') as cov_rc_file:
+        cov_rc_file.write(engine.render(jp(here, "coverage_rc.tenjin"), dict(api_type=api_type)))
+            
+    cmd = ['py.test', '--capture=sys', '--cov=' + here + '/..', '--cov-report=term-missing', '--cov-config=' + cov_rc_file_name, '--instafail', '--ff']
     if not parallel:
         return subprocess.check_call(cmd)
-    return subprocess.check_call(cmd + ['-n', '16'])
+    subprocess.check_call(cmd + ['-n', '16'])
+    os.unlink(cov_rc_file_name)
 
 
 opts = """
@@ -46,6 +58,7 @@ Job Load Options:  Control job loading and parallel test run. Specifying any of 
 """
 
 def args_parser():
+    test_cfg.select_api(ApiType.SPECIALIZED)
     doc = opts % dict(speedup_default=1000, direct_url=test_cfg.direct_url())
     args = docopt(doc, argv=None, help=True, version=None, options_first=False)
 
@@ -55,7 +68,8 @@ def args_parser():
     if args['--direct-url']:
         os.environ[test_cfg.DIRECT_URL_NAME] = args['--direct-url']
     os.environ[test_cfg.SCRIPT_DIR_NAME] = test_cfg.script_dir()
-    os.environ[test_cfg.USE_JENKINS_API_NAME] = 'true' if args['--use-jenkinsapi'] else 'false'
+    if args['--use-jenkinsapi']:
+        test_cfg.select_api(ApiType.JENKINSAPI)
     os.environ[test_cfg.SKIP_JOB_DELETE_NAME] = 'true' if args['--skip-job-delete'] else 'false'
     os.environ[test_cfg.SKIP_JOB_LOAD_NAME] = 'true' if args['--skip-job-load'] else 'false'
 
@@ -84,24 +98,16 @@ def main():
             test_cfg.unmock()
             sys.exit(subprocess.call(['py.test', '--capture=sys', '--instafail'] + extra_args))
 
-        start_msg("Using mock_api")
-        run_tests(False, here + '/.coverage_mocked_rc')
-
+        run_tests(False, ApiType.MOCK)
         test_cfg.unmock()
-        parallel = test_cfg.skip_job_load() | test_cfg.skip_job_delete()
-        if not test_cfg.use_jenkinsapi():
-            start_msg("Using specialized_api")
-            os.environ[test_cfg.USE_SPECIALIZED_API_NAME] = 'true'
-            run_tests(parallel, here + '/.coverage_real_rc')
-        else:
-            start_msg("Using jenkinsapi_wrapper")
-            run_tests(parallel, here + '/.coverage_jenkinsapi_rc')
 
-        start_msg("Using script_api")
-        os.environ[test_cfg.USE_SPECIALIZED_API_NAME] = 'false'
-        os.environ[test_cfg.USE_JENKINS_API_NAME] = 'false'
-        os.environ[test_cfg.USE_SCRIPT_API_NAME] = 'true'
-        run_tests(parallel, here + '/.coverage_script_api_rc')
+        parallel = test_cfg.skip_job_load() | test_cfg.skip_job_delete()
+        # TODO run both, use extra job prefix
+        if not test_cfg.selected_api() == ApiType.JENKINSAPI:
+            run_tests(parallel, ApiType.SPECIALIZED)
+        else:
+            run_tests(parallel, ApiType.JENKINSAPI)
+        run_tests(parallel, ApiType.SCRIPT)
 
         start_msg("Testing setup.py")
         user = getpass.getuser()

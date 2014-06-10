@@ -1,3 +1,4 @@
+<?py from jenkinsflow.test.cfg import ApiType ?>
 [report]
 exclude_lines =
     # Have to re-enable the standard pragma
@@ -18,9 +19,21 @@ exclude_lines =
     self.api.poll_job(self.name)
     self.api.poll()
 
+    <?py if api_type == ApiType.MOCK: ?>
+    # Parts of 'mocked' not used when not mocked
+    hyperspeed = time
+    <?py else: ?>
     # Parts of 'mocked' only used when mocked
     from .test.framework.hyperspeed
     hyperspeed = _HyperSpeed
+    <?py #endif ?>
+
+    <?py if api_type != ApiType.SCRIPT: ?>
+    # Part of set_build_result only used for script_api
+    from . import script_api
+    script_api.set_build_result\(result
+    return
+    <?py #endif ?>
 
 omit = 
      test/*
@@ -28,5 +41,12 @@ omit =
      server.py
      setup.py
      ordered_enum.py
-     jenkinsapi_wrapper.py
+     <?py if api_type != ApiType.SPECIALIZED: ?>
      specialized_api.py
+     <?py #endif ?>
+     <?py if api_type != ApiType.JENKINSAPI: ?>
+     jenkinsapi_wrapper.py
+     <?py #endif ?>
+     <?py if api_type != ApiType.SCRIPT: ?>
+     script_api.py
+     <?py #endif ?>

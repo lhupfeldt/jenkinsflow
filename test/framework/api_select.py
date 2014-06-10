@@ -46,14 +46,9 @@ def api(file_name, login=False, fixed_prefix=None):
         from .mock_api import MockApi
         return MockApi(job_name_prefix, test_cfg.direct_url())
     else:
+        api_type = test_cfg.selected_api()
+        print('Using:', api_type)
         url_or_dir = test_cfg.direct_url()
-        if test_cfg.use_specialized_api():
-            print('Using Specialized Jenkins API with wrapper')
-        elif test_cfg.use_jenkinsapi():
-            print('Using JenkinsAPI with wrapper')
-        elif test_cfg.use_script_api():
-            print('Using Script API with wrapper')
-            url_or_dir = test_cfg.script_dir()
 
         reload_jobs = not test_cfg.skip_job_load() and not fixed_prefix
         pre_delete_jobs = not test_cfg.skip_job_delete()

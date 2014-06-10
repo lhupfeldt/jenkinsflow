@@ -1,6 +1,8 @@
 # Copyright (c) 2012 - 2014 Lars Hupfeldt Nielsen, Hupfeldt IT
 # All rights reserved. This work is under a BSD license, see LICENSE.TXT.
 
+from __future__ import print_function
+
 import os, sys, importlib
 from os.path import join as jp
 import multiprocessing
@@ -16,6 +18,18 @@ def _mkdir(path):
             raise
 
 
+_build_res = None
+
+
+def set_build_result(res):
+    global _build_res
+    _build_res = res
+
+
+def _get_build_result():
+    return _build_res
+
+
 class LoggingProcess(multiprocessing.Process):
     def __init__(self, group=None, target=None, output_file_name=None, name=None, args=()):
         self.user_target = target
@@ -23,11 +37,22 @@ class LoggingProcess(multiprocessing.Process):
         self.output_file_name = output_file_name
 
     def run_job_wrapper(self, *args):
+        rc = 0
+        set_build_result(None)
         try:
-            sys.exit(self.user_target(*args))
-        except Exception as ex:
-            print("Caught exception from job script:", ex)
-            sys.exit(1)
+            rc = self.user_target(*args)
+        except Exception as ex:  # pylint: disable=broad-except
+            print("jenkinsflow.script_api: Caught exception from job script:", ex)
+            rc = 1
+
+        sbr = _get_build_result()
+        print('sbr:', sbr)
+        if sbr == None:
+            sys.exit(rc)
+        if sbr == 'unstable':
+            sys.exit(2)
+        print("jenkinsflow.script_api: Unknown requested build result:", sbr)
+        sys.exit(1)
 
     def run(self):
         sys.stdout = sys.stderr = open(self.output_file_name, 'w', buffering=0)

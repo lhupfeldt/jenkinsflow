@@ -7,10 +7,11 @@ import pytest
 
 from .config import flow_graph_root_dir
 from jenkinsflow.test import cfg as test_cfg
+from jenkinsflow.test.cfg import ApiType
 
 
 _http_re = re.compile(r'https?://.*?/job/([^/" ]*)')
-if not test_cfg.use_script_api():
+if test_cfg.selected_api() != ApiType.SCRIPT:
     def replace_host_port(contains_url):
         return _http_re.sub(r'http://x.x/job/\1', contains_url)
 else:

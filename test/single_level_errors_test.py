@@ -36,7 +36,7 @@ def test_single_level_errors_parallel(capsys):
         assert_lines_in(
             sout,
             "^FAILURE: 'jenkinsflow_test__single_level_errors_parallel__quick_fail' - build: ",
-            re.compile("http://x.x/job/jenkinsflow_test__single_level_errors_parallel__quick_fail.*/console after:"),
+            re.compile("/job/jenkinsflow_test__single_level_errors_parallel__quick_fail.*/console after:"),
         )
 
 

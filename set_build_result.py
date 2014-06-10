@@ -64,6 +64,12 @@ def set_build_result(username, password, result, direct_url=None, java='java'):
                         "You must set 'Jenkins Location' in Jenkins setup for JENKINS_URL to be exported. " +
                         "You must set 'Hudson URL' in Hudson setup for HUDSON_URL to be exported.")
 
+    if not base_url.startswith('http'):
+        # Using script_api
+        from . import script_api
+        script_api.set_build_result(result)
+        return
+
     import subprocess32 as subprocess
 
     def set_res():
