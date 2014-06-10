@@ -7,12 +7,12 @@
 
 from __future__ import print_function
 
-import demo_setup
-demo_setup.sys_path()
-
-import sys, os
+import sys, os, tempfile
 import logging
 from collections import OrderedDict
+
+import demo_setup
+demo_setup.sys_path()
 
 from jenkinsflow.flow import serial
 from jenkinsflow.unbuffered import UnBuffered
@@ -21,7 +21,6 @@ from jenkinsflow.unbuffered import UnBuffered
 sys.stdout = UnBuffered(sys.stdout)
 
 import demo_security as security
-from jenkinsflow.test.framework.utils import flow_graph_dir
 
 
 def main(api):
@@ -31,7 +30,7 @@ def main(api):
     print("Doing stuff before flow ...")
     demo_name = 'jenkinsflow_demo__calculated_flow'
 
-    graph_output_dir = flow_graph_dir(demo_name)
+    graph_output_dir = os.path.join(tempfile.gettempdir(), demo_name)
     if not os.path.exists(graph_output_dir):
         os.makedirs(graph_output_dir)
 
