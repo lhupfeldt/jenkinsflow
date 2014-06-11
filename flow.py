@@ -280,7 +280,7 @@ class _SingleJob(_JobControl):
                 del display_params[name]
 
         if self.job:
-            print('Defined Job', self.job.non_clickable_build_trigger_url + (' - parameters:' if display_params else ''))
+            print('Defined Job', self.job.public_uri + (' - parameters:' if display_params else ''))
         else:
             print('Defined Job', repr(self.name) + " - MISSING JOB")
         for key, value in chain(first.iteritems(), sorted(display_params.iteritems()), last.iteritems()):

@@ -161,7 +161,7 @@ class ApiJob(ApiJobMixin):
         self.name = name
 
         self.build = None
-        self.public_uri = self.baseurl = self.non_clickable_build_trigger_url = script_file
+        self.public_uri = self.baseurl = script_file
         self.workspace = workspace
         self.func = func
         self.log_file = jp(self.jenkins.log_dir, self.name + '.log')

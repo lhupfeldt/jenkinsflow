@@ -113,11 +113,9 @@ class ApiJob(ApiJobMixin):
         for action in actions:
             if action.get('parameterDefinitions'):
                 self._build_trigger_path = "/job/" + self.name + "/buildWithParameters"
-                self.non_clickable_build_trigger_url = self.public_uri
                 break
         else:
             self._build_trigger_path = "/job/" + self.name + "/build"
-            self.non_clickable_build_trigger_url = self.public_uri
 
     def invoke(self, securitytoken, build_params, cause):
         try:

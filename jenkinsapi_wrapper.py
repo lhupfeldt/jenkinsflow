@@ -42,14 +42,12 @@ class Jenkins(jenkinsapi.jenkins.Jenkins):
 
 
 class ApiJob(ObjectWrapper, jenkinsapi.job.Job, ApiJobMixin):
-    non_clickable_build_trigger_url = None
     public_uri = None
 
     def __init__(self, jenkins_job):
         ObjectWrapper.__init__(self, jenkins_job)
         # TODO params validation? params = jenkins_job.get_params_list()
         self.public_uri = self.baseurl
-        self.non_clickable_build_trigger_url = self.baseurl
 
     def invoke(self, securitytoken, build_params, cause):
         self.__subject__.invoke(securitytoken=securitytoken, invoke_pre_check_delay=0, block=False, build_params=build_params, cause=cause)  # pylint: disable=no-member

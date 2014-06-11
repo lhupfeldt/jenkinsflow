@@ -24,10 +24,6 @@ class MockJob(TestJob, ApiJobMixin):
         self.params = params
         self.just_invoked = False
 
-    @property
-    def non_clickable_build_trigger_url(self):
-        return self.baseurl
-
     def is_running(self):
         return self.start_time <= hyperspeed.time() < self.end_time
 
