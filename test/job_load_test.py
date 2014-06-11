@@ -13,7 +13,7 @@ from .cfg import ApiType
 
 here = os.path.abspath(os.path.dirname(__file__))
 
-_context = dict(exec_time=1, params=(), script=None, securitytoken='abc')
+_context = dict(exec_time=1, params=(), script=None, securitytoken='abc', print_env=False)
 
 
 def _random_job_name(api, short_name=None):

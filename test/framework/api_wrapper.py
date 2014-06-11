@@ -90,22 +90,23 @@ class JenkinsTestWrapperApi(jenkins.Jenkins, TestJenkins):
         self.securitytoken = securitytoken
         self.direct_url = direct_url
 
-    def _jenkins_job(self, name, exec_time, params, script):
+    def _jenkins_job(self, name, exec_time, params, script, print_env):
         name = self.job_name_prefix + name
         assert not self.test_jobs.get(name)
         # Create job in Jenkins
         if self.reload_jobs:
             context = dict(exec_time=exec_time, params=params or (), script=script, pseudo_install_dir=pseudo_install_dir,
-                           securitytoken=self.securitytoken, username=security.username, password=security.password, direct_url=self.direct_url)
+                           securitytoken=self.securitytoken, username=security.username, password=security.password, direct_url=self.direct_url,
+                           print_env=print_env)
             update_job_from_template(self.job_loader_jenkins, name, self.job_xml_template, pre_delete=self.pre_delete_jobs, context=context)
         return name
 
     def job(self, name, exec_time, max_fails, expect_invocations, expect_order, initial_buildno=None, invocation_delay=0.1, params=None,
-            script=None, unknown_result=False, final_result=None, serial=False):
+            script=None, unknown_result=False, final_result=None, serial=False, print_env=False):
         if max_fails > 0 or final_result:
             params = list(params) if params else []
             params.append(('force_result', ('SUCCESS', 'FAILURE', 'UNSTABLE'), 'Caller can force job to success, fail or unstable'))
-        name = self._jenkins_job(name, exec_time, params, script)
+        name = self._jenkins_job(name, exec_time, params, script, print_env)
         self.test_jobs[name] = MockJob(name, exec_time, max_fails, expect_invocations, expect_order, initial_buildno, invocation_delay, unknown_result, final_result, serial, params)
 
     def flow_job(self, name=None, params=None):
@@ -130,7 +131,7 @@ class JenkinsTestWrapperApi(jenkins.Jenkins, TestJenkins):
             script += "python -Bc &quot;from jenkinsflow.test." + self.file_name.replace('.py', '') + " import *; test_" + self.func_name + "(" + dummy_args + ")&quot;"
         else:
             script = "python -B " + jp(pseudo_install_dir, 'demo', self.file_name)
-        self._jenkins_job(name, exec_time=0.5, params=params, script=script)
+        self._jenkins_job(name, exec_time=0.5, params=params, script=script, print_env=False)
         return job_name
 
     # --- Wrapped API ---

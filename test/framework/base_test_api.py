@@ -17,7 +17,7 @@ class TestJob(AbstractApiJob):
 
     _current_order = 1
 
-    def __init__(self, exec_time, max_fails, expect_invocations, expect_order, initial_buildno=None, invocation_delay=0.01, unknown_result=False, final_result=None, serial=False):
+    def __init__(self, exec_time, max_fails, expect_invocations, expect_order, initial_buildno=None, invocation_delay=0.01, unknown_result=False, final_result=None, serial=False, print_env=False):
         """
         Set unknown_result to True if the result is indeterminate (timeout or invoke_unchecked)
         """
@@ -38,6 +38,7 @@ class TestJob(AbstractApiJob):
         self.invocation_delay = invocation_delay
         self.unknown_result = unknown_result
         self.serial = serial
+        self.print_env = print_env
         self.final_result = final_result if isinstance(final_result, (BuildResult, type(None))) else BuildResult[final_result.upper()]
 
         self.invocation = 0
@@ -75,7 +76,7 @@ class TestJenkins(AbstractApiJenkins):
 
     @abc.abstractmethod
     def job(self, name, exec_time, max_fails, expect_invocations, expect_order, initial_buildno=None, invocation_delay=0.1, params=None,
-            script=None, unknown_result=False, final_result=None, serial=False):
+            script=None, unknown_result=False, final_result=None, serial=False, print_env=False):
         pass
 
     @abc.abstractmethod

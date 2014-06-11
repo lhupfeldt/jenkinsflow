@@ -3,7 +3,7 @@
 
 from __future__ import print_function
 
-import os, sys, importlib
+import sys, os, shutil, importlib, datetime, tempfile
 from os.path import join as jp
 import multiprocessing
 from .api_base import UnknownJobException, ApiJobMixin, ApiBuildMixin
@@ -31,14 +31,16 @@ def _get_build_result():
 
 
 class LoggingProcess(multiprocessing.Process):
-    def __init__(self, group=None, target=None, output_file_name=None, name=None, args=()):
+    def __init__(self, group=None, target=None, output_file_name=None, workspace=None, name=None, args=()):
         self.user_target = target
         super(LoggingProcess, self).__init__(group=group, target=self.run_job_wrapper, name=name, args=args)
         self.output_file_name = output_file_name
+        self.workspace = workspace
 
     def run_job_wrapper(self, *args):
         rc = 0
         set_build_result(None)
+        os.chdir(self.workspace)
         try:
             rc = self.user_target(*args)
         except Exception as ex:  # pylint: disable=broad-except
@@ -46,7 +48,6 @@ class LoggingProcess(multiprocessing.Process):
             rc = 1
 
         sbr = _get_build_result()
-        print('sbr:', sbr)
         if sbr == None:
             sys.exit(rc)
         if sbr == 'unstable':
@@ -87,7 +88,7 @@ class Jenkins(object):
         **kwargs: Ignored for compatibility with the other jenkins apis
     """
 
-    def __init__(self, direct_uri, job_prefix_filter=None, username=None, password=None, log_dir='/tmp', **kwargs):
+    def __init__(self, direct_uri, job_prefix_filter=None, username=None, password=None, log_dir=tempfile.gettempdir(), **kwargs):
         self.job_prefix_filter = job_prefix_filter
         self.username = username
         self.password = password
@@ -103,6 +104,9 @@ class Jenkins(object):
 
     def _script_file(self, job_name):
         return jp(self.public_uri, job_name + '.py')
+
+    def _workspace(self, job_name):
+        return jp(self.public_uri, job_name)
 
     def get_job(self, name):
         job = self.jobs.get(name)
@@ -126,8 +130,7 @@ class Jenkins(object):
                 func = user_module.run_job
             except AttributeError as ex:
                 raise UnknownJobException(script_file + repr(ex))
-
-            job = self.jobs[name] = ApiJob(self, name, script_file, func)
+            job = self.jobs[name] = ApiJob(jenkins=self, name=name, script_file=script_file, workspace=self._workspace(name), func=func)
         return job
 
     def create_job(self, job_name, config_xml):
@@ -145,24 +148,32 @@ class Jenkins(object):
                 raise UnknownJobException(script_file + repr(ex))
             raise
 
+        try:
+            shutil.rmtree(self._workspace(job_name))
+        except OSError as ex:
+            if os.path.exists(script_file):
+                raise
+
 
 class ApiJob(ApiJobMixin):
-    def __init__(self, jenkins, name, script_file, func):
+    def __init__(self, jenkins, name, script_file, workspace, func):
         self.jenkins = jenkins
         self.name = name
 
         self.build = None
         self.public_uri = self.baseurl = self.non_clickable_build_trigger_url = script_file
+        self.workspace = workspace
         self.func = func
         self.log_file = jp(self.jenkins.log_dir, self.name + '.log')
         self.build_num = 0
 
     def invoke(self, securitytoken, build_params, cause):
         _mkdir(self.jenkins.log_dir)
+        _mkdir(self.workspace)
         self.build_num += 1
         fixed_args = [self.name, self.jenkins.job_prefix_filter, self.jenkins.username, self.jenkins.password, securitytoken, cause]
         fixed_args.append(build_params if build_params else {})
-        proc = LoggingProcess(target=self.func, output_file_name=self.log_file, args=fixed_args)
+        proc = LoggingProcess(target=self.func, output_file_name=self.log_file, workspace=self.workspace, args=fixed_args)
         self.build = ApiBuild(self, proc, self.build_num)
 
     def is_running(self):
@@ -193,6 +204,25 @@ class ApiBuild(ApiBuildMixin):
         self.job = job
         self.proc = proc
         self.buildno = buildno
+
+        # Export some of the same variables that Jenkins does
+        os.environ.update(dict(
+            BUILD_NUMBER=repr(self.buildno),
+            BUILD_ID=datetime.datetime.isoformat(datetime.datetime.utcnow()),
+            BUILD_DISPLAY_NAME='#' + repr(self.buildno),
+            JOB_NAME=self.job.name,
+            BUILD_TAG='jenkinsflow-' + self.job.name + '-' + repr(self.buildno),
+            EXECUTOR_NUMBER=repr(self.proc.pid),
+            NODE_NAME='master',
+            NODE_LABELS='',
+            WORKSPACE=self.job.workspace,
+            JENKINS_HOME=self.job.jenkins.public_uri,
+            JENKINS_URL=self.job.jenkins.public_uri,
+            HUDSON_URL=self.job.jenkins.public_uri,
+            BUILD_URL=jp(self.job.public_uri, repr(self.buildno)),
+            JOB_URL=self.job.public_uri,
+        ))
+
         self.proc.start()
 
     def is_running(self):

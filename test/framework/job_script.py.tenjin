@@ -4,6 +4,11 @@ import time
 
 
 def run_job(job_name, job_prefix_filter, username, password, securitytoken, cause, build_params):
+<?py if print_env: ?>
+    import os
+    print(os.environ)
+<?py #endif ?>
+
 <?py if script is not None: ?>
 <?py     raise Exception("Script is not supported: " + script) ?>
 <?py else: ?>

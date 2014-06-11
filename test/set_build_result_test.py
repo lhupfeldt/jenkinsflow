@@ -110,6 +110,10 @@ def test_set_build_result_no_auth(fake_java, pre_existing_cli, env_base_url, cap
 
 
 def test_set_build_result_no_jenkinsurl(pre_existing_cli, env_no_base_url, capfd):
+    if test_cfg.selected_api() == ApiType.SCRIPT:
+        # JENKINS_URL is always set for script_api
+        return
+
     with raises(Exception) as exinfo:
         with api_select.api(__file__) as api:
             api.flow_job()

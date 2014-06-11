@@ -93,7 +93,7 @@ class MockApi(TestJenkins):
         self._deleted_jobs = {}
 
     def job(self, name, exec_time, max_fails, expect_invocations, expect_order, initial_buildno=None, invocation_delay=0.1, params=None,
-            script=None, unknown_result=False, final_result=None, serial=False):
+            script=None, unknown_result=False, final_result=None, serial=False, print_env=False):
         name = self.job_name_prefix + name
         assert not self.test_jobs.get(name)
         self.test_jobs[name] = MockJob(name, exec_time, max_fails, expect_invocations, expect_order, initial_buildno, invocation_delay, unknown_result, final_result, serial, params)
