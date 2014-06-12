@@ -5,7 +5,7 @@ from pytest import raises
 
 from jenkinsflow.flow import serial, MessageRedefinedException
 from .framework import api_select
-from .framework.utils import assert_lines_in
+from .framework.utils import assert_lines_in, result_msg
 
 
 def test_messages(capsys):
@@ -35,20 +35,20 @@ def test_messages(capsys):
             "^--- Starting flow ---",
             "^Invoking Flow (1/1,1/1): ['jenkinsflow_test__messages__j11', ['jenkinsflow_test__messages__j21'], 'jenkinsflow_test__messages__j12', (",
             "^Invoking Job (1/1,1/1): http://x.x/job/jenkinsflow_test__messages__j11/",
-            "^SUCCESS: 'jenkinsflow_test__messages__j11' - build: http://x.x/job/jenkinsflow_test__messages__j11/",
+            "^SUCCESS: " + result_msg(api, "jenkinsflow_test__messages__j11"),
             "^**** Message 1 ****",
             "^Invoking Flow (1/1,1/1): ['jenkinsflow_test__messages__j21']",
             "^Invoking Job (1/1,1/1): http://x.x/job/jenkinsflow_test__messages__j21/",
-            "^SUCCESS: 'jenkinsflow_test__messages__j21' - build: http://x.x/job/jenkinsflow_test__messages__j21/",
+            "^SUCCESS: " + result_msg(api, "jenkinsflow_test__messages__j21"),
             "^Flow SUCCESS ['jenkinsflow_test__messages__j21'] after: ",
             "^Invoking Job (1/1,1/1): http://x.x/job/jenkinsflow_test__messages__j12/",
-            "^SUCCESS: 'jenkinsflow_test__messages__j12' - build: http://x.x/job/jenkinsflow_test__messages__j12/",
+            "^SUCCESS: " + result_msg(api, "jenkinsflow_test__messages__j12"),
             "^==== Message 2 ====",
             "^Invoking Flow (1/1,1/1): ('jenkinsflow_test__messages__j22', 'jenkinsflow_test__messages__j23')",
             "^Invoking Job (1/1,1/1): http://x.x/job/jenkinsflow_test__messages__j22/",
             "^Invoking Job (1/1,1/1): http://x.x/job/jenkinsflow_test__messages__j23/",
-            "^SUCCESS: 'jenkinsflow_test__messages__j22' - build: http://x.x/job/jenkinsflow_test__messages__j22/",
-            "^SUCCESS: 'jenkinsflow_test__messages__j23' - build: http://x.x/job/jenkinsflow_test__messages__j23/",
+            "^SUCCESS: " + result_msg(api, "jenkinsflow_test__messages__j22"),
+            "^SUCCESS: " + result_msg(api, "jenkinsflow_test__messages__j23"),
             "^Flow SUCCESS ('jenkinsflow_test__messages__j22', 'jenkinsflow_test__messages__j23') after: ",
             "^Flow SUCCESS ['jenkinsflow_test__messages__j11', ['jenkinsflow_test__messages__j21'], 'jenkinsflow_test__messages__j12', ('jenkinsflow_test__messages__j22', 'jenkinsflow_test__messages__j23')]",
         )
@@ -75,10 +75,10 @@ def test_messages_on_job(capsys):
             "^Invoking Flow (1/1,1/1): ['jenkinsflow_test__messages_on_job__j21']",
             "^*** Calling j21 ***",
             "^Invoking Job (1/1,1/1): http://x.x/job/jenkinsflow_test__messages_on_job__j21/",
-            "^SUCCESS: 'jenkinsflow_test__messages_on_job__j21' - build: http://x.x/job/jenkinsflow_test__messages_on_job__j21/",
+            "^SUCCESS: " + result_msg(api, "jenkinsflow_test__messages_on_job__j21"),
             "^Flow SUCCESS ['jenkinsflow_test__messages_on_job__j21'] after: ",
             "^Invoking Job (1/1,1/1): http://x.x/job/jenkinsflow_test__messages_on_job__j12/",
-            "^SUCCESS: 'jenkinsflow_test__messages_on_job__j12' - build: http://x.x/job/jenkinsflow_test__messages_on_job__j12/",
+            "^SUCCESS: " + result_msg(api, "jenkinsflow_test__messages_on_job__j12"),
         )
 
 

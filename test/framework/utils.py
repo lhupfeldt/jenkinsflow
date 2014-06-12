@@ -1,7 +1,7 @@
 # Copyright (c) 2012 - 2014 Lars Hupfeldt Nielsen, Hupfeldt IT
 # All rights reserved. This work is under a BSD license, see LICENSE.TXT.
 
-import os, re
+import os, re, tempfile
 from os.path import join as jp
 import pytest
 
@@ -10,10 +10,26 @@ from jenkinsflow.test import cfg as test_cfg
 from jenkinsflow.test.cfg import ApiType
 
 
-_http_re = re.compile(r'https?://.*?/job/([^/" ]*)')
+_console_url_script_api_log_file_msg_prefix = ' - ' + tempfile.gettempdir() + '/'
+_result_msg_script_api_log_file_msg_prefix = tempfile.gettempdir() + '/'
+
+
+def console_url(api, job_name, num):
+    if api.api_type == ApiType.SCRIPT:
+        return test_cfg.script_dir() + '/' + job_name + '.py' + _console_url_script_api_log_file_msg_prefix + job_name + '.log'
+    return 'http://x.x/job/' + job_name + '/' + (str(num) + "/console" if api.api_type == ApiType.MOCK else "")
+
+
+def result_msg(api, job_name, num=None):
+    if api.api_type == ApiType.SCRIPT:
+        return repr(job_name) + " - build: " + _result_msg_script_api_log_file_msg_prefix + job_name + '.log'
+    return repr(job_name) + " - build: http://x.x/job/" + job_name + "/" + (str(num) + "/console" if api.api_type == ApiType.MOCK and num else "")
+
+
+_http_re = re.compile(r'https?://.*?/job/([^/" ]*)(/?)')
 if test_cfg.selected_api() != ApiType.SCRIPT:
     def replace_host_port(contains_url):
-        return _http_re.sub(r'http://x.x/job/\1', contains_url)
+        return _http_re.sub(r'http://x.x/job/\1\2', contains_url)
 else:
     def replace_host_port(contains_url):
         return _http_re.sub(r'/tmp/jenkinsflow-test/job/\1.py', contains_url)

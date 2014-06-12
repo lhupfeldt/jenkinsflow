@@ -195,6 +195,9 @@ class ApiJob(ApiJobMixin):
     def poll(self):
         pass
 
+    def console_url(self, buildno):
+        return self.public_uri + ' - ' + self.log_file
+
     def __repr__(self):
         return str(self.name)
 
@@ -237,6 +240,9 @@ class ApiBuild(ApiBuildMixin):
         if rc == 1:
             return 'FAILURE'
         return 'UNSTABLE'
+
+    def console_url(self):
+        return self.job.log_file
 
     def __repr__(self):
         return self.job.name + " #" + repr(self.buildno)

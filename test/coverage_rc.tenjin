@@ -33,6 +33,10 @@ exclude_lines =
     from . import script_api
     script_api.set_build_result\(result
     return
+    <?py else: ?>
+    # Parts of api_base not used in script_api (overridden methods)
+    return self.public_uri + '/' + str(buildno) + '/console'
+    return self.job.console_url(self.buildno)
     <?py #endif ?>
 
 omit = 

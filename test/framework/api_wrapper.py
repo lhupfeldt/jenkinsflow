@@ -27,14 +27,14 @@ elif api_type == ApiType.SCRIPT:
 else:
     raise Exception("Don't know which API to use!")
 
-from jenkinsflow.api_base import UnknownJobException, ApiJobMixin
+from jenkinsflow.api_base import UnknownJobException
 
 from .base_test_api import TestJob, TestJenkins
 from .config import test_tmp_dir, pseudo_install_dir
 from .mock_api import MockJob
 
 
-class WrapperJob(ObjectWrapper, TestJob, ApiJobMixin):
+class WrapperJob(ObjectWrapper, TestJob, jenkins.ApiJob):
     # NOTE: ObjectWrapper class requires all attributes which are NOT proxied to be declared statically and overridden at instance level
     exec_time = None
     max_fails = None
