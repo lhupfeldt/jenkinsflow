@@ -1,5 +1,6 @@
 import os
-import pytest
+from pytest import fixture  # pylint: disable=no-name-in-module
+
 
 from . import cfg as test_cfg
 
@@ -48,48 +49,48 @@ def _unset_env_fixture(var_name, request):
         request.addfinalizer(fin)
 
 
-@pytest.fixture
+@fixture
 def mock_speedup_bad_value(request):
     _set_env_fixture("JENKINSFLOW_MOCK_SPEEDUP", 'true', request)
 
 
-@pytest.fixture
+@fixture
 def mock_speedup_307(request):
     _set_env_fixture("JENKINSFLOW_MOCK_SPEEDUP", '307', request)
 
 
-@pytest.fixture
+@fixture
 def mock_speedup_none(request):
     _unset_env_fixture("JENKINSFLOW_MOCK_SPEEDUP", request)
 
 
-@pytest.fixture
+@fixture
 def env_base_url(request):
     # Fake that we are running from inside jenkins job
     if os.environ.get('HUDSON_URL') is None:
         _set_env_if_not_set_fixture('JENKINS_URL', test_cfg.direct_url(), request)
 
 
-@pytest.fixture
+@fixture
 def env_no_base_url(request):
     # Make sure it looks as if we are we are running from outside jenkins job
     _unset_env_fixture('JENKINS_URL', request)
     _unset_env_fixture('HUDSON_URL', request)
 
 
-@pytest.fixture
+@fixture
 def env_job_name(request):
     # Fake that we are running from inside jenkins job
     _set_env_if_not_set_fixture('JOB_NAME', 'hudelihuu', request)
 
 
-@pytest.fixture
+@fixture
 def env_build_number(request):
     # Fake that we are running from inside jenkins job
     _set_env_if_not_set_fixture('BUILD_NUMBER', '1', request)
 
 
-@pytest.fixture(scope="module")
+@fixture(scope="module")
 def fake_java(request):
     if not os.environ.get('BUILD_URL'):
         # Running outside of Jenkins, fake call to java - cli, use script ./framework/java
