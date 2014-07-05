@@ -11,7 +11,7 @@ jenkins_cli_jar = 'jenkins-cli.jar'
 hudson_cli_jar = 'hudson-cli.jar'
 
 
-def cli_jar_info(direct_url):
+def cli_jar_info():
     base_url = os.environ.get('JENKINS_URL')
     cli_jar = jenkins_cli_jar
 
@@ -19,20 +19,27 @@ def cli_jar_info(direct_url):
         base_url = os.environ.get('HUDSON_URL')
         cli_jar = hudson_cli_jar
 
-    base_url = base_url + '/' if base_url is not None and base_url[-1] != '/' else base_url
-    return cli_jar, direct_url or base_url, base_url if base_url != direct_url else None
+    if base_url is None:
+        raise Exception("Could not get env variable JENKINS_URL or HUDSON_URL. Don't know whether to use " +
+                        jenkins_cli_jar + " or " + hudson_cli_jar + " for setting result! " +
+                        "You must set 'Jenkins Location' in Jenkins setup for JENKINS_URL to be exported. " +
+                        "You must set 'Hudson URL' in Hudson setup for HUDSON_URL to be exported.")
+
+    return cli_jar, base_url.rstrip('/')
 
 
-def download_cli(cli_jar, base_url, public_base_url):
+def download_cli(cli_jar, direct_base_url, public_base_url):
     import urllib2
-
-    cli_url = base_url + 'jnlpJars/' + cli_jar
-    if public_base_url:
-        public_cli_url = public_base_url + 'jnlpJars/' + cli_jar
-        print("INFO: Downloading cli:", repr(public_cli_url), " (using direct url: ", cli_url, ')')
+    
+    path = '/jnlpJars/' + cli_jar
+    if direct_base_url and direct_base_url != public_base_url:
+        download_cli_url = direct_base_url + path
+        print("INFO: Downloading cli:", repr(public_base_url + path), "(using direct url:", download_cli_url + ')')
     else:
-        print("INFO: Downloading cli:", repr(cli_url))
-    response = urllib2.urlopen(cli_url)
+        download_cli_url = public_base_url + path
+        print("INFO: Downloading cli:", repr(download_cli_url))
+
+    response = urllib2.urlopen(download_cli_url)
     with open(cli_jar, 'w') as ff:
         ff.write(response.read())
     print("INFO: Download finished:", repr(cli_jar))
@@ -57,14 +64,9 @@ def set_build_result(username, password, result, direct_url=None, java='java'):
 
     print("INFO: Setting job result to", repr(result))
 
-    cli_jar, base_url, public_base_url = cli_jar_info(direct_url)
-    if base_url is None:
-        raise Exception("Could not get env variable JENKINS_URL or HUDSON_URL. Don't know whether to use " +
-                        jenkins_cli_jar + " or " + hudson_cli_jar + " for setting result! " +
-                        "You must set 'Jenkins Location' in Jenkins setup for JENKINS_URL to be exported. " +
-                        "You must set 'Hudson URL' in Hudson setup for HUDSON_URL to be exported.")
+    cli_jar, public_base_url = cli_jar_info()
 
-    if not base_url.startswith('http'):
+    if not public_base_url.startswith('http'):
         # Using script_api
         from . import script_api
         script_api.set_build_result(result)
@@ -73,7 +75,7 @@ def set_build_result(username, password, result, direct_url=None, java='java'):
     import subprocess32 as subprocess
 
     def set_res():
-        command = [java, '-jar', cli_jar, '-s', base_url, 'set-build-result', result]
+        command = [java, '-jar', cli_jar, '-s', direct_url if direct_url else public_base_url, 'set-build-result', result]
         if username or password:
             assert password and username, "You must specify both username and password if any"
             fname = None
@@ -97,7 +99,7 @@ def set_build_result(username, password, result, direct_url=None, java='java'):
         set_res()
     except subprocess.CalledProcessError:
         # We failed for some reason, try again with updated cli_jar
-        download_cli(cli_jar, base_url, public_base_url)
+        download_cli(cli_jar, direct_url, public_base_url)
         set_res()
 
 

@@ -67,8 +67,17 @@ def mock_speedup_none(request):
 @fixture
 def env_base_url(request):
     # Fake that we are running from inside jenkins job
-    if os.environ.get('HUDSON_URL') is None:
-        _set_env_if_not_set_fixture('JENKINS_URL', test_cfg.direct_url(), request)
+    _set_env_if_not_set_fixture('JENKINS_URL', test_cfg.public_url(), request)
+
+
+@fixture
+def env_base_url_trailing_slash(request):
+    _set_env_if_not_set_fixture('JENKINS_URL', test_cfg.public_url() + '/', request)
+
+
+@fixture
+def env_base_url_trailing_slashes(request):
+    _set_env_if_not_set_fixture('JENKINS_URL', test_cfg.public_url() + '//', request)
 
 
 @fixture

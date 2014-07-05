@@ -1,4 +1,4 @@
-import os
+import os, socket
 from enum import Enum
 
 # Duplicated from .. mocked, can't import that here because of coverage test issues
@@ -38,6 +38,42 @@ def direct_url():
     if selected_api() != ApiType.SCRIPT:
         durl = os.environ.get(DIRECT_URL_NAME)
         return 'http://localhost:8080' if durl is None else durl.rstrip('/')
+    else:
+        return script_dir()
+
+
+def public_url():
+    if selected_api() != ApiType.SCRIPT:
+        purl = os.environ.get('JENKINS_URL') or os.environ.get('HUDSON_URL')
+        return "http://" + socket.getfqdn() + ':' + repr(8080) + '/' if purl is None else purl
+    else:
+        return script_dir()
+
+
+def direct_cli_url():
+    if selected_api() != ApiType.SCRIPT:
+        purl = os.environ.get('JENKINS_URL')
+        if purl:
+            return direct_url() + '/jnlpJars/jenkins-cli.jar'
+        purl = os.environ.get('HUDSON_URL')
+        if purl:
+            return direct_url() + '/jnlpJars/hudson-cli.jar'
+        # If neither JENKINS nor HUDSON URL is set, assume jenkins for testing
+        return direct_url() + '/jenkins-cli.jar'
+    else:
+        return script_dir()
+
+
+def public_cli_url():
+    if selected_api() != ApiType.SCRIPT:
+        purl = os.environ.get('JENKINS_URL')
+        if purl:
+            return purl.rstrip('/') + '/jnlpJars/jenkins-cli.jar'
+        purl = os.environ.get('HUDSON_URL')
+        if purl:
+            return purl.rstrip('/') + '/jnlpJars/hudson-cli.jar'
+        # If neither JENKINS nor HUDSON URL is set, assume jenkins for testing
+        return "http://" + socket.getfqdn() + ':' + repr(8080) + '/jenkins-cli.jar'
     else:
         return script_dir()
 

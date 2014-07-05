@@ -5,11 +5,23 @@ from __future__ import print_function
 
 import abc
 from collections import OrderedDict
+import os
+from os.path import join as jp
 
 from .abstract_api import AbstractApiJob, AbstractApiBuild as TestBuild, AbstractApiJenkins
 
 from jenkinsflow.flow import BuildResult
 from jenkinsflow.mocked import hyperspeed
+
+from .config import test_tmp_dir
+
+
+def _mkdir(path):
+    try:
+        os.mkdir(path)
+    except OSError:
+        if not os.path.exists(path):
+            raise
 
 
 class TestJob(AbstractApiJob):
@@ -89,9 +101,15 @@ class TestJenkins(AbstractApiJenkins):
         return (self.job_name_prefix or '') + name
 
     def __enter__(self):
+        # pylint: disable=attribute-defined-outside-init
+        self._pre_work_dir = os.getcwd()
+        self._work_dir = jp(test_tmp_dir,self.job_name_prefix)
+        _mkdir(self._work_dir)
+        os.chdir(self._work_dir)
         return self
 
     def __exit__(self, exc_type, exc_value, traceback):
+        os.chdir(self._pre_work_dir)
         if not exc_type:
             self.test_results()
 
