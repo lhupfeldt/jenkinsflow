@@ -44,12 +44,13 @@ def assert_lines_in(text, *expected_lines):
             Otherwise, if the `expected_line` starts with '^', a line in `text` must start with `expected_line[1:]`
             Otherwise `expected line` must simply occur in a line in `text`
     """
+    assert expected_lines
 
     fixed_expected = []
     for expected in expected_lines:
         fixed_expected.append(replace_host_port(expected) if not hasattr(expected, 'match') else expected)
 
-    max_index = len(fixed_expected) - 1
+    max_index = len(fixed_expected)
     index = 0
 
     for line in text.split('\n'):
