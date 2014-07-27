@@ -24,9 +24,12 @@ _default_secret_params_re = re.compile(_default_secret_params)
 class BuildResult(OrderedEnum):
     # pylint: disable=no-init
     FAILURE = 0
-    UNSTABLE = 1
-    SUCCESS = 2
-    UNKNOWN = 3
+    ABORTED = 1
+    UNSTABLE = 2
+    SUCCESS = 3
+    UNKNOWN = 4
+
+_build_result_failures = (BuildResult.FAILURE, BuildResult.ABORTED)
 
 
 class Propagation(OrderedEnum):
@@ -328,7 +331,7 @@ class _SingleJob(_JobControl):
         unchecked = (Propagation.UNCHECKED.name + ' ') if self.propagation == Propagation.UNCHECKED else ''
         print(unchecked + str(build.get_status()) + ":", repr(self.job.name), "- build:", build.console_url(), self._time_msg())
 
-        if self.result == BuildResult.FAILURE:
+        if self.result in _build_result_failures:
             raise FailedSingleJobException(self.job, self.propagation)
 
     def sequence(self):
@@ -593,7 +596,7 @@ class _Parallel(_Flow):
                 self.result = min(self.result, job.propagate_result)
             self.report_result()
 
-            if self.result == BuildResult.FAILURE:
+            if self.result in _build_result_failures:
                 raise FailedChildJobsException(self, self._failed_child_jobs.values(), self.propagation)
         else:
             self._check_timeout()
@@ -676,7 +679,7 @@ class _Serial(_Flow):
             for job in self.jobs[0:self.job_index + 1]:
                 self.result = min(self.result, job.propagate_result)
 
-            if self.result == BuildResult.FAILURE:
+            if self.result in _build_result_failures:
                 self.report_result()
                 raise FailedChildJobException(self, job, self.propagation)
 

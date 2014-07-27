@@ -105,7 +105,7 @@ class JenkinsTestWrapperApi(jenkins.Jenkins, TestJenkins):
             script=None, unknown_result=False, final_result=None, serial=False, print_env=False):
         if max_fails > 0 or final_result:
             params = list(params) if params else []
-            params.append(('force_result', ('SUCCESS', 'FAILURE', 'UNSTABLE'), 'Caller can force job to success, fail or unstable'))
+            params.append(('force_result', ('SUCCESS', 'FAILURE', 'UNSTABLE', 'ABORTED'), 'Caller can force job to success, fail, unstable or aborted'))
         name = self._jenkins_job(name, exec_time, params, script, print_env)
         self.test_jobs[name] = MockJob(name, exec_time, max_fails, expect_invocations, expect_order, initial_buildno, invocation_delay, unknown_result, final_result, serial, params)
 
