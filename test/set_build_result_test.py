@@ -139,7 +139,7 @@ def test_set_build_result_no_cli_jar_env_base_url_trailing_slashes(fake_java, en
     )
 
 
-def test_set_build_result(fake_java, env_base_url, capfd):
+def test_set_build_result(fake_java, env_base_url):
     with api_select.api(__file__) as api:
         pre_existing_cli()
         try:
@@ -157,7 +157,7 @@ def test_set_build_result(fake_java, env_base_url, capfd):
             xfail()
 
 
-def test_set_build_result_direct_url(fake_java, env_base_url, capfd):
+def test_set_build_result_direct_url(fake_java, env_base_url):
     with api_select.api(__file__) as api:
         pre_existing_cli()
         try:
@@ -229,7 +229,7 @@ def test_set_build_result_direct_url_trailing_slash(fake_java, env_base_url, cap
     )
 
 
-def test_set_build_result_no_auth(fake_java, env_base_url, capfd):
+def test_set_build_result_no_auth(fake_java, env_base_url):
     with api_select.api(__file__) as api:
         pre_existing_cli()
         try:
@@ -246,7 +246,7 @@ def test_set_build_result_no_auth(fake_java, env_base_url, capfd):
             xfail()
 
 
-def test_set_build_result_no_jenkinsurl(env_no_base_url, capfd):
+def test_set_build_result_no_jenkinsurl(env_no_base_url):
     if test_cfg.selected_api() == ApiType.SCRIPT:
         # JENKINS_URL is always set for script_api
         return
@@ -278,14 +278,14 @@ def test_set_build_result_call_script_direct_url(capfd):
     assert '[--java' in sout
 
 
-def test_set_build_result_call_script_direct_url_trailing_slash(fake_java, env_base_url, capfd):
+def test_set_build_result_call_script_direct_url_trailing_slash(fake_java, env_base_url):
     with api_select.api(__file__):
         pre_existing_cli()
         base_url = test_cfg.direct_url() + '/'
         set_build_result.main(['--direct-url', base_url])
 
 
-def test_set_build_result_call_script_direct_url_no_trailing_slash(fake_java, env_base_url, capfd):
+def test_set_build_result_call_script_direct_url_no_trailing_slash(fake_java, env_base_url):
     with api_select.api(__file__):
         pre_existing_cli()
         base_url = test_cfg.direct_url().rstrip('/')

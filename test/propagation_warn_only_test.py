@@ -9,7 +9,7 @@ from .framework import api_select
 from demo_security import username, password
 
 
-def test_propagation_warn_only_serial(env_base_url, fake_java, capfd):
+def test_propagation_warn_only_serial(env_base_url, fake_java):
     with api_select.api(__file__) as api:
         api.flow_job()
         api.job('j11', exec_time=0.01, max_fails=0, expect_invocations=1, expect_order=1)
@@ -22,7 +22,7 @@ def test_propagation_warn_only_serial(env_base_url, fake_java, capfd):
             ctrl1.invoke('j13')
 
 
-def test_propagation_warn_only_parallel(env_base_url, fake_java, capfd):
+def test_propagation_warn_only_parallel(env_base_url, fake_java):
     with api_select.api(__file__) as api:
         api.flow_job()
         api.job('j1_fail', exec_time=0.01, max_fails=1, expect_invocations=1, expect_order=1)
@@ -33,7 +33,7 @@ def test_propagation_warn_only_parallel(env_base_url, fake_java, capfd):
             ctrl1.invoke('j2')
 
 
-def test_propagation_warn_only_nested_serial_parallel(env_base_url, fake_java, capfd):
+def test_propagation_warn_only_nested_serial_parallel(env_base_url, fake_java):
     with api_select.api(__file__) as api:
         api.flow_job()
         api.job('j11', exec_time=0.01, max_fails=0, expect_invocations=1, expect_order=1)
@@ -50,7 +50,7 @@ def test_propagation_warn_only_nested_serial_parallel(env_base_url, fake_java, c
                 ctrl2.invoke('j23')
 
 
-def test_propagation_warn_only_nested_parallel_serial(env_base_url, fake_java, capfd):
+def test_propagation_warn_only_nested_parallel_serial(env_base_url, fake_java):
     with api_select.api(__file__) as api:
         api.flow_job()
         api.job('j11', exec_time=0.01, max_fails=0, expect_invocations=1, expect_order=1)
@@ -67,7 +67,7 @@ def test_propagation_warn_only_nested_parallel_serial(env_base_url, fake_java, c
                 ctrl2.invoke('j23')
 
 
-def test_propagation_warn_only_nested_serial_serial(env_base_url, fake_java, capfd):
+def test_propagation_warn_only_nested_serial_serial(env_base_url, fake_java):
     with api_select.api(__file__) as api:
         api.flow_job()
         api.job('j11', exec_time=0.01, max_fails=0, expect_invocations=1, expect_order=1)
@@ -84,7 +84,7 @@ def test_propagation_warn_only_nested_serial_serial(env_base_url, fake_java, cap
                 ctrl2.invoke('j23')
 
 
-def test_propagation_warn_only_nested_parallel_parallel(env_base_url, fake_java, capfd):
+def test_propagation_warn_only_nested_parallel_parallel(env_base_url, fake_java):
     with api_select.api(__file__) as api:
         api.flow_job()
         api.job('j11', exec_time=0.01, max_fails=0, expect_invocations=1, expect_order=1)
@@ -101,7 +101,7 @@ def test_propagation_warn_only_nested_parallel_parallel(env_base_url, fake_java,
                 ctrl2.invoke('j23')
 
 
-def test_propagation_warn_only_nested_serial_serial_continue(env_base_url, fake_java, capfd):
+def test_propagation_warn_only_nested_serial_serial_continue(env_base_url, fake_java):
     with api_select.api(__file__) as api:
         api.flow_job()
         api.job('j11', exec_time=0.01, max_fails=0, expect_invocations=1, expect_order=1)
@@ -119,7 +119,7 @@ def test_propagation_warn_only_nested_serial_serial_continue(env_base_url, fake_
                 ctrl2.invoke('j23')
 
 
-def test_propagation_warn_only_nested_parallel_serial_continue(env_base_url, fake_java, capfd):
+def test_propagation_warn_only_nested_parallel_serial_continue(env_base_url, fake_java):
     with api_select.api(__file__) as api:
         api.flow_job()
         api.job('j11', exec_time=0.01, max_fails=0, expect_invocations=1, expect_order=1)

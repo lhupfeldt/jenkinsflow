@@ -9,7 +9,7 @@ from .framework import api_select
 from demo_security import username, password
 
 
-def test_propagate_unstable_serial_single_unstable(env_base_url, fake_java, capfd):
+def test_propagate_unstable_serial_single_unstable(env_base_url, fake_java):
     with api_select.api(__file__) as api:
         api.flow_job()
         api.job('j11_unstable', 0.01, max_fails=0, expect_invocations=1, expect_order=1, final_result='unstable')
@@ -20,7 +20,7 @@ def test_propagate_unstable_serial_single_unstable(env_base_url, fake_java, capf
         assert ctrl1.result == BuildResult.UNSTABLE
 
 
-def test_propagate_unstable_parallel_single_unstable(env_base_url, fake_java, capfd):
+def test_propagate_unstable_parallel_single_unstable(env_base_url, fake_java):
     with api_select.api(__file__) as api:
         api.flow_job()
         api.job('j11_unstable', 0.01, max_fails=0, expect_invocations=1, expect_order=1, final_result='unstable')
@@ -31,7 +31,7 @@ def test_propagate_unstable_parallel_single_unstable(env_base_url, fake_java, ca
         assert ctrl1.result == BuildResult.UNSTABLE
 
 
-def test_propagate_unstable_serial_toplevel(env_base_url, fake_java, capfd):
+def test_propagate_unstable_serial_toplevel(env_base_url, fake_java):
     with api_select.api(__file__) as api:
         api.flow_job()
         api.job('j11', 0.01, max_fails=0, expect_invocations=1, expect_order=1)
@@ -46,7 +46,7 @@ def test_propagate_unstable_serial_toplevel(env_base_url, fake_java, capfd):
         assert ctrl1.result == BuildResult.UNSTABLE
 
 
-def test_propagate_unstable_parallel_toplevel(env_base_url, fake_java, capfd):
+def test_propagate_unstable_parallel_toplevel(env_base_url, fake_java):
     with api_select.api(__file__) as api:
         api.flow_job()
         api.job('j11', 0.01, max_fails=0, expect_invocations=1, expect_order=1)
@@ -61,7 +61,7 @@ def test_propagate_unstable_parallel_toplevel(env_base_url, fake_java, capfd):
         assert ctrl1.result == BuildResult.UNSTABLE
 
 
-def test_propagate_unstable_serial_inner(env_base_url, fake_java, capfd):
+def test_propagate_unstable_serial_inner(env_base_url, fake_java):
     with api_select.api(__file__) as api:
         api.flow_job()
         api.job('j11', 0.01, max_fails=0, expect_invocations=1, expect_order=1)
@@ -80,7 +80,7 @@ def test_propagate_unstable_serial_inner(env_base_url, fake_java, capfd):
         assert ctrl1.result == BuildResult.UNSTABLE
 
 
-def test_propagate_unstable_parallel_inner(env_base_url, fake_java, capfd):
+def test_propagate_unstable_parallel_inner(env_base_url, fake_java):
     with api_select.api(__file__) as api:
         api.flow_job()
         api.job('j11', 0.01, max_fails=0, expect_invocations=1, expect_order=1)
@@ -99,7 +99,7 @@ def test_propagate_unstable_parallel_inner(env_base_url, fake_java, capfd):
         assert ctrl1.result == BuildResult.UNSTABLE
 
 
-def test_propagate_unstable_serial_inner_fail_after(env_base_url, fake_java, capfd):
+def test_propagate_unstable_serial_inner_fail_after(env_base_url, fake_java):
     with api_select.api(__file__) as api:
         api.flow_job()
         api.job('j11', 0.01, max_fails=0, expect_invocations=1, expect_order=1)
@@ -116,7 +116,7 @@ def test_propagate_unstable_serial_inner_fail_after(env_base_url, fake_java, cap
                     ctrl2.invoke('j23_fail')
 
 
-def test_propagate_unstable_parallel_inner_fail_before(env_base_url, fake_java, capfd):
+def test_propagate_unstable_parallel_inner_fail_before(env_base_url, fake_java):
     with api_select.api(__file__) as api:
         api.flow_job()
         api.job('j11', 0.01, max_fails=0, expect_invocations=1, expect_order=1)
