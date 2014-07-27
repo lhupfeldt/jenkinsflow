@@ -88,6 +88,13 @@ def env_no_base_url(request):
 
 
 @fixture
+def env_different_base_url(request):
+    # Fake that we are running from inside jenkins job
+    # This url is not used, but should simply be different fron direct_url used in test, to simulate proxied jenkins
+    _set_env_if_not_set_fixture('JENKINS_URL', test_cfg.proxied_public_url, request)
+
+
+@fixture
 def env_job_name(request):
     # Fake that we are running from inside jenkins job
     _set_env_if_not_set_fixture('JOB_NAME', 'hudelihuu', request)

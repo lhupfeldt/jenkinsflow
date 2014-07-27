@@ -78,6 +78,19 @@ def public_cli_url():
         return script_dir()
 
 
+proxied_public_url = "http://myproxy.mydom/jenkins"
+
+
+def proxied_public_cli_url():
+    # Not required to be a real url
+    if selected_api() != ApiType.SCRIPT:
+        # If neither JENKINS nor HUDSON URL is set, assume jenkins for testing
+        cli = '/jnlpJars/hudson-cli.jar' if os.environ.get('HUDSON_URL') else '/jnlpJars/jenkins-cli.jar'
+        return proxied_public_url + cli
+    else:
+        return script_dir()
+
+
 def script_dir():
     sdir = os.environ.get(SCRIPT_DIR_NAME)
     return config.job_script_dir if sdir is None else sdir.rstrip('/')

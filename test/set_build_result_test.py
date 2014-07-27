@@ -6,8 +6,7 @@
 
 import os, urllib2, re
 
-import pytest
-from pytest import raises, xfail, fixture  # pylint: disable=no-name-in-module
+from pytest import raises, xfail  # pylint: disable=no-name-in-module
 
 from jenkinsflow import set_build_result
 from jenkinsflow.flow import serial, Propagation
@@ -197,6 +196,7 @@ def test_set_build_result_no_cli_jar_env_base_url_eq_direct_url(fake_java, env_b
     expected = [_setting_job_result_msg]
     if api.api_type != ApiType.SCRIPT:
         expected.append(re.compile("^INFO: Downloading cli: '%(public_url)s'$" % dict(public_url=test_cfg.public_cli_url())))
+        expected.append("^INFO: Download finished: ")
         assert '/jnlpJars/' in sout
 
     assert_lines_in(
@@ -225,7 +225,39 @@ def test_set_build_result_direct_url_trailing_slash(fake_java, env_base_url, cap
     sout, _ = capfd.readouterr()
     assert_lines_in(
         sout,
-        "INFO: Setting job result to 'unstable'"
+        _setting_job_result_msg
+    )
+
+
+def test_set_build_result_direct_url_different_from_proxied_url(fake_java, env_different_base_url, capfd):
+    with api_select.api(__file__) as api:
+        no_pre_existing_cli()
+        try:
+            api.flow_job()
+            api.job('j1_fail', exec_time=0.01, max_fails=1, expect_invocations=1, expect_order=1)
+
+            with serial(api, timeout=70, username=username, password=password, job_name_prefix=api.job_name_prefix, report_interval=3,
+                        propagation=Propagation.FAILURE_TO_UNSTABLE, direct_url=test_cfg.direct_url() + '/') as ctrl1:
+                ctrl1.invoke('j1_fail')
+
+        except urllib2.URLError:
+            # Jenkins is not running, so we cant test this
+            if api.api_type != ApiType.MOCK:
+                raise
+            xfail()
+
+    sout, _ = capfd.readouterr()
+
+    expected = [_setting_job_result_msg]
+    if api.api_type != ApiType.SCRIPT:
+        public_url = test_cfg.proxied_public_cli_url()
+        direct_url = test_cfg.direct_cli_url()
+        expected.append("^INFO: Downloading cli: '%(public_url)s' (using direct url: %(direct_url)s)" % \
+                        dict(public_url=public_url, direct_url=direct_url))
+
+    assert_lines_in(
+        sout,
+        *expected
     )
 
 
