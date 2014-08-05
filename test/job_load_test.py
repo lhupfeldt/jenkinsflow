@@ -2,7 +2,6 @@
 # All rights reserved. This work is under a BSD license, see LICENSE.TXT.
 
 import os, random
-from os.path import join as jp
 
 from pytest import raises
 
@@ -13,7 +12,7 @@ from .cfg import ApiType
 
 here = os.path.abspath(os.path.dirname(__file__))
 
-_context = dict(exec_time=1, params=(), script=None, securitytoken='abc', print_env=False)
+_context = dict(exec_time=1, params=(), script=None, securitytoken='abc', print_env=False, create_job=None)
 
 
 def _random_job_name(api, short_name=None):

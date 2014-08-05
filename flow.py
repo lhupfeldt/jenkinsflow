@@ -258,7 +258,7 @@ class _SingleJob(_JobControl):
                 self.checking_status = Checking.FINISHED
                 self.result = BuildResult.FAILURE
                 raise MissingJobsException(ex)
-            print(self.indentation + repr(self), "NOTE: ", repr(ex))
+            print(self.indentation + repr(self), " - MISSING JOB")
             super(_SingleJob, self)._prepare_to_invoke(reset_tried_times=False)
             return
 

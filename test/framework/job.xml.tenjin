@@ -69,6 +69,63 @@
   <triggers/>
   <concurrentBuild>false</concurrentBuild>
   <builders>
+<?py if create_job is not None: ?>
+  <?py assert create_job.flow_created ?>
+    <hudson.tasks.Shell>
+      <?py import sys ?>
+      <command>#!{==sys.executable==} -B
+import sys
+sys.path.append("{==test_tmp_dir==}")
+from jenkinsflow.jobload import update_job_from_template
+
+<?py sys.path.append(test_tmp_dir) ?>
+
+<?py from jenkinsflow.test.cfg import ApiType ?>
+<?py if api_type == ApiType.SPECIALIZED: ?>
+from jenkinsflow import specialized_api as jenkins
+<?py elif api_type == ApiType.JENKINSAPI: ?>
+from jenkinsflow import jenkinsapi_wrapper as jenkins
+<?py else: ?>
+<?py raise Exception("Unknown/Unsupported api_type: " + api_type) ?>
+<?py #endif ?>
+
+<?py if create_job.create_job: ?>
+from jenkinsflow.test.framework.mock_api import MockJob
+<?py #endif ?>
+from jenkinsflow.test.cfg import ApiType
+
+config_xml_template = "{==test_tmp_dir==}/jenkinsflow/test/framework/job.xml.tenjin"
+context = dict(
+    exec_time={==create_job.exec_time==},
+    max_fails={==create_job.max_fails==},
+    expect_invocations={==create_job.expect_invocations==},
+    expect_order={==create_job.expect_order==},
+    params=(),
+    script=None,
+    flow_created={==create_job.flow_created==},
+<?py if create_job.create_job: ?>
+<?py cj = create_job.create_job ?>
+<?py fr = 'SUCCESS' if cj.final_result is None else cj.final_result.name ?>
+    create_job=MockJob(
+        name="{==cj.name==}", exec_time={==cj.exec_time==}, max_fails={==cj.max_fails==},
+        expect_invocations={==cj.expect_invocations==}, expect_order={==cj.expect_order==},
+        initial_buildno=None, invocation_delay={==cj.invocation_delay==}, unknown_result={==cj.unknown_result==},
+        final_result="{==fr==}", serial={==cj.serial==}, params=(), flow_created={==cj.flow_created==}, create_job=None),
+<?py else: ?>
+    create_job=None,
+<?py #endif ?>
+    securitytoken="{==securitytoken==}",
+    test_tmp_dir="{==test_tmp_dir==}",
+    api_type={==api_type==},
+    direct_url="{==direct_url==}",
+    username="{==username==}",
+    password="{==password==}")
+
+job_loader_jenkins = jenkins.Jenkins(direct_uri="{==direct_url==}", job_prefix_filter=None, username="{==username==}", password="{==password==}")
+update_job_from_template(job_loader_jenkins, "{==create_job.name==}", config_xml_template, context=context)
+      </command>
+    </hudson.tasks.Shell>
+<?py #endif ?>
     <hudson.tasks.Shell>
       <command>#!/bin/bash
 set -u

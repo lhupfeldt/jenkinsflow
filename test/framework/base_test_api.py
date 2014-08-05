@@ -29,7 +29,7 @@ class TestJob(AbstractApiJob):
 
     _current_order = 1
 
-    def __init__(self, exec_time, max_fails, expect_invocations, expect_order, initial_buildno=None, invocation_delay=0.01, unknown_result=False, final_result=None, serial=False, print_env=False):
+    def __init__(self, exec_time, max_fails, expect_invocations, expect_order, initial_buildno=None, invocation_delay=0.01, unknown_result=False, final_result=None, serial=False, print_env=False, flow_created=False, create_job=None):
         """
         Set unknown_result to True if the result is indeterminate (timeout or invoke_unchecked)
         """
@@ -52,6 +52,8 @@ class TestJob(AbstractApiJob):
         self.serial = serial
         self.print_env = print_env
         self.final_result = final_result if isinstance(final_result, (BuildResult, type(None))) else BuildResult[final_result.upper()]
+        self.flow_created = flow_created
+        self.create_job = create_job
 
         self.invocation = 0
         self.invocation_time = self.start_time = self.end_time = 0
@@ -78,6 +80,35 @@ class TestJob(AbstractApiJob):
             ", end_time: " + repr(self.end_time)
 
 
+class Jobs(object):
+    def __init__(self, api):
+        self.api = api
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, exc_type, exc_value, traceback):
+        if exc_type:
+            return None
+
+        test_jobs = self.api.test_jobs
+        for job_name, job in test_jobs.items():
+            if job.flow_created:
+                # Patch up another job that is supposed to be created by this job - replace job_name with job reference
+                for other_job in test_jobs.values():
+                    if isinstance(other_job.create_job, str):
+                        other_job_name = self.api.job_name_prefix + other_job.create_job
+                        if other_job_name == job_name:
+                            other_job.create_job = job
+                            break
+                else:
+                    raise Exception("Job: " + repr(job_name) + " is supposed to be created by another job, but that job was not found")
+
+        for job_name, job in test_jobs.iteritems():
+            if job.create_job and isinstance(job.create_job, str):
+                raise Exception("Job: " + repr(job_name) + " is supposed to create job: " + repr(job.create_job) + " but definition for that job was not found")
+
+
 class TestJenkins(AbstractApiJenkins):
     __metaclass__ = abc.ABCMeta
 
@@ -88,8 +119,22 @@ class TestJenkins(AbstractApiJenkins):
 
     @abc.abstractmethod
     def job(self, name, exec_time, max_fails, expect_invocations, expect_order, initial_buildno=None, invocation_delay=0.1, params=None,
-            script=None, unknown_result=False, final_result=None, serial=False, print_env=False):
+            script=None, unknown_result=False, final_result=None, serial=False, print_env=False, flow_created=False, create_job=None):
+        """Create a job with corresponding test metadata.
+
+        Args:
+            name (str): Base name of job, the test framework will add a prefix base on test module
+            exec_time (int): Number of seconds that the job will run (sleep), actual run may/will be longer
+            max_fails (int): Number of times the job will fail during this flow (when using retry)
+            expect_invocations (int): Number of expected invocation during this flow. Will be larger or equal to exec_time.
+            ...
+            flow_created (boolean): This job is expected to non-existing at start of flow and be created during the flow
+            create_job (str): Name of another job that will be created by this job, when this job is running
+        """
         pass
+
+    def job_creator(self):
+        return Jobs(self)
 
     @abc.abstractmethod
     def flow_job(self, name=None, params=None):
@@ -120,7 +165,7 @@ class TestJenkins(AbstractApiJenkins):
         last_expected_order = 0
         last_end_time = 0
 
-        for job in self.test_jobs.values():            
+        for job in self.test_jobs.values():
             if job.expect_order is not None:
                 # Check job invocation order
                 assert last_expected_order <= job.expect_order, "Mock job list must be sorted by expected order, error in test setup."

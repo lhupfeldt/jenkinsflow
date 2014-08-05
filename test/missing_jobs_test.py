@@ -3,8 +3,12 @@
 
 from pytest import raises
 
+import re
+
 from jenkinsflow.flow import parallel, serial, MissingJobsException, FailedChildJobsException, FailedChildJobException
 from .framework import api_select
+from .framework.utils import assert_lines_in
+from .cfg import ApiType
 
 
 def test_missing_jobs_not_allowed():
@@ -19,8 +23,10 @@ def test_missing_jobs_not_allowed():
                 ctrl1.invoke('missingA')
                 ctrl1.invoke('j2')
 
-        print exinfo.value
-        assert "Job not found: jenkinsflow_test__missing_jobs_not_allowed__missingA" in exinfo.value.message
+        assert_lines_in(
+            exinfo.value.message,
+            re.compile("^Job not found: .*jenkinsflow_test__missing_jobs_not_allowed__missingA")
+        )
 
         with raises(MissingJobsException):
             with serial(api, 20, job_name_prefix=api.job_name_prefix) as ctrl1:
@@ -74,4 +80,26 @@ def test_missing_jobs_allowed_still_missing_parallel_serial():
                 ctrl1.invoke('missingC')
 
 
-# TODO Jobs created during flow!
+def test_missing_jobs_allowed_created_serial_parallel():
+    with api_select.api(__file__) as api:
+        if api.api_type == ApiType.SCRIPT:
+            # TODO: Handle ApiType.SCRIPT
+            return
+
+        with api.job_creator():
+            api.flow_job()
+            api.job('j1', 0.01, max_fails=0, expect_invocations=1, expect_order=1, create_job='missingA')
+            api.job('missingA', 0.01, max_fails=0, expect_invocations=1, expect_order=2, flow_created=True, create_job='missingB')
+            api.job('missingB', 0.01, max_fails=0, expect_invocations=1, expect_order=3, flow_created=True)
+            api.job('j2', 0.01, max_fails=0, expect_invocations=1, expect_order=3, create_job='missingC')
+            api.job('missingC', 0.01, max_fails=0, expect_invocations=1, expect_order=4, flow_created=True)
+
+        with serial(api, 20, job_name_prefix=api.job_name_prefix, allow_missing_jobs=True) as ctrl1:
+            ctrl1.invoke('j1')
+            ctrl1.invoke('missingA')
+            with ctrl1.parallel() as ctrl2:
+                ctrl2.invoke('missingB')
+                ctrl2.invoke('j2')
+            ctrl1.invoke('missingC')
+
+        # TODO: Validate output
