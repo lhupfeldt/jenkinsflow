@@ -38,6 +38,7 @@ nosetests.xml
 # Emacs backup
 *~
 TAGS
+*_flymake.py
 
 *.tenjin.cache
 .cache
