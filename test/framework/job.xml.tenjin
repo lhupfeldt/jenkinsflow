@@ -77,6 +77,7 @@
 import sys
 sys.path.append("{==test_tmp_dir==}")
 from jenkinsflow.jobload import update_job_from_template
+from jenkinsflow.test.cfg import ApiType
 
 <?py sys.path.append(test_tmp_dir) ?>
 
@@ -90,9 +91,17 @@ from jenkinsflow import jenkinsapi_wrapper as jenkins
 <?py #endif ?>
 
 <?py if create_job.create_job: ?>
+<?py cj = create_job.create_job ?>
+<?py fr = 'SUCCESS' if cj.final_result is None else cj.final_result.name ?>
 from jenkinsflow.test.framework.mock_api import MockJob
+mock_job = MockJob(
+    name="{==cj.name==}", exec_time={==cj.exec_time==}, max_fails={==cj.max_fails==},
+    expect_invocations={==cj.expect_invocations==}, expect_order={==cj.expect_order==},
+    initial_buildno=None, invocation_delay={==cj.invocation_delay==}, unknown_result={==cj.unknown_result==},
+    final_result="{==fr==}", serial={==cj.serial==}, params=(), flow_created={==cj.flow_created==}, create_job=None, disappearing=False)
+<?py else: ?>
+mock_job = None
 <?py #endif ?>
-from jenkinsflow.test.cfg import ApiType
 
 config_xml_template = "{==test_tmp_dir==}/jenkinsflow/test/framework/job.xml.tenjin"
 context = dict(
@@ -103,17 +112,7 @@ context = dict(
     params=(),
     script=None,
     flow_created={==create_job.flow_created==},
-<?py if create_job.create_job: ?>
-<?py cj = create_job.create_job ?>
-<?py fr = 'SUCCESS' if cj.final_result is None else cj.final_result.name ?>
-    create_job=MockJob(
-        name="{==cj.name==}", exec_time={==cj.exec_time==}, max_fails={==cj.max_fails==},
-        expect_invocations={==cj.expect_invocations==}, expect_order={==cj.expect_order==},
-        initial_buildno=None, invocation_delay={==cj.invocation_delay==}, unknown_result={==cj.unknown_result==},
-        final_result="{==fr==}", serial={==cj.serial==}, params=(), flow_created={==cj.flow_created==}, create_job=None),
-<?py else: ?>
-    create_job=None,
-<?py #endif ?>
+    create_job=mock_job,
     securitytoken="{==securitytoken==}",
     test_tmp_dir="{==test_tmp_dir==}",
     api_type={==api_type==},

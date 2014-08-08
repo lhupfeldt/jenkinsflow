@@ -45,6 +45,7 @@ class WrapperJob(ObjectWrapper, TestJob, jenkins.ApiJob):
     unknown_result = None
     final_result = None
     serial = None
+    disappearing = None
 
     mock_job = None
 
@@ -59,10 +60,14 @@ class WrapperJob(ObjectWrapper, TestJob, jenkins.ApiJob):
         TestJob.__init__(self, exec_time=mock_job.exec_time, max_fails=mock_job.max_fails,
                          expect_invocations=mock_job.expect_invocations, expect_order=mock_job.expect_order,
                          initial_buildno=mock_job.initial_buildno, invocation_delay=mock_job.invocation_delay,
-                         unknown_result=mock_job.unknown_result, final_result=mock_job.final_result, serial=mock_job.serial)
+                         unknown_result=mock_job.unknown_result, final_result=mock_job.final_result, serial=mock_job.serial,
+                         print_env=False, flow_created=mock_job.flow_created, create_job=mock_job.create_job, disappearing=mock_job.disappearing)
 
     def invoke(self, securitytoken=None, build_params=None, cause=None):
         self.invocation_time = time.time()
+        if self.disappearing:
+            # Delete the job to fake a job that disappears while a flow is running
+            self.jenkins_resource.delete_job(self.name)
 
         if self.has_force_result_param:
             build_params = build_params or {}
@@ -120,7 +125,7 @@ class JenkinsTestWrapperApi(jenkins.Jenkins, TestJenkins):
             update_job_from_template(self.job_loader_jenkins, name, self.job_xml_template, pre_delete=self.pre_delete_jobs, context=context)
 
     def job(self, name, exec_time, max_fails, expect_invocations, expect_order, initial_buildno=None, invocation_delay=0.1, params=None,
-            script=None, unknown_result=False, final_result=None, serial=False, print_env=False, flow_created=False, create_job=None):
+            script=None, unknown_result=False, final_result=None, serial=False, print_env=False, flow_created=False, create_job=None, disappearing=False):
         job_name = self.job_name_prefix + name
         assert not self.test_jobs.get(job_name)
 
@@ -141,10 +146,10 @@ class JenkinsTestWrapperApi(jenkins.Jenkins, TestJenkins):
             # TODO: Remove and convert all to use job_creator?
             self._jenkins_job(job_name, exec_time, params, script, print_env, create_job=create_job)
 
-        self.test_jobs[job_name] = MockJob(name=job_name, exec_time=exec_time, max_fails=max_fails, expect_invocations=expect_invocations, expect_order=expect_order,
-                                           initial_buildno=initial_buildno, invocation_delay=invocation_delay,
-                                           unknown_result=unknown_result, final_result=final_result, serial=serial, params=params,
-                                           flow_created=flow_created, create_job=create_job)
+        job = MockJob(name=job_name, exec_time=exec_time, max_fails=max_fails, expect_invocations=expect_invocations, expect_order=expect_order,
+                      initial_buildno=initial_buildno, invocation_delay=invocation_delay, unknown_result=unknown_result, final_result=final_result,
+                      serial=serial, params=params, flow_created=flow_created, create_job=create_job, disappearing=disappearing)
+        self.test_jobs[job_name] = job
 
     def flow_job(self, name=None, params=None):
         """
@@ -189,7 +194,10 @@ class JenkinsTestWrapperApi(jenkins.Jenkins, TestJenkins):
             job = self.test_jobs.get(name)
             jenkins_job = super(JenkinsTestWrapperApi, self).get_job(name)
             if not job:
-                raise Exception("InternalError in api_wrapper get_job. Job exists in Jenkins, but not in test_jobs: " + repr(name))
+                msg = "InternalError in api_wrapper get_job. Job exists in Jenkins, but not in test_jobs: " + repr(name)
+                print(msg, file=sys.stderr)
+                print("test_jobs:", self.test_jobs, file=sys.stderr)
+                raise Exception(msg)
                 
             if isinstance(job, MockJob):
                 self.test_jobs[name] = job = WrapperJob(jenkins_job, job)

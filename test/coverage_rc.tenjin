@@ -34,6 +34,7 @@ omit =
      server.py
      setup.py
      ordered_enum.py
+     *_flymake.py
      <?py if api_type != ApiType.SPECIALIZED: ?>
      specialized_api.py
      <?py #endif ?>

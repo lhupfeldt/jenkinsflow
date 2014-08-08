@@ -29,7 +29,8 @@ class TestJob(AbstractApiJob):
 
     _current_order = 1
 
-    def __init__(self, exec_time, max_fails, expect_invocations, expect_order, initial_buildno=None, invocation_delay=0.01, unknown_result=False, final_result=None, serial=False, print_env=False, flow_created=False, create_job=None):
+    def __init__(self, exec_time, max_fails, expect_invocations, expect_order, initial_buildno, invocation_delay,
+                 unknown_result, final_result, serial, print_env, flow_created, create_job, disappearing):
         """
         Set unknown_result to True if the result is indeterminate (timeout or invoke_unchecked)
         """
@@ -41,6 +42,8 @@ class TestJob(AbstractApiJob):
         assert invocation_delay > 0
         assert unknown_result in (False, True)
         assert serial in (False, True)
+        assert flow_created in (False, True)
+        assert disappearing in (False, True)
 
         self.exec_time = exec_time
         self.max_fails = max_fails
@@ -54,6 +57,7 @@ class TestJob(AbstractApiJob):
         self.final_result = final_result if isinstance(final_result, (BuildResult, type(None))) else BuildResult[final_result.upper()]
         self.flow_created = flow_created
         self.create_job = create_job
+        self.disappearing = disappearing
 
         self.invocation = 0
         self.invocation_time = self.start_time = self.end_time = 0
@@ -119,7 +123,7 @@ class TestJenkins(AbstractApiJenkins):
 
     @abc.abstractmethod
     def job(self, name, exec_time, max_fails, expect_invocations, expect_order, initial_buildno=None, invocation_delay=0.1, params=None,
-            script=None, unknown_result=False, final_result=None, serial=False, print_env=False, flow_created=False, create_job=None):
+            script=None, unknown_result=False, final_result=None, serial=False, print_env=False, flow_created=False, create_job=None, disappearing=False):
         """Create a job with corresponding test metadata.
 
         Args:
@@ -128,7 +132,7 @@ class TestJenkins(AbstractApiJenkins):
             max_fails (int): Number of times the job will fail during this flow (when using retry)
             expect_invocations (int): Number of expected invocation during this flow. Will be larger or equal to exec_time.
             ...
-            flow_created (boolean): This job is expected to non-existing at start of flow and be created during the flow
+            flow_created (boolean): This job is expected to be non-existing at start of flow and be created during the flow
             create_job (str): Name of another job that will be created by this job, when this job is running
         """
         pass
