@@ -2,7 +2,6 @@
 # All rights reserved. This work is under a BSD license, see LICENSE.TXT.
 
 import os
-from os.path import join as jp
 
 from pytest import raises
 
