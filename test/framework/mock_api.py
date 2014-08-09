@@ -89,6 +89,8 @@ class MockApi(TestJenkins):
         super(MockApi, self).__init__(job_name_prefix)
         self.baseurl = baseurl
         self._deleted_jobs = {}
+        self.username = 'dummy'
+        self.password = 'dummy'
 
     def job(self, name, exec_time, max_fails, expect_invocations, expect_order, initial_buildno=None, invocation_delay=0.1, params=None,
             script=None, unknown_result=False, final_result=None, serial=False, print_env=False, flow_created=False, create_job=None,

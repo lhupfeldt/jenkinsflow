@@ -29,6 +29,8 @@ class Jenkins(Resource):
             kwargs['filters'] = filters
         super(Jenkins, self).__init__(direct_uri, **kwargs)
 
+        self.username = username
+        self.password = password
         self.job_prefix_filter = job_prefix_filter
         self._public_uri = self._baseurl = None
         self.jobs = None

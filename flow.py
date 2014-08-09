@@ -416,7 +416,7 @@ class _Flow(_JobControl):
                 Note that jenkins jobs are NOT terminated when the flow times out.
             securitytoken (str): Token to use on security enabled Jenkins instead of username/password. The Jenkins job must have the token configured.
                 If None, the parent flow securitytoken is used.
-            job_name_prefix (str): All jobs defined in flow will automatically be prefixed with the parent flow job_name_prefix + this job_name_prefix before invoking Jenkins job.
+            job_name_prefix (str): All jobs defined in flow will automatically be prefixed with the parent flow job_name_prefix + this job_name_prefix before invoking Jenkins job. To reset prefixing (i.e. don't use parent flow prefix either), set the value to None
             max_tries (int): Maximum number of times to invoke the flow. Default is 1, meaning no retry will be attempted in case a job fails.
                 If a job fails, jobs are retried from start of the parallel flow::
 
@@ -749,8 +749,8 @@ class _TopLevelControllerMixin(object):
 
         self._api = jenkins_api
         self.securitytoken = securitytoken
-        self.username = username
-        self.password = password
+        self.username = username or self._api.username
+        self.password = password or self._api.password
         self.poll_interval = poll_interval
         self.direct_url = direct_url.rstrip('/') if direct_url is not None else direct_url
         self.require_idle = require_idle
@@ -852,10 +852,12 @@ class serial(_Serial, _TopLevelControllerMixin):
 
     Args:
         jenkins_api (:py:class:`.specialized_api.Jenkins` or :py:class:`.jenkinsapi_wrapper.Jenkins`): Jenkins Api instance used for accessing jenkins.
+            If jenkins_api is instantiated with username/password you do not need to specify username/password to the flow (see below).
         securitytoken (str): Token to use on security enabled Jenkins instead of username/password. The Jenkins job must have the token configured.
         username (str): Name of user authorized to run Jenkins 'cli' and change job status.
         password (str): Password of user.
             The username/password here is are not used for running the jobs. See specialized_api for that.
+            If username/password is specified for jenkins_api, they will be used unless they are also specified on the flow.
         job_name_prefix (str): All jobs defined in flow will automatically be prefixed with this string before invoking Jenkins job.
         poll_interval (float): The interval in seconds between polling the status of unfinished Jenkins jobs.
         allow_missing_jobs (boolean): If true it is not considered an error if Jenkins jobs are missing when the flow starts.
