@@ -55,6 +55,9 @@ class MockJob(TestJob, ApiJobMixin):
         self.end_time = self.start_time + self.exec_time
         self.just_invoked = True
 
+    def stop(self, build):
+        pass
+
     def update_config(self, config_xml):
         pass
 

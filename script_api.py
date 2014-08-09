@@ -176,6 +176,9 @@ class ApiJob(ApiJobMixin):
         proc = LoggingProcess(target=self.func, output_file_name=self.log_file, workspace=self.workspace, args=fixed_args)
         self.build = ApiBuild(self, proc, self.build_num)
 
+    def stop(self, build):
+        build.proc.terminate()
+
     def is_running(self):
         build = self.get_last_build_or_none()
         return build.is_running() if build else False

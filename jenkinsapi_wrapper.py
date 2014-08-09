@@ -50,7 +50,11 @@ class ApiJob(ObjectWrapper, jenkinsapi.job.Job, ApiJobMixin):
         self.public_uri = self.baseurl
 
     def invoke(self, securitytoken, build_params, cause):
-        self.__subject__.invoke(securitytoken=securitytoken, invoke_pre_check_delay=0, block=False, build_params=build_params, cause=cause)  # pylint: disable=no-member
+        # pylint: disable=no-member
+        self.__subject__.invoke(securitytoken=securitytoken, invoke_pre_check_delay=0, block=False, build_params=build_params, cause=cause)
+
+    def stop(self, build):
+        build.stop()
 
     def get_last_build_or_none(self):
         for ii in range(1, 20):

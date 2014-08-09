@@ -135,6 +135,9 @@ class ApiJob(ApiJobMixin):
         except errors.ResourceNotFound:
             raise UnknownJobException(self.jenkins_resource._public_job_url(self.name))  # pylint: disable=protected-access
 
+    def stop(self, build):
+        self.jenkins_resource.post(self._path + '/' + repr(build.buildno) + '/stop')
+
     def is_running(self):
         build = self.get_last_build_or_none()
         return build.is_running() if build else False

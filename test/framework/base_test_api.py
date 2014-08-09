@@ -202,6 +202,10 @@ class TestJenkins(AbstractApiJenkins):
                     else:
                         job.poll()
                 assert job.is_running(), "Job: " + job.name + " is expected to be running, but state is " + ('QUEUED' if job.is_queued() else 'IDLE')
+                # Now stop the job, so that it won't be running after the testsuite is finished
+                last_build = job.get_last_build_or_none()
+                if last_build:
+                    job.stop(last_build)
             elif job.expect_invocations != 0:
                 if job.invocation > job.max_fails:
                     expect_status = BuildResult.SUCCESS if job.final_result is None else job.final_result

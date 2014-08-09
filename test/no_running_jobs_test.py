@@ -10,7 +10,7 @@ from .framework import api_select
 
 
 def test_no_running_jobs():
-    with api_select.api(__file__) as api:
+    with api_select.api(__file__, login=True) as api:
         api.flow_job()
         api.job('j1', exec_time=50, max_fails=0, expect_invocations=1, expect_order=None, unknown_result=True)
 
@@ -28,7 +28,7 @@ def test_no_running_jobs():
 
 
 def test_no_running_jobs_unchecked():
-    with api_select.api(__file__) as api:
+    with api_select.api(__file__, login=True) as api:
         api.flow_job()
         api.job('j1', exec_time=50, max_fails=0, expect_invocations=1, expect_order=None, unknown_result=True)
 
@@ -45,7 +45,7 @@ def test_no_running_jobs_unchecked():
 
 
 def test_no_running_jobs_jobs_allowed():
-    with api_select.api(__file__) as api:
+    with api_select.api(__file__, login=True) as api:
         api.flow_job()
         exp_invocations = 2 if api.api_type != ApiType.MOCK else 1
         unknown_result = False if api.api_type != ApiType.MOCK else True

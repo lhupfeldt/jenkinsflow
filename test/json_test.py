@@ -57,7 +57,7 @@ def _flow(api, strip_prefix, json_dir):
 
 
 def test_json_strip_prefix():
-    with api_select.api(__file__) as api:
+    with api_select.api(__file__, login=True) as api:
         flow_name = api.flow_job()
         api.job('j1', exec_time=0.01, max_fails=0, expect_invocations=1, expect_order=1)
         api.job('j2', exec_time=0.01, max_fails=0, expect_invocations=1, expect_order=2)
@@ -87,7 +87,7 @@ def test_json_strip_prefix():
 
 
 def test_json_no_strip_prefix():
-    with api_select.api(__file__) as api:
+    with api_select.api(__file__, login=True) as api:
         flow_name = api.flow_job()
         api.job('j1', exec_time=0.01, max_fails=0, expect_invocations=1, expect_order=1)
         api.job('j2', exec_time=0.01, max_fails=0, expect_invocations=1, expect_order=2)
@@ -111,7 +111,7 @@ def test_json_no_strip_prefix():
 
 
 def test_json_unchecked_only_in_flows():
-    with api_select.api(__file__) as api:
+    with api_select.api(__file__, login=True) as api:
         flow_name = api.flow_job()
         api.job('j1_unchecked', exec_time=40, max_fails=0, expect_invocations=1, invocation_delay=0.0000000000001, expect_order=None, unknown_result=True)
         api.job('j2_unchecked', exec_time=0.01, max_fails=0, expect_invocations=1, expect_order=None)

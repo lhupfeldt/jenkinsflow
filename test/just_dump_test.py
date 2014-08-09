@@ -37,7 +37,7 @@ def _flow(api, json_dir):
 
 
 def test_just_dump_no_json():
-    with api_select.api(__file__) as api:
+    with api_select.api(__file__, login=True) as api:
         api.flow_job()
         api.job('j1', exec_time=0.01, max_fails=0, expect_invocations=0, expect_order=None)
         api.job('j2', exec_time=0.01, max_fails=0, expect_invocations=0, expect_order=None)
@@ -49,7 +49,7 @@ def test_just_dump_no_json():
 
 
 def test_just_dump_with_json():
-    with api_select.api(__file__) as api:
+    with api_select.api(__file__, login=True) as api:
         flow_name = api.flow_job()
         api.job('j1', exec_time=0.01, max_fails=0, expect_invocations=0, expect_order=None)
         api.job('j2', exec_time=0.01, max_fails=0, expect_invocations=0, expect_order=None)

@@ -142,7 +142,7 @@ def test_reporting_retry(capsys):
 
 
 def test_reporting_result_unchecked(capsys):
-    with api_select.api(__file__) as api:
+    with api_select.api(__file__, login=True) as api:
         api.flow_job()
         api.job('j11', 0.1, max_fails=0, expect_invocations=1, expect_order=1)
         api.job('j21_unchecked', 50, max_fails=0, expect_invocations=1, invocation_delay=0.0001, initial_buildno=7, expect_order=None, unknown_result=True, serial=True)
