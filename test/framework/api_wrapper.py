@@ -168,6 +168,7 @@ class JenkinsTestWrapperApi(jenkins.Jenkins, TestJenkins):
         if self.func_name:
             script = "export PYTHONPATH=" + test_tmp_dir + "\n"
             script += test_cfg.skip_job_load_sh_export_str() + "\n"
+            script += "export " + ApiType.SPECIALIZED.env_name() + "=true\n"  # pylint: disable=no-member
             # Supply dummy args for the py.test fixtures
             dummy_args = ','.join(['0' for _ in range(self.func_num_params)])
             script += sys.executable + " -Bc &quot;from jenkinsflow.test." + self.file_name.replace('.py', '') + " import *; test_" + self.func_name + "(" + dummy_args + ")&quot;"
