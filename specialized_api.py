@@ -112,12 +112,13 @@ class ApiJob(ApiJobMixin):
         self.que_item_why = que_item.get('why') if que_item else None
 
         actions = self.dct.get('actions') or []
+        self._path = "/job/" + self.name
         for action in actions:
             if action.get('parameterDefinitions'):
-                self._build_trigger_path = "/job/" + self.name + "/buildWithParameters"
+                self._build_trigger_path = self._path + "/buildWithParameters"
                 break
         else:
-            self._build_trigger_path = "/job/" + self.name + "/build"
+            self._build_trigger_path = self._path + "/build"
 
     def invoke(self, securitytoken, build_params, cause):
         try:
