@@ -15,7 +15,7 @@ def test_messages(capsys):
         api.job('j21', 0.01, max_fails=0, expect_invocations=1, invocation_delay=1.0, expect_order=2, serial=True)
         api.job('j12', 0.01, max_fails=0, expect_invocations=1, invocation_delay=1.0, expect_order=3, serial=True)
         api.job('j22', 0.01, max_fails=0, expect_invocations=1, invocation_delay=1.0, expect_order=4)
-        api.job('j23', 0.01, max_fails=0, expect_invocations=1, invocation_delay=1.0, expect_order=4)
+        api.job('j23', 2.00, max_fails=0, expect_invocations=1, invocation_delay=1.0, expect_order=4)
 
         with serial(api, timeout=70, job_name_prefix=api.job_name_prefix) as ctrl1:
             ctrl1.invoke('j11')
