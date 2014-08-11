@@ -42,6 +42,7 @@ TAGS
 
 *.tenjin.cache
 .cache
+.cache-*
 
 __pycache__
 

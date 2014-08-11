@@ -21,8 +21,19 @@ from jenkinsflow.test import cfg as test_cfg
 from jenkinsflow.test.cfg import ApiType
 
 
+_cache_dir = jp(os.path.dirname(here), '.cache')
+
+
 def run_tests(parallel, api_type):
     start_msg("Using " + str(api_type))
+
+    # Running the test suite multiple times (for each api) breaks the run failed first, preserve the cache dir for each type
+    api_type_cache_dir = _cache_dir + '-' + api_type.name
+    if os.path.exists(api_type_cache_dir):
+        if os.path.exists(_cache_dir):
+            shutil.rmtree(_cache_dir)
+        shutil.move(api_type_cache_dir, _cache_dir)
+
     test_cfg.select_api(api_type)
 
     engine = tenjin.Engine()
@@ -31,10 +42,14 @@ def run_tests(parallel, api_type):
         cov_rc_file.write(engine.render(jp(here, "coverage_rc.tenjin"), dict(api_type=api_type)))
             
     cmd = ['py.test', '--capture=sys', '--cov=' + here + '/..', '--cov-report=term-missing', '--cov-config=' + cov_rc_file_name, '--instafail', '--ff']
-    if not parallel:
-        return subprocess.check_call(cmd)
-    subprocess.check_call(cmd + ['-n', '16'])
-    os.unlink(cov_rc_file_name)
+    try:
+        if not parallel:
+            return subprocess.check_call(cmd)
+        subprocess.check_call(cmd + ['-n', '16'])        
+    finally:
+        if os.path.exists(_cache_dir):
+            shutil.move(_cache_dir, api_type_cache_dir)
+        os.unlink(cov_rc_file_name)
 
 
 opts = """
@@ -113,9 +128,8 @@ def main():
         os.makedirs(tmp_packages_dir)
         subprocess.check_call([sys.executable, jp(here, '../setup.py'), 'install', '--prefix', install_prefix])
         shutil.rmtree(jp(here, '../build'))
-
-        # TODO: Timing dependent, requires unchecked jobs from SPECIALIZED run to be finished
-        # TODO: fix
+        
+        # TODO: Fix
         # run_tests(parallel, ApiType.JENKINSAPI)
     except Exception as ex:
         print('*** ERROR: There were errors! Check output! ***', repr(ex), file=sys.stderr)
