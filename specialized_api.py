@@ -92,7 +92,7 @@ class Jenkins(Resource):
     def create_job(self, job_name, config_xml):
         self.post('/createItem', name=job_name, headers={'Content-Type': 'application/xml header'}, payload=config_xml)
 
-    def delete_job(self, job_name):
+    def delete_job(self, job_name, async=False):
         try:
             self.post('/job/' + job_name + '/doDelete')
         except errors.ResourceNotFound:
@@ -100,13 +100,13 @@ class Jenkins(Resource):
 
 
 class ApiJob(ApiJobMixin):
-    def __init__(self, jenkins_resource, dct, name):
-        self.jenkins_resource = jenkins_resource
+    def __init__(self, jenkins, dct, name):
+        self.jenkins = jenkins
         self.dct = dct.copy()
         self.name = name
 
         self.build = None
-        self.public_uri = self.baseurl = self.jenkins_resource._public_job_url(self.name)  # pylint: disable=protected-access
+        self.public_uri = self.baseurl = self.jenkins._public_job_url(self.name)  # pylint: disable=protected-access
 
         que_item = self.dct.get('queueItem')
         self.que_item_why = que_item.get('why') if que_item else None
@@ -131,12 +131,12 @@ class ApiJob(ApiJobMixin):
                 params['payload'] = build_params
             if securitytoken:
                 params['token'] = securitytoken
-            self.jenkins_resource.post(self._build_trigger_path, **params)
+            self.jenkins.post(self._build_trigger_path, **params)
         except errors.ResourceNotFound:
-            raise UnknownJobException(self.jenkins_resource._public_job_url(self.name))  # pylint: disable=protected-access
+            raise UnknownJobException(self.jenkins._public_job_url(self.name))  # pylint: disable=protected-access
 
     def stop(self, build):
-        self.jenkins_resource.post(self._path + '/' + repr(build.buildno) + '/stop')
+        self.jenkins.post(self._path + '/' + repr(build.buildno) + '/stop')
 
     def is_running(self):
         build = self.get_last_build_or_none()
@@ -156,7 +156,7 @@ class ApiJob(ApiJobMixin):
         return self.build
 
     def update_config(self, config_xml):
-        self.jenkins_resource.post("/job/" + self.name + "/config.xml", payload=config_xml)
+        self.jenkins.post("/job/" + self.name + "/config.xml", payload=config_xml)
 
     def poll(self):
         pass

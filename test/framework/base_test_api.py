@@ -197,10 +197,8 @@ class TestJenkins(AbstractApiJenkins):
                     if job.is_running():
                         break
                     hyperspeed.sleep(0.01)
-                    if hasattr(job, 'jenkins_resource'):
-                        job.jenkins_resource.quick_poll()
-                    else:
-                        job.poll()
+                    job.jenkins.quick_poll()
+                    job.poll()
                 assert job.is_running(), "Job: " + job.name + " is expected to be running, but state is " + ('QUEUED' if job.is_queued() else 'IDLE')
                 # Now stop the job, so that it won't be running after the testsuite is finished
                 last_build = job.get_last_build_or_none()

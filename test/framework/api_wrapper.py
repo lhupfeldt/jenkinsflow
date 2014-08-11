@@ -67,7 +67,7 @@ class WrapperJob(ObjectWrapper, TestJob, jenkins.ApiJob):
         self.invocation_time = time.time()
         if self.disappearing:
             # Delete the job to fake a job that disappears while a flow is running
-            self.jenkins_resource.delete_job(self.name)
+            self.jenkins.delete_job(self.name)
 
         if self.has_force_result_param:
             build_params = build_params or {}
