@@ -815,6 +815,7 @@ class _TopLevelControllerMixin(object):
         finally:
             print()
             print("--- Final status ---")
+            self.api.quick_poll()
             self._final_status()
 
         if self.result == BuildResult.UNSTABLE:
