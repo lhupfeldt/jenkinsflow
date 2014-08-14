@@ -345,7 +345,7 @@ class _SingleJob(_JobControl):
                 return
 
             progress = ""
-            if self.progress_status() != Progress.IDLE:
+            if self.progress_status() != Progress.IDLE or self.result == BuildResult.UNKNOWN:
                 progress = "- " + self.progress_status().name
             console_url = ""
             if self.result != BuildResult.UNKNOWN:

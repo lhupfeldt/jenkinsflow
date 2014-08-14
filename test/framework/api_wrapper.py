@@ -36,7 +36,7 @@ from .config import test_tmp_dir, pseudo_install_dir
 from .mock_api import MockJob
 
 
-class WrapperJob(ObjectWrapper, TestJob, jenkins.ApiJob):
+class WrapperJob(TestJob, jenkins.ApiJob, ObjectWrapper):
     # NOTE: ObjectWrapper class requires all attributes which are NOT proxied to be declared statically and overridden at instance level
     exec_time = None
     max_fails = None
@@ -46,6 +46,7 @@ class WrapperJob(ObjectWrapper, TestJob, jenkins.ApiJob):
     final_result = None
     serial = None
     disappearing = None
+    non_existing = None
 
     mock_job = None
 
@@ -61,13 +62,16 @@ class WrapperJob(ObjectWrapper, TestJob, jenkins.ApiJob):
                          expect_invocations=mock_job.expect_invocations, expect_order=mock_job.expect_order,
                          initial_buildno=mock_job.initial_buildno, invocation_delay=mock_job.invocation_delay,
                          unknown_result=mock_job.unknown_result, final_result=mock_job.final_result, serial=mock_job.serial,
-                         print_env=False, flow_created=mock_job.flow_created, create_job=mock_job.create_job, disappearing=mock_job.disappearing)
+                         print_env=False, flow_created=mock_job.flow_created, create_job=mock_job.create_job, disappearing=mock_job.disappearing,
+                         non_existing=mock_job.non_existing)
 
     def invoke(self, securitytoken=None, build_params=None, cause=None):
         self.invocation_time = time.time()
         if self.disappearing:
             # Delete the job to fake a job that disappears while a flow is running
+            print("Deleting disappearing job:", self.name)
             self.jenkins.delete_job(self.name)
+            self.jenkins.poll()
 
         if self.has_force_result_param:
             build_params = build_params or {}
@@ -87,7 +91,7 @@ class Jobs(TestJobs):
         super(Jobs, self).__exit__(exc_type, exc_value, traceback)
         test_jobs = self.api.test_jobs
         for job_name, job in test_jobs.iteritems():
-            if not job.flow_created:
+            if not (job.flow_created or job.non_existing):
                 self.api._jenkins_job(job_name, job.exec_time, job.params, None, job.print_env, job.create_job, always_load=job.disappearing)
 
 
@@ -125,7 +129,8 @@ class JenkinsTestWrapperApi(jenkins.Jenkins, TestJenkins):
             update_job_from_template(self.job_loader_jenkins, name, self.job_xml_template, pre_delete=self.pre_delete_jobs, context=context)
 
     def job(self, name, exec_time, max_fails, expect_invocations, expect_order, initial_buildno=None, invocation_delay=0.1, params=None,
-            script=None, unknown_result=False, final_result=None, serial=False, print_env=False, flow_created=False, create_job=None, disappearing=False):
+            script=None, unknown_result=False, final_result=None, serial=False, print_env=False, flow_created=False, create_job=None, disappearing=False,
+            non_existing=False):
         job_name = self.job_name_prefix + name
         assert not self.test_jobs.get(job_name)
 
@@ -136,19 +141,20 @@ class JenkinsTestWrapperApi(jenkins.Jenkins, TestJenkins):
             params = list(params) if params else []
             params.append(('force_result', ('SUCCESS', 'FAILURE', 'UNSTABLE', 'ABORTED'), 'Caller can force job to success, fail, unstable or aborted'))
 
-        if flow_created:
+        if flow_created or non_existing:
             try:
                 print("Deleting job:", job_name)
                 self.job_loader_jenkins.delete_job(job_name)
             except UnknownJobException:
                 pass
-        elif not self.using_job_creator:
+        elif not self.using_job_creator and not non_existing:
             # TODO: Remove and convert all to use job_creator?
             self._jenkins_job(job_name, exec_time, params, script, print_env, create_job=create_job, always_load=disappearing)
 
         job = MockJob(name=job_name, exec_time=exec_time, max_fails=max_fails, expect_invocations=expect_invocations, expect_order=expect_order,
                       initial_buildno=initial_buildno, invocation_delay=invocation_delay, unknown_result=unknown_result, final_result=final_result,
-                      serial=serial, params=params, flow_created=flow_created, create_job=create_job, disappearing=disappearing)
+                      serial=serial, params=params, flow_created=flow_created, create_job=create_job, disappearing=disappearing,
+                      non_existing=non_existing)
         self.test_jobs[job_name] = job
 
     def flow_job(self, name=None, params=None):
@@ -184,9 +190,11 @@ class JenkinsTestWrapperApi(jenkins.Jenkins, TestJenkins):
     # --- Wrapped API ---
 
     def delete_job(self, job_name):
+        TestJenkins.delete_job(self, job_name)
         self.job_loader_jenkins.delete_job(job_name)
 
     def create_job(self, job_name, config_xml):
+        TestJenkins.create_job(self, job_name, config_xml)
         self.job_loader_jenkins.create_job(job_name, config_xml)
 
     def get_job(self, name):
@@ -194,10 +202,13 @@ class JenkinsTestWrapperApi(jenkins.Jenkins, TestJenkins):
         try:
             job = self.test_jobs.get(name)
             jenkins_job = super(JenkinsTestWrapperApi, self).get_job(name)
-            if not job:
-                msg = "InternalError in api_wrapper get_job. Job exists in Jenkins, but not in test_jobs: " + repr(name)
+            if job is None or job.non_existing:
+                msg = "InternalError in api_wrapper get_job. Job exists in Jenkins"
+                if job is None:
+                    msg += ", but not in test_jobs: " + repr(name)
+                else:
+                    msg += ", but test job has property non_existing: " + repr(name) + ", test job:" + repr(job)
                 print(msg, file=sys.stderr)
-                print("test_jobs:", self.test_jobs, file=sys.stderr)
                 raise Exception(msg)
                 
             if isinstance(job, MockJob):
@@ -206,7 +217,9 @@ class JenkinsTestWrapperApi(jenkins.Jenkins, TestJenkins):
             job.__subject__ = jenkins_job
             return job
         except UnknownJobException as ex:
-            if job:
+            if job and not (job.flow_created or job.non_existing):
                 print(ex, file=sys.stderr)
-                print("In api_wrapper get_job. Job exists in test_jobs, but not in in Jenkins: " + repr(name))
+                msg = "In api_wrapper get_job. Job exists in test_jobs, but not in in Jenkins: " + repr(name)
+                print(msg, file=sys.stderr)
+                raise Exception(msg)
             raise

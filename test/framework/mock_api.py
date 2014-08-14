@@ -16,10 +16,11 @@ here = os.path.abspath(os.path.dirname(__file__))
 
 class MockJob(TestJob, ApiJobMixin):
     def __init__(self, name, exec_time, max_fails, expect_invocations, expect_order, initial_buildno, invocation_delay, unknown_result,
-                 final_result, serial, params, flow_created, create_job, disappearing):
+                 final_result, serial, params, flow_created, create_job, disappearing, non_existing):
         super(MockJob, self).__init__(exec_time=exec_time, max_fails=max_fails, expect_invocations=expect_invocations, expect_order=expect_order,
                                       initial_buildno=initial_buildno, invocation_delay=invocation_delay, unknown_result=unknown_result, final_result=final_result,
-                                      serial=serial, print_env=False, flow_created=flow_created, create_job=create_job, disappearing=disappearing)
+                                      serial=serial, print_env=False, flow_created=flow_created, create_job=create_job, disappearing=disappearing,
+                                      non_existing=non_existing)
         self.name = name
         self.public_uri = self.baseurl = 'http://hupfeldtit.dk/job/' + self.name
         self.build = Build(self, initial_buildno) if initial_buildno is not None else None
@@ -91,19 +92,18 @@ class MockApi(TestJenkins):
     def __init__(self, job_name_prefix, baseurl):
         super(MockApi, self).__init__(job_name_prefix)
         self.baseurl = baseurl
-        self._deleted_jobs = {}
         self.username = 'dummy'
         self.password = 'dummy'
 
     def job(self, name, exec_time, max_fails, expect_invocations, expect_order, initial_buildno=None, invocation_delay=0.1, params=None,
             script=None, unknown_result=False, final_result=None, serial=False, print_env=False, flow_created=False, create_job=None,
-            disappearing=False):
+            disappearing=False, non_existing=False):
         job_name = self.job_name_prefix + name
         assert not self.test_jobs.get(job_name)
         job = MockJob(name=job_name, exec_time=exec_time, max_fails=max_fails, expect_invocations=expect_invocations, expect_order=expect_order,
                       initial_buildno=initial_buildno, invocation_delay=invocation_delay, unknown_result=unknown_result,
                       final_result=final_result, serial=serial, params=params, flow_created=flow_created, create_job=create_job,
-                      disappearing=disappearing)
+                      disappearing=disappearing, non_existing=non_existing)
         self.test_jobs[job_name] = job
 
     def flow_job(self, name=None, params=None):
@@ -118,20 +118,11 @@ class MockApi(TestJenkins):
     def quick_poll(self):
         pass
 
-    # Delete/Create hack sufficient to get resonable coverage on job_load test
-    def delete_job(self, job_name):
-        try:
-            self._deleted_jobs[job_name] = self.test_jobs[job_name]
-        except KeyError:
-            raise UnknownJobException(job_name)
-        del self.test_jobs[job_name]
-
-    def create_job(self, job_name, config_xml):
-        if not job_name in self.test_jobs:
-            self.test_jobs[job_name] = self._deleted_jobs[job_name]
-
     def get_job(self, name):
         try:
-            return self.test_jobs[name]
+            job = self.test_jobs[name]
+            if job.non_existing:
+                raise UnknownJobException(name)
+            return job
         except KeyError:
             raise UnknownJobException(name)

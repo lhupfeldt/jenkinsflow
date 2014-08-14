@@ -10,6 +10,7 @@ from os.path import join as jp
 
 from .abstract_api import AbstractApiJob, AbstractApiBuild as TestBuild, AbstractApiJenkins
 
+from jenkinsflow.api_base import UnknownJobException
 from jenkinsflow.flow import BuildResult
 from jenkinsflow.mocked import hyperspeed
 
@@ -30,7 +31,7 @@ class TestJob(AbstractApiJob):
     _current_order = 1
 
     def __init__(self, exec_time, max_fails, expect_invocations, expect_order, initial_buildno, invocation_delay,
-                 unknown_result, final_result, serial, print_env, flow_created, create_job, disappearing):
+                 unknown_result, final_result, serial, print_env, flow_created, create_job, disappearing, non_existing):
         """
         Set unknown_result to True if the result is indeterminate (timeout or invoke_unchecked)
         """
@@ -44,6 +45,7 @@ class TestJob(AbstractApiJob):
         assert serial in (False, True)
         assert flow_created in (False, True)
         assert disappearing in (False, True)
+        assert non_existing in (False, True)
 
         self.exec_time = exec_time
         self.max_fails = max_fails
@@ -58,6 +60,7 @@ class TestJob(AbstractApiJob):
         self.flow_created = flow_created
         self.create_job = create_job
         self.disappearing = disappearing
+        self.non_existing = non_existing
 
         self.invocation = 0
         self.invocation_time = self.start_time = self.end_time = 0
@@ -120,10 +123,12 @@ class TestJenkins(AbstractApiJenkins):
         self.job_name_prefix = job_name_prefix
         TestJob._current_order = 1
         self.test_jobs = OrderedDict()
+        self._deleted_jobs = {}
 
     @abc.abstractmethod
     def job(self, name, exec_time, max_fails, expect_invocations, expect_order, initial_buildno=None, invocation_delay=0.1, params=None,
-            script=None, unknown_result=False, final_result=None, serial=False, print_env=False, flow_created=False, create_job=None, disappearing=False):
+            script=None, unknown_result=False, final_result=None, serial=False, print_env=False, flow_created=False, create_job=None, disappearing=False,
+            non_existing=False):
         """Create a job with corresponding test metadata.
 
         Args:
@@ -136,6 +141,21 @@ class TestJenkins(AbstractApiJenkins):
             create_job (str): Name of another job that will be created by this job, when this job is running
         """
         pass
+
+    # Delete/Create hack sufficient to get resonable coverage on job_load test
+    def delete_job(self, job_name):
+        try:            
+            self._deleted_jobs[job_name] = self.test_jobs[job_name]
+        except KeyError:
+            raise UnknownJobException(job_name)
+        del self.test_jobs[job_name]
+
+    def create_job(self, job_name, config_xml):
+        job = self.test_jobs.get(job_name)
+        if job is None:
+            job = self._deleted_jobs[job_name]
+            self.test_jobs[job_name] = job
+        job.non_existing = False
 
     def job_creator(self):
         return Jobs(self)
@@ -197,7 +217,8 @@ class TestJenkins(AbstractApiJenkins):
                     if job.is_running():
                         break
                     hyperspeed.sleep(0.01)
-                    job.jenkins.quick_poll()
+                    if hasattr(job, 'jenkins'):
+                        job.jenkins.quick_poll()
                     job.poll()
                 assert job.is_running(), "Job: " + job.name + " is expected to be running, but state is " + ('QUEUED' if job.is_queued() else 'IDLE')
                 # Now stop the job, so that it won't be running after the testsuite is finished
