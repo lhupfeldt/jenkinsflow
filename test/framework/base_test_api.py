@@ -123,7 +123,6 @@ class TestJenkins(AbstractApiJenkins):
         self.job_name_prefix = job_name_prefix
         TestJob._current_order = 1
         self.test_jobs = OrderedDict()
-        self._deleted_jobs = {}
 
     @abc.abstractmethod
     def job(self, name, exec_time, max_fails, expect_invocations, expect_order, initial_buildno=None, invocation_delay=0.1, params=None,
@@ -144,18 +143,20 @@ class TestJenkins(AbstractApiJenkins):
 
     # Delete/Create hack sufficient to get resonable coverage on job_load test
     def delete_job(self, job_name):
-        try:            
-            self._deleted_jobs[job_name] = self.test_jobs[job_name]
+        try:
+            job = self.test_jobs[job_name]
+            if job.non_existing:
+                raise UnknownJobException(job_name)
+            job.non_existing = True
         except KeyError:
-            raise UnknownJobException(job_name)
-        del self.test_jobs[job_name]
+            raise Exception("Test job setup error, missing test job definition:", job_name)
 
     def create_job(self, job_name, config_xml):
-        job = self.test_jobs.get(job_name)
-        if job is None:
-            job = self._deleted_jobs[job_name]
-            self.test_jobs[job_name] = job
-        job.non_existing = False
+        try:
+            job = self.test_jobs[job_name]
+            job.non_existing = False
+        except KeyError:
+            raise Exception("Test job setup error, missing test job definition:", job_name)
 
     def job_creator(self):
         return Jobs(self)
