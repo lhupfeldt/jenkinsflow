@@ -62,7 +62,9 @@ class LoggingProcess(multiprocessing.Process):
 
 class Jenkins(object):
     """Optimized minimal set of methods needed for jenkinsflow to directly execute python code instead of invoking Jenkins jobs.
-    
+
+    THIS IS CONSIDERED EXPERIMENTAL
+
     There is no concept of job queues or executors, so if your flow depends on these for correctness, you wil experience different behaviour
     when using this api instead of the real Jenkins.
 

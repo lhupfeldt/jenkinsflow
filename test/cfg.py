@@ -18,7 +18,6 @@ SKIP_JOB_DELETE_NAME = env_var_prefix + 'SKIP_JOB_DELETE'
 class ApiType(Enum):
     SPECIALIZED = 0
     SCRIPT = 1
-    JENKINSAPI = 2
     MOCK = 3
 
     def env_name(self):

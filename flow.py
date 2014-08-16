@@ -852,7 +852,7 @@ class serial(_Serial, _TopLevelControllerMixin):
     Only differences to  :py:meth:`_Flow.serial` are described.
 
     Args:
-        jenkins_api (:py:class:`.specialized_api.Jenkins` or :py:class:`.jenkinsapi_wrapper.Jenkins`): Jenkins Api instance used for accessing jenkins.
+        jenkins_api (:py:class:`.specialized_api.Jenkins` or :py:class:`.script_api.Jenkins`): Jenkins Api instance used for accessing jenkins.
             If jenkins_api is instantiated with username/password you do not need to specify username/password to the flow (see below).
         securitytoken (str): Token to use on security enabled Jenkins instead of username/password. The Jenkins job must have the token configured.
         username (str): Name of user authorized to run Jenkins 'cli' and change job status.
@@ -867,8 +867,10 @@ class serial(_Serial, _TopLevelControllerMixin):
         json_indent (int): If not None json graph file is pretty printed with this indentation level.
         json_strip_top_level_prefix (boolean): If True, the job_name_prefix will be stripped from job names when generating json graph file
         direct_url (str): Non proxied url for accessing Jenkins
-            Propagation.WARNING requires this as it uses the Jenkins cli, which will not work through a proxy, to set the build result
-        require_idle (boolean): If True it is considered an error if any of the jobs in the flow are running when the flow starts
+            Propagation.WARNING requires this, as it uses the Jenkins cli, which will not work through a proxy, to set the build result.
+        require_idle (boolean): If True it is considered an error if any of the jobs in the flow are running when the flow starts.
+            Please note that `jenkinsflow` was not designed to control simultaneous invocations of the same flow, so depending on your flow, it
+            may or may not work correctly if you set this to False
         just_dump (boolean): If True, the flow is just printed, no jobs are invoked.
         params_display_order (list): List of job parameter names used for ordering the parameters in the output.
             The format is [first1, ..., firstN, '*', last1, ..., lastN], where first..., last... are names that will be matched against the

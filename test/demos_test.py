@@ -7,7 +7,7 @@ import sys, os, imp
 from os.path import join as jp
 here = os.path.abspath(os.path.dirname(__file__))
 
-extra_sys_path = [os.path.normpath(path) for path in [here, jp(here, '../..'), jp(here, '../demo'), jp(here, '../demo/jobs'), jp(here, '../../jenkinsapi')]]
+extra_sys_path = [os.path.normpath(path) for path in [here, jp(here, '../..'), jp(here, '../demo'), jp(here, '../demo/jobs')]]
 sys.path = extra_sys_path + sys.path
 
 from pytest import raises

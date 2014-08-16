@@ -18,7 +18,7 @@ Module contents
 
    jenkinsflow.flow
    jenkinsflow.specialized_api
-   jenkinsflow.jenkinsapi_wrapper
+   jenkinsflow.script_api
    jenkinsflow.set_build_result
    set_build_result.py
    jenkinsflow.jobload

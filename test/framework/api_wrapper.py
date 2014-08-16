@@ -20,9 +20,6 @@ here = os.path.abspath(os.path.dirname(__file__))
 if api_type == ApiType.SPECIALIZED:
     from jenkinsflow import specialized_api as jenkins
     _job_xml_template = jp(here, 'job.xml.tenjin')
-elif api_type == ApiType.JENKINSAPI:
-    from jenkinsflow import jenkinsapi_wrapper as jenkins
-    _job_xml_template = jp(here, 'job.xml.tenjin')
 elif api_type == ApiType.SCRIPT:
     from jenkinsflow import script_api as jenkins
     _job_xml_template = jp(here, 'job_script.py.tenjin')

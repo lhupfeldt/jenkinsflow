@@ -38,9 +38,6 @@ omit =
      <?py if api_type != ApiType.SPECIALIZED: ?>
      specialized_api.py
      <?py #endif ?>
-     <?py if api_type != ApiType.JENKINSAPI: ?>
-     jenkinsapi_wrapper.py
-     <?py #endif ?>
      <?py if api_type != ApiType.SCRIPT: ?>
      script_api.py
      <?py #endif ?>

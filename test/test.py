@@ -11,7 +11,7 @@ from tenjin.helpers import *
 
 here = os.path.abspath(os.path.dirname(__file__))
 
-extra_sys_path = [os.path.normpath(path) for path in [here, jp(here, '../..'), jp(here, '../demo'), jp(here, '../demo/jobs'), jp(here, '../../jenkinsapi')]]
+extra_sys_path = [os.path.normpath(path) for path in [here, jp(here, '../..'), jp(here, '../demo'), jp(here, '../demo/jobs')]]
 sys.path = extra_sys_path + sys.path
 os.environ['PYTHONPATH'] = ':'.join(extra_sys_path)
 
@@ -54,7 +54,7 @@ def run_tests(parallel, api_type):
 
 opts = """
 Test jenkinsflow.
-First runs all tests mocked in hyperspeed, then runs against Jenkins, first using specialized_api, then using jenkinsapi.
+First runs all tests mocked in hyperspeed, then runs against Jenkins, using specialized_api, then run script_api jobs.
 
 Usage:
 test.py [--mock-speedup <speedup> --direct-url <direct_url> --pytest-args <pytest_args> --skip-job-delete --skip-job-load <file>...]
@@ -128,9 +128,6 @@ def main():
         os.makedirs(tmp_packages_dir)
         subprocess.check_call([sys.executable, jp(here, '../setup.py'), 'install', '--prefix', install_prefix])
         shutil.rmtree(jp(here, '../build'))
-        
-        # TODO: Fix
-        # run_tests(parallel, ApiType.JENKINSAPI)
     except Exception as ex:
         print('*** ERROR: There were errors! Check output! ***', repr(ex), file=sys.stderr)
         raise

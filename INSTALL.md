@@ -1,6 +1,6 @@
 Installation
 ------------
-In the following Jenkins also means Hudson unless otherwise stated.
+In the following Jenkins also means Hudson, unless otherwise stated.
 
 1. The easy way:
    python setup.py install
@@ -8,26 +8,14 @@ In the following Jenkins also means Hudson unless otherwise stated.
    To uninstall:
    pip uninstall jenkinsflow
 
-Jenkinsflow can use it's own 'specialized_api' or the generic 'jenkinsapi' (through the jenkinsapi_wrapper)
-to access jenkins. For most use cases the specialized_api should perform better and put less load on Jenkins.
-There may be some setups (e.g. thusands of jobs and few builds per job) where jenkinsapi will perform better.
+Jenkinsflow uses it's own 'specialized_api' python module to access jenkins, using the jenkins rest api.
 
 2. Manually:
 2.1. Install dependencies:
-   To use 'specialized_api':
    pip install enum34 restkit
    optional: pip install tenjin (if you want to use the template based job loader)
 
-   To use 'jenkinsapi':
-   pip install enum34 jenkinsapi proxytypes
-   # Jenkinsapi can be found here https://github.com/salimfadhley/jenkinsapi
-   Note: If jenkinsapi is placed next to jenkinsflow, that version of jenkinsapi will be used for the tests.
-
-   Note: if you use Hudson (3.x):
-      a. You cannot use the pip installed jenkinsapi, instead get it from:
-         https://github.com/henriklynggaard/jenkinsapi.git
-         checkout the 'hudson_support' branch
-      b. You need to install the REST API plugin and enable REST API
+   Note: if you use Hudson (3.x): You need to install the REST API plugin and enable REST API
 
 2.2. To use the experimental visualisation feature:
    pip install bottle atomicfile

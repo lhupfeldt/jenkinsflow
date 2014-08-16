@@ -84,8 +84,6 @@ from jenkinsflow.test.cfg import ApiType
 <?py from jenkinsflow.test.cfg import ApiType ?>
 <?py if api_type == ApiType.SPECIALIZED: ?>
 from jenkinsflow import specialized_api as jenkins
-<?py elif api_type == ApiType.JENKINSAPI: ?>
-from jenkinsflow import jenkinsapi_wrapper as jenkins
 <?py else: ?>
 <?py raise Exception("Unknown/Unsupported api_type: " + api_type) ?>
 <?py #endif ?>

@@ -23,7 +23,7 @@ setup(
     package_dir={'jenkinsflow':'.'},
     zip_safe=True,
     include_package_data=False,
-    install_requires=['restkit', 'jenkinsapi', 'enum34', 'tenjin', 'bottle', 'atomicfile', 'proxytypes', 'subprocess32'],
+    install_requires=['restkit', 'enum34', 'tenjin', 'bottle', 'atomicfile', 'subprocess32'],
     test_suite='pytest',
     tests_require=['pytest', 'pytest-cov', 'pytest-cache', 'pytest-instafail', 'pytest-xdist', 'logilab-devtools', 'proxytypes', 'docopt'],
     url=PROJECT_URL,
@@ -31,7 +31,7 @@ setup(
     long_description=DESCRIPTION,
     license='BSD',
     classifiers=[
-        'Development Status :: 4 - Beta',
+        'Development Status :: 5 - Production/Stable',
         'Environment :: Console',
         'Intended Audience :: Developers',
         'License :: OSI Approved :: BSD License',

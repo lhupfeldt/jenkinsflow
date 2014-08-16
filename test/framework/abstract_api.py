@@ -1,7 +1,7 @@
 # Copyright (c) 2012 - 2014 Lars Hupfeldt Nielsen, Hupfeldt IT
 # All rights reserved. This work is under a BSD license, see LICENSE.TXT.
 
-# Abstract base classes representing the API's used from jenkinsapi
+# Abstract base classes representing the API's used from specialized_api
 # These classes serve as base classes for the Mock and Wrappper test API's
 
 import abc
