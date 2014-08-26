@@ -12,13 +12,16 @@ Jenkinsflow uses it's own 'specialized_api' python module to access jenkins, usi
 
 2. Manually:
 2.1. Install dependencies:
-   pip install enum34 restkit
+   pip install enum34 restkit subprocess32
    optional: pip install tenjin (if you want to use the template based job loader)
 
    Note: if you use Hudson (3.x): You need to install the REST API plugin and enable REST API
 
-2.2. To use the experimental visualisation feature:
-   pip install bottle atomicfile
+2.2. Install dependencies for experimental features:
+   To use the experimental visualisation feature:
+     pip install bottle atomicfile
+   To use the experimental script api:
+     pip install psutil setproctitle
 
 2.3. Make jenkinsflow files (flow.py and possibly unbuffered.py) available to your Jenkins installation.
 

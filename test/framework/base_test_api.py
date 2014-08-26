@@ -8,10 +8,9 @@ from collections import OrderedDict
 import os
 from os.path import join as jp
 
-from .abstract_api import AbstractApiJob, AbstractApiBuild as TestBuild, AbstractApiJenkins
+from .abstract_api import AbstractApiJob, AbstractApiJenkins
 
-from jenkinsflow.api_base import UnknownJobException
-from jenkinsflow.flow import BuildResult
+from jenkinsflow.api_base import UnknownJobException, BuildResult, Progress
 from jenkinsflow.mocked import hyperspeed
 
 from .config import test_tmp_dir
@@ -62,7 +61,7 @@ class TestJob(AbstractApiJob):
         self.disappearing = disappearing
         self.non_existing = non_existing
 
-        self.invocation = 0
+        self.invocation_number = 0
         self.invocation_time = self.start_time = self.end_time = 0
         self.actual_order = -1
 
@@ -74,13 +73,13 @@ class TestJob(AbstractApiJob):
 
     def invoke(self, securitytoken=None, build_params=None, cause=None):
         self.build_params = build_params
-        self.invocation += 1
+        self.invocation_number += 1
         self.actual_order = TestJob._current_order
         TestJob._current_order += 1
 
     def __repr__(self):
         return ", expect_invocations: " + repr(self.expect_invocations) + \
-            ", invocation: " + repr(self.invocation) + \
+            ", invocation_number: " + repr(self.invocation_number) + \
             ", expect_order: " + repr(self.expect_order) + \
             ", start_time: " + repr(self.start_time) + \
             ", exec_time: " + repr(self.exec_time) + \
@@ -210,28 +209,31 @@ class TestJenkins(AbstractApiJenkins):
 
             if  job.expect_invocations is not None:
                 # Check expected number of job invocations
-                assert job.expect_invocations == job.invocation, "Job: " + job.name + " invoked " + str(job.invocation) + " times, expected " + str(job.expect_invocations) + " invocations"
+                assert job.expect_invocations == job.invocation_number, "Job: " + job.name + " invoked " + str(job.invocation_number) + " times, expected " + str(job.expect_invocations) + " invocations"
 
             if job.unknown_result:
                 # The job must still be running, but maybe it has not been started yet, so wait up to 3 seconds for it to start
                 for _ in range(1, 300):
-                    if job.is_running():
+                    # TODO: job obj should be invocation obj!
+                    _result, progress, _last_build_number = job.job_status()
+                    # print("FW: last build status:", _result, progress, _last_build_number)
+                    if progress == Progress.RUNNING:
                         break
                     hyperspeed.sleep(0.01)
                     if hasattr(job, 'jenkins'):
                         job.jenkins.quick_poll()
                     job.poll()
-                assert job.is_running(), "Job: " + job.name + " is expected to be running, but state is " + ('QUEUED' if job.is_queued() else 'IDLE')
+                # pylint: disable=maybe-no-member
+                assert progress == Progress.RUNNING, "Job: " + job.name + " is expected to be running, but state is " + progress.name
                 # Now stop the job, so that it won't be running after the testsuite is finished
-                last_build = job.get_last_build_or_none()
-                if last_build:
-                    job.stop(last_build)
+                job.stop_latest()
             elif job.expect_invocations != 0:
-                if job.invocation > job.max_fails:
+                if job.invocation_number > job.max_fails:
                     expect_status = BuildResult.SUCCESS if job.final_result is None else job.final_result
                 else:
                     expect_status = BuildResult.FAILURE
-                build = job.get_last_build_or_none()
-                assert build, "Job: " + repr(job) + " should have had build, but it has none"
-                result = BuildResult[build.get_status()]
+                # TODO job obj should be invocation obj!
+                invocation = job.invocations[-1]
+                assert invocation.build_number is not None, "Job: " + repr(job) + " should have had build_number, but it has None"
+                result, progress = invocation.status()
                 assert result == expect_status, "Job: " + job.name + " expected result " + repr(expect_status) + " but got " + repr(result)

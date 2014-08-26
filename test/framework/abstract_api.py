@@ -24,22 +24,6 @@ class AbstractApiJob(object):
     # def poll(self):
 
 
-class AbstractApiBuild(object):
-    __metaclass__ = abc.ABCMeta
-
-    @abc.abstractmethod
-    def is_running(self):
-        raise Exception("AbstractNotImplemented")
-
-    @abc.abstractmethod
-    def get_status(self):
-        raise Exception("AbstractNotImplemented")
-
-    @abc.abstractmethod
-    def console_url(self):
-        raise Exception("AbstractNotImplemented")
-
-
 class AbstractApiJenkins(object):
     __metaclass__ = abc.ABCMeta
 

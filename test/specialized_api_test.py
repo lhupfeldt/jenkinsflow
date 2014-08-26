@@ -6,13 +6,6 @@ from pytest import raises
 from jenkinsflow import specialized_api
 
 
-def test_specialized_api_build_repr():
-    class Job(object):
-        name = "Hello"
-    b = specialized_api.ApiBuild(Job(), dict(number=7))
-    assert repr(b) == 'Hello #7'
-
-
 def test_specialized_api_init_api_no_password():
     with raises(Exception) as exinfo:
         specialized_api.Jenkins("dummy", "dummy", username="hugo")

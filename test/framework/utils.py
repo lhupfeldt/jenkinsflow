@@ -16,7 +16,8 @@ _result_msg_script_api_log_file_msg_prefix = tempfile.gettempdir() + '/'
 
 def console_url(api, job_name, num):
     if api.api_type == ApiType.SCRIPT:
-        return test_cfg.script_dir() + '/' + job_name + '.py' + _console_url_script_api_log_file_msg_prefix + job_name + '.log'
+        # test_cfg.script_dir() + '/' + job_name + '.py' + _console_url_script_api_log_file_msg_prefix + job_name + '.log'
+        return tempfile.gettempdir() + '/' + job_name + '.log'
     return 'http://x.x/job/' + job_name + '/' + (str(num) + "/console" if api.api_type == ApiType.MOCK else "")
 
 
@@ -24,6 +25,10 @@ def result_msg(api, job_name, num=None):
     if api.api_type == ApiType.SCRIPT:
         return repr(job_name) + " - build: " + _result_msg_script_api_log_file_msg_prefix + job_name + '.log'
     return repr(job_name) + " - build: http://x.x/job/" + job_name + "/" + (str(num) + "/console" if api.api_type == ApiType.MOCK and num else "")
+
+
+def build_started_msg(api, job_name, num):
+    return "Build started: " + repr(job_name) + " - " + console_url(api, job_name, num)
 
 
 _http_re = re.compile(r'https?://.*?/job/([^/" ]*)(/?)')
@@ -45,7 +50,7 @@ def assert_lines_in(text, *expected_lines):
             Otherwise `expected line` must simply occur in a line in `text`
     """
     assert expected_lines
-
+    assert text 
     fixed_expected = []
     for expected in expected_lines:
         fixed_expected.append(replace_host_port(expected) if not hasattr(expected, 'match') else expected)

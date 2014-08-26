@@ -14,4 +14,7 @@ def test_stop_api_not_running_build():
             ctrl.invoke('j1')
 
     job = api.get_job(api.job_name_prefix + "j1")
-    job.stop(job.get_last_build_or_none())
+    job.stop_latest()
+
+
+# TODO

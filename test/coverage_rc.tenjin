@@ -28,6 +28,9 @@ exclude_lines =
     return self.job.console_url(self.buildno)
     <?py #endif ?>
 
+    # TODO tests this 
+    Exception\("Build deleted while flow running
+
 omit = 
      test/*
      demo/*

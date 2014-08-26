@@ -8,10 +8,9 @@ from os.path import join as jp
 from collections import OrderedDict
 from itertools import chain
 
-from enum import Enum
 from .ordered_enum import OrderedEnum
 from .set_build_result import set_build_result
-from .specialized_api import UnknownJobException
+from .specialized_api import BuildResult, Progress, Invocation, UnknownJobException
 from .mocked import hyperspeed, mocked
 
 
@@ -19,15 +18,6 @@ _default_poll_interval = 0.5 if not mocked else 0.001
 _default_report_interval = 5
 _default_secret_params = '.*passw.*|.*PASSW.*'
 _default_secret_params_re = re.compile(_default_secret_params)
-
-
-class BuildResult(OrderedEnum):
-    # pylint: disable=no-init
-    FAILURE = 0
-    ABORTED = 1
-    UNSTABLE = 2
-    SUCCESS = 3
-    UNKNOWN = 4
 
 _build_result_failures = (BuildResult.FAILURE, BuildResult.ABORTED)
 
@@ -44,13 +34,6 @@ class Checking(OrderedEnum):
     MUST_CHECK = 0
     HAS_UNCHECKED = 1
     FINISHED = 2
-
-
-class Progress(Enum):
-    # pylint: disable=no-init
-    RUNNING = 1
-    QUEUED = 2
-    IDLE = 3
 
 
 class JobControlException(Exception):
@@ -232,6 +215,11 @@ class _JobControl(object):
 
 
 class _SingleJob(_JobControl):
+    """Represents a single flow-invocation of a Jenkins job
+    Multiple invocations of the same job in a single flow are allowed
+    Retries are handled by the same instance of this class, but distinct invocations are handled by different instances
+    """
+
     def __init__(self, parent_flow, securitytoken, job_name_prefix, max_tries, job_name, params, propagation, secret_params_re, allow_missing_jobs):
         for key, value in params.iteritems():
             # Handle parameters passed as int or bool. Booleans will be lowercased!
@@ -242,10 +230,12 @@ class _SingleJob(_JobControl):
         # There is no separate retry for individual jobs, so set self.total_max_tries to the same as parent flow!
         self.total_max_tries = self.parent_flow.total_max_tries
         self.job = None
+        self.job_invocation = None
         self.old_build_num = None
         self.name = job_name_prefix + job_name
         self.repr_str = ("unchecked " if self.propagation == Propagation.UNCHECKED else "") + "job: " + repr(self.name)
         self.jenkins_baseurl = None
+        self._reported_invoked = False
 
         print(self.indentation + repr(self))
 
@@ -263,12 +253,12 @@ class _SingleJob(_JobControl):
             return
 
         self._prepare_to_invoke()
-        pgstat = self.progress_status()
-        if self.top_flow.require_idle and pgstat != Progress.IDLE:
+        _result, progress, _ = self.job.job_status()
+        if self.top_flow.require_idle and progress != Progress.IDLE:
             # Pylint does not like Enum pylint: disable=no-member
-            raise JobNotIdleException(repr(self) + " is in state " + pgstat.name + ". It must be " + Progress.IDLE.name + '.')
+            raise JobNotIdleException(repr(self) + " is in state " + progress.name + ". It must be " + Progress.IDLE.name + '.')
 
-        print(self.indentation + self._status_message(self.old_build_num))
+        print(self.indentation + self._status_message(progress, self.old_build_num, 'latest '))
 
     def _show_job_definition(self):
         first = current = OrderedDict()
@@ -294,42 +284,53 @@ class _SingleJob(_JobControl):
     def __repr__(self):
         return self.repr_str
 
-    def progress_status(self):
-        return Progress.RUNNING if self.job.is_running() else Progress.QUEUED if self.job.is_queued() else Progress.IDLE
+    def _invoked_message(self):
+        print("Build started:", repr(self.name), '-', self.job_invocation.console_url())
 
-    def _status_message(self, build_num):
-        return repr(self) + " Status " + self.progress_status().name + " - latest build: " + '#' + str(build_num if build_num else None)
+    def _status_message(self, progress, build_num, latest=''):
+        return repr(self) + " Status " + progress.name + " - " + latest + "build: " + '#' + str(build_num if build_num else None)
 
     def _prepare_to_invoke(self, reset_tried_times=False):
         super(_SingleJob, self)._prepare_to_invoke(reset_tried_times)
         self.job.poll()
-        old_build = self.job.get_last_build_or_none()
-        self.old_build_num = old_build.buildno if old_build else None
+        _, _, self.old_build_num = self.job.job_status()
+        self._reported_invoked = False
 
     def _check(self, report_now):
         if self.job is None:
             self._prepare_first(require_job=True)
 
+        self.job.poll()
         if self._must_invoke_set_invocation_time():
             # Don't re-invoke unchecked jobs that are still running
-            if self.propagation != Propagation.UNCHECKED or not self.job.is_running():
-                self._invocation_message('Job', self.job.console_url(self.old_build_num + 1 if self.old_build_num else 1))
-                self.job.invoke(securitytoken=self.securitytoken, build_params=self.params if self.params else None, cause=self.top_flow.cause)
+            if self.propagation != Propagation.UNCHECKED:
+                self._invocation_message('Job', self.job.public_uri)
+                params = self.params if self.params else None
+                self.job_invocation = self.job.invoke(securitytoken=self.securitytoken, build_params=params, cause=self.top_flow.cause)
+            elif not self.job_invocation or self.job_invocation.status()[1] == Progress.IDLE:
+                self._invocation_message('Job', self.job.public_uri)
+                params = self.params if self.params else None
+                self.job_invocation = self.job.invoke(securitytoken=self.securitytoken, build_params=params, cause=self.top_flow.cause)
 
-        build = self.job.get_last_build_or_none()
-        if build is None or build.buildno == self.old_build_num or build.is_running():
+        result, progress = self.job_invocation.status()
+        if not self._reported_invoked and self.job_invocation.build_number is not None:
+            self._invoked_message()
+            self._reported_invoked = True
+
+        if result == BuildResult.UNKNOWN:
             if report_now:
-                print(self._status_message(build.buildno if build else self.old_build_num))
+                print(self._status_message(progress, self.job_invocation.build_number if self.job_invocation.build_number else self.old_build_num))
             return
 
         # The job has stopped running
         print(self, "stopped running")
         self.checking_status = Checking.FINISHED
-        print(self._status_message(build.buildno))
-        self.result = BuildResult[build.get_status()]
+        print(self._status_message(progress, self.job_invocation.build_number))
+        self.result = result
         # Pylint does not like Enum pylint: disable=no-member
         unchecked = (Propagation.UNCHECKED.name + ' ') if self.propagation == Propagation.UNCHECKED else ''
-        print(unchecked + str(build.get_status()) + ":", repr(self.job.name), "- build:", build.console_url(), self._time_msg())
+        # Pylint does not like Enum pylint: disable=maybe-no-member
+        print(unchecked + self.result.name + ":", repr(self.job.name), "- build:", self.job_invocation.console_url(), self._time_msg())
 
         if self.result in _build_result_failures:
             raise FailedSingleJobException(self.job, self.propagation)
@@ -344,13 +345,19 @@ class _SingleJob(_JobControl):
                 print(self.indentation + repr(self), self.result.name)
                 return
 
-            progress = ""
-            if self.progress_status() != Progress.IDLE or self.result == BuildResult.UNKNOWN:
-                progress = "- " + self.progress_status().name
+            self.job.poll()
+            if self.job_invocation:
+                result, progress = self.job_invocation.status()
+            else:
+                result, progress = BuildResult.UNKNOWN, Progress.IDLE
+            progress_msg = ""
+            if progress != Progress.IDLE or result == BuildResult.UNKNOWN:
+                progress_msg = "- " + progress.name
             console_url = ""
             if self.result != BuildResult.UNKNOWN:
-                console_url = self.job.console_url(self.old_build_num + 1 if self.old_build_num else 1)
-            print(self.indentation + repr(self), self.result.name, progress, console_url)
+                console_url = self.job_invocation.console_url()
+            assert isinstance(result, BuildResult)
+            print(self.indentation + repr(self), result.name, progress_msg, console_url)
             return
 
         print(self.indentation + repr(self), " - MISSING JOB")
@@ -452,7 +459,7 @@ class _Flow(_JobControl):
         return _Serial(self, timeout, securitytoken, job_name_prefix, max_tries, propagation, report_interval, secret_params, allow_missing_jobs)
 
     def invoke(self, job_name, **params):
-        """Define a Jenkins job that will be invoked under control of the surrounding flow.
+        """Define a Jenkins job invocation that will be invoked under control of the surrounding flow.
         
         This does not create the job in Jenkins. It defines how the job will be invoked by ``jenkinsflow``.
 
@@ -468,7 +475,7 @@ class _Flow(_JobControl):
         return job
 
     def invoke_unchecked(self, job_name, **params):
-        """Define a Jenkins job that will be invoked under control of the surrounding flow, but will never cause the flow to fail.
+        """Define a Jenkins job invocation that will be invoked under control of the surrounding flow, but will never cause the flow to fail.
 
         The job is always run in parallel with other jobs in the flow, even when invoked in a serial flow.
         It is not started out of order, but following jobs will be started immediately after this is started.

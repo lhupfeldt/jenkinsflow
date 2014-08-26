@@ -5,84 +5,13 @@ from __future__ import print_function
 import os
 from os.path import join as jp
 
-from jenkinsflow.api_base import UnknownJobException, ApiJobMixin, ApiBuildMixin
+from jenkinsflow.api_base import BuildResult, Progress, UnknownJobException, ApiInvocationMixin
 from jenkinsflow.mocked import hyperspeed
 
-from .base_test_api import TestJob, TestBuild, TestJenkins
+from .base_test_api import TestJob, TestJenkins
 from jenkinsflow.test.cfg import ApiType
 
 here = os.path.abspath(os.path.dirname(__file__))
-
-
-class MockJob(TestJob, ApiJobMixin):
-    def __init__(self, name, exec_time, max_fails, expect_invocations, expect_order, initial_buildno, invocation_delay, unknown_result,
-                 final_result, serial, params, flow_created, create_job, disappearing, non_existing):
-        super(MockJob, self).__init__(exec_time=exec_time, max_fails=max_fails, expect_invocations=expect_invocations, expect_order=expect_order,
-                                      initial_buildno=initial_buildno, invocation_delay=invocation_delay, unknown_result=unknown_result, final_result=final_result,
-                                      serial=serial, print_env=False, flow_created=flow_created, create_job=create_job, disappearing=disappearing,
-                                      non_existing=non_existing)
-        self.name = name
-        self.public_uri = self.baseurl = 'http://hupfeldtit.dk/job/' + self.name
-        self.build = Build(self, initial_buildno) if initial_buildno is not None else None
-        self.params = params
-        self.just_invoked = False
-
-    def is_running(self):
-        return self.start_time <= hyperspeed.time() < self.end_time
-
-    def is_queued(self):
-        return self.invocation_time <= hyperspeed.time() < self.start_time
-
-    def poll(self):
-        # If has been invoked and started running or already (supposed to be) finished
-        if self.just_invoked and self.end_time and hyperspeed.time() >= self.start_time:
-            self.just_invoked = False
-
-            if self.build is None:
-                self.build = Build(self, 1)
-                return
-
-            self.build = Build(self, self.build.buildno + 1)
-
-    def get_last_build_or_none(self):
-        self.poll()
-        return self.build
-
-    def invoke(self, securitytoken=None, build_params=None, cause=None):
-        super(MockJob, self).invoke(securitytoken, build_params, cause)
-        assert not self.is_running()
-        self.invocation_time = hyperspeed.time()
-        self.start_time = self.invocation_time + self.invocation_delay
-        self.end_time = self.start_time + self.exec_time
-        self.just_invoked = True
-
-    def stop(self, build):
-        pass
-
-    def update_config(self, config_xml):
-        pass
-
-    def __repr__(self):
-        return self.name + ", " + super(MockJob, self).__repr__()
-
-
-class Build(ApiBuildMixin, TestBuild):
-    def __init__(self, job, initial_buildno):
-        self.job = job
-        self.buildno = initial_buildno
-
-    def is_running(self):
-        return self.job.is_running()
-
-    def get_status(self):
-        if self.job.invocation <= self.job.max_fails:
-            return 'FAILURE'
-        if self.job.final_result is None:
-            return 'SUCCESS'
-        return self.job.final_result.name
-
-    def __repr__(self):
-        return self.job.name + " #" + repr(self.buildno) + " " + self.get_status()
 
 
 class MockApi(TestJenkins):
@@ -126,3 +55,94 @@ class MockApi(TestJenkins):
             return job
         except KeyError:
             raise UnknownJobException(name)
+
+
+class MockJob(TestJob):
+    def __init__(self, name, exec_time, max_fails, expect_invocations, expect_order, initial_buildno, invocation_delay, unknown_result,
+                 final_result, serial, params, flow_created, create_job, disappearing, non_existing):
+        super(MockJob, self).__init__(exec_time=exec_time, max_fails=max_fails, expect_invocations=expect_invocations, expect_order=expect_order,
+                                      initial_buildno=initial_buildno, invocation_delay=invocation_delay, unknown_result=unknown_result, final_result=final_result,
+                                      serial=serial, print_env=False, flow_created=flow_created, create_job=create_job, disappearing=disappearing,
+                                      non_existing=non_existing)
+        self.name = name
+        self.public_uri = self.baseurl = 'http://hupfeldtit.dk/job/' + self.name
+        self.build_number = None
+        self.initial_build_number = initial_buildno
+        self.last_build_number = initial_buildno
+        self.params = params
+        self.just_invoked = False
+        self.invocations = []
+
+    def job_status(self):
+        latest_build_number = self._get_last_build_number_or_none()
+        if self.start_time <= hyperspeed.time() < self.end_time:
+            assert latest_build_number
+            return (BuildResult.UNKNOWN, Progress.RUNNING, latest_build_number)
+
+        if self.invocation_time <= hyperspeed.time() < self.start_time:
+            return (BuildResult.UNKNOWN, Progress.QUEUED, latest_build_number)
+
+        # Job is finished
+        if self.invocation_number <= self.max_fails:
+            return (BuildResult.FAILURE, Progress.IDLE, latest_build_number)
+        if self.final_result is None:
+            return (BuildResult.SUCCESS, Progress.IDLE, latest_build_number)
+        return (BuildResult[self.final_result.name], Progress.IDLE, latest_build_number)
+
+    def poll(self):
+        # If has been invoked and started running or already (supposed to be) finished
+        if self.just_invoked and hyperspeed.time() >= self.start_time:
+            self.just_invoked = False
+            self.build_number = self.last_build_number + 1 if self.last_build_number else 1
+            self.invocations[-1].build_number = self.build_number
+
+    def _get_last_build_number_or_none(self):
+        self.poll()
+        return self.build_number or self.last_build_number
+
+    def _is_running(self):
+        return self.start_time <= hyperspeed.time() < self.end_time
+
+    def invoke(self, securitytoken=None, build_params=None, cause=None):
+        assert not self._is_running()
+        super(MockJob, self).invoke(securitytoken, build_params, cause)
+        self.invocation_time = hyperspeed.time()
+        self.start_time = self.invocation_time + self.invocation_delay
+        self.end_time = self.start_time + self.exec_time
+        self.just_invoked = True
+        self.last_build_number = self.build_number or self.last_build_number
+        self.build_number = None
+
+        inv = Invocation(self)
+        inv.queued_why = "Why am I queued?"
+        self.invocations.append(inv)
+        self.poll()
+        return inv
+
+    def stop_latest(self):
+        pass
+
+    def update_config(self, config_xml):
+        pass
+
+    def __repr__(self):
+        return self.name + ", " + super(MockJob, self).__repr__()
+
+
+class Invocation(ApiInvocationMixin):
+    def __init__(self, job):
+        # _debug("queued_item_path:", queued_item_path)
+        self.job = job
+        self.build_number = None
+        self.queued_why = None
+
+    def status(self):
+        """Result and Progress info for the invocation"""
+        if self.build_number is None:
+            return (BuildResult.UNKNOWN, Progress.QUEUED)
+
+        result, progress, _build_number = self.job.job_status()
+        return result, progress
+
+    def stop(self):
+        pass

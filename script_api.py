@@ -3,10 +3,10 @@
 
 from __future__ import print_function
 
-import sys, os, shutil, importlib, datetime, tempfile
+import sys, os, shutil, importlib, datetime, tempfile, psutil, setproctitle
 from os.path import join as jp
 import multiprocessing
-from .api_base import UnknownJobException, ApiJobMixin, ApiBuildMixin
+from .api_base import BuildResult, Progress, UnknownJobException, ApiInvocationMixin
 
 here = os.path.abspath(os.path.dirname(__file__))
 
@@ -16,6 +16,14 @@ def _mkdir(path):
     except OSError:
         if not os.path.exists(path):
             raise
+
+
+def _pgrep(proc_name):
+    """Returns True if a process with name 'proc_name' is running, else False"""
+    for proc in psutil.process_iter():
+        if proc_name == proc.name():
+            return True
+    return False
 
 
 _build_res = None
@@ -31,6 +39,8 @@ def _get_build_result():
 
 
 class LoggingProcess(multiprocessing.Process):
+    proc_name_prefix = "jenkinsflow_script_api_"
+
     def __init__(self, group=None, target=None, output_file_name=None, workspace=None, name=None, args=()):
         self.user_target = target
         super(LoggingProcess, self).__init__(group=group, target=self.run_job_wrapper, name=name, args=args)
@@ -38,6 +48,8 @@ class LoggingProcess(multiprocessing.Process):
         self.workspace = workspace
 
     def run_job_wrapper(self, *args):
+        setproctitle.setproctitle(self.proc_name_prefix + self.name)
+
         rc = 0
         set_build_result(None)
         os.chdir(self.workspace)
@@ -64,6 +76,7 @@ class Jenkins(object):
     """Optimized minimal set of methods needed for jenkinsflow to directly execute python code instead of invoking Jenkins jobs.
 
     THIS IS CONSIDERED EXPERIMENTAL
+    THIS DOES NOT SUPPORT CONCURRENT INVOCATIONS OF FLOW
 
     There is no concept of job queues or executors, so if your flow depends on these for correctness, you wil experience different behaviour
     when using this api instead of the real Jenkins.
@@ -78,7 +91,7 @@ class Jenkins(object):
                 A return value of 0 is 'SUCCESS'
                 A return value of 1 or any exception raised is 'FAILURE'
                 Other return values means 'UNSTABLE'
-                
+
                 set_build_result.set_build_result() can be used in run_job to set result to 'unstable' (executing set_build_result.py has no effect)
                     This is mainly for compatibility with the other APIs, it is simpler to return 2 from run_job.
 
@@ -157,7 +170,7 @@ class Jenkins(object):
                 raise
 
 
-class ApiJob(ApiJobMixin):
+class ApiJob(object):
     def __init__(self, jenkins, name, script_file, workspace, func):
         self.jenkins = jenkins
         self.name = name
@@ -167,59 +180,61 @@ class ApiJob(ApiJobMixin):
         self.workspace = workspace
         self.func = func
         self.log_file = jp(self.jenkins.log_dir, self.name + '.log')
-        self.build_num = 0
+        self.build_num = None
+        self.invocations = []
 
     def invoke(self, securitytoken, build_params, cause):
         _mkdir(self.jenkins.log_dir)
         _mkdir(self.workspace)
+        self.build_num = self.build_num or 0
         self.build_num += 1
         fixed_args = [self.name, self.jenkins.job_prefix_filter, self.jenkins.username, self.jenkins.password, securitytoken, cause]
         fixed_args.append(build_params if build_params else {})
-        proc = LoggingProcess(target=self.func, output_file_name=self.log_file, workspace=self.workspace, args=fixed_args)
-        self.build = ApiBuild(self, proc, self.build_num)
-
-    def stop(self, build):
-        build.proc.terminate()
-
-    def is_running(self):
-        build = self.get_last_build_or_none()
-        return build.is_running() if build else False
-
-    def is_queued(self):
-        build = self.get_last_build_or_none()
-        return (not build.is_running and build.proc.pid == None) if build else False
-
-    def get_last_build_or_none(self):
+        proc = LoggingProcess(target=self.func, output_file_name=self.log_file, workspace=self.workspace, name=self.name, args=fixed_args)
+        self.build = Invocation(self, proc, self.build_num)
+        self.invocations.append(self.build)
         return self.build
+
+    def poll(self):
+        pass
+
+    def job_status(self):
+        """Result, progress and latest buildnumber info for the JOB NOT the invocation
+
+        Return (result, progress_info, latest_build_number) (str, str, int or None):
+            Note: Always returns result == BuildResult.UNKNOWN and latest_build_number == None
+        """
+
+        progress = Progress.RUNNING if _pgrep(LoggingProcess.proc_name_prefix + self.name) else Progress.IDLE
+        result = BuildResult.UNKNOWN
+        return (result, progress, None)
+
+    def stop_latest(self):
+        if self.build:
+            self.build.proc.terminate()
 
     def update_config(self, config_xml):
         _mkdir(os.path.dirname(self.public_uri))
         with open(self.public_uri, 'w') as ff:
             ff.write(config_xml)
 
-    def poll(self):
-        pass
-
-    def console_url(self, buildno):
-        return self.public_uri + ' - ' + self.log_file
-
     def __repr__(self):
         return str(self.name)
 
 
-class ApiBuild(ApiBuildMixin):
-    def __init__(self, job, proc, buildno):
+class Invocation(ApiInvocationMixin):
+    def __init__(self, job, proc, build_number):
         self.job = job
         self.proc = proc
-        self.buildno = buildno
+        self.build_number = build_number
 
         # Export some of the same variables that Jenkins does
         os.environ.update(dict(
-            BUILD_NUMBER=repr(self.buildno),
+            BUILD_NUMBER=repr(self.build_number),
             BUILD_ID=datetime.datetime.isoformat(datetime.datetime.utcnow()),
-            BUILD_DISPLAY_NAME='#' + repr(self.buildno),
+            BUILD_DISPLAY_NAME='#' + repr(self.build_number),
             JOB_NAME=self.job.name,
-            BUILD_TAG='jenkinsflow-' + self.job.name + '-' + repr(self.buildno),
+            BUILD_TAG='jenkinsflow-' + self.job.name + '-' + repr(self.build_number),
             EXECUTOR_NUMBER=repr(self.proc.pid),
             NODE_NAME='master',
             NODE_LABELS='',
@@ -227,27 +242,28 @@ class ApiBuild(ApiBuildMixin):
             JENKINS_HOME=self.job.jenkins.public_uri,
             JENKINS_URL=self.job.jenkins.public_uri,
             HUDSON_URL=self.job.jenkins.public_uri,
-            BUILD_URL=jp(self.job.public_uri, repr(self.buildno)),
+            BUILD_URL=jp(self.job.public_uri, repr(self.build_number)),
             JOB_URL=self.job.public_uri,
         ))
 
         self.proc.start()
 
-    def is_running(self):
-        return self.proc.is_alive()
-
-    def get_status(self):
-        if self.is_running():
-            return 'RUNNING'
+    def status(self):
+        if self.proc.is_alive():
+            return (BuildResult.UNKNOWN, Progress.RUNNING)
         rc = self.proc.exitcode
         if rc == 0:
-            return 'SUCCESS'
+            return (BuildResult.SUCCESS, Progress.IDLE)
         if rc == 1:
-            return 'FAILURE'
-        return 'UNSTABLE'
+            return (BuildResult.FAILURE, Progress.IDLE)
+        return (BuildResult.UNSTABLE, Progress.IDLE)
+
+    def stop(self):
+        self.proc.terminate()
 
     def console_url(self):
+        # return self.job.public_uri + ' - ' + self.job.log_file
         return self.job.log_file
 
     def __repr__(self):
-        return self.job.name + " #" + repr(self.buildno)
+        return self.job.name + " #" + repr(self.build_number)

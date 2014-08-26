@@ -47,7 +47,7 @@ class WrapperJob(TestJob, jenkins.ApiJob, ObjectWrapper):
 
     mock_job = None
 
-    invocation = None
+    invocation_number = None
     invocation_time = None
     invocation_delay = None
     end_time = None
@@ -72,13 +72,14 @@ class WrapperJob(TestJob, jenkins.ApiJob, ObjectWrapper):
 
         if self.has_force_result_param:
             build_params = build_params or {}
-            if self.invocation < self.max_fails:
+            if self.invocation_number < self.max_fails:
                 build_params['force_result'] = 'FAILURE'
-            if self.invocation >= self.max_fails:
+            if self.invocation_number >= self.max_fails:
                 build_params['force_result'] = 'SUCCESS' if self.final_result is None else self.final_result.name
 
-        self.__subject__.invoke(securitytoken, build_params=build_params, cause=cause)  # pylint: disable=no-member
+        invocation = self.__subject__.invoke(securitytoken, build_params=build_params, cause=cause)  # pylint: disable=no-member
         TestJob.invoke(self, securitytoken, build_params, cause)
+        return invocation
 
 
 class Jobs(TestJobs):
