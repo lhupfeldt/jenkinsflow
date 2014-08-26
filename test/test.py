@@ -57,7 +57,7 @@ Test jenkinsflow.
 First runs all tests mocked in hyperspeed, then runs against Jenkins, using specialized_api, then run script_api jobs.
 
 Usage:
-test.py [--mock-speedup <speedup> --direct-url <direct_url> --pytest-args <pytest_args> --skip-job-delete --skip-job-load <file>...]
+test.py [--mock-speedup <speedup> --direct-url <direct_url> --pytest-args <pytest_args> --job-delete --skip-job-load <file>...]
 
 General Options:
 -s, --mock-speedup <speedup>     Time speedup when running mocked tests. int. [default: %(speedup_default)i]
@@ -65,7 +65,8 @@ General Options:
 --pytest-args <pytest_args>  py.test arguments. str.
 
 Job Load Options:  Control job loading and parallel test run. Specifying any of these options enables running of tests in parallel.
---skip-job-delete  Don't delete and re-load jobs into Jenkins (assumes that re-loading generates correct job config).
+--job-delete       Don't delete and re-load jobs into Jenkins (assumes that re-loading generates correct job config).
+                   Tests that require jobs to be deleted will delete the jobs regardless of this option
 --skip-job-load    Don't load jobs into Jenkins (assumes all jobs already loaded and up to date).
 
 <file>...  File names to pass to py.test
@@ -82,7 +83,7 @@ def args_parser():
     if args['--direct-url']:
         os.environ[test_cfg.DIRECT_URL_NAME] = args['--direct-url']
     os.environ[test_cfg.SCRIPT_DIR_NAME] = test_cfg.script_dir()
-    os.environ[test_cfg.SKIP_JOB_DELETE_NAME] = 'true' if args['--skip-job-delete'] else 'false'
+    os.environ[test_cfg.SKIP_JOB_DELETE_NAME] = 'false' if args['--job-delete'] else 'true'
     os.environ[test_cfg.SKIP_JOB_LOAD_NAME] = 'true' if args['--skip-job-load'] else 'false'
 
     return args['--pytest-args'], args['<file>']
