@@ -28,22 +28,34 @@ def load_demo_jobs(demo):
     return api
 
 
-def test_demos_good():
+def _test_demo(demo):
     # TODO: script api is not configured to run demos
     if test_cfg.selected_api() == ApiType.SCRIPT:
         return
 
-    demos = (basic, calculated_flow, hide_password, prefix)
-    for demo in demos:
-        load_demo_jobs(demo)
+    load_demo_jobs(demo)
 
     with api_select.api(__file__, fixed_prefix="jenkinsflow_demo__") as api:
-        for demo in demos:
-            api.job(demo.__name__ + "__0flow", 0.01, max_fails=0, expect_invocations=1, expect_order=1)
+        api.job(demo.__name__ + "__0flow", 0.01, max_fails=0, expect_invocations=1, expect_order=1)
 
         with parallel(api, timeout=70, job_name_prefix=api.job_name_prefix) as ctrl1:
-            for demo in demos:
-                ctrl1.invoke(demo.__name__ + "__0flow")
+            ctrl1.invoke(demo.__name__ + "__0flow")
+
+
+def test_demos_basic():
+    _test_demo(basic)
+
+
+def test_demos_calculated_flow():
+    _test_demo(calculated_flow)
+
+
+def test_demos_prefix():
+    _test_demo(prefix)
+
+
+def test_demos_hide_password():
+    _test_demo(hide_password)
 
 
 def test_demos_with_errors():
@@ -51,15 +63,12 @@ def test_demos_with_errors():
     if test_cfg.selected_api() == ApiType.SCRIPT:
         return
 
-    demos = (errors,)
-    for demo in demos:
-        load_demo_jobs(demo)
+    demo = errors
+    load_demo_jobs(demo)
 
     with api_select.api(__file__, fixed_prefix="jenkinsflow_demo__") as api:
-        for demo in demos:
-            api.job(demo.__name__ + "__0flow", 0.01, max_fails=1, expect_invocations=1, expect_order=1)
+        api.job(demo.__name__ + "__0flow", 0.01, max_fails=1, expect_invocations=1, expect_order=1)
 
         with raises(JobControlFailException):
             with parallel(api, timeout=70, job_name_prefix=api.job_name_prefix) as ctrl1:
-                for demo in demos:
-                    ctrl1.invoke(demo.__name__ + "__0flow")
+                ctrl1.invoke(demo.__name__ + "__0flow")
