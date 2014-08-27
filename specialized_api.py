@@ -3,23 +3,10 @@
 
 from __future__ import print_function
 
-import json, sys
+import json
 from restkit import Resource, BasicAuth, errors
 
 from .api_base import BuildResult, Progress, UnknownJobException, ApiInvocationMixin
-
-
-def _debug(*args):
-    print(*args)
-    pass
-
-
-def _json_dump(dct):
-    if dct is None:
-        print("dct is:", dct)
-    json.dump(dct, sys.stdout, indent=2)
-    print("")
-    pass
 
 
 def _result_and_progress(build_dct):
@@ -74,11 +61,9 @@ class Jenkins(Resource):
         return self.public_uri + '/job/' + job_name
 
     def poll(self):
-        # _debug("\npoll")
-        query = "jobs[name,lastBuild[number,result],inQueue,actions[parameterDefinitions[name,type]]],primaryView[url]"
+        query = "jobs[name,lastBuild[number,result],queueItem[why],actions[parameterDefinitions[name,type]]],primaryView[url]"
         response = self.get("/api/json", tree=query)
         dct = json.loads(response.body_string())
-        # _json_dump(dct)
         self._public_uri = self._baseurl = dct['primaryView']['url'].rstrip('/')
 
         self.jobs = {}
@@ -89,8 +74,7 @@ class Jenkins(Resource):
             self.jobs[job_name] = ApiJob(self, job_dct, job_name)
 
     def quick_poll(self):
-        # _debug("\nquick_poll")
-        query = "jobs[name,lastBuild[number,result],inQueue]"
+        query = "jobs[name,lastBuild[number,result],queueItem[why]]"
         response = self.get("/api/json", tree=query)
         dct = json.loads(response.body_string())
 
@@ -105,13 +89,12 @@ class Jenkins(Resource):
 
             # A new job was created while flow was running, get the remaining properties
             try:
-                query = "lastBuild[number,result],inQueue,actions[parameterDefinitions[name,type]]"
+                query = "lastBuild[number,result],queueItem[why],actions[parameterDefinitions[name,type]]"
                 response = self.get("/job/" + job_name + "/api/json", tree=query)
                 job_dct = json.loads(response.body_string())
-                # _json_dump(job_dct)
                 job = ApiJob(self, job_dct, job_name)
                 self.jobs[job_name] = job
-            except errors.ResourceNotFound:
+            except errors.ResourceNotFound:  # pragma: no cover
                 # Ignore this, the job came and went
                 pass
 
@@ -148,6 +131,7 @@ class ApiJob(object):
         else:
             self._build_trigger_path = self._path + "/build"
         self.invocations = []
+        self.queued_why = None
 
     def invoke(self, securitytoken, build_params, cause):
         try:
@@ -170,7 +154,6 @@ class ApiJob(object):
 
     def poll(self):
         for invocation in self.invocations:
-            # _debug("\njob.poll, queue_item")
             if not invocation.build_number:
                 query = "executable[number],why"
                 qi_response = self.jenkins.get(invocation.queued_item_path, tree=query)
@@ -179,7 +162,9 @@ class ApiJob(object):
                 executable = dct.get('executable')
                 if executable:
                     invocation.build_number = executable['number']
-                invocation.queued_why = dct['why']
+                    invocation.queued_why = None
+                else:
+                    invocation.queued_why = dct['why']
 
     def job_status(self):
         """Result, progress and latest buildnumber info for the JOB NOT the invocation
@@ -188,16 +173,14 @@ class ApiJob(object):
             If there is no finished build, result will be BuildResult.UNKNOWN and latest_build_number will be None
         """
 
-        query = "inQueue"
+        query = "queueItem[why]"
         response = self.jenkins.get(self._path + '/api/json', tree=query)
         dct = json.loads(response.body_string())
-        _json_dump(dct)
-        progress = Progress.QUEUED if dct['inQueue'] else None
+        qi = dct['queueItem']
+        progress = Progress.QUEUED if qi else None
 
         dct = self.dct.get('lastBuild')
         if dct:
-            _debug("job.job_status")
-            _json_dump(dct)
             result, latest_progress = _result_and_progress(dct)
             return (result, progress or latest_progress, dct['number'])
 
@@ -217,7 +200,6 @@ class ApiJob(object):
 
 class Invocation(ApiInvocationMixin):
     def __init__(self, job, queued_item_path):
-        # _debug("queued_item_path:", queued_item_path)
         self.job = job
         self.queued_item_path = queued_item_path
         self.build_number = None
@@ -231,14 +213,11 @@ class Invocation(ApiInvocationMixin):
         """
 
         if self.build_number is None:
-            #_debug("status: no build_number", self.job.dct['inQueue'])
-            # assert self.dct['inQueue']
             return (BuildResult.UNKNOWN, Progress.QUEUED)
 
         # It seems that even after the executor has been assigned a number in the queue item, the lastBuild migh not yet exist
         dct = self.job.dct.get('lastBuild')
         last_number = dct['number'] if dct else None
-        #_json_dump(dct)
         if last_number is None:
             return (BuildResult.UNKNOWN, Progress.QUEUED)
 
@@ -253,7 +232,6 @@ class Invocation(ApiInvocationMixin):
         query = "builds[number,result]"
         response = self.job.jenkins.get("/job/" + self.job.name + "/api/json", tree=query)
         dct = json.loads(response.body_string())
-        #_json_dump(dct)
         for build in dct['builds']:
             if build['number'] == self.build_number:
                 return _result_and_progress(build)

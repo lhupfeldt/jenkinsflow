@@ -31,6 +31,14 @@ def build_started_msg(api, job_name, num):
     return "Build started: " + repr(job_name) + " - " + console_url(api, job_name, num)
 
 
+def build_queued_msg(api, job_name, num):
+    if api.api_type == ApiType.MOCK:
+        queued_why = r"Why am I queued\?"
+    else:
+        queued_why = r"Build #[0-9]+ is already in progress \(ETA:[0-9.]+ sec\)"
+    return re.compile("^job: '" + job_name + "' Status QUEUED - " + queued_why)
+
+
 _http_re = re.compile(r'https?://.*?/job/([^/" ]*)(/?)')
 if test_cfg.selected_api() != ApiType.SCRIPT:
     def replace_host_port(contains_url):

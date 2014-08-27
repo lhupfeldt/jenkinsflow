@@ -230,6 +230,7 @@ class Invocation(ApiInvocationMixin):
         self.job = job
         self.proc = proc
         self.build_number = build_number
+        self.queued_why = None
 
         # Export some of the same variables that Jenkins does
         os.environ.update(dict(

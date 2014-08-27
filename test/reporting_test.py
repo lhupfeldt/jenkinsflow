@@ -27,7 +27,7 @@ def test_reporting_job_status(capsys):
             repr_not_invoked = "job: 'jenkinsflow_test__reporting_job_status__j11' Status IDLE - latest build: "
             assert repr_not_invoked in sout, repr_not_invoked + "\n - NOT FOUND IN:\n" + sout
             assert_lines_in(sout, "job: 'jenkinsflow_test__reporting_job_status__j12' Status IDLE - latest build: #7")
-            assert_lines_in(sout, "'jenkinsflow_test__reporting_job_status__j12' Status QUEUED - build: #7")
+            assert_lines_in(sout, "'jenkinsflow_test__reporting_job_status__j12' Status QUEUED - Why am I queued?")
             assert_lines_in(sout, "'jenkinsflow_test__reporting_job_status__j12' Status RUNNING - build: #8")
             assert_lines_in(sout, "'jenkinsflow_test__reporting_job_status__j12' Status IDLE - build: #8")
         else:

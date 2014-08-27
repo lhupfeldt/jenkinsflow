@@ -258,7 +258,7 @@ class _SingleJob(_JobControl):
             # Pylint does not like Enum pylint: disable=no-member
             raise JobNotIdleException(repr(self) + " is in state " + progress.name + ". It must be " + Progress.IDLE.name + '.')
 
-        print(self.indentation + self._status_message(progress, self.old_build_num, 'latest '))
+        print(self.indentation + self._status_message(progress, self.old_build_num, None, 'latest '))
 
     def _show_job_definition(self):
         first = current = OrderedDict()
@@ -287,8 +287,12 @@ class _SingleJob(_JobControl):
     def _invoked_message(self):
         print("Build started:", repr(self.name), '-', self.job_invocation.console_url())
 
-    def _status_message(self, progress, build_num, latest=''):
-        return repr(self) + " Status " + progress.name + " - " + latest + "build: " + '#' + str(build_num if build_num else None)
+    def _status_message(self, progress, build_num, queued_why, latest=''):
+        if progress == Progress.QUEUED:
+            msg = (queued_why) if queued_why else ''
+        else:
+            msg = latest + "build: " + ('#' + str(build_num) if build_num else str(None))
+        return repr(self) + " Status " + progress.name + " - " + msg
 
     def _prepare_to_invoke(self, reset_tried_times=False):
         super(_SingleJob, self)._prepare_to_invoke(reset_tried_times)
@@ -319,13 +323,14 @@ class _SingleJob(_JobControl):
 
         if result == BuildResult.UNKNOWN:
             if report_now:
-                print(self._status_message(progress, self.job_invocation.build_number if self.job_invocation.build_number else self.old_build_num))
+                build_num = self.job_invocation.build_number if self.job_invocation.build_number else self.old_build_num
+                print(self._status_message(progress, build_num, self.job_invocation.queued_why))
             return
 
         # The job has stopped running
         print(self, "stopped running")
         self.checking_status = Checking.FINISHED
-        print(self._status_message(progress, self.job_invocation.build_number))
+        print(self._status_message(progress, self.job_invocation.build_number, self.job_invocation.queued_why))
         self.result = result
         # Pylint does not like Enum pylint: disable=no-member
         unchecked = (Propagation.UNCHECKED.name + ' ') if self.propagation == Propagation.UNCHECKED else ''
