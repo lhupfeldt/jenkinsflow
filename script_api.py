@@ -20,9 +20,12 @@ def _mkdir(path):
 
 def _pgrep(proc_name):
     """Returns True if a process with name 'proc_name' is running, else False"""
-    for proc in psutil.process_iter():
-        if proc_name == proc.name():
-            return True
+    try:
+        for proc in psutil.process_iter():
+            if proc_name == proc.name():
+                return True
+    except psutil.NoSuchProcess:
+        return False
     return False
 
 
