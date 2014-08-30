@@ -285,7 +285,6 @@ def test_set_build_result_no_jenkinsurl(env_no_base_url):
 
     with raises(Exception) as exinfo:
         with api_select.api(__file__) as api:
-            pre_existing_cli()
             api.flow_job()
             api.job('j1_fail', exec_time=0.01, max_fails=1, expect_invocations=1, expect_order=1)
 
@@ -293,7 +292,10 @@ def test_set_build_result_no_jenkinsurl(env_no_base_url):
                         propagation=Propagation.FAILURE_TO_UNSTABLE) as ctrl1:
                 ctrl1.invoke('j1_fail')
 
-    assert "Could not get env variable JENKINS_URL or HUDSON_URL. Don't know whether to use jenkins-cli.jar or hudson-cli.jar for setting result! You must set 'Jenkins Location' in Jenkins setup for JENKINS_URL to be exported. You must set 'Hudson URL' in Hudson setup for HUDSON_URL to be exported." in exinfo.value.message
+    assert_lines_in(
+        exinfo.value.message,
+        "Could not get env variable JENKINS_URL or HUDSON_URL. Don't know whether to use jenkins-cli.jar or hudson-cli.jar for setting result! You must set 'Jenkins Location' in Jenkins setup for JENKINS_URL to be exported. You must set 'Hudson URL' in Hudson setup for HUDSON_URL to be exported."
+    )
 
 
 def test_set_build_result_call_script_direct_url(capfd):
