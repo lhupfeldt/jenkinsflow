@@ -64,10 +64,13 @@ General Options:
 --direct-url <direct_url>    Direct Jenkins URL. Must be different from the URL set in Jenkins (and preferably non proxied) [default: %(direct_url)s]
 --pytest-args <pytest_args>  py.test arguments. str.
 
-Job Load Options:  Control job loading and parallel test run. Specifying any of these options enables running of tests in parallel.
---job-delete       Don't delete and re-load jobs into Jenkins (assumes that re-loading generates correct job config).
-                   Tests that require jobs to be deleted will delete the jobs regardless of this option
+Job Load Options:  Control job loading and parallel test run.
+--job-delete       Delete and re-load jobs into Jenkins
 --skip-job-load    Don't load jobs into Jenkins (assumes all jobs already loaded and up to date).
+
+    Normally jobs will be run in parallel, specifying --job-delete disables this.
+    Default options assumes that re-loading without deletions generates correct job config
+    Tests that require jobs to be deleted/non-existing will delete the jobs regardless of the --job-delete option
 
 <file>...  File names to pass to py.test
 """
@@ -114,10 +117,13 @@ def main():
         run_tests(False, ApiType.MOCK)
         test_cfg.unmock()
 
-        parallel = test_cfg.skip_job_load() | test_cfg.skip_job_delete()
+        hudson = os.environ.get('HUDSON_URL')
+        if hudson:
+            print("Disabling parallel run, Hudson can't handle it :(")
+        parallel = test_cfg.skip_job_load() or test_cfg.skip_job_delete() and not hudson
         # TODO run all types in parallel, use extra job prefix and separate .cache
         run_tests(parallel, ApiType.SPECIALIZED)
-        run_tests(parallel, ApiType.SCRIPT)
+        run_tests(True, ApiType.SCRIPT)
 
         start_msg("Testing setup.py")
         user = getpass.getuser()
