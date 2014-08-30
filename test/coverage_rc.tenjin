@@ -1,4 +1,5 @@
 <?py from jenkinsflow.test.cfg import ApiType ?>
+<?py import os ?>
 [report]
 exclude_lines =
     # Have to re-enable the standard pragma
@@ -15,6 +16,13 @@ exclude_lines =
     # Parts of 'mocked' only used when mocked
     from .test.framework.hyperspeed
     hyperspeed = _HyperSpeed
+    <?py if os.environ.get('HUDSON_URL'): ?>
+    # Parts of specialized_api not used when hudson
+    if self.jenkins.is_jenkins
+    <?py else: ?>
+    # Parts of specialized_api not used when jenkins
+    else:  # Hudson
+    <?py #endif ?>
     <?py #endif ?>
 
     <?py if api_type != ApiType.SCRIPT: ?>

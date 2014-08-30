@@ -43,6 +43,8 @@ class Jenkins(Resource):
         self.job_prefix_filter = job_prefix_filter
         self._public_uri = self._baseurl = None
         self.jobs = None
+        self.is_jenkins = True
+        self.ci_version = None
 
     @property
     def baseurl(self):
@@ -63,6 +65,16 @@ class Jenkins(Resource):
     def poll(self):
         query = "jobs[name,lastBuild[number,result],queueItem[why],actions[parameterDefinitions[name,type]]],primaryView[url]"
         response = self.get("/api/json", tree=query)
+
+        # Determine whether we are talking to Jenkins or Hudson
+        self.ci_version = response.headers.get("X-Jenkins")
+        if not self.ci_version:
+            head_response = self.head()
+            self.ci_version = head_response.headers.get("X-Hudson")
+            if not self.ci_version:
+                raise Exception("Not connected to Jenkins or Hudson (expected X-Jenkins or X-Hudson header, got: " + repr(response.headers))
+            self.is_jenkins = False
+
         dct = json.loads(response.body_string())
         self._public_uri = self._baseurl = dct['primaryView']['url'].rstrip('/')
 
@@ -130,6 +142,7 @@ class ApiJob(object):
                 break
         else:
             self._build_trigger_path = self._path + "/build"
+        self.old_build_number = None
         self.invocations = []
         self.queued_why = None
 
@@ -149,22 +162,36 @@ class ApiJob(object):
             raise UnknownJobException(self.jenkins._public_job_url(self.name), ex)  # pylint: disable=protected-access
         inv = Invocation(self, response.location[len(self.jenkins.direct_uri):] + 'api/json')
         self.invocations.append(inv)
-        # self.poll()
         return inv
 
     def poll(self):
         for invocation in self.invocations:
             if not invocation.build_number:
-                query = "executable[number],why"
+                # Husdon does not return queue item from invoke, instead it returns the job URL :(
+                query = "executable[number],why" if self.jenkins.is_jenkins else "queueItem[why],lastBuild[number]"
                 qi_response = self.jenkins.get(invocation.queued_item_path, tree=query)
                 dct = json.loads(qi_response.body_string())
 
-                executable = dct.get('executable')
-                if executable:
-                    invocation.build_number = executable['number']
-                    invocation.queued_why = None
-                else:
-                    invocation.queued_why = dct['why']
+                if self.jenkins.is_jenkins:
+                    executable = dct.get('executable')
+                    if executable:
+                        invocation.build_number = executable['number']
+                        invocation.queued_why = None
+                    else:
+                        invocation.queued_why = dct['why']
+                else:  # Hudson
+                    # Note, this is not guaranteed to be correct in case of simultaneously running flows!
+                    # Should handle multiple invocations in same flow
+                    qi = dct.get('queueItem')
+                    if qi:
+                        invocation.queued_why = qi['why']
+
+                    last_build = dct.get('lastBuild')
+                    if last_build:
+                        last_build_number = last_build['number']
+                        if last_build_number > self.old_build_number:
+                            invocation.build_number = last_build['number']
+                            self.old_build_number = invocation.build_number
 
     def job_status(self):
         """Result, progress and latest buildnumber info for the JOB NOT the invocation
@@ -181,8 +208,9 @@ class ApiJob(object):
 
         dct = self.dct.get('lastBuild')
         if dct:
+            self.old_build_number = dct['number']
             result, latest_progress = _result_and_progress(dct)
-            return (result, progress or latest_progress, dct['number'])
+            return (result, progress or latest_progress, self.old_build_number)
 
         return (BuildResult.UNKNOWN, progress or Progress.IDLE, None)
 
@@ -215,7 +243,7 @@ class Invocation(ApiInvocationMixin):
         if self.build_number is None:
             return (BuildResult.UNKNOWN, Progress.QUEUED)
 
-        # It seems that even after the executor has been assigned a number in the queue item, the lastBuild migh not yet exist
+        # It seems that even after the executor has been assigned a number in the queue item, the lastBuild might not yet exist
         dct = self.job.dct.get('lastBuild')
         last_number = dct['number'] if dct else None
         if last_number is None:
@@ -226,7 +254,7 @@ class Invocation(ApiInvocationMixin):
 
         if last_number < self.build_number:
             # TODO: Why does this happen?
-            pass
+            pass  # pragma: no cover
 
         # Latest build is not ours, get the correct build
         query = "builds[number,result]"
