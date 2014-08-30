@@ -757,7 +757,7 @@ class _TopLevelControllerMixin(object):
         else:
             import getpass
             user = getpass.getuser()
-            self.cause = "By flow script, user " + repr(user)
+            self.cause = "By flow script, user: " + user
 
         self._api = jenkins_api
         self.securitytoken = securitytoken
