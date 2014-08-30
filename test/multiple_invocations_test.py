@@ -70,6 +70,7 @@ def test_multiple_invocations_same_flow_queued(capsys):
             ctrl1.invoke('j1', password='b', s1='invocation2')
             ctrl1.invoke('j1', password='b', s1='invocation3')
 
+        # Note: This output order depends on the job NOT allowing concurrent builds!
         if api.api_type != ApiType.MOCK:
             sout, _ = capsys.readouterr()
             assert_lines_in(
@@ -91,5 +92,11 @@ def test_multiple_invocations_same_flow_queued(capsys):
                 build_started_msg(api, "jenkinsflow_test__multiple_invocations_same_flow_queued__j1", 3),
                 "^job: 'jenkinsflow_test__multiple_invocations_same_flow_queued__j1' stopped running",
                 "^job: 'jenkinsflow_test__multiple_invocations_same_flow_queued__j1' Status IDLE - build: #",
-                "^SUCCESS: 'jenkinsflow_test__multiple_invocations_same_flow_queued__j1'"
+                "^SUCCESS: 'jenkinsflow_test__multiple_invocations_same_flow_queued__j1'",
+
+                "^parallel flow: (",
+                "job: 'jenkinsflow_test__multiple_invocations_same_flow_queued__j1' SUCCESS",
+                "job: 'jenkinsflow_test__multiple_invocations_same_flow_queued__j1' SUCCESS",
+                "job: 'jenkinsflow_test__multiple_invocations_same_flow_queued__j1' SUCCESS", 
+                "^)",
             )
