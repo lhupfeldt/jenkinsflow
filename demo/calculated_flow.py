@@ -31,7 +31,7 @@ def main(api):
     demo_name = 'jenkinsflow_demo__calculated_flow'
 
     hudson = os.environ.get('HUDSON_URL')
-    graph_output_dir = os.path.join(tempfile.gettempdir(), demo_name + '_hudson' if hudson else '_jenkins')
+    graph_output_dir = os.path.join(tempfile.gettempdir(), demo_name + ('_hudson' if hudson else '_jenkins'))
     if not os.path.exists(graph_output_dir):
         os.makedirs(graph_output_dir)
 
