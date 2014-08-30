@@ -23,6 +23,14 @@ def _set_env_fixture(var_name, value, request):
     request.addfinalizer(fin)
 
 
+def _set_jenkins_url_env_fixture(not_set_value, request):
+    if os.environ.get('JENKINS_URL'):
+        _set_env_fixture('JENKINS_URL', not_set_value, request)
+        return
+
+    _set_env_fixture('HUDSON_URL', not_set_value, request)
+
+
 def _set_env_if_not_set_fixture(var_name, not_set_value, request):
     """
     Ensure env var_name is set to the value 'not_set_value' IFF it was not already set.
@@ -34,6 +42,11 @@ def _set_env_if_not_set_fixture(var_name, not_set_value, request):
         def fin():
             del os.environ[var_name]
         request.addfinalizer(fin)
+
+
+def _set_jenkins_url_env_if_not_set_fixture(not_set_value, request):
+    if not os.environ.get('HUDSON_URL'):
+        _set_env_if_not_set_fixture('JENKINS_URL', not_set_value, request)
 
 
 def _unset_env_fixture(var_name, request):
@@ -67,17 +80,17 @@ def mock_speedup_none(request):
 @fixture
 def env_base_url(request):
     # Fake that we are running from inside jenkins job
-    _set_env_if_not_set_fixture('JENKINS_URL', test_cfg.public_url(), request)
+    _set_jenkins_url_env_if_not_set_fixture(test_cfg.public_url(), request)
 
 
 @fixture
 def env_base_url_trailing_slash(request):
-    _set_env_if_not_set_fixture('JENKINS_URL', test_cfg.public_url() + '/', request)
+    _set_jenkins_url_env_if_not_set_fixture(test_cfg.public_url() + '/', request)
 
 
 @fixture
 def env_base_url_trailing_slashes(request):
-    _set_env_if_not_set_fixture('JENKINS_URL', test_cfg.public_url() + '//', request)
+    _set_jenkins_url_env_if_not_set_fixture(test_cfg.public_url() + '//', request)
 
 
 @fixture
@@ -91,7 +104,7 @@ def env_no_base_url(request):
 def env_different_base_url(request):
     # Fake that we are running from inside jenkins job
     # This url is not used, but should simply be different fron direct_url used in test, to simulate proxied jenkins
-    _set_env_if_not_set_fixture('JENKINS_URL', test_cfg.proxied_public_url, request)
+    _set_jenkins_url_env_fixture(test_cfg.proxied_public_url, request)
 
 
 @fixture
