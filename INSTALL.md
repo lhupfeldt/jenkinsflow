@@ -45,25 +45,32 @@ Test
 1. Install pytest and tenjin template engine:
    pip install -U pytest pytest-cov pytest-cache pytest-instafail logilab-devtools pytest-xdist tenjin proxytypes
 
-2. Read and update the file demo/demo_security.py if you have enabled security on your Jenkins
+2. Some of the tests currently requires security enabled.
+   Read the file demo/demo_security.py and create the user specified (or change the file)
 
 3. Run the tests:
    You should use ./test/test.py to run the tests.
+
+   JENKINS_URL=<your Jenkins> python ./test/test.py --mock-speedup=100 --direct-url <non proxied url different from JENKINS_URL>
+   # Or if you are using Hudson:
+   HUDSON_URL=<your Hudson> python ./test/tests.py --mock-speedup=100  --direct-url <non proxied url different from HUDSON_URL>
+
+   Note: you may omit JENKINS_URL if your jenkins is on http://localhost:8080, but you have to specify HUDSON_URL if you are running hudson!
+   Note: you may omit --direct-url if your jenkins or hudson is on http://localhost:8080      
+   Note: Because of timing dependencies when creating new jobs in Hudson, the first test run or any test run with --job-delete against Hudson will likely fail.
+
    I will first run the test suite with mocked jenkins api, not actually invoking any jenkins jobs, this tests the flow logic very fast.
-   If the mock test passes, the same testsuite is run with the real jenkins api invokin jenkins jobs. The test jobs are automatically created.
    Mocked tests do not require Jenkins (but there will be a couple of xfails if jenkins is not running)
-
-   JENKINS_URL=<your Jenkins> python ./test/test.py --mock-speedup=100
-   # Or if you are using Hudson
-   HUDSON_URL=<your Hudson> python ./test/tests.py --mock-speedup=100
-
-   Note: you may omit JENKINS_URL if your jenkins is on localhot:8080, but you have to specify HUDSON_URL if you are running hudson!
+   If the mock test passes, the same testsuite is run with the real jenkins api invokin jenkins jobs. The test jobs are automatically created.
 
    The value given to --mock-speedup is the time time speedup for the mocked tests. If you have a reasonably fast computer, try 2000.
    If you get FlowTimeoutException try a lower value.
    If you get "<job> is expected to be running, but state is IDLE" try a lower value.
 
-   To enable the use of xdist to run tests (not mocked) in parallel use --skip-job-delete. You should have 32 executors or more for this.
+   By default tests (not mocked) are run in parallel using xdist and jobs are not deleted (but will be updated) before each run.
+   You should have 32 executors or more for this, the cpu/disk load will be small, as the test jobs don't really do anything except sleep.
+   Note: Parallel run is disabled when testing against Hudson, Hudson (3.2 at the time of writing) can't cope with the load, it throws NullPointerExceptions.
+   To disable the use of xdist to run tests in parallel use --job-delete
 
    Important:
    Jenkins is default configured with only two executors on master. To avoid timeouts in the test cases this must be raised to at least 8.
