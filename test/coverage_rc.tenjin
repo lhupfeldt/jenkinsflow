@@ -22,6 +22,7 @@ exclude_lines =
     <?py else: ?>
     # Parts of specialized_api not used when jenkins
     else:  # Hudson
+    self.is_jenkins = False
     <?py #endif ?>
     <?py #endif ?>
 
