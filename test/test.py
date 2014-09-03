@@ -40,12 +40,13 @@ def run_tests(parallel, api_type):
     cov_rc_file_name = jp(here, '.coverage_rc_' +  api_type.env_name().lower())
     with open(cov_rc_file_name, 'w') as cov_rc_file:
         cov_rc_file.write(engine.render(jp(here, "coverage_rc.tenjin"), dict(api_type=api_type)))
-            
+
     cmd = ['py.test', '--capture=sys', '--cov=' + here + '/..', '--cov-report=term-missing', '--cov-config=' + cov_rc_file_name, '--instafail', '--ff']
     try:
+        # Note: 'boxed' is required for the kill/abort_current test not to abort other tests
         if not parallel:
-            return subprocess.check_call(cmd)
-        subprocess.check_call(cmd + ['-n', '16'])        
+            return subprocess.check_call(cmd + ['--boxed'])
+        subprocess.check_call(cmd + ['--boxed', '-n', '16'])
     finally:
         if os.path.exists(_cache_dir):
             shutil.move(_cache_dir, api_type_cache_dir)
@@ -103,15 +104,20 @@ def main():
     install_script = jp(here, 'tmp_install.sh')
     rc = subprocess.call([install_script])
     if rc:
-        print("Failed test installation to. Install script is:", repr(install_script), file=sys.stderr)
+        print("Failed test installation to", repr(config.pseudo_install_dir), "Install script is:", repr(install_script), file=sys.stderr)
         print("Warning: Some tests will fail!", file=sys.stderr)
 
     print("\nRunning tests")
     try:
-        if False or pytest_args or files:
+        if pytest_args or files:
             extra_args = pytest_args.split(' ') + files if pytest_args else files
             subprocess.check_call(['py.test', '--capture=sys', '--instafail'] + extra_args)
             test_cfg.unmock()
+            test_cfg.select_api(ApiType.SPECIALIZED)
+            rc = subprocess.call(['py.test', '--capture=sys', '--instafail'] + extra_args)
+            if rc:
+                sys.exit(rc)
+            test_cfg.select_api(ApiType.SCRIPT)
             sys.exit(subprocess.call(['py.test', '--capture=sys', '--instafail'] + extra_args))
 
         run_tests(False, ApiType.MOCK)

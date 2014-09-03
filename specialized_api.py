@@ -3,7 +3,7 @@
 
 from __future__ import print_function
 
-import json
+import time, json
 from restkit import Resource, BasicAuth, errors
 
 from .api_base import BuildResult, Progress, UnknownJobException, ApiInvocationMixin
@@ -69,10 +69,17 @@ class Jenkins(Resource):
         # Determine whether we are talking to Jenkins or Hudson
         self.ci_version = response.headers.get("X-Jenkins")
         if not self.ci_version:
-            head_response = self.head()
-            self.ci_version = head_response.headers.get("X-Hudson")
+            # TODO: A lot of Nonsense here because Hudson does not respond reliably
+            head_response = "HEAD request failed: " + repr(self.direct_uri)
+            for _ in (1, 2, 3):
+                try:
+                    head_response = self.head()
+                    self.ci_version = head_response.headers.get("X-Hudson")
+                    break
+                except Exception:  # pragma: no cover
+                    time.sleep(0.1)
             if not self.ci_version:
-                raise Exception("Not connected to Jenkins or Hudson (expected X-Jenkins or X-Hudson header, got: " + repr(response.headers))
+                raise Exception("Not connected to Jenkins or Hudson (expected X-Jenkins or X-Hudson header, got: " + repr(head_response.headers))
             self.is_jenkins = False
 
         dct = json.loads(response.body_string())
@@ -199,12 +206,15 @@ class ApiJob(object):
         Return (result, progress_info, latest_build_number) (str, str, int or None):
             If there is no finished build, result will be BuildResult.UNKNOWN and latest_build_number will be None
         """
+        progress = None
 
         query = "queueItem[why]"
         response = self.jenkins.get(self._path + '/api/json', tree=query)
         dct = json.loads(response.body_string())
         qi = dct['queueItem']
-        progress = Progress.QUEUED if qi else None
+        if qi:
+            progress = Progress.QUEUED
+            self.queued_why = qi['why']
 
         dct = self.dct.get('lastBuild')
         if dct:
@@ -214,10 +224,15 @@ class ApiJob(object):
 
         return (BuildResult.UNKNOWN, progress or Progress.IDLE, None)
 
-    def stop_latest(self):
-        _result, progress, latest_build_number = self.job_status()
-        if latest_build_number and progress != Progress.IDLE:
-            self.jenkins.post(self._path + '/' + repr(latest_build_number) + '/stop')
+    def stop_all(self):
+        query = "builds[number,result]"
+        response = self.jenkins.get("/job/" + self.name + "/api/json", tree=query)
+        dct = json.loads(response.body_string())
+        for build in dct['builds']:
+            _result, progress = _result_and_progress(build)
+            if progress != Progress.IDLE:
+                build_number = build['number']
+                self.jenkins.post(self._path + '/' + repr(build_number) + '/stop')
 
     def update_config(self, config_xml):
         self.jenkins.post("/job/" + self.name + "/config.xml", payload=config_xml)

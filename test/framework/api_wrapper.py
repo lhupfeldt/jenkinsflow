@@ -44,6 +44,7 @@ class WrapperJob(TestJob, jenkins.ApiJob, ObjectWrapper):
     serial = None
     disappearing = None
     non_existing = None
+    kill = None
 
     mock_job = None
 
@@ -60,7 +61,7 @@ class WrapperJob(TestJob, jenkins.ApiJob, ObjectWrapper):
                          initial_buildno=mock_job.initial_buildno, invocation_delay=mock_job.invocation_delay,
                          unknown_result=mock_job.unknown_result, final_result=mock_job.final_result, serial=mock_job.serial,
                          print_env=False, flow_created=mock_job.flow_created, create_job=mock_job.create_job, disappearing=mock_job.disappearing,
-                         non_existing=mock_job.non_existing)
+                         non_existing=mock_job.non_existing, kill=mock_job.kill)
 
     def invoke(self, securitytoken=None, build_params=None, cause=None):
         self.invocation_time = time.time()
@@ -128,7 +129,7 @@ class JenkinsTestWrapperApi(jenkins.Jenkins, TestJenkins):
 
     def job(self, name, exec_time, max_fails, expect_invocations, expect_order, initial_buildno=None, invocation_delay=0.1, params=None,
             script=None, unknown_result=False, final_result=None, serial=False, print_env=False, flow_created=False, create_job=None, disappearing=False,
-            non_existing=False):
+            non_existing=False, kill=False):
         job_name = self.job_name_prefix + name
         assert not self.test_jobs.get(job_name)
 
@@ -152,7 +153,7 @@ class JenkinsTestWrapperApi(jenkins.Jenkins, TestJenkins):
         job = MockJob(name=job_name, exec_time=exec_time, max_fails=max_fails, expect_invocations=expect_invocations, expect_order=expect_order,
                       initial_buildno=initial_buildno, invocation_delay=invocation_delay, unknown_result=unknown_result, final_result=final_result,
                       serial=serial, params=params, flow_created=flow_created, create_job=create_job, disappearing=disappearing,
-                      non_existing=non_existing)
+                      non_existing=non_existing, kill=kill)
         self.test_jobs[job_name] = job
 
     def flow_job(self, name=None, params=None):

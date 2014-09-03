@@ -30,7 +30,7 @@ class TestJob(AbstractApiJob):
     _current_order = 1
 
     def __init__(self, exec_time, max_fails, expect_invocations, expect_order, initial_buildno, invocation_delay,
-                 unknown_result, final_result, serial, print_env, flow_created, create_job, disappearing, non_existing):
+                 unknown_result, final_result, serial, print_env, flow_created, create_job, disappearing, non_existing, kill):
         """
         Set unknown_result to True if the result is indeterminate (timeout or invoke_unchecked)
         """
@@ -60,6 +60,7 @@ class TestJob(AbstractApiJob):
         self.create_job = create_job
         self.disappearing = disappearing
         self.non_existing = non_existing
+        self.kill = kill
 
         self.invocation_number = 0
         self.invocation_time = self.start_time = self.end_time = 0
@@ -126,7 +127,7 @@ class TestJenkins(AbstractApiJenkins):
     @abc.abstractmethod
     def job(self, name, exec_time, max_fails, expect_invocations, expect_order, initial_buildno=None, invocation_delay=0.1, params=None,
             script=None, unknown_result=False, final_result=None, serial=False, print_env=False, flow_created=False, create_job=None, disappearing=False,
-            non_existing=False):
+            non_existing=False, kill=False):
         """Create a job with corresponding test metadata.
 
         Args:
@@ -226,8 +227,8 @@ class TestJenkins(AbstractApiJenkins):
                 # pylint: disable=maybe-no-member
                 assert progress == Progress.RUNNING, "Job: " + job.name + " is expected to be running, but state is " + progress.name
                 # Now stop the job, so that it won't be running after the testsuite is finished
-                job.stop_latest()
-            elif job.expect_invocations != 0:
+                job.stop_all()
+            elif job.expect_invocations != 0 and not job.kill:
                 if job.invocation_number > job.max_fails:
                     expect_status = BuildResult.SUCCESS if job.final_result is None else job.final_result
                 else:
@@ -237,3 +238,9 @@ class TestJenkins(AbstractApiJenkins):
                 assert invocation.build_number is not None, "Job: " + repr(job) + " should have had build_number, but it has None"
                 result, progress = invocation.status()
                 assert result == expect_status, "Job: " + job.name + " expected result " + repr(expect_status) + " but got " + repr(result)
+            elif job.kill:
+                result, progress, _ = job.job_status()
+                assert progress == Progress.IDLE
+                # TODO
+                # expect_status = BuildResult.ABORTED
+                # assert result == expect_status, "Job: " + job.name + " expected result " + repr(expect_status) + " but got " + repr(result)

@@ -185,6 +185,7 @@ class ApiJob(object):
         self.log_file = jp(self.jenkins.log_dir, self.name + '.log')
         self.build_num = None
         self.invocations = []
+        self.queued_why = None
 
     def invoke(self, securitytoken, build_params, cause):
         _mkdir(self.jenkins.log_dir)
@@ -212,7 +213,8 @@ class ApiJob(object):
         result = BuildResult.UNKNOWN
         return (result, progress, None)
 
-    def stop_latest(self):
+    def stop_all(self):
+        # TODO stop ALL
         if self.build:
             self.build.proc.terminate()
 

@@ -17,12 +17,12 @@ here = os.path.abspath(os.path.dirname(__file__))
 
 @bottle.route('/')
 def index():
-    return bottle.static_file('not_ci_server.html', root=here)
+    return bottle.static_file('which_ci_server.html', root=here)
 
 
 @bottle.route('/api/json')
 def api():
-    return bottle.static_file('not_ci_server.html', root=here)
+    return bottle.static_file('which_ci_server.html', root=here)
 
 
 _host = 'localhost'
@@ -33,7 +33,7 @@ def server():
     bottle.run(host=_host, port=_port, debug=True)
 
 
-def test_not_ci_server():
+def test_which_ci_server_not_ci():
     proc = None
     try:
         with api_select.api(__file__) as api:

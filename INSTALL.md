@@ -44,6 +44,8 @@ Test
 
 1. Install pytest and tenjin template engine:
    pip install -U pytest pytest-cov pytest-cache pytest-instafail logilab-devtools pytest-xdist tenjin proxytypes
+   
+   Note: Requires pytest-cov 1.8.0 or later
 
 2. Some of the tests currently requires security enabled.
    Read the file demo/demo_security.py and create the user specified (or change the file)

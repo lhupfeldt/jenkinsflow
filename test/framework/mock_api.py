@@ -26,13 +26,13 @@ class MockApi(TestJenkins):
 
     def job(self, name, exec_time, max_fails, expect_invocations, expect_order, initial_buildno=None, invocation_delay=0.1, params=None,
             script=None, unknown_result=False, final_result=None, serial=False, print_env=False, flow_created=False, create_job=None,
-            disappearing=False, non_existing=False):
+            disappearing=False, non_existing=False, kill=False):
         job_name = self.job_name_prefix + name
         assert not self.test_jobs.get(job_name)
         job = MockJob(name=job_name, exec_time=exec_time, max_fails=max_fails, expect_invocations=expect_invocations, expect_order=expect_order,
                       initial_buildno=initial_buildno, invocation_delay=invocation_delay, unknown_result=unknown_result,
                       final_result=final_result, serial=serial, params=params, flow_created=flow_created, create_job=create_job,
-                      disappearing=disappearing, non_existing=non_existing)
+                      disappearing=disappearing, non_existing=non_existing, kill=kill)
         self.test_jobs[job_name] = job
 
     def flow_job(self, name=None, params=None):
@@ -59,11 +59,11 @@ class MockApi(TestJenkins):
 
 class MockJob(TestJob):
     def __init__(self, name, exec_time, max_fails, expect_invocations, expect_order, initial_buildno, invocation_delay, unknown_result,
-                 final_result, serial, params, flow_created, create_job, disappearing, non_existing):
+                 final_result, serial, params, flow_created, create_job, disappearing, non_existing, kill):
         super(MockJob, self).__init__(exec_time=exec_time, max_fails=max_fails, expect_invocations=expect_invocations, expect_order=expect_order,
                                       initial_buildno=initial_buildno, invocation_delay=invocation_delay, unknown_result=unknown_result, final_result=final_result,
                                       serial=serial, print_env=False, flow_created=flow_created, create_job=create_job, disappearing=disappearing,
-                                      non_existing=non_existing)
+                                      non_existing=non_existing, kill=kill)
         self.name = name
         self.public_uri = self.baseurl = 'http://hupfeldtit.dk/job/' + self.name
         self.build_number = None
@@ -72,6 +72,7 @@ class MockJob(TestJob):
         self.params = params
         self.just_invoked = False
         self.invocations = []
+        self.queued_why = "Why am I queued?"
 
     def job_status(self):
         latest_build_number = self._get_last_build_number_or_none()
@@ -80,7 +81,7 @@ class MockJob(TestJob):
             return (BuildResult.UNKNOWN, Progress.RUNNING, latest_build_number)
 
         if self.invocation_time <= hyperspeed.time() < self.start_time:
-            return (BuildResult.UNKNOWN, Progress.QUEUED, latest_build_number)
+            return (BuildResult.UNKNOWN, Progress.QUEUD, latest_build_number)
 
         # Job is finished
         if self.invocation_number <= self.max_fails:
@@ -119,7 +120,7 @@ class MockJob(TestJob):
         self.poll()
         return inv
 
-    def stop_latest(self):
+    def stop_all(self):
         pass
 
     def update_config(self, config_xml):

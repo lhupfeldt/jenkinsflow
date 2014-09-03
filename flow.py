@@ -3,7 +3,7 @@
 
 from __future__ import print_function
 
-import os, re, abc
+import os, re, abc, signal
 from os.path import join as jp
 from collections import OrderedDict
 from itertools import chain
@@ -236,6 +236,7 @@ class _SingleJob(_JobControl):
         self.repr_str = ("unchecked " if self.propagation == Propagation.UNCHECKED else "") + "job: " + repr(self.name)
         self.jenkins_baseurl = None
         self._reported_invoked = False
+        self._killed = False
 
         print(self.indentation + repr(self))
 
@@ -244,17 +245,17 @@ class _SingleJob(_JobControl):
             self.job = self.api.get_job(self.name)
         except UnknownJobException as ex:
             # TODO? stack trace
-            if require_job or not self.allow_missing_jobs:
+            if require_job or not self.allow_missing_jobs and not self.top_flow.kill:
                 self.checking_status = Checking.FINISHED
                 self.result = BuildResult.FAILURE
                 raise MissingJobsException(ex)
-            print(self.indentation + repr(self), " - MISSING JOB")
+            print(self.indentation + repr(self), "- MISSING JOB")
             super(_SingleJob, self)._prepare_to_invoke(reset_tried_times=False)
             return
 
         self._prepare_to_invoke()
         _result, progress, _ = self.job.job_status()
-        if self.top_flow.require_idle and progress != Progress.IDLE:
+        if self.top_flow.require_idle and progress != Progress.IDLE and not self.top_flow.kill:
             # Pylint does not like Enum pylint: disable=no-member
             raise JobNotIdleException(repr(self) + " is in state " + progress.name + ". It must be " + Progress.IDLE.name + '.')
 
@@ -340,13 +341,57 @@ class _SingleJob(_JobControl):
         if self.result in _build_result_failures:
             raise FailedSingleJobException(self.job, self.propagation)
 
+    def _kill_check(self, report_now):
+        if self.job is None:
+            print(self, "no job")
+            self.checking_status = Checking.FINISHED
+            return
+
+        self.job.poll()
+        if not self._killed:
+            self._killed = True
+            if self.top_flow.kill_all:
+                # TODO stop_all
+                print("Killing all running builds for:", repr(self.name))
+                self.job.stop_all()
+            elif self.job_invocation:
+                print("Killing build:", repr(self.name), '-', self.job_invocation.console_url())
+                self.job_invocation.stop()
+            else:
+                print("Not invoked:", repr(self.name))
+
+        if self.job_invocation:
+            result, progress = self.job_invocation.status()
+            if progress != Progress.IDLE:
+                if report_now:
+                    build_num = self.job_invocation.build_number if self.job_invocation.build_number else self.old_build_num
+                    print(self._status_message(progress, build_num, self.job_invocation.queued_why))
+                return
+        else:
+            result, progress, old_build_num = self.job.job_status()
+            if progress != Progress.IDLE:
+                if report_now:
+                    print(self._status_message(progress, None, self.job.queued_why))
+                return
+
+        # The job has stopped running
+        print(self, "stopped running")
+        self.checking_status = Checking.FINISHED
+        if self.job_invocation:
+            print(self._status_message(progress, self.job_invocation.build_number, self.job_invocation.queued_why))
+        else:
+            print(self._status_message(progress, old_build_num, self.job.queued_why))
+        self.result = result
+        # Pylint does not like Enum pylint: disable=maybe-no-member
+        print(self.result.name + ":", repr(self.job.name))
+
     def sequence(self):
         return self.name
 
     def _final_status(self):
         if self.job is not None:
             # Pylint does not like Enum pylint: disable=maybe-no-member
-            if self.result == BuildResult.SUCCESS:
+            if self.result == BuildResult.SUCCESS and not self.top_flow.kill:
                 print(self.indentation + repr(self), self.result.name)
                 return
 
@@ -354,18 +399,21 @@ class _SingleJob(_JobControl):
             if self.job_invocation:
                 result, progress = self.job_invocation.status()
             else:
-                result, progress = BuildResult.UNKNOWN, Progress.IDLE
+                if self.top_flow.kill_all:
+                    result, progress, _ = self.job.job_status()
+                else:
+                    result, progress = BuildResult.UNKNOWN, Progress.IDLE
             progress_msg = ""
-            if progress != Progress.IDLE or result == BuildResult.UNKNOWN:
+            if progress != Progress.IDLE or result == BuildResult.UNKNOWN or self.top_flow.kill:
                 progress_msg = "- " + progress.name
             console_url = ""
-            if self.result != BuildResult.UNKNOWN:
+            if self.result != BuildResult.UNKNOWN and not self.top_flow.kill_all and self.job_invocation:
                 console_url = self.job_invocation.console_url()
             assert isinstance(result, BuildResult)
             print(self.indentation + repr(self), result.name, progress_msg, console_url)
             return
 
-        print(self.indentation + repr(self), " - MISSING JOB")
+        print(self.indentation + repr(self), "- MISSING JOB")
 
     def last_jobs_in_flow(self):
         return [self] if self.propagation != Propagation.UNCHECKED else []
@@ -465,7 +513,7 @@ class _Flow(_JobControl):
 
     def invoke(self, job_name, **params):
         """Define a Jenkins job invocation that will be invoked under control of the surrounding flow.
-        
+
         This does not create the job in Jenkins. It defines how the job will be invoked by ``jenkinsflow``.
 
         Args:
@@ -538,19 +586,40 @@ class _Flow(_JobControl):
             print(self.indentation + "INFO: Ignoring empty flow")
         print()
 
-    def _check_invoke_report(self):
-        if self._must_invoke_set_invocation_time():
-            self._invocation_message('Flow', self)
-
+    def _check_report(self):
         now = hyperspeed.time()
         report_now = now - self.last_report_time >= self.report_interval
         if report_now:
             self.last_report_time = now
         return report_now
 
+    def _check_invoke_report(self):
+        if self._must_invoke_set_invocation_time():
+            self._invocation_message('Flow', self)
+        return self._check_report()
+
+    def _kill_check(self, report_now):
+        report_now = self._check_report()
+
+        self.checking_status = Checking.FINISHED
+        for job in self.jobs:
+            if job.checking_status != Checking.FINISHED:
+                print("Checking job: ", job)
+                job._kill_check(report_now)
+                job_propagate_checking_status = job.checking_status if job.checking_status != Checking.HAS_UNCHECKED else Checking.MUST_CHECK
+                self.checking_status = min(self.checking_status, job_propagate_checking_status)
+                print("sel.checking_status: ", self.checking_status)
+
+        if self.checking_status == Checking.FINISHED:
+            # All jobs have stopped running
+            for job in self.jobs:
+                self.result = min(self.result, job.propagate_result)
+            self.report_result()
+
     def report_result(self):
         # Pylint does not like Enum pylint: disable=no-member
         unchecked = (Propagation.UNCHECKED.name + ' ') if self.propagation == Propagation.UNCHECKED else ''
+        # Pylint does not like Enum pylint: disable=maybe-no-member
         print('Flow ' + unchecked + self.result.name, self, self._time_msg())
 
     def json(self, file_path, indent=None):
@@ -588,6 +657,11 @@ class _Parallel(_Flow):
                         del self._failed_child_jobs[id(job)]
             except JobControlFailException:
                 self._failed_child_jobs[id(job)] = job
+
+                if job.result == BuildResult.ABORTED:
+                    if job.remaining_tries or job.remaining_total_tries:
+                        print("ABORTED:", job, "not retrying")
+                    job.checking_status = Checking.FINISHED
 
                 if job.remaining_tries:
                     print("RETRY:", job, "failed but will be retried. Up to", job.remaining_tries, "more times in current flow")
@@ -736,7 +810,7 @@ class _TopLevelControllerMixin(object):
     __metaclass__ = abc.ABCMeta
 
     def toplevel_init(self, jenkins_api, securitytoken, username, password, top_level_job_name_prefix, poll_interval, direct_url, require_idle,
-                      json_dir, json_indent, json_strip_top_level_prefix, params_display_order):
+                      json_dir, json_indent, json_strip_top_level_prefix, params_display_order, just_dump, kill_all):
         self._start_msg()
         # pylint: disable=attribute-defined-outside-init
         # Note: Special handling in top level flow, these atributes will be modified in proper flow init
@@ -750,6 +824,11 @@ class _TopLevelControllerMixin(object):
         self.secret_params_re = _default_secret_params_re
         self.allow_missing_jobs = None
         self.next_node_id = 0
+        self.just_dump = just_dump
+
+        self.kill = kill_all
+        self.kill_all = kill_all
+        self.kill_current = False
 
         jenkins_job_name = os.environ.get('JOB_NAME')
         if jenkins_job_name:
@@ -773,6 +852,13 @@ class _TopLevelControllerMixin(object):
         self.json_file = jp(self.json_dir, 'flow_graph.json') if json_dir is not None else None
 
         self.params_display_order = params_display_order
+
+        # Set signalhandler to kill entire flow
+        def set_kill(_sig, _frame):
+            print("\nGot SIGTERM: Killing all builds belonging to current flow")
+            self.kill = True
+            self.kill_current = True
+        signal.signal(signal.SIGTERM, set_kill)
 
         # Allow test framework to set securitytoken, so that we won't have to litter all the testcases with it
         return self.securitytoken or jenkins_api.securitytoken if hasattr(jenkins_api, 'securitytoken') else None
@@ -820,9 +906,13 @@ class _TopLevelControllerMixin(object):
         print("--- Starting flow ---")
         sleep_time = min(self.poll_interval, self.report_interval)
         try:
+            #while self.checking_status == Checking.MUST_CHECK or (self.kill and self.checking_status != Checking.FINISHED):
             while self.checking_status == Checking.MUST_CHECK:
                 self.api.quick_poll()
-                self._check(None)
+                if not self.kill:
+                    self._check(None)
+                else:
+                    self._kill_check(None)
                 hyperspeed.sleep(sleep_time)
         finally:
             print()
@@ -842,13 +932,13 @@ class parallel(_Parallel, _TopLevelControllerMixin):
 
     def __init__(self, jenkins_api, timeout, securitytoken=None, username=None, password=None, job_name_prefix='', max_tries=1, propagation=Propagation.NORMAL,
                  report_interval=_default_report_interval, poll_interval=_default_poll_interval, secret_params=_default_secret_params_re, allow_missing_jobs=False,
-                 json_dir=None, json_indent=None, json_strip_top_level_prefix=True, direct_url=None, require_idle=True, just_dump=False, params_display_order=()):
+                 json_dir=None, json_indent=None, json_strip_top_level_prefix=True, direct_url=None, require_idle=True, just_dump=False, params_display_order=(),
+                 kill_all=False):
         assert isinstance(propagation, Propagation)
         securitytoken = self.toplevel_init(jenkins_api, securitytoken, username, password, job_name_prefix, poll_interval, direct_url, require_idle,
-                                           json_dir, json_indent, json_strip_top_level_prefix, params_display_order)
+                                           json_dir, json_indent, json_strip_top_level_prefix, params_display_order, just_dump, kill_all)
         super(parallel, self).__init__(self, timeout, securitytoken, job_name_prefix, max_tries, propagation, report_interval, secret_params, allow_missing_jobs)
         self.parent_flow = None
-        self.just_dump = just_dump
 
     def __exit__(self, exc_type, exc_value, traceback):
         if exc_type:
@@ -889,6 +979,10 @@ class serial(_Serial, _TopLevelControllerMixin):
             invoke **param names.
             Any of first..., '*', last... may be omitted
             Any parameters that are not matched will be displayes at the place of the '*', if specified, otherwise they will be displayed last.
+        kill_all (boolean): If True, all running builds for jobs defined in the flow will be aborted, regardless which flow invocation
+            started the build.
+            Note: It also possible to send SIGTERM to an already running flow to make the flow abort all builds started by the current 
+            invocation of the flow, but not builds started by other invocations of the same flow.
 
     Returns:
         serial flow object
@@ -899,13 +993,13 @@ class serial(_Serial, _TopLevelControllerMixin):
 
     def __init__(self, jenkins_api, timeout, securitytoken=None, username=None, password=None, job_name_prefix='', max_tries=1, propagation=Propagation.NORMAL,
                  report_interval=_default_report_interval, poll_interval=_default_poll_interval, secret_params=_default_secret_params_re, allow_missing_jobs=False,
-                 json_dir=None, json_indent=None, json_strip_top_level_prefix=True, direct_url=None, require_idle=True, just_dump=False, params_display_order=()):
+                 json_dir=None, json_indent=None, json_strip_top_level_prefix=True, direct_url=None, require_idle=True, just_dump=False, params_display_order=(),
+                 kill_all=False):
         assert isinstance(propagation, Propagation)
         securitytoken = self.toplevel_init(jenkins_api, securitytoken, username, password, job_name_prefix, poll_interval, direct_url, require_idle,
-                                           json_dir, json_indent, json_strip_top_level_prefix, params_display_order)
+                                           json_dir, json_indent, json_strip_top_level_prefix, params_display_order, just_dump, kill_all)
         super(serial, self).__init__(self, timeout, securitytoken, job_name_prefix, max_tries, propagation, report_interval, secret_params, allow_missing_jobs)
         self.parent_flow = None
-        self.just_dump = just_dump
 
     def __exit__(self, exc_type, exc_value, traceback):
         if exc_type:
