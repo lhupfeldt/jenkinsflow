@@ -39,7 +39,7 @@ def build_queued_msg(api, job_name, num):
     if api.api_type == ApiType.MOCK:
         queued_why = r"Why am I queued\?"
     else:
-        queued_why = r"Build #[0-9]+ is already in progress \(ETA:[0-9.]+ sec\)"
+        queued_why = r"Build #[0-9]+ is already in progress \(ETA:([0-9.]+ sec|N/A)\)"
     return re.compile("^job: '" + job_name + "' Status QUEUED - " + queued_why)
 
 
