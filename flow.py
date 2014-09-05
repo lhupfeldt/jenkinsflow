@@ -7,10 +7,11 @@ import os, re, abc, signal
 from os.path import join as jp
 from collections import OrderedDict
 from itertools import chain
+from enum import Enum
 
 from .ordered_enum import OrderedEnum
 from .set_build_result import set_build_result
-from .specialized_api import BuildResult, Progress, Invocation, UnknownJobException
+from .specialized_api import BuildResult, Progress, UnknownJobException
 from .mocked import hyperspeed, mocked
 
 
@@ -34,6 +35,15 @@ class Checking(OrderedEnum):
     MUST_CHECK = 0
     HAS_UNCHECKED = 1
     FINISHED = 2
+
+
+class KillType(Enum):
+    NONE = 0
+    CURRENT = 1
+    ALL = 2
+
+    def __nonzero__(self):
+        return self !=  KillType.NONE
 
 
 class JobControlException(Exception):
@@ -350,7 +360,7 @@ class _SingleJob(_JobControl):
         self.job.poll()
         if not self._killed:
             self._killed = True
-            if self.top_flow.kill_all:
+            if self.top_flow.kill == KillType.ALL:
                 # TODO stop_all
                 print("Killing all running builds for:", repr(self.name))
                 self.job.stop_all()
@@ -364,8 +374,7 @@ class _SingleJob(_JobControl):
             result, progress = self.job_invocation.status()
             if progress != Progress.IDLE:
                 if report_now:
-                    build_num = self.job_invocation.build_number if self.job_invocation.build_number else self.old_build_num
-                    print(self._status_message(progress, build_num, self.job_invocation.queued_why))
+                    print(self._status_message(progress, self.job_invocation.build_number, self.job_invocation.queued_why))
                 return
         else:
             result, progress, old_build_num = self.job.job_status()
@@ -399,7 +408,7 @@ class _SingleJob(_JobControl):
             if self.job_invocation:
                 result, progress = self.job_invocation.status()
             else:
-                if self.top_flow.kill_all:
+                if self.top_flow.kill == KillType.ALL:
                     result, progress, _ = self.job.job_status()
                 else:
                     result, progress = BuildResult.UNKNOWN, Progress.IDLE
@@ -407,7 +416,7 @@ class _SingleJob(_JobControl):
             if progress != Progress.IDLE or result == BuildResult.UNKNOWN or self.top_flow.kill:
                 progress_msg = "- " + progress.name
             console_url = ""
-            if self.result != BuildResult.UNKNOWN and not self.top_flow.kill_all and self.job_invocation:
+            if self.result != BuildResult.UNKNOWN and not (self.top_flow.kill == KillType.ALL) and self.job_invocation:
                 console_url = self.job_invocation.console_url()
             assert isinstance(result, BuildResult)
             print(self.indentation + repr(self), result.name, progress_msg, console_url)
@@ -826,9 +835,7 @@ class _TopLevelControllerMixin(object):
         self.next_node_id = 0
         self.just_dump = just_dump
 
-        self.kill = kill_all
-        self.kill_all = kill_all
-        self.kill_current = False
+        self.kill = KillType.ALL if kill_all else KillType.NONE
 
         jenkins_job_name = os.environ.get('JOB_NAME')
         if jenkins_job_name:
@@ -856,8 +863,7 @@ class _TopLevelControllerMixin(object):
         # Set signalhandler to kill entire flow
         def set_kill(_sig, _frame):
             print("\nGot SIGTERM: Killing all builds belonging to current flow")
-            self.kill = True
-            self.kill_current = True
+            self.kill = KillType.CURRENT
         signal.signal(signal.SIGTERM, set_kill)
 
         # Allow test framework to set securitytoken, so that we won't have to litter all the testcases with it
