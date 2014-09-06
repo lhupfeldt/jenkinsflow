@@ -613,11 +613,9 @@ class _Flow(_JobControl):
         self.checking_status = Checking.FINISHED
         for job in self.jobs:
             if job.checking_status != Checking.FINISHED:
-                print("Checking job: ", job)
                 job._kill_check(report_now)
                 job_propagate_checking_status = job.checking_status if job.checking_status != Checking.HAS_UNCHECKED else Checking.MUST_CHECK
                 self.checking_status = min(self.checking_status, job_propagate_checking_status)
-                print("sel.checking_status: ", self.checking_status)
 
         if self.checking_status == Checking.FINISHED:
             # All jobs have stopped running
@@ -909,7 +907,10 @@ class _TopLevelControllerMixin(object):
         self.last_report_time = self.start_time
 
         print()
-        print("--- Starting flow ---")
+        if not self.kill:
+            print("--- Starting flow ---")
+        else:
+            print("--- Starting kill of all builds in flow ---")            
         sleep_time = min(self.poll_interval, self.report_interval)
         try:
             #while self.checking_status == Checking.MUST_CHECK or (self.kill and self.checking_status != Checking.FINISHED):
