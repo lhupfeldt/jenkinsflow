@@ -47,6 +47,9 @@ class MockApi(TestJenkins):
     def quick_poll(self):
         pass
 
+    def queue_poll(self):
+        pass
+
     def get_job(self, name):
         try:
             job = self.test_jobs[name]

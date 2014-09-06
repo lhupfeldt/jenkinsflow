@@ -120,6 +120,9 @@ class Jenkins(object):
     def quick_poll(self):
         pass
 
+    def queue_poll(self):
+        pass
+
     def _script_file(self, job_name):
         return jp(self.public_uri, job_name + '.py')
 

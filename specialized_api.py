@@ -43,6 +43,7 @@ class Jenkins(Resource):
         self.job_prefix_filter = job_prefix_filter
         self._public_uri = self._baseurl = None
         self.jobs = None
+        self.queue_items = {}
         self.is_jenkins = True
         self.ci_version = None
 
@@ -117,6 +118,20 @@ class Jenkins(Resource):
                 # Ignore this, the job came and went
                 pass
 
+    def queue_poll(self):
+        query = "items[task[name],id]"
+        response = self.get("/queue/api/json", tree=query)
+        dct = json.loads(response.body_string())
+
+        queue_items = {}
+        for qi_dct in dct.get('items') or []:
+            job_name = str(qi_dct['task']['name'])
+            if self.job_prefix_filter and not job_name.startswith(self.job_prefix_filter):
+                continue
+
+            queue_items.setdefault(job_name, []).append(qi_dct['id'])
+        self.queue_items = queue_items
+
     def get_job(self, name):
         try:
             return self.jobs[name]
@@ -175,11 +190,12 @@ class ApiJob(object):
         for invocation in self.invocations:
             if not invocation.build_number:
                 # Husdon does not return queue item from invoke, instead it returns the job URL :(
-                query = "executable[number],why" if self.jenkins.is_jenkins else "queueItem[why],lastBuild[number]"
+                query = "id,executable[number],why" if self.jenkins.is_jenkins else "queueItem[why,id],lastBuild[number]"
                 qi_response = self.jenkins.get(invocation.queued_item_path, tree=query)
                 dct = json.loads(qi_response.body_string())
 
                 if self.jenkins.is_jenkins:
+                    invocation.qid = dct.get('id')
                     executable = dct.get('executable')
                     if executable:
                         invocation.build_number = executable['number']
@@ -191,6 +207,7 @@ class ApiJob(object):
                     # Should handle multiple invocations in same flow
                     qi = dct.get('queueItem')
                     if qi:
+                        invocation.qid = qi['id']
                         invocation.queued_why = qi['why']
 
                     last_build = dct.get('lastBuild')
@@ -225,6 +242,16 @@ class ApiJob(object):
         return (BuildResult.UNKNOWN, progress or Progress.IDLE, None)
 
     def stop_all(self):
+        # First remove pending builds from queue
+        queue_item_ids = self.jenkins.queue_items.get(self.name) or []
+        for qid in queue_item_ids:
+            try:
+                self.jenkins.post('/queue/cancelItem?id=' + repr(qid))
+            except errors.ResourceNotFound:
+                # Job is no longer queued, so just ignore
+                pass
+
+        # Abort running builds
         query = "builds[number,result]"
         response = self.jenkins.get("/job/" + self.name + "/api/json", tree=query)
         dct = json.loads(response.body_string())
@@ -232,7 +259,11 @@ class ApiJob(object):
             _result, progress = _result_and_progress(build)
             if progress != Progress.IDLE:
                 build_number = build['number']
-                self.jenkins.post(self._path + '/' + repr(build_number) + '/stop')
+                try:
+                    self.jenkins.post(self._path + '/' + repr(build_number) + '/stop')
+                except errors.ResourceNotFound:
+                    # Job is no longer running, so just ignore
+                    pass
 
     def update_config(self, config_xml):
         self.jenkins.post("/job/" + self.name + "/config.xml", payload=config_xml)
@@ -245,6 +276,7 @@ class Invocation(ApiInvocationMixin):
     def __init__(self, job, queued_item_path):
         self.job = job
         self.queued_item_path = queued_item_path
+        self.qid = None
         self.build_number = None
         self.queued_why = None
 
@@ -282,5 +314,13 @@ class Invocation(ApiInvocationMixin):
         raise Exception("Build deleted while flow running?")
 
     def stop(self):
-        if self.build_number is not None:
-            self.job.jenkins.post(self.job._path + '/' + repr(self.build_number) + '/stop')
+        try:
+            if self.build_number is not None:
+                # Job has started
+                self.job.jenkins.post(self.job._path + '/' + repr(self.build_number) + '/stop')
+            else:
+                # Job is queued
+                self.job.jenkins.post('/queue/cancelItem?id=' + repr(self.qid))
+        except errors.ResourceNotFound:
+            # Job is no longer queued or running, so just ignore
+            pass

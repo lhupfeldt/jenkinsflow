@@ -910,7 +910,7 @@ class _TopLevelControllerMixin(object):
         if not self.kill:
             print("--- Starting flow ---")
         else:
-            print("--- Starting kill of all builds in flow ---")            
+            print("--- Starting kill of all builds in flow ---")
         sleep_time = min(self.poll_interval, self.report_interval)
         try:
             #while self.checking_status == Checking.MUST_CHECK or (self.kill and self.checking_status != Checking.FINISHED):
@@ -919,6 +919,7 @@ class _TopLevelControllerMixin(object):
                 if not self.kill:
                     self._check(None)
                 else:
+                    self.api.queue_poll()
                     self._kill_check(None)
                 hyperspeed.sleep(sleep_time)
         finally:
@@ -988,7 +989,7 @@ class serial(_Serial, _TopLevelControllerMixin):
             Any parameters that are not matched will be displayes at the place of the '*', if specified, otherwise they will be displayed last.
         kill_all (boolean): If True, all running builds for jobs defined in the flow will be aborted, regardless which flow invocation
             started the build.
-            Note: It also possible to send SIGTERM to an already running flow to make the flow abort all builds started by the current 
+            Note: It also possible to send SIGTERM to an already running flow to make the flow abort all builds started by the current
             invocation of the flow, but not builds started by other invocations of the same flow.
 
     Returns:

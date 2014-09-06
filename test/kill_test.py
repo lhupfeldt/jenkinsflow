@@ -1,7 +1,9 @@
 # Copyright (c) 2012 - 2014 Lars Hupfeldt Nielsen, Hupfeldt IT
 # All rights reserved. This work is under a BSD license, see LICENSE.TXT.
 
-import subprocess32, os, signal, sys
+from __future__ import print_function
+
+import subprocess32, os
 from os.path import join as jp
 
 from pytest import raises
@@ -24,7 +26,7 @@ def test_kill_all_unchecked(capsys):
         api.flow_job()
         api.job('j1', exec_time=50, max_fails=0, expect_invocations=1, expect_order=None, unknown_result=False, kill=True)
         api.job('j2', exec_time=0.1, max_fails=0, expect_invocations=1, expect_order=1, unknown_result=False, kill=True)
-        api.job('j3', exec_time=50, max_fails=0, expect_invocations=1, expect_order=None, unknown_result=False, kill=True)
+        api.job('j3', exec_time=50, max_fails=0, expect_invocations=3, expect_order=None, unknown_result=False, kill=True)
         api.job('j4', exec_time=0.1, max_fails=0, expect_invocations=1, expect_order=None, unknown_result=False, kill=True)
         api.job('j5', exec_time=0.1, max_fails=1, expect_invocations=1, expect_order=2, unknown_result=False, kill=True)
 
@@ -35,6 +37,8 @@ def test_kill_all_unchecked(capsys):
                     ctrl2.invoke_unchecked('j2')
                 with ctrl1.parallel() as ctrl3:
                     ctrl3.invoke_unchecked('j3')
+                    ctrl3.invoke_unchecked('j3') # Queue
+                    ctrl3.invoke_unchecked('j3') # Queue
                     ctrl3.invoke_unchecked('j4')
                     ctrl3.invoke_unchecked('j5')
         
@@ -44,12 +48,17 @@ def test_kill_all_unchecked(capsys):
         # Make sure job has actually started before entering new flow
         hyperspeed.sleep(5)
 
-        sout, _ = capsys.readouterr()
-        assert_lines_in(sout, "unchecked job: 'jenkinsflow_test__kill_all_unchecked__j1' UNKNOWN - RUNNING")
-        assert_lines_in(sout, "unchecked job: 'jenkinsflow_test__kill_all_unchecked__j3' UNKNOWN - RUNNING")
+        if capsys:
+            sout, _ = capsys.readouterr()
+            assert_lines_in(sout, "unchecked job: 'jenkinsflow_test__kill_all_unchecked__j1' UNKNOWN - RUNNING")
+            assert_lines_in(sout, "unchecked job: 'jenkinsflow_test__kill_all_unchecked__j3' UNKNOWN - RUNNING")
 
         # Kill the flow
         flow(api, True)
+
+        if not capsys:
+            # Not called by pytest, but from flow hudson job
+            return
 
         sout, _ = capsys.readouterr()
         assert_lines_in(
@@ -66,6 +75,8 @@ def test_kill_all_unchecked(capsys):
             "^   )",
              
             "^   parallel flow: (",
+            "^      unchecked job: 'jenkinsflow_test__kill_all_unchecked__j3' ABORTED - IDLE",
+            "^      unchecked job: 'jenkinsflow_test__kill_all_unchecked__j3' ABORTED - IDLE",
             "^      unchecked job: 'jenkinsflow_test__kill_all_unchecked__j3' ABORTED - IDLE",
             "^      unchecked job: 'jenkinsflow_test__kill_all_unchecked__j4' SUCCESS - IDLE", 
             "^      unchecked job: 'jenkinsflow_test__kill_all_unchecked__j5' FAILURE - IDLE", 
@@ -86,11 +97,12 @@ def test_kill_current(capsys):
         api.job('j3', exec_time=50, max_fails=0, expect_invocations=1, expect_order=None, kill=True)
         api.job('j4', exec_time=0.1, max_fails=1, expect_invocations=1, expect_order=2)
         api.job('j5', exec_time=50, max_fails=0, expect_invocations=1, expect_order=None, kill=True)
-        api.job('j6', exec_time=0.1, max_fails=0, expect_invocations=0, expect_order=None)
+        api.job('j6', exec_time=50, max_fails=0, expect_invocations=2, expect_order=None, kill=True)
+        api.job('j7', exec_time=50, max_fails=0, expect_invocations=0, expect_order=None)
 
         pid = os.getpid()
-        print("kill_test pid:", pid)
-        subprocess32.Popen([jp(here, "killer.py"), repr(pid)])
+        print("kill_test, pid:", pid, )
+        subprocess32.Popen([jp(here, "killer.py"), repr(pid), repr(10)])
 
         with serial(api, timeout=70, job_name_prefix=api.job_name_prefix) as ctrl1:
             with ctrl1.parallel() as ctrl2:
@@ -99,8 +111,13 @@ def test_kill_current(capsys):
                 ctrl2.invoke('j3')
                 ctrl2.invoke('j4')
                 ctrl2.invoke_unchecked('j5')
+                ctrl2.invoke('j6')
+                ctrl2.invoke('j6')  # Queue
             with ctrl1.parallel() as ctrl3:
-                ctrl3.invoke('j6')
+                ctrl3.invoke('j7')
+
+        if not capsys:
+            return
 
         sout, _ = capsys.readouterr()
         assert_lines_in(
@@ -117,10 +134,12 @@ def test_kill_current(capsys):
             "^      job: 'jenkinsflow_test__kill_current__j3' ABORTED - IDLE",
             "^      job: 'jenkinsflow_test__kill_current__j4' FAILURE - IDLE",
             "^      unchecked job: 'jenkinsflow_test__kill_current__j5' ABORTED - IDLE",
+            "^      job: 'jenkinsflow_test__kill_current__j6' ABORTED - IDLE",
+            "^      job: 'jenkinsflow_test__kill_current__j6' ABORTED - IDLE",
             "^   )",
             "^",
             "^   parallel flow: (",
-            "^      job: 'jenkinsflow_test__kill_current__j6' UNKNOWN - IDLE",
+            "^      job: 'jenkinsflow_test__kill_current__j7' UNKNOWN - IDLE",
             "^   )",
             "^",
             "^]",
@@ -157,12 +176,16 @@ def test_kill_all_unchecked_no_job(capsys):
         # Make sure job has actually started before entering new flow
         hyperspeed.sleep(5)
 
-        sout, _ = capsys.readouterr()
-        assert_lines_in(sout, "unchecked job: 'jenkinsflow_test__kill_all_unchecked_no_job__j1' UNKNOWN - RUNNING")
-        assert_lines_in(sout, "job: 'jenkinsflow_test__kill_all_unchecked_no_job__j3' - MISSING JOB")
+        if capsys:
+            sout, _ = capsys.readouterr()
+            assert_lines_in(sout, "unchecked job: 'jenkinsflow_test__kill_all_unchecked_no_job__j1' UNKNOWN - RUNNING")
+            assert_lines_in(sout, "job: 'jenkinsflow_test__kill_all_unchecked_no_job__j3' - MISSING JOB")
 
         # Kill the flow
         flow(api, True, False)
+
+        if not capsys:
+            return
 
         sout, _ = capsys.readouterr()
         assert_lines_in(
