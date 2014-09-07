@@ -43,9 +43,12 @@ def run_tests(parallel, api_type):
 
     cmd = ['py.test', '--capture=sys', '--cov=' + here + '/..', '--cov-report=term-missing', '--cov-config=' + cov_rc_file_name, '--instafail', '--ff']
     try:
-        # Note: 'boxed' is required for the kill/abort_current test not to abort other tests
         if not parallel:
-            return subprocess.check_call(cmd + ['--boxed'])
+            if api_type == ApiType.MOCK:
+                return subprocess.check_call(cmd)
+            else:
+                # Note: 'boxed' is required for the kill/abort_current test not to abort other tests
+                return subprocess.check_call(cmd + ['--boxed'])
         subprocess.check_call(cmd + ['--boxed', '-n', '16'])
     finally:
         if os.path.exists(_cache_dir):
@@ -106,6 +109,11 @@ def main():
     if rc:
         print("Failed test installation to", repr(config.pseudo_install_dir), "Install script is:", repr(install_script), file=sys.stderr)
         print("Warning: Some tests will fail!", file=sys.stderr)
+
+    cov_file = ".coverage"
+    for cov_file in jp(here, cov_file), jp(here, '..', cov_file):
+        if os.path.exists(cov_file):
+            os.remove(cov_file)
 
     print("\nRunning tests")
     try:
