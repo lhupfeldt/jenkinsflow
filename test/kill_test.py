@@ -104,7 +104,7 @@ def test_kill_current(capsys):
         print("kill_test, pid:", pid, )
         subprocess32.Popen([jp(here, "killer.py"), repr(pid), repr(10)])
 
-        with serial(api, timeout=70, job_name_prefix=api.job_name_prefix) as ctrl1:
+        with serial(api, timeout=70, job_name_prefix=api.job_name_prefix, report_interval=0.05) as ctrl1:
             with ctrl1.parallel() as ctrl2:
                 ctrl2.invoke('j1')
                 ctrl2.invoke('j2')
