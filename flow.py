@@ -669,6 +669,7 @@ class _Parallel(_Flow):
                     if job.remaining_tries or job.remaining_total_tries:
                         print("ABORTED:", job, "not retrying")
                     job.checking_status = Checking.FINISHED
+                    continue
 
                 if job.remaining_tries:
                     print("RETRY:", job, "failed but will be retried. Up to", job.remaining_tries, "more times in current flow")
@@ -742,6 +743,14 @@ class _Serial(_Flow):
                     job._check(report_now)
                     self.checking_status = min(self.checking_status, job.propagate_checking_status)
             except JobControlFailException:
+                if job.result == BuildResult.ABORTED:
+                    if job.remaining_tries or job.remaining_total_tries:
+                        print("ABORTED:", job, "not retrying")
+                    job.checking_status = Checking.FINISHED
+                    self.total_max_tries = 0
+                    self.max_tries = 0
+                    continue
+
                 # The job has stopped running
                 if job.remaining_tries:
                     if job.propagation != Propagation.NORMAL:

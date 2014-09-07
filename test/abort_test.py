@@ -6,6 +6,7 @@ from os.path import join as jp
 from pytest import raises
 
 from jenkinsflow.flow import parallel, FailedChildJobsException
+
 from .framework import api_select
 from .framework.utils import assert_lines_in
 
@@ -25,7 +26,7 @@ def test_abort(capsys):
         api.job('wait1_fail', exec_time=1, max_fails=1, expect_invocations=1, expect_order=1)
         
         if api.api_type != ApiType.MOCK:
-            subprocess32.Popen([sys.executable, jp(here, "abort_job.py")])
+            subprocess32.Popen([sys.executable, jp(here, "abort_job.py"), __file__, 'abort', 'wait10_abort'])
         
         with raises(FailedChildJobsException) as exinfo:
             with parallel(api, timeout=40, job_name_prefix=api.job_name_prefix, report_interval=3) as ctrl:
