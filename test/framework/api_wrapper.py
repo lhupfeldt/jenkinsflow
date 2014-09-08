@@ -63,7 +63,7 @@ class WrapperJob(TestJob, jenkins.ApiJob, ObjectWrapper):
                          print_env=False, flow_created=mock_job.flow_created, create_job=mock_job.create_job, disappearing=mock_job.disappearing,
                          non_existing=mock_job.non_existing, kill=mock_job.kill)
 
-    def invoke(self, securitytoken=None, build_params=None, cause=None):
+    def invoke(self, securitytoken=None, build_params=None, cause=None, description=None):
         self.invocation_time = time.time()
         if self.disappearing:
             # Delete the job to fake a job that disappears while a flow is running
@@ -78,7 +78,7 @@ class WrapperJob(TestJob, jenkins.ApiJob, ObjectWrapper):
             if self.invocation_number >= self.max_fails:
                 build_params['force_result'] = 'SUCCESS' if self.final_result is None else self.final_result.name
 
-        invocation = self.__subject__.invoke(securitytoken, build_params=build_params, cause=cause)  # pylint: disable=no-member
+        invocation = self.__subject__.invoke(securitytoken, build_params=build_params, cause=cause, description=description)  # pylint: disable=no-member
         TestJob.invoke(self, securitytoken, build_params, cause)
         return invocation
 

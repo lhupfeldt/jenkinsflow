@@ -190,7 +190,7 @@ class ApiJob(object):
         self.invocations = []
         self.queued_why = None
 
-    def invoke(self, securitytoken, build_params, cause):
+    def invoke(self, securitytoken, build_params, cause, description):
         _mkdir(self.jenkins.log_dir)
         _mkdir(self.workspace)
         self.build_num = self.build_num or 0

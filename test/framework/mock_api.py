@@ -107,7 +107,7 @@ class MockJob(TestJob):
     def _is_running(self):
         return self.start_time <= hyperspeed.time() < self.end_time
 
-    def invoke(self, securitytoken=None, build_params=None, cause=None):
+    def invoke(self, securitytoken=None, build_params=None, cause=None, description=None):
         assert not self._is_running()
         super(MockJob, self).invoke(securitytoken, build_params, cause)
         self.invocation_time = hyperspeed.time()

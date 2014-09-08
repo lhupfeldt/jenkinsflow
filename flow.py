@@ -321,11 +321,13 @@ class _SingleJob(_JobControl):
             if self.propagation != Propagation.UNCHECKED:
                 self._invocation_message('Job', self.job.public_uri)
                 params = self.params if self.params else None
-                self.job_invocation = self.job.invoke(securitytoken=self.securitytoken, build_params=params, cause=self.top_flow.cause)
+                self.job_invocation = self.job.invoke(securitytoken=self.securitytoken, build_params=params,
+                                                      cause=self.top_flow.cause, description=self.top_flow.description)
             elif not self.job_invocation or self.job_invocation.status()[1] == Progress.IDLE:
                 self._invocation_message('Job', self.job.public_uri)
                 params = self.params if self.params else None
-                self.job_invocation = self.job.invoke(securitytoken=self.securitytoken, build_params=params, cause=self.top_flow.cause)
+                self.job_invocation = self.job.invoke(securitytoken=self.securitytoken, build_params=params, cause=self.top_flow.cause,
+                                                      description=self.top_flow.description)
 
         result, progress = self.job_invocation.status()
         if not self._reported_invoked and self.job_invocation.build_number is not None:
@@ -826,7 +828,7 @@ class _TopLevelControllerMixin(object):
     __metaclass__ = abc.ABCMeta
 
     def toplevel_init(self, jenkins_api, securitytoken, username, password, top_level_job_name_prefix, poll_interval, direct_url, require_idle,
-                      json_dir, json_indent, json_strip_top_level_prefix, params_display_order, just_dump, kill_all):
+                      json_dir, json_indent, json_strip_top_level_prefix, params_display_order, just_dump, kill_all, description):
         self._start_msg()
         # pylint: disable=attribute-defined-outside-init
         # Note: Special handling in top level flow, these atributes will be modified in proper flow init
@@ -866,6 +868,7 @@ class _TopLevelControllerMixin(object):
         self.json_file = jp(self.json_dir, 'flow_graph.json') if json_dir is not None else None
 
         self.params_display_order = params_display_order
+        self.description = description
 
         # Set signalhandler to kill entire flow
         def set_kill(_sig, _frame):
@@ -950,10 +953,10 @@ class parallel(_Parallel, _TopLevelControllerMixin):
     def __init__(self, jenkins_api, timeout, securitytoken=None, username=None, password=None, job_name_prefix='', max_tries=1, propagation=Propagation.NORMAL,
                  report_interval=_default_report_interval, poll_interval=_default_poll_interval, secret_params=_default_secret_params_re, allow_missing_jobs=False,
                  json_dir=None, json_indent=None, json_strip_top_level_prefix=True, direct_url=None, require_idle=True, just_dump=False, params_display_order=(),
-                 kill_all=False):
+                 kill_all=False, description=None):
         assert isinstance(propagation, Propagation)
         securitytoken = self.toplevel_init(jenkins_api, securitytoken, username, password, job_name_prefix, poll_interval, direct_url, require_idle,
-                                           json_dir, json_indent, json_strip_top_level_prefix, params_display_order, just_dump, kill_all)
+                                           json_dir, json_indent, json_strip_top_level_prefix, params_display_order, just_dump, kill_all, description)
         super(parallel, self).__init__(self, timeout, securitytoken, job_name_prefix, max_tries, propagation, report_interval, secret_params, allow_missing_jobs)
         self.parent_flow = None
 
@@ -1011,10 +1014,10 @@ class serial(_Serial, _TopLevelControllerMixin):
     def __init__(self, jenkins_api, timeout, securitytoken=None, username=None, password=None, job_name_prefix='', max_tries=1, propagation=Propagation.NORMAL,
                  report_interval=_default_report_interval, poll_interval=_default_poll_interval, secret_params=_default_secret_params_re, allow_missing_jobs=False,
                  json_dir=None, json_indent=None, json_strip_top_level_prefix=True, direct_url=None, require_idle=True, just_dump=False, params_display_order=(),
-                 kill_all=False):
+                 kill_all=False, description=None):
         assert isinstance(propagation, Propagation)
         securitytoken = self.toplevel_init(jenkins_api, securitytoken, username, password, job_name_prefix, poll_interval, direct_url, require_idle,
-                                           json_dir, json_indent, json_strip_top_level_prefix, params_display_order, just_dump, kill_all)
+                                           json_dir, json_indent, json_strip_top_level_prefix, params_display_order, just_dump, kill_all, description=description)
         super(serial, self).__init__(self, timeout, securitytoken, job_name_prefix, max_tries, propagation, report_interval, secret_params, allow_missing_jobs)
         self.parent_flow = None
 

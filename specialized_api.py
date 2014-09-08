@@ -168,7 +168,7 @@ class ApiJob(object):
         self.invocations = []
         self.queued_why = None
 
-    def invoke(self, securitytoken, build_params, cause):
+    def invoke(self, securitytoken, build_params, cause, description):
         try:
             params = {}
             if cause:
@@ -182,7 +182,7 @@ class ApiJob(object):
             response = self.jenkins.post(self._build_trigger_path, **params)
         except errors.ResourceNotFound as ex:
             raise UnknownJobException(self.jenkins._public_job_url(self.name), ex)  # pylint: disable=protected-access
-        inv = Invocation(self, response.location[len(self.jenkins.direct_uri):] + 'api/json')
+        inv = Invocation(self, response.location[len(self.jenkins.direct_uri):] + 'api/json', description)
         self.invocations.append(inv)
         return inv
 
@@ -200,6 +200,7 @@ class ApiJob(object):
                     if executable:
                         invocation.build_number = executable['number']
                         invocation.queued_why = None
+                        invocation.set_description()
                     else:
                         invocation.queued_why = dct['why']
                 else:  # Hudson
@@ -216,6 +217,7 @@ class ApiJob(object):
                         if last_build_number > self.old_build_number:
                             invocation.build_number = last_build['number']
                             self.old_build_number = invocation.build_number
+                            invocation.set_description()
 
     def job_status(self):
         """Result, progress and latest buildnumber info for the JOB NOT the invocation
@@ -273,9 +275,10 @@ class ApiJob(object):
 
 
 class Invocation(ApiInvocationMixin):
-    def __init__(self, job, queued_item_path):
+    def __init__(self, job, queued_item_path, description):
         self.job = job
         self.queued_item_path = queued_item_path
+        self.description = description
         self.qid = None
         self.build_number = None
         self.queued_why = None
@@ -312,6 +315,20 @@ class Invocation(ApiInvocationMixin):
                 return _result_and_progress(build)
 
         raise Exception("Build deleted while flow running?")
+
+    def set_description(self):
+        """Sets the build description"""
+        if not self.description:
+            return
+
+        build_url = self.job._path + '/' + repr(self.build_number)
+        try:
+            params = {}
+            params['headers'] = {'Content-Type': 'application/x-www-form-urlencoded'}
+            params['payload'] = {'description': self.description}
+            self.job.jenkins.post(build_url + '/submitDescription', **params)
+        except errors.ResourceNotFound as ex:
+            raise Exception("Build deleted while flow running? " + repr(build_url), ex)
 
     def stop(self):
         try:
