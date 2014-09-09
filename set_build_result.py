@@ -66,7 +66,7 @@ def set_build_result(username, password, result, direct_url=None, java='java'):
 
     cli_jar, public_base_url = cli_jar_info()
 
-    if not public_base_url.startswith('http'):
+    if not public_base_url.startswith('http:'):
         # Using script_api
         from . import script_api
         script_api.set_build_result(result)
@@ -106,6 +106,7 @@ def set_build_result(username, password, result, direct_url=None, java='java'):
 def args_parser():
     parser = argparse.ArgumentParser(description='Change result of a Jenkins Job. Must be run from within the job!')
     parser.add_argument('--username', help='Name of jenkins user with access to the job')
+    # TODO: insecure password
     parser.add_argument('--password', help='Password of jenkins user with access to the job. *** Warning Insecure, will show up in process listing! ***')
     parser.add_argument('--result', default='unstable', help="The result to set. Should probably be 'unstable'")
     parser.add_argument('--direct-url', default=None, help="Jenkins URL. Default is JENKINS_URL env var value. Use this argument if JENKINS_URL is a proxy.")
@@ -119,5 +120,10 @@ def main(arguments):
     set_build_result(args.username, args.password, args.result, direct_url, args.java)
 
 
-if __name__ == '__main__':
+# Allow relative imports while running as script
+if __name__ == "__main__" and __package__ is None:
+    here = os.path.dirname(os.path.abspath(__file__))
+    sys.path.insert(1, os.path.dirname(here))
+    import jenkinsflow
+    __package__ = "jenkinsflow"
     main(sys.argv[1:])

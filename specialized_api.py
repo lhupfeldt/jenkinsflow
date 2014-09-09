@@ -148,6 +148,34 @@ class Jenkins(Resource):
             # TODO: Check error
             raise UnknownJobException(self._public_job_url(job_name), ex)
 
+    def set_build_description(self, job_name, build_number, description, append=True, separator='\n'):
+        """Utility to set/append build description
+        Args
+            job_name (str):     Name of the Jenkins job
+            build_number (int): The build number for which to set the description
+            description (str):  The description to set on the build
+            append (bool):      If True append to existing description, if any
+            separator (str):    A separator to insert between any existing description and the new :py:obj:`description` if :py:obj:`append` is True.
+        """
+        self.poll()
+
+        job_path = "/job/" + job_name
+        build_url = job_path + '/' + str(build_number)
+        try:
+            if append:
+                response = self.get(build_url + '/api/json', tree="description")
+                dct = json.loads(response.body_string())
+                existing_description = dct['description']
+                if existing_description:
+                    description = existing_description + separator + description
+
+            params = {}
+            params['headers'] = {'Content-Type': 'application/x-www-form-urlencoded'}
+            params['payload'] = {'description': description}
+            self.post(build_url + '/submitDescription', **params)
+        except errors.ResourceNotFound as ex:
+            raise Exception("Build not found " + repr(build_url), ex)
+
 
 class ApiJob(object):
     def __init__(self, jenkins, dct, name):
@@ -263,8 +291,8 @@ class ApiJob(object):
                 build_number = build['number']
                 try:
                     self.jenkins.post(self._path + '/' + repr(build_number) + '/stop')
-                except errors.ResourceNotFound:
-                    # Job is no longer running, so just ignore
+                except errors.ResourceNotFound:  # pragma: no cover
+                    # Build was deleted, just ignore
                     pass
 
     def update_config(self, config_xml):
@@ -336,8 +364,9 @@ class Invocation(ApiInvocationMixin):
                 # Job has started
                 self.job.jenkins.post(self.job._path + '/' + repr(self.build_number) + '/stop')
             else:
-                # Job is queued
-                self.job.jenkins.post('/queue/cancelItem?id=' + repr(self.qid))
-        except errors.ResourceNotFound:
-            # Job is no longer queued or running, so just ignore
+                # Job is queued self.qid
+                self.job.jenkins.post('/queue/cancelItem?id=' + repr(1))
+        except errors.ResourceNotFound:  # pragma: no cover
+            # Job is no longer queued or running, except that it may have just changed from queued to running
+            # We leave it up to the flow logic to handle that
             pass

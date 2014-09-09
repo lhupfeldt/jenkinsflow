@@ -5,7 +5,7 @@ from jenkinsflow.flow import serial
 from .framework import api_select
 
 
-def test_set_description():
+def test_description_flow_set():
     with api_select.api(__file__, login=True) as api:
         api.flow_job()
         _params = (('password', '', 'Some password'), ('s1', '', 'Some string argument'))
@@ -31,3 +31,18 @@ def test_set_description():
                     ctrl3b.invoke('job-5', password='a', s1='b')
 
             ctrl1.invoke('job-7', password='a', s1='b')
+
+        # TODO read description back to validate that it was set!
+
+
+def test_description_util():
+    with api_select.api(__file__, login=True) as api:
+        api.flow_job()
+        _params = (('password', '', 'Some password'), ('s1', '', 'Some string argument'))
+        api.job('job-1', exec_time=0.01, max_fails=0, expect_invocations=1, expect_order=1, params=_params)
+
+        with serial(api, timeout=70, job_name_prefix=api.job_name_prefix, report_interval=1, description="AAA") as ctrl1:
+            ctrl1.invoke('job-1', password='a', s1='b')
+
+        from jenkinsflow.set_build_description import set_build_description
+        # TODO
