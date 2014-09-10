@@ -5,7 +5,7 @@ from jenkinsflow.flow import serial
 from .framework import api_select
 
 
-def test_description_flow_set():
+def test_set_build_description_flow_set():
     with api_select.api(__file__, login=True) as api:
         api.flow_job()
         _params = (('password', '', 'Some password'), ('s1', '', 'Some string argument'))
@@ -35,7 +35,7 @@ def test_description_flow_set():
         # TODO read description back to validate that it was set!
 
 
-def test_description_util():
+def test_set_build_description_util():
     with api_select.api(__file__, login=True) as api:
         api.flow_job()
         _params = (('password', '', 'Some password'), ('s1', '', 'Some string argument'))
