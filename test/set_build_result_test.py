@@ -305,8 +305,7 @@ def test_set_build_result_call_script_direct_url(capfd):
             set_build_result.main(['-h'])
 
     sout, _ = capfd.readouterr()
-    assert '[--username' in sout
-    assert '[--password' in sout
+    assert '[(--username <user_name> --password <password>)]' in sout
     assert '[--result' in sout
     assert '[--direct-url' in sout
     assert '[--java' in sout

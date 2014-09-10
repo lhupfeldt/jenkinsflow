@@ -6,13 +6,14 @@
 """
 Utility to set/append build description on a job build.
 
-Usage:
-%(file)s --direct-url <direct_url> --job-name <job_name> --build-number <build_number> --description <description> [--append [--separator <separator>]] [(--username <user_name> --password <password>)]
+ Usage:
+%(file)s --job-name <job_name> --build-number <build_number> --description <description> --direct-url <direct_url> [--append [--separator <separator>]] [(--username <user_name> --password <password>)]
 
--u, --direct-url <direct_url>      Jenkins URL - possibly non-proxied
 -j, --job-name <job_name>          Job Name
 -b, --build-number <build_number>  Build Number
 -d, --description <description>    The description to set on the build
+
+--direct-url <direct_url>          Jenkins URL - possibly non-proxied
 
 -a, --append                       If True append to existing description, if any. [default: true]
 -s, --separator <separator>        A separator to insert between any existing description and the new 'description'
@@ -41,6 +42,13 @@ def set_build_description(jenkins, job_name, build_number, description, append=T
 
 
 def main():
+    import sys, os
+    here = os.path.dirname(os.path.abspath(__file__))
+    sys.path.insert(1, os.path.dirname(here))
+    import jenkinsflow
+    __package__ = "jenkinsflow"
+    del sys, os
+
     doc = __doc__ % dict(file=__file__)
     args = docopt(doc, argv=None, help=True, version=None, options_first=False)
 
@@ -52,16 +60,7 @@ def main():
     separator = '\n' if str(args['--separator']) == '\\n' else args['--separator']
     username = args['--username']
     password = args['--password']
-
-    print("direct_url",     direct_url)
-    print("job_name",     job_name)
-    print("build_number",     build_number)
-    print("description",     description)
-    print("append",     append)
-    print("separator",     separator)
-    print("username",     username)
-    print("password",     password)
-
+ 
     if direct_url.startswith('http:'):
         # Using specialized_api
         from . import specialized_api as api
@@ -75,10 +74,4 @@ def main():
 
 # Allow relative imports while running as script
 if __name__ == "__main__" and __package__ is None:
-    import sys, os
-    here = os.path.dirname(os.path.abspath(__file__))
-    sys.path.insert(1, os.path.dirname(here))
-    import jenkinsflow
-    __package__ = "jenkinsflow"
-    del sys, os
     main()

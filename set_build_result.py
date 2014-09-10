@@ -3,9 +3,23 @@
 # Copyright (c) 2012 - 2014 Lars Hupfeldt Nielsen, Hupfeldt IT
 # All rights reserved. This work is under a BSD license, see LICENSE.TXT.
 
-from __future__ import print_function
+"""
+Change result of a Jenkins Job. Must be run from within the job!
 
-import sys, os, argparse, tempfile
+Usage:
+%(file)s [--result <result>] [--java <java>] [--direct-url <direct_url>] [(--username <user_name> --password <password>)]
+
+-r, --result <result>      The result to set. Should probably be 'unstable' [default: unstable]
+--java <java>              Alternative 'java' executable [default: java]
+--direct-url <direct_url>  Jenkins URL. Default is JENKINS_URL env var value. Use this argument if JENKINS_URL is a proxy [default: None]
+--username <user_name>     Name of jenkins user with access to the job
+--password <password>     Password of jenkins user with access to the job. *** Warning Insecure, will show up in process listing! ***
+"""
+# TODO: insecure password
+
+from __future__ import print_function
+import sys, os, tempfile
+from docopt import docopt
 
 jenkins_cli_jar = 'jenkins-cli.jar'
 hudson_cli_jar = 'hudson-cli.jar'
@@ -103,27 +117,24 @@ def set_build_result(username, password, result, direct_url=None, java='java'):
         set_res()
 
 
-def args_parser():
-    parser = argparse.ArgumentParser(description='Change result of a Jenkins Job. Must be run from within the job!')
-    parser.add_argument('--username', help='Name of jenkins user with access to the job')
-    # TODO: insecure password
-    parser.add_argument('--password', help='Password of jenkins user with access to the job. *** Warning Insecure, will show up in process listing! ***')
-    parser.add_argument('--result', default='unstable', help="The result to set. Should probably be 'unstable'")
-    parser.add_argument('--direct-url', default=None, help="Jenkins URL. Default is JENKINS_URL env var value. Use this argument if JENKINS_URL is a proxy.")
-    parser.add_argument('--java', default='java', help="Alternative 'java' executable.")
-    return parser
-
-
 def main(arguments):
-    args = args_parser().parse_args(arguments)
-    direct_url = args.direct_url + '/' if args.direct_url is not None and args.direct_url[-1] != '/' else args.direct_url
-    set_build_result(args.username, args.password, args.result, direct_url, args.java)
-
-
-# Allow relative imports while running as script
-if __name__ == "__main__" and __package__ is None:
     here = os.path.dirname(os.path.abspath(__file__))
     sys.path.insert(1, os.path.dirname(here))
     import jenkinsflow
     __package__ = "jenkinsflow"
+
+    doc = __doc__ % dict(file=__file__)
+    args = docopt(doc, argv=arguments, help=True, version=None, options_first=False)
+    direct_url = args['--direct-url']
+    direct_url = direct_url + '/' if direct_url is not None and direct_url[-1] != '/' else direct_url
+    result = args['--result']
+    username = args['--username']
+    password = args['--password']
+    java = args['--java']
+
+    set_build_result(username, password, result, direct_url, java)
+
+
+# Allow relative imports while running as script
+if __name__ == "__main__" and __package__ is None:
     main(sys.argv[1:])
