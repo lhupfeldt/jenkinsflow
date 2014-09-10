@@ -1,5 +1,28 @@
 #!/usr/bin/env python
 
+"""
+Test jenkinsflow.
+First runs all tests mocked in hyperspeed, then runs against Jenkins, using specialized_api, then run script_api jobs.
+
+Usage:
+test.py [--mock-speedup <speedup> --direct-url <direct_url> --pytest-args <pytest_args> --job-delete --skip-job-load <file>...]
+
+General Options:
+-s, --mock-speedup <speedup>     Time speedup when running mocked tests. int. [default: %(speedup_default)i]
+--direct-url <direct_url>    Direct Jenkins URL. Must be different from the URL set in Jenkins (and preferably non proxied) [default: %(direct_url)s]
+--pytest-args <pytest_args>  py.test arguments. str.
+
+Job Load Options:  Control job loading and parallel test run.
+--job-delete       Delete and re-load jobs into Jenkins
+--skip-job-load    Don't load jobs into Jenkins (assumes all jobs already loaded and up to date).
+
+    Normally jobs will be run in parallel, specifying --job-delete disables this.
+    Default options assumes that re-loading without deletions generates correct job config
+    Tests that require jobs to be deleted/non-existing will delete the jobs regardless of the --job-delete option
+
+<file>...  File names to pass to py.test
+"""
+
 from __future__ import print_function
 
 import sys, os, subprocess32 as subprocess, getpass, shutil
@@ -56,32 +79,9 @@ def run_tests(parallel, api_type):
         os.unlink(cov_rc_file_name)
 
 
-opts = """
-Test jenkinsflow.
-First runs all tests mocked in hyperspeed, then runs against Jenkins, using specialized_api, then run script_api jobs.
-
-Usage:
-test.py [--mock-speedup <speedup> --direct-url <direct_url> --pytest-args <pytest_args> --job-delete --skip-job-load <file>...]
-
-General Options:
--s, --mock-speedup <speedup>     Time speedup when running mocked tests. int. [default: %(speedup_default)i]
---direct-url <direct_url>    Direct Jenkins URL. Must be different from the URL set in Jenkins (and preferably non proxied) [default: %(direct_url)s]
---pytest-args <pytest_args>  py.test arguments. str.
-
-Job Load Options:  Control job loading and parallel test run.
---job-delete       Delete and re-load jobs into Jenkins
---skip-job-load    Don't load jobs into Jenkins (assumes all jobs already loaded and up to date).
-
-    Normally jobs will be run in parallel, specifying --job-delete disables this.
-    Default options assumes that re-loading without deletions generates correct job config
-    Tests that require jobs to be deleted/non-existing will delete the jobs regardless of the --job-delete option
-
-<file>...  File names to pass to py.test
-"""
-
 def args_parser():
     test_cfg.select_api(ApiType.SPECIALIZED)
-    doc = opts % dict(speedup_default=1000, direct_url=test_cfg.direct_url())
+    doc = __doc__ % dict(speedup_default=1000, direct_url=test_cfg.direct_url())
     args = docopt(doc, argv=None, help=True, version=None, options_first=False)
 
     speedup = float(args['--mock-speedup'])
