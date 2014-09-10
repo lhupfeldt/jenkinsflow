@@ -12,7 +12,7 @@ Jenkinsflow uses it's own 'specialized_api' python module to access jenkins, usi
 
 2. Manually:
 2.1. Install dependencies:
-   pip install enum34 restkit subprocess32
+   pip install enum34 restkit subprocess32 docopt
    optional: pip install tenjin (if you want to use the template based job loader)
 
    Note: if you use Hudson (3.x): You need to install the REST API plugin and enable REST API
@@ -27,6 +27,7 @@ Jenkinsflow uses it's own 'specialized_api' python module to access jenkins, usi
 
 2.4. To use propagation=Propagation.FAILURE_TO_UNSTABLE feature, Jenkins URL must be set in Jenkins configuration.
    Note that this feature uses the 'cli' which has problems working over a proxy.
+   This requires java to run the cli
 
 2.5. Read the file demo/demo_security.py for notes about security, if you have enabled security on your Jenkins
 
