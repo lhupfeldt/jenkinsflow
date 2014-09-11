@@ -11,9 +11,9 @@ Usage:
 
 -r, --result <result>      The result to set. Should probably be 'unstable' [default: unstable]
 --java <java>              Alternative 'java' executable [default: java]
---direct-url <direct_url>  Jenkins URL. Default is JENKINS_URL env var value. Use this argument if JENKINS_URL is a proxy [default: None]
+--direct-url <direct_url>  Jenkins URL. Default is JENKINS_URL/HUDSON_URL env var value. Use this argument if JENKINS_URL is a proxy [default: None]
 --username <user_name>     Name of jenkins user with access to the job
---password <password>     Password of jenkins user with access to the job. *** Warning Insecure, will show up in process listing! ***
+--password <password>      Password of jenkins user with access to the job. *** Warning Insecure, will show up in process listing! ***
 """
 # TODO: insecure password
 
@@ -123,7 +123,7 @@ def main(arguments):
     import jenkinsflow
     __package__ = "jenkinsflow"
 
-    doc = __doc__ % dict(file=__file__)
+    doc = __doc__ % dict(file=os.path.basename(__file__))
     args = docopt(doc, argv=arguments, help=True, version=None, options_first=False)
     direct_url = args['--direct-url']
     direct_url = direct_url + '/' if direct_url is not None and direct_url[-1] != '/' else direct_url

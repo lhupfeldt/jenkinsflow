@@ -331,3 +331,20 @@ epub_exclude_files = ['search.html']
 
 # If false, no index is generated.
 #epub_use_index = True
+
+
+def remove_module_docstring(app, what, name, obj, options, lines):
+    if what == "module" and name in ("jenkinsflow.set_build_description", "jenkinsflow.set_build_result"):
+        # Distinguish between the script and the module documentstion
+        if 'members' in options:
+            # Module: Delete the module __doc__string which is for the script
+            del lines[:]
+        else:
+            # Script substitute script name into __doc__string
+            script = name.split('.')[1] + '.py'
+            for index, line in enumerate(lines):
+                lines[index] = line % dict(file=script)
+
+
+def setup(app):
+    app.connect("autodoc-process-docstring", remove_module_docstring)

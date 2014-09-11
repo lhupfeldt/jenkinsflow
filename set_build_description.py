@@ -6,7 +6,7 @@
 """
 Utility to set/append build description on a job build.
 
- Usage:
+Usage:
 %(file)s --job-name <job_name> --build-number <build_number> --description <description> --direct-url <direct_url> [--append [--separator <separator>]] [(--username <user_name> --password <password>)]
 
 -j, --job-name <job_name>          Job Name
@@ -47,9 +47,8 @@ def main():
     sys.path.insert(1, os.path.dirname(here))
     import jenkinsflow
     __package__ = "jenkinsflow"
-    del sys, os
 
-    doc = __doc__ % dict(file=__file__)
+    doc = __doc__ % dict(file=os.path.basename(__file__))
     args = docopt(doc, argv=None, help=True, version=None, options_first=False)
 
     direct_url = args['--direct-url']

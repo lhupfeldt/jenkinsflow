@@ -991,12 +991,10 @@ class serial(_Serial, _TopLevelControllerMixin):
         direct_url (str): Non proxied url for accessing Jenkins
             Propagation.WARNING requires this, as it uses the Jenkins cli, which will not work through a proxy, to set the build result.
         require_idle (boolean): If True it is considered an error if any of the jobs in the flow are running when the flow starts.
-            Please note that `jenkinsflow` was not designed to control simultaneous invocations of the same flow, so depending on your flow, it
-            may or may not work correctly if you set this to False
         just_dump (boolean): If True, the flow is just printed, no jobs are invoked.
         params_display_order (list): List of job parameter names used for ordering the parameters in the output.
-            The format is [first1, ..., firstN, '*', last1, ..., lastN], where first..., last... are names that will be matched against the
-            invoke **param names.
+            The format is [first1, ..., firstN, '\*', last1, ..., lastN], where first..., last... are names that will be matched against the
+            invoke \*\*param names.
             Any of first..., '*', last... may be omitted
             Any parameters that are not matched will be displayes at the place of the '*', if specified, otherwise they will be displayed last.
         kill_all (boolean): If True, all running builds for jobs defined in the flow will be aborted, regardless which flow invocation
