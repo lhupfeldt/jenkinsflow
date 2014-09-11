@@ -56,7 +56,7 @@ def main():
     doc = __doc__ % dict(file=os.path.basename(__file__))
     args = docopt(doc, argv=None, help=True, version=None, options_first=False)
 
-    direct_url = args['--direct-url']
+    base_url = args['--direct-url']
     job_name = args['--job-name']
     build_number = args['--build-number']
     description = args['--description']
@@ -65,15 +65,21 @@ def main():
     username = args['--username']
     password = args['--password']
  
-    if direct_url.startswith('http:'):
+    if not base_url:
+        try:
+            base_url, _ = base_url_jenkins()
+        except Exception:
+            print("*** ERROR: You must specify '--direct-url' is not running from Jenkins job", file=sys.stderr)
+            raise
+
+    if base_url.startswith('http:'):
         # Using specialized_api
         from . import specialized_api as api
     else:
         # Using script_api
         from . import script_api as api
 
-    public_base_url, _ = base_url_jenkins()
-    jenkins = api.Jenkins(direct_uri=direct_url or public_base_url, username=username, password=password)
+    jenkins = api.Jenkins(direct_uri=base_url, username=username, password=password)
     set_build_description(jenkins, job_name, build_number, description, append, separator)
 
 
