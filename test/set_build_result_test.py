@@ -294,7 +294,7 @@ def test_set_build_result_no_jenkinsurl(env_no_base_url):
 
     assert_lines_in(
         exinfo.value.message,
-        "Could not get env variable JENKINS_URL or HUDSON_URL. Don't know whether to use jenkins-cli.jar or hudson-cli.jar for setting result! You must set 'Jenkins Location' in Jenkins setup for JENKINS_URL to be exported. You must set 'Hudson URL' in Hudson setup for HUDSON_URL to be exported."
+        "Could not get env variable JENKINS_URL or HUDSON_URL. You must set 'Jenkins Location' in Jenkins setup for JENKINS_URL to be exported. You must set 'Hudson URL' in Hudson setup for HUDSON_URL to be exported."
     )
 
 

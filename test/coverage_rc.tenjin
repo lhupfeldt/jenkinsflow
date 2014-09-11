@@ -5,9 +5,9 @@ exclude_lines =
     # Have to re-enable the standard pragma
     pragma: no cover
 
-    # set_build_result
-    main\(sys.argv
-    set_build_result\(args
+    # utility scripts
+    if __name__ == "__main__:
+    if __package__ is None:
 
     <?py if api_type == ApiType.MOCK: ?>
     # Parts of 'mocked' not used when not mocked

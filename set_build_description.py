@@ -7,13 +7,14 @@
 Utility to set/append build description on a job build.
 
 Usage:
-%(file)s --job-name <job_name> --build-number <build_number> --description <description> --direct-url <direct_url> [--append [--separator <separator>]] [(--username <user_name> --password <password>)]
+%(file)s --job-name <job_name> --build-number <build_number> --description <description> [--direct-url <direct_url>] [--append [--separator <separator>]] [(--username <user_name> --password <password>)]
 
 -j, --job-name <job_name>          Job Name
 -b, --build-number <build_number>  Build Number
 -d, --description <description>    The description to set on the build
 
---direct-url <direct_url>          Jenkins URL - possibly non-proxied
+--direct-url <direct_url>          Jenkins URL - preferably non-proxied.
+                                   If not specified, the value of JENKINS_URL or HUDSON_URL environment variables will be used.
 
 -a, --append                       If True append to existing description, if any. [default: true]
 -s, --separator <separator>        A separator to insert between any existing description and the new 'description'
@@ -26,6 +27,16 @@ Usage:
 
 from __future__ import print_function
 from docopt import docopt
+
+# Allow relative imports while running as script
+if __package__ is None:
+    import sys, os
+    _here = os.path.dirname(os.path.abspath(__file__))
+    sys.path.insert(1, os.path.dirname(_here))
+    import jenkinsflow
+    __package__ = "jenkinsflow"
+
+from .utils import base_url_jenkins
 
 
 def set_build_description(jenkins, job_name, build_number, description, append=True, separator='\n'):
@@ -42,12 +53,6 @@ def set_build_description(jenkins, job_name, build_number, description, append=T
 
 
 def main():
-    import sys, os
-    here = os.path.dirname(os.path.abspath(__file__))
-    sys.path.insert(1, os.path.dirname(here))
-    import jenkinsflow
-    __package__ = "jenkinsflow"
-
     doc = __doc__ % dict(file=os.path.basename(__file__))
     args = docopt(doc, argv=None, help=True, version=None, options_first=False)
 
@@ -67,10 +72,10 @@ def main():
         # Using script_api
         from . import script_api as api
 
-    jenkins = api.Jenkins(direct_uri=direct_url, username=username, password=password)
+    public_base_url, _ = base_url_jenkins()
+    jenkins = api.Jenkins(direct_uri=direct_url or public_base_url, username=username, password=password)
     set_build_description(jenkins, job_name, build_number, description, append, separator)
 
 
-# Allow relative imports while running as script
-if __name__ == "__main__" and __package__ is None:
+if __name__ == "__main__":
     main()

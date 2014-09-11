@@ -21,25 +21,18 @@ from __future__ import print_function
 import sys, os, tempfile
 from docopt import docopt
 
+# Allow relative imports while running as script
+if __package__ is None:
+    _here = os.path.dirname(os.path.abspath(__file__))
+    sys.path.insert(1, os.path.dirname(_here))
+    import jenkinsflow
+    __package__ = "jenkinsflow"
+
+from .utils import base_url_jenkins
+
+
 jenkins_cli_jar = 'jenkins-cli.jar'
 hudson_cli_jar = 'hudson-cli.jar'
-
-
-def cli_jar_info():
-    base_url = os.environ.get('JENKINS_URL')
-    cli_jar = jenkins_cli_jar
-
-    if base_url is None:
-        base_url = os.environ.get('HUDSON_URL')
-        cli_jar = hudson_cli_jar
-
-    if base_url is None:
-        raise Exception("Could not get env variable JENKINS_URL or HUDSON_URL. Don't know whether to use " +
-                        jenkins_cli_jar + " or " + hudson_cli_jar + " for setting result! " +
-                        "You must set 'Jenkins Location' in Jenkins setup for JENKINS_URL to be exported. " +
-                        "You must set 'Hudson URL' in Hudson setup for HUDSON_URL to be exported.")
-
-    return cli_jar, base_url.rstrip('/')
 
 
 def download_cli(cli_jar, direct_base_url, public_base_url):
@@ -78,7 +71,8 @@ def set_build_result(username, password, result, direct_url=None, java='java'):
 
     print("INFO: Setting job result to", repr(result))
 
-    cli_jar, public_base_url = cli_jar_info()
+    public_base_url, is_jenkins = base_url_jenkins()
+    cli_jar = jenkins_cli_jar if is_jenkins else hudson_cli_jar
 
     if not public_base_url.startswith('http:'):
         # Using script_api
@@ -118,11 +112,6 @@ def set_build_result(username, password, result, direct_url=None, java='java'):
 
 
 def main(arguments):
-    here = os.path.dirname(os.path.abspath(__file__))
-    sys.path.insert(1, os.path.dirname(here))
-    import jenkinsflow
-    __package__ = "jenkinsflow"
-
     doc = __doc__ % dict(file=os.path.basename(__file__))
     args = docopt(doc, argv=arguments, help=True, version=None, options_first=False)
     direct_url = args['--direct-url']
@@ -135,6 +124,5 @@ def main(arguments):
     set_build_result(username, password, result, direct_url, java)
 
 
-# Allow relative imports while running as script
-if __name__ == "__main__" and __package__ is None:
+if __name__ == "__main__":
     main(sys.argv[1:])
