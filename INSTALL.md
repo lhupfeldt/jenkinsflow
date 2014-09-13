@@ -112,8 +112,9 @@ Demos
 Documentation
 ----
 
-1. Install sphinx and extensions
-   pip install sphinx sphinxcontrib-napoleon sphinx-argparse
+1. Install sphinx and extensions:
+   pip install sphinx sphinxcontrib-napoleon sphinxcontrib-programoutput
 
-2. cd doc/source
+2. Build documentation:
+   cd doc/source
    make html (or some other format supported by sphinx)
