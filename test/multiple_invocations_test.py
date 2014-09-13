@@ -70,7 +70,7 @@ def test_multiple_invocations_same_flow_queued(capsys):
             ctrl1.invoke('j1', password='b', s1='invocation2')
             ctrl1.invoke('j1', password='b', s1='invocation3')
 
-        # Note: This output order depends on the job NOT allowing concurrent builds, AND on the order of polling in specialized_api!
+        # Note: This output order depends on the job NOT allowing concurrent builds, AND on the order of polling in jenkins_api!
         if api.api_type != ApiType.MOCK:
             sout, _ = capsys.readouterr()
             assert_lines_in(

@@ -11,7 +11,7 @@ from enum import Enum
 
 from .ordered_enum import OrderedEnum
 from .set_build_result import set_build_result
-from .specialized_api import BuildResult, Progress, UnknownJobException
+from .jenkins_api import BuildResult, Progress, UnknownJobException
 from .mocked import hyperspeed, mocked
 
 
@@ -974,12 +974,12 @@ class serial(_Serial, _TopLevelControllerMixin):
     Only differences to  :py:meth:`_Flow.serial` are described.
 
     Args:
-        jenkins_api (:py:class:`.specialized_api.Jenkins` or :py:class:`.script_api.Jenkins`): Jenkins Api instance used for accessing jenkins.
+        jenkins_api (:py:class:`.jenkins_api.Jenkins` or :py:class:`.script_api.Jenkins`): Jenkins Api instance used for accessing jenkins.
             If jenkins_api is instantiated with username/password you do not need to specify username/password to the flow (see below).
         securitytoken (str): Token to use on security enabled Jenkins instead of username/password. The Jenkins job must have the token configured.
         username (str): Name of user authorized to run Jenkins 'cli' and change job status.
         password (str): Password of user.
-            The username/password here is are not used for running the jobs. See specialized_api for that.
+            The username/password here is are not used for running the jobs. See jenkins_api for that.
             If username/password is specified for jenkins_api, they will be used unless they are also specified on the flow.
         job_name_prefix (str): All jobs defined in flow will automatically be prefixed with this string before invoking Jenkins job.
         poll_interval (float): The interval in seconds between polling the status of unfinished Jenkins jobs.

@@ -1,6 +1,6 @@
-jenkinsflow.specialized_api module
+jenkinsflow.jenkins_api module
 ==================================
 
-.. automodule:: jenkinsflow.specialized_api
+.. automodule:: jenkinsflow.jenkins_api
     :members:
     :show-inheritance:

@@ -2,7 +2,7 @@
 
 """
 Test jenkinsflow.
-First runs all tests mocked in hyperspeed, then runs against Jenkins, using specialized_api, then run script_api jobs.
+First runs all tests mocked in hyperspeed, then runs against Jenkins, using jenkins_api, then run script_api jobs.
 
 Usage:
 test.py [--mock-speedup <speedup> --direct-url <direct_url> --pytest-args <pytest_args> --job-delete --skip-job-load <file>...]
@@ -80,7 +80,7 @@ def run_tests(parallel, api_type):
 
 
 def args_parser():
-    test_cfg.select_api(ApiType.SPECIALIZED)
+    test_cfg.select_api(ApiType.JENKINS)
     doc = __doc__ % dict(speedup_default=1000, direct_url=test_cfg.direct_url())
     args = docopt(doc, argv=None, help=True, version=None, options_first=False)
 
@@ -121,7 +121,7 @@ def main():
             extra_args = pytest_args.split(' ') + files if pytest_args else files
             subprocess.check_call(['py.test', '--capture=sys', '--instafail'] + extra_args)
             test_cfg.unmock()
-            test_cfg.select_api(ApiType.SPECIALIZED)
+            test_cfg.select_api(ApiType.JENKINS)
             rc = subprocess.call(['py.test', '--capture=sys', '--instafail'] + extra_args)
             if rc:
                 sys.exit(rc)
@@ -136,7 +136,7 @@ def main():
             print("Disabling parallel run, Hudson can't handle it :(")
         parallel = test_cfg.skip_job_load() or test_cfg.skip_job_delete() and not hudson
         # TODO run all types in parallel, use extra job prefix and separate .cache
-        run_tests(parallel, ApiType.SPECIALIZED)
+        run_tests(parallel, ApiType.JENKINS)
         run_tests(True, ApiType.SCRIPT)
 
         start_msg("Testing setup.py")

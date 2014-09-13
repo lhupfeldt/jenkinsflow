@@ -8,7 +8,7 @@ In the following Jenkins also means Hudson, unless otherwise stated.
    To uninstall:
    pip uninstall jenkinsflow
 
-Jenkinsflow uses it's own 'specialized_api' python module to access jenkins, using the jenkins rest api.
+Jenkinsflow uses it's own specialized 'jenkins_api' python module to access jenkins, using the jenkins rest api.
 
 2. Manually:
 2.1. Install dependencies:

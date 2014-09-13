@@ -17,10 +17,10 @@ exclude_lines =
     from .test.framework.hyperspeed
     hyperspeed = _HyperSpeed
     <?py if os.environ.get('HUDSON_URL'): ?>
-    # Parts of specialized_api not used when hudson
+    # Parts of jenkins_api not used when hudson
     if self.jenkins.is_jenkins
     <?py else: ?>
-    # Parts of specialized_api not used when jenkins
+    # Parts of jenkins_api not used when jenkins
     else:  # Hudson
     self.is_jenkins = False
     <?py #endif ?>
@@ -47,8 +47,8 @@ omit =
      setup.py
      ordered_enum.py
      *_flymake.py
-     <?py if api_type != ApiType.SPECIALIZED: ?>
-     specialized_api.py
+     <?py if api_type != ApiType.JENKINS: ?>
+     jenkins_api.py
      <?py #endif ?>
      <?py if api_type != ApiType.SCRIPT: ?>
      script_api.py

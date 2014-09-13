@@ -17,8 +17,8 @@ from jenkinsflow.test.cfg import ApiType
 api_type = test_cfg.selected_api()
 here = os.path.abspath(os.path.dirname(__file__))
 
-if api_type == ApiType.SPECIALIZED:
-    from jenkinsflow import specialized_api as jenkins
+if api_type == ApiType.JENKINS:
+    from jenkinsflow import jenkins_api as jenkins
     _job_xml_template = jp(here, 'job.xml.tenjin')
 elif api_type == ApiType.SCRIPT:
     from jenkinsflow import script_api as jenkins
@@ -173,7 +173,7 @@ class JenkinsTestWrapperApi(jenkins.Jenkins, TestJenkins):
         if self.func_name:
             script = "export PYTHONPATH=" + test_tmp_dir + "\n"
             script += test_cfg.skip_job_load_sh_export_str() + "\n"
-            script += "export " + ApiType.SPECIALIZED.env_name() + "=true\n"  # pylint: disable=no-member
+            script += "export " + ApiType.JENKINS.env_name() + "=true\n"  # pylint: disable=no-member
             # Supply dummy args for the py.test fixtures
             dummy_args = ','.join(['0' for _ in range(self.func_num_params)])
             script += sys.executable + " -Bc &quot;from jenkinsflow.test." + self.file_name.replace('.py', '') + " import *; test_" + self.func_name + "(" + dummy_args + ")&quot;"

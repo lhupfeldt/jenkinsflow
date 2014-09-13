@@ -82,8 +82,8 @@ from jenkinsflow.test.cfg import ApiType
 <?py sys.path.append(test_tmp_dir) ?>
 
 <?py from jenkinsflow.test.cfg import ApiType ?>
-<?py if api_type == ApiType.SPECIALIZED: ?>
-from jenkinsflow import specialized_api as jenkins
+<?py if api_type == ApiType.JENKINS: ?>
+from jenkinsflow import jenkins_api as jenkins
 <?py else: ?>
 <?py raise Exception("Unknown/Unsupported api_type: " + api_type) ?>
 <?py #endif ?>

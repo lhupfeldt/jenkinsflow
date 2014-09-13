@@ -16,7 +16,7 @@ SKIP_JOB_DELETE_NAME = env_var_prefix + 'SKIP_JOB_DELETE'
 
 
 class ApiType(Enum):
-    SPECIALIZED = 0
+    JENKINS = 0
     SCRIPT = 1
     MOCK = 3
 

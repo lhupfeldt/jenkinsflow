@@ -73,8 +73,8 @@ def main():
             raise
 
     if base_url.startswith('http:'):
-        # Using specialized_api
-        from . import specialized_api as api
+        # Using jenkins_api
+        from . import jenkins_api as api
     else:
         # Using script_api
         from . import script_api as api

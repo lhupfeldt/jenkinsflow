@@ -6,7 +6,7 @@ import bottle
 
 from pytest import raises
 
-from jenkinsflow import specialized_api
+from jenkinsflow import jenkins_api
 from .cfg import ApiType
 from .framework import api_select
 from .framework.utils import assert_lines_in
@@ -37,14 +37,14 @@ def test_which_ci_server_not_ci():
     proc = None
     try:
         with api_select.api(__file__) as api:
-            if api.api_type != ApiType.SPECIALIZED:
+            if api.api_type != ApiType.JENKINS:
                 return
 
             proc = multiprocessing.Process(target=server)
             proc.start()
 
             with raises(Exception) as exinfo:
-                specialized_api.Jenkins("http://" + _host + ':' + repr(_port), "dummy").poll()
+                jenkins_api.Jenkins("http://" + _host + ':' + repr(_port), "dummy").poll()
     
             assert_lines_in(
                 exinfo.value.message,

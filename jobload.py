@@ -2,7 +2,7 @@
 # All rights reserved. This work is under a BSD license, see LICENSE.TXT.
 
 from __future__ import print_function
-from .specialized_api import UnknownJobException
+from .jenkins_api import UnknownJobException
 
 try:
     import tenjin
@@ -16,7 +16,7 @@ def update_job(jenkins, job_name, config_xml, pre_delete=False, async=False):
     """Update or create a job in Jenkins.
 
     Args:
-        jenkins (specialized_api.Jenkins): Jenkins Api instance used for accessing jenkins.
+        jenkins (jenkins_api.Jenkins): Jenkins Api instance used for accessing jenkins.
         job_name (str): The name of the job.
         config_xml (str): The Jenkins job config xml.
         pre_delete (boolean): I the job exists it will be deleted and re-created instead of being updated.

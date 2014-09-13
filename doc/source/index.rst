@@ -17,7 +17,7 @@ Module contents
    :maxdepth: 2
 
    jenkinsflow.flow
-   jenkinsflow.specialized_api
+   jenkinsflow.jenkins_api
    jenkinsflow.script_api
    jenkinsflow.set_build_result
    jenkinsflow.set_build_description

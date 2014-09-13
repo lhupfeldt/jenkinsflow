@@ -4,7 +4,6 @@
 # All rights reserved. This work is under a BSD license, see LICENSE.TXT.
 
 from bottle import route, run, static_file, post, response
-from jenkinsapi.jenkins import Jenkins
 import os
 from os.path import join as jp
 import json
@@ -34,7 +33,7 @@ def stylesheets(filename):
 
 @post('/jenkinsflow/builds')
 def builds():
-    # TODO: change this to jenkinsapi call because this url
+    # TODO: change this to jenkins_api call because this url
     # returns html table, and we only need job names and state of the build
     # api = Jenkins(jenkins_url)
     # simple_queue = []
