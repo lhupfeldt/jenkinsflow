@@ -1,6 +1,4 @@
 jenkinsflow.script_api module
 =====================================
 
-.. automodule:: jenkinsflow.script_api
-    :members:
-    :show-inheritance:
+.. autoclass:: jenkinsflow.script_api.Jenkins

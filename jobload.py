@@ -42,7 +42,7 @@ def update_job(jenkins, job_name, config_xml, pre_delete=False, async=False):
 
 
 def update_job_from_template(jenkins, job_name, config_xml_template, pre_delete=False, async=False, context=None):
-    """Create or update a job based on a Tenjin config.xml template.
+    """Create or update a job based on a `Tenjin` http://www.kuwata-lab.com/tenjin/ config.xml template.
 
     Args:
         config_xml_template (str): Filename of tenjin config.xml template.
