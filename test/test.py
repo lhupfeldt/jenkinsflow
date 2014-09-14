@@ -149,6 +149,10 @@ def main():
         os.makedirs(tmp_packages_dir)
         subprocess.check_call([sys.executable, jp(here, '../setup.py'), 'install', '--prefix', install_prefix])
         shutil.rmtree(jp(here, '../build'))
+
+        start_msg("Testing documentation generation")
+        os.chdir(jp(here, '../doc/source'))
+        subprocess.check_call(['make', 'html'])
     except Exception as ex:
         print('*** ERROR: There were errors! Check output! ***', repr(ex), file=sys.stderr)
         raise
