@@ -148,21 +148,21 @@ class Jenkins(Resource):
             # TODO: Check error
             raise UnknownJobException(self._public_job_url(job_name), ex)
 
-    def set_build_description(self, job_name, build_number, description, append=True, separator='\n'):
+    def set_build_description(self, job_name, build_number, description, replace=False, separator='\n'):
         """Utility to set/append build description
         Args
             job_name (str):     Name of the Jenkins job
             build_number (int): The build number for which to set the description
             description (str):  The description to set on the build
-            append (bool):      If True append to existing description, if any
-            separator (str):    A separator to insert between any existing description and the new :py:obj:`description` if :py:obj:`append` is True.
+            replace (bool):     If True, replace existing description, if any, instead of appending to it
+            separator (str):    A separator to insert between any existing description and the new :py:obj:`description` if :py:obj:`replace` is False.
         """
         self.poll()
 
         job_path = "/job/" + job_name
         build_url = job_path + '/' + str(build_number)
         try:
-            if append:
+            if not replace:
                 response = self.get(build_url + '/api/json', tree="description")
                 dct = json.loads(response.body_string())
                 existing_description = dct['description']

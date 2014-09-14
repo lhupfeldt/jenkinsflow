@@ -59,6 +59,9 @@ class MockApi(TestJenkins):
         except KeyError:
             raise UnknownJobException(name)
 
+    def set_build_description(self, job_name, build_number, description, append, separator):
+        pass
+
 
 class MockJob(TestJob):
     def __init__(self, name, exec_time, max_fails, expect_invocations, expect_order, initial_buildno, invocation_delay, unknown_result,

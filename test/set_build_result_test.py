@@ -4,7 +4,8 @@
 # NOTE: the tests here all raise exceptions because they can not really be run outside of a jenkinsjob
 # TODO: Test that the script actually does what expected! The test here just assure that the script can be run :(
 
-import os, urllib2, re
+import sys, os, urllib2, re, subprocess32
+from os.path import join as jp
 
 from pytest import raises, xfail  # pylint: disable=no-name-in-module
 
@@ -17,7 +18,7 @@ from .cfg import ApiType
 
 from demo_security import username, password
 
-here = os.path.dirname(__file__)
+here = os.path.abspath(os.path.dirname(__file__))
 
 
 def pre_existing_cli():
@@ -298,28 +299,28 @@ def test_set_build_result_no_jenkinsurl(env_no_base_url):
     )
 
 
-def test_set_build_result_call_script_direct_url(capfd):
-    with raises(SystemExit):
-        with api_select.api(__file__):
-            pre_existing_cli()
-            set_build_result.main(['-h'])
-
-    sout, _ = capfd.readouterr()
-    assert '[(--username <user_name> --password <password>)]' in sout
-    assert '[--result' in sout
-    assert '[--direct-url' in sout
-    assert '[--java' in sout
-
-
-def test_set_build_result_call_script_direct_url_trailing_slash(fake_java, env_base_url):
+def test_set_build_result_call_main_direct_url_trailing_slash(fake_java, env_base_url):
     with api_select.api(__file__):
         pre_existing_cli()
         base_url = test_cfg.direct_url() + '/'
         set_build_result.main(['--direct-url', base_url])
 
 
-def test_set_build_result_call_script_direct_url_no_trailing_slash(fake_java, env_base_url):
+def test_set_build_result_call_main_direct_url_no_trailing_slash(fake_java, env_base_url):
     with api_select.api(__file__):
         pre_existing_cli()
         base_url = test_cfg.direct_url().rstrip('/')
         set_build_result.main(['--direct-url', base_url])
+
+
+def test_set_build_result_call_script_help(capfd):
+    # Invoke this in a subprocess to ensure that calling the script works
+    # This will not give coverage as it not not traced through the subprocess call
+    rc = subprocess32.call([sys.executable, jp(here, '..', 'set_build_result.py'), '--help'])
+    assert rc == 0
+
+    sout, _ = capfd.readouterr()
+    assert '[--result' in sout
+    assert '[--direct-url' in sout
+    assert '[(--username <user_name> --password <password>)]' in sout
+    assert '[--java' in sout

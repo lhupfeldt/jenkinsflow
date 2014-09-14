@@ -3,6 +3,7 @@
 
 import sys, os, subprocess32
 from os.path import join as jp
+
 from pytest import raises, fail
 
 from jenkinsflow.flow import parallel, serial, FailedChildJobException, FailedChildJobsException
