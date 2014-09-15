@@ -80,7 +80,7 @@ def main(arguments):
         from . import script_api as api
 
     jenkins = api.Jenkins(direct_uri=base_url, username=username, password=password)
-    set_build_description(jenkins, job_name, build_number, description, not replace, separator)
+    set_build_description(jenkins, job_name, build_number, description, replace, separator)
 
 
 if __name__ == "__main__":
