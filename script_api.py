@@ -175,7 +175,7 @@ class Jenkins(object):
             if os.path.exists(script_file):
                 raise
 
-    def set_build_description(self, job_name, build_number, description, append=True, separator='\n'):
+    def set_build_description(self, job_name, build_number, description, replace=False, separator='\n'):
         """Utility to set/append build description. :py:obj:`description` will be written to a file in the workspace.
         Args
             job_name (str)
@@ -185,9 +185,9 @@ class Jenkins(object):
             separator (str):   A separator to insert between any existing description and the new :py:obj:`description` if :py:obj:`append` is True.
         """
         workspace = self._workspace(job_name)
-        with open(jp(workspace, 'description.txt'), 'w') as ff:
+        mode = 'w' if replace else 'a'
+        with open(jp(workspace, 'description.txt'), mode) as ff:
             ff.write(description)
-        # TODO append
 
 
 class ApiJob(object):
