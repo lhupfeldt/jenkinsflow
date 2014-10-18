@@ -44,6 +44,15 @@ from jenkinsflow.test import cfg as test_cfg
 from jenkinsflow.test.cfg import ApiType
 
 
+def dummy(*_args):
+    print("*** Please use test/tests.py to run tests", file=sys.stderr)
+
+
+class TestLoader(object):
+    def loadTestsFromNames(self, names, module=None):
+        return dummy
+
+
 _cache_dir = jp(os.path.dirname(here), '.cache')
 
 
@@ -135,6 +144,7 @@ def main():
         if hudson:
             print("Disabling parallel run, Hudson can't handle it :(")
         parallel = test_cfg.skip_job_load() or test_cfg.skip_job_delete() and not hudson
+        print("PARALLEL:", parallel)
         # TODO run all types in parallel, use extra job prefix and separate .cache
         run_tests(parallel, ApiType.JENKINS)
         run_tests(True, ApiType.SCRIPT)
