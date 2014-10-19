@@ -144,7 +144,6 @@ def main():
         if hudson:
             print("Disabling parallel run, Hudson can't handle it :(")
         parallel = test_cfg.skip_job_load() or test_cfg.skip_job_delete() and not hudson
-        print("PARALLEL:", parallel)
         # TODO run all types in parallel, use extra job prefix and separate .cache
         run_tests(parallel, ApiType.JENKINS)
         run_tests(True, ApiType.SCRIPT)

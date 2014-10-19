@@ -5,4 +5,4 @@ jenkinsflow.set_build_result module
     :members:
     :show-inheritance:
 
-You can also run the script :doc:`set_build_result.py <./set_build_result.py>` directly from a shell execution step.
+You can also run the script :doc:`jenkinsflow set_build_result <./jenkinsflow>` directly from a shell execution step.

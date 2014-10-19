@@ -3,6 +3,7 @@
 
 import os
 from pytest import fixture  # pylint: disable=no-name-in-module
+from click.testing import CliRunner
 
 
 from . import cfg as test_cfg
@@ -134,3 +135,8 @@ def fake_java(request):
             def fin():
                 os.environ['PATH'] = orig_path
             request.addfinalizer(fin)
+
+
+@fixture(scope='function')
+def cli_runner(request):
+    return CliRunner()

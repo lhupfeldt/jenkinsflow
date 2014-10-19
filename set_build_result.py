@@ -1,32 +1,8 @@
-#!/usr/bin/env python
-
 # Copyright (c) 2012 - 2014 Lars Hupfeldt Nielsen, Hupfeldt IT
 # All rights reserved. This work is under a BSD license, see LICENSE.TXT.
 
-"""
-Change result of a Jenkins Job. Must be run from within the job!
-
-Usage:
-%(file)s [--result <result>] [--java <java>] [--direct-url <direct_url>] [(--username <user_name> --password <password>)]
-
--r, --result <result>      The result to set. Should probably be 'unstable' [default: unstable]
---java <java>              Alternative 'java' executable [default: java]
---direct-url <direct_url>  Jenkins URL. Default is JENKINS_URL/HUDSON_URL env var value. Use this argument if JENKINS_URL is a proxy [default: None]
---username <user_name>     Name of jenkins user with access to the job
---password <password>      Password of jenkins user with access to the job. *** Warning Insecure, will show up in process listing! ***
-"""
-# TODO: insecure password
-
 from __future__ import print_function
-import sys, os, tempfile
-from docopt import docopt
-
-# Allow relative imports while running as script
-if __package__ is None:
-    _here = os.path.dirname(os.path.abspath(__file__))
-    sys.path.insert(1, os.path.dirname(_here))
-    import jenkinsflow
-    __package__ = "jenkinsflow"
+import os, tempfile
 
 from .utils import base_url_jenkins
 
@@ -56,7 +32,6 @@ def set_build_result(username, password, result, direct_url=None, java='java'):
     """Change the result of a Jenkins job.
 
     Note: set_build_result can only be done from within the job, not after the job has finished.
-
     Note: Only available if URL is set in `Jenkins <http://jenkins-ci.org/>`_ system configuration.
 
     This command uses the Jenkins `cli` to change the result. It requires a java executable to run the cli.
@@ -70,7 +45,6 @@ def set_build_result(username, password, result, direct_url=None, java='java'):
     """
 
     print("INFO: Setting job result to", repr(result))
-
     public_base_url, is_jenkins = base_url_jenkins()
     cli_jar = jenkins_cli_jar if is_jenkins else hudson_cli_jar
 
@@ -109,20 +83,3 @@ def set_build_result(username, password, result, direct_url=None, java='java'):
         # We failed for some reason, try again with updated cli_jar
         download_cli(cli_jar, direct_url, public_base_url)
         set_res()
-
-
-def main(arguments):
-    doc = __doc__ % dict(file=os.path.basename(__file__))
-    args = docopt(doc, argv=arguments, help=True, version=None, options_first=False)
-    direct_url = args['--direct-url']
-    direct_url = direct_url + '/' if direct_url is not None and direct_url[-1] != '/' else direct_url
-    result = args['--result']
-    username = args['--username']
-    password = args['--password']
-    java = args['--java']
-
-    set_build_result(username, password, result, direct_url, java)
-
-
-if __name__ == "__main__":
-    main(sys.argv[1:])

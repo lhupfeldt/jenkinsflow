@@ -20,7 +20,6 @@ Module contents
    jenkinsflow.jenkins_api
    jenkinsflow.script_api
    jenkinsflow.set_build_result
-   jenkinsflow.set_build_description
    jenkinsflow.jobload
    jenkinsflow.unbuffered
 
@@ -31,8 +30,7 @@ Utility Scripts
 .. toctree::
    :maxdepth: 2
 
-   set_build_result.py
-   set_build_description.py
+   jenkinsflow
 
 .. automodule:: jenkinsflow
     :members:

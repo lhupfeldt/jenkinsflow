@@ -18,11 +18,11 @@ if __name__ == "__main__":
         version=LONG_VERSION,
         author=PROJECT_AUTHORS,
         author_email=PROJECT_EMAILS,
-        packages=['jenkinsflow'],
-        package_dir={'jenkinsflow':'.'},
+        packages=['jenkinsflow', 'jenkinsflow.cli'],
+        package_dir={'jenkinsflow':'.', 'jenkinsflow.cli': 'cli'},
         zip_safe=True,
         include_package_data=False,
-        install_requires=['restkit', 'enum34', 'tenjin', 'bottle', 'atomicfile', 'subprocess32', 'psutil', 'setproctitle', 'docopt'],
+        install_requires=['restkit', 'enum34', 'tenjin', 'bottle', 'atomicfile', 'subprocess32', 'psutil', 'setproctitle', 'click'],
         test_suite='test',
         test_loader='test.test:TestLoader',
         tests_require=['pytest', 'pytest-cov', 'pytest-cache', 'pytest-instafail', 'pytest-xdist', 'logilab-devtools', 'proxytypes', 'docopt'],
@@ -40,4 +40,8 @@ if __name__ == "__main__":
             'Programming Language :: Python :: 2.7',
             'Topic :: Software Development :: Testing',
         ],
+        entry_points='''
+            [console_scripts]
+            jenkinsflow=jenkinsflow.cli.cli:cli
+        ''',
     )

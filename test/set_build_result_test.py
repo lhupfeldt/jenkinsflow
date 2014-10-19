@@ -11,6 +11,8 @@ from pytest import raises, xfail  # pylint: disable=no-name-in-module
 
 from jenkinsflow import set_build_result
 from jenkinsflow.flow import serial, Propagation
+from jenkinsflow.cli.cli import cli
+
 from .framework import api_select
 from .framework.utils import assert_lines_in
 from . import cfg as test_cfg
@@ -299,28 +301,37 @@ def test_set_build_result_no_jenkinsurl(env_no_base_url):
     )
 
 
-def test_set_build_result_call_main_direct_url_trailing_slash(fake_java, env_base_url):
+def test_set_build_result_call_cli_direct_url_trailing_slash(fake_java, env_base_url, cli_runner):
     with api_select.api(__file__):
         pre_existing_cli()
         base_url = test_cfg.direct_url() + '/'
-        set_build_result.main(['--direct-url', base_url])
+        _result = cli_runner.invoke(
+            cli,
+            ['set_build_result',
+             '--direct-url',
+             base_url])
 
 
-def test_set_build_result_call_main_direct_url_no_trailing_slash(fake_java, env_base_url):
+def test_set_build_result_call_main_direct_url_no_trailing_slash(fake_java, env_base_url, cli_runner):
     with api_select.api(__file__):
         pre_existing_cli()
         base_url = test_cfg.direct_url().rstrip('/')
-        set_build_result.main(['--direct-url', base_url])
+        _result = cli_runner.invoke(
+            cli,
+            ['set_build_result',
+             '--direct-url',
+             base_url])
 
 
 def test_set_build_result_call_script_help(capfd):
     # Invoke this in a subprocess to ensure that calling the script works
     # This will not give coverage as it not not traced through the subprocess call
-    rc = subprocess32.call([sys.executable, jp(here, '..', 'set_build_result.py'), '--help'])
+    rc = subprocess32.call([sys.executable, jp(here, '../cli/cli.py'), 'set_build_result', '--help'])
     assert rc == 0
 
     sout, _ = capfd.readouterr()
-    assert '[--result' in sout
-    assert '[--direct-url' in sout
-    assert '[(--username <user_name> --password <password>)]' in sout
-    assert '[--java' in sout
+    assert '--result' in sout
+    assert '--direct-url' in sout
+    assert '--username' in sout
+    assert '--password' in sout
+    assert '--java' in sout

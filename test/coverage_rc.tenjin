@@ -8,7 +8,6 @@ exclude_lines =
     # utility scripts
     # This is hopefully covered by a subprocess call, but it won't be collected
     if __name__ == "__main__":
-    if __package__ is None:
 
     <?py if api_type == ApiType.MOCK: ?>
     # Parts of 'mocked' not used when not mocked

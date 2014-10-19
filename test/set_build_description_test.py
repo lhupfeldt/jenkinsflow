@@ -1,12 +1,14 @@
 # Copyright (c) 2012 - 2014 Lars Hupfeldt Nielsen, Hupfeldt IT
 # All rights reserved. This work is under a BSD license, see LICENSE.TXT.
 
-import sys, os, urllib2, re, subprocess32
+import sys, os, subprocess32
 from os.path import join as jp
 
 from pytest import raises
 
 from jenkinsflow.flow import serial
+from jenkinsflow.cli.cli import cli
+
 from .framework import api_select
 from . import cfg as test_cfg
 from .cfg import ApiType
@@ -49,6 +51,9 @@ def test_set_build_description_flow_set():
 
 def test_set_build_description_util():
     with api_select.api(__file__, login=True) as api:
+        if api.api_type == ApiType.MOCK:
+            return
+
         api.flow_job()
         job_name = 'job-1'
         api.job(job_name, exec_time=0.01, max_fails=0, expect_invocations=1, expect_order=1)
@@ -60,20 +65,18 @@ def test_set_build_description_util():
         job = api.get_job(api.job_name_prefix + job_name)
         _, _, build_num = job.job_status()
 
-        from jenkinsflow.set_build_description import set_build_description
-
-        set_build_description(api, job.name, build_num, 'BBB1')
-        set_build_description(api, job.name, build_num, 'BBB2', replace=False)
-        set_build_description(api, job.name, build_num, 'BBB3', replace=True)
-        set_build_description(api, job.name, build_num, 'BBB4', replace=False, separator='#')
-        set_build_description(api, job.name, build_num, 'BBB5', separator='!!')
+        api.set_build_description(job.name, build_num, 'BBB1')
+        api.set_build_description(job.name, build_num, 'BBB2', replace=False)
+        api.set_build_description(job.name, build_num, 'BBB3', replace=True)
+        api.set_build_description(job.name, build_num, 'BBB4', replace=False, separator='#')
+        api.set_build_description(job.name, build_num, 'BBB5', separator='!!')
 
         # TODO read back description and verify
 
 
-def test_set_build_description_call_main():
+def test_set_build_description_cli(cli_runner):
     with api_select.api(__file__, login=True) as api:
-        if api.api_type == ApiType.MOCK:
+        if api.api_type in (ApiType.MOCK, ApiType.SCRIPT):
             return
 
         api.flow_job()
@@ -86,58 +89,39 @@ def test_set_build_description_call_main():
         # Need to read the build number
         job = api.get_job(api.job_name_prefix + job_name)
         _, _, build_num = job.job_status()
-
-        from jenkinsflow.set_build_description import main
-
         base_url = test_cfg.direct_url() + '/'
-        main(['--job-name', job.name,
-              '--build-number', repr(build_num),
-              '--description', 'BBB1',
-              '--direct-url', base_url,
-              '--separator', '\n',
-              '--username', username,
-              '--password', password])
 
-        main(['--job-name', job.name,
-              '--build-number', repr(build_num),
-              '--description', 'BBB2',
-              '--direct-url', base_url,
-              '--replace', 
-              '--username', username,
-              '--password', password])
+        result = cli_runner.invoke(
+            cli,
+            ['set_build_description',
+             '--job-name', job.name,
+             '--build-number', repr(build_num),
+             '--description', 'BBB1',
+             '--direct-url', base_url,
+             '--separator', '\n',
+             '--username', username,
+             '--password', password])
 
-        # TODO read back description and verify
+        assert not result.exception
 
+        result = cli_runner.invoke(
+            cli,
+            ['set_build_description',
+             '--job-name', job.name,
+             '--build-number', repr(build_num),
+             '--description', 'BBB2',
+             '--direct-url', base_url,
+             '--replace',
+             '--username', username,
+             '--password', password])
 
-def test_set_build_description_env_url(env_base_url):
-    with api_select.api(__file__, login=True) as api:
-        if api.api_type == ApiType.MOCK:
-            return
-
-        api.flow_job()
-        job_name = 'j1'
-        api.job(job_name, exec_time=0.01, max_fails=0, expect_invocations=1, expect_order=1)
-
-        with serial(api, timeout=70, job_name_prefix=api.job_name_prefix, report_interval=1) as ctrl1:
-            ctrl1.invoke(job_name, password='a', s1='b')
-
-        # Need to read the build number
-        job = api.get_job(api.job_name_prefix + job_name)
-        _, _, build_num = job.job_status()
-
-        from jenkinsflow.set_build_description import main
-
-        main(['--job-name', job.name,
-              '--build-number', repr(build_num),
-              '--description', 'BBB1',
-              '--separator', '\n',
-              '--username', username,
-              '--password', password])
+        print result.output
+        assert not result.exception
 
         # TODO read back description and verify
 
 
-def test_set_build_description_no_env_url(capsys, env_no_base_url):
+def test_set_build_description_cli_env_url(env_base_url, cli_runner):
     with api_select.api(__file__, login=True) as api:
         if api.api_type in (ApiType.MOCK, ApiType.SCRIPT):
             return
@@ -153,27 +137,61 @@ def test_set_build_description_no_env_url(capsys, env_no_base_url):
         job = api.get_job(api.job_name_prefix + job_name)
         _, _, build_num = job.job_status()
 
-        from jenkinsflow.set_build_description import main
+        result = cli_runner.invoke(
+            cli,
+            ['set_build_description',
+             '--job-name', job.name,
+             '--build-number', repr(build_num),
+             '--description', 'BBB1',
+             '--separator', '\n',
+             '--username', username,
+             '--password', password])
 
-        with raises(Exception) as exinfo:
-            main(['--job-name', job.name, '--build-number', repr(build_num), '--description', 'BBB1'])
+        assert not result.exception
 
-        assert "Could not get env variable JENKINS_URL or HUDSON_URL" in exinfo.value.message
-        _, serr = capsys.readouterr()
-        assert "You must specify '--direct-url'" in serr
+        # TODO read back description and verify
+
+
+def test_set_build_description_cli_no_env_url(env_no_base_url, cli_runner):
+    with api_select.api(__file__, login=True) as api:
+        if api.api_type in (ApiType.MOCK, ApiType.SCRIPT):
+            return
+
+        api.flow_job()
+        job_name = 'j1'
+        api.job(job_name, exec_time=0.01, max_fails=0, expect_invocations=1, expect_order=1)
+
+        with serial(api, timeout=70, job_name_prefix=api.job_name_prefix, report_interval=1) as ctrl1:
+            ctrl1.invoke(job_name, password='a', s1='b')
+
+        # Need to read the build number
+        job = api.get_job(api.job_name_prefix + job_name)
+        _, _, build_num = job.job_status()
+
+        result = cli_runner.invoke(
+            cli,
+            ['set_build_description',
+             '--job-name', job.name,
+             '--build-number', repr(build_num),
+             '--description', 'BBB1'])
+
+        assert result.exception
+        assert "Could not get env variable JENKINS_URL or HUDSON_URL" in result.exception.message
+        assert "You must specify '--direct-url'" in result.output
 
 
 def test_set_build_result_call_script_help(capfd):
     # Invoke this in a subprocess to ensure that calling the script works
     # This will not give coverage as it not not traced through the subprocess call
-    rc = subprocess32.call([sys.executable, jp(_here, '..', 'set_build_description.py'), '--help'])
+    rc = subprocess32.call([sys.executable, jp(_here, '../cli/cli.py'), 'set_build_description', '--help'])
     assert rc == 0
 
     sout, _ = capfd.readouterr()
-    assert '[--job-name'
-    assert '[--build-number'
-    assert '[--description'
-    assert '[--direct-url' in sout
-    assert '[--replace' in sout
+    assert '--job-name' in sout
+    assert '--build-number' in sout
+    assert '--description' in sout
+    assert '--direct-url' in sout
+    assert '--replace' in sout
     assert '--separator' in sout
-    assert '[(--username <user_name> --password <password>)]' in sout
+    assert '--username' in sout
+    assert '--password' in sout

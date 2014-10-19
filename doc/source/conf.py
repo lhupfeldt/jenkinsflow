@@ -336,11 +336,12 @@ epub_exclude_files = ['search.html']
 
 
 def remove_module_docstring(app, what, name, obj, options, lines):
-    if what == "module" and name in ("jenkinsflow.set_build_description", "jenkinsflow.set_build_result"):
+    if what == "module" and name in ("jenkinsflow.set_build_result"):
         # Distinguish between the script and the module documentstion
         if 'members' in options:
             # Module: Delete the module __doc__string which is for the script invocation
-            del lines[:]
+            # del lines[:]
+            pass
 
 
 def setup(app):

@@ -137,7 +137,7 @@ sleep {==exec_time==}
 [[ $force_result == SUCCESS ]] &amp;&amp; exit 0
 [[ $force_result == FAILURE ]] &amp;&amp; exit 1
 [[ $force_result == UNSTABLE ]] &amp;&amp; {
-    {==pseudo_install_dir==}/set_build_result.py --username {==username==} --password {==password==} --direct-url {==direct_url==}
+    {==pseudo_install_dir==}/cli/cli.py set_build_result --username {==username==} --password {==password==} --direct-url {==direct_url==}
 } || exit 1
 <?py #endif ?>
       </command>
