@@ -191,11 +191,11 @@ class _JobControl(object):
 
     @property
     def remaining_tries(self):
-        return self.max_tries - self.tried_times
+        return max(self.max_tries - self.tried_times, 0)
 
     @property
     def remaining_total_tries(self):
-        return self.total_max_tries - self.total_tried_times
+        return max(self.total_max_tries - self.total_tried_times, 0)
 
     def message(self, msg):
         """Define a message that will be printed before the invocation of the job or flow on which it is defined.
