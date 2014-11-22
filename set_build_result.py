@@ -1,8 +1,18 @@
+#!/usr/bin/env python
+
 # Copyright (c) 2012 - 2014 Lars Hupfeldt Nielsen, Hupfeldt IT
 # All rights reserved. This work is under a BSD license, see LICENSE.TXT.
 
 from __future__ import print_function
 import os, tempfile
+
+# Deprecated Compatibility - Allow relative imports while running as script. Necessary for testing without installing
+if __package__ is None:
+    import sys
+    _here = os.path.dirname(os.path.abspath(__file__))
+    sys.path.insert(1, os.path.dirname(_here))
+    import jenkinsflow
+    __package__ = "jenkinsflow"
 
 from .utils import base_url_jenkins
 
@@ -83,3 +93,16 @@ def set_build_result(username, password, result, direct_url=None, java='java'):
         # We failed for some reason, try again with updated cli_jar
         download_cli(cli_jar, direct_url, public_base_url)
         set_res()
+
+
+# Deprecated - Compatibility
+def main(args):
+    import sys, subprocess32
+    _here = os.path.dirname(os.path.abspath(__file__))
+    return subprocess32.call([sys.executable, os.path.join(_here, 'cli/cli.py'), 'set_build_result'] + args)
+
+
+# Deprecated - Compatibility
+if __name__ == "__main__":
+    import sys
+    main(sys.argv[1:])
