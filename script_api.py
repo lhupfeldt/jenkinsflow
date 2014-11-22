@@ -203,6 +203,7 @@ class ApiJob(object):
         self.build_num = None
         self.invocations = []
         self.queued_why = None
+        self.old_build_number = None
 
     def invoke(self, securitytoken, build_params, cause, description):
         _mkdir(self.jenkins.log_dir)

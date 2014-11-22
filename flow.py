@@ -363,8 +363,8 @@ class _SingleJob(_JobControl):
         if not self._killed:
             self._killed = True
             if self.top_flow.kill == KillType.ALL:
-                # TODO stop_all
                 print("Killing all running builds for:", repr(self.name))
+                self.old_build_num = self.job.old_build_number
                 self.job.stop_all()
             elif self.job_invocation:
                 print("Killing build:", repr(self.name), '-', self.job_invocation.console_url())
@@ -372,27 +372,31 @@ class _SingleJob(_JobControl):
             else:
                 print("Not invoked:", repr(self.name))
 
-        if self.job_invocation:
-            result, progress = self.job_invocation.status()
+        if self.top_flow.kill == KillType.ALL:
+            self.result, progress, current_build_num = self.job.job_status()
+            if progress != Progress.IDLE and self.old_build_num == current_build_num:
+                if report_now:
+                    print(self._status_message(progress, None, self.job.queued_why))
+                return
+        elif self.job_invocation:
+            self.result, progress = self.job_invocation.status()
             if progress != Progress.IDLE:
                 if report_now:
                     print(self._status_message(progress, self.job_invocation.build_number, self.job_invocation.queued_why))
                 return
-        else:
-            result, progress, old_build_num = self.job.job_status()
-            if progress != Progress.IDLE:
-                if report_now:
-                    print(self._status_message(progress, None, self.job.queued_why))
-                return
 
         # The job has stopped running
-        print(self, "stopped running")
         self.checking_status = Checking.FINISHED
-        if self.job_invocation:
+        if self.top_flow.kill == KillType.ALL:
+            if self.old_build_num == current_build_num:            
+                print(self, "stopped running")
+            else:
+                print(self, "was invoked again after kill")                
+            print(self._status_message(progress, current_build_num, self.job.queued_why))
+        elif self.job_invocation:
+            print(self, "stopped running")
             print(self._status_message(progress, self.job_invocation.build_number, self.job_invocation.queued_why))
-        else:
-            print(self._status_message(progress, old_build_num, self.job.queued_why))
-        self.result = result
+
         # Pylint does not like Enum pylint: disable=maybe-no-member
         print(self.result.name + ":", repr(self.job.name))
 
