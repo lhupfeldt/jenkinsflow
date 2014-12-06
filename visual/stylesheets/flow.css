@@ -16,9 +16,6 @@ text {
 }
 
 .node:hover {
-  stroke-width: 2px;
-  stroke: #333;
-  fill: #aaaaaa;
   cursor: pointer;
   opacity: 0.4;
 }
