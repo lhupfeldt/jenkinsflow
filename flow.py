@@ -307,7 +307,6 @@ class _SingleJob(_JobControl):
 
     def _prepare_to_invoke(self, reset_tried_times=False):
         super(_SingleJob, self)._prepare_to_invoke(reset_tried_times)
-        self.job.poll()
         _, _, self.old_build_num = self.job.job_status()
         self._reported_invoked = False
 
