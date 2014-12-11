@@ -95,13 +95,11 @@ class Jenkins(object):
                 A return value of 1 or any exception raised is 'FAILURE'
                 Other return values means 'UNSTABLE'
 
-                set_build_result.set_build_result() can be used in run_job to set result to 'unstable' (executing set_build_result.py has no effect)
+                set_build_result.set_build_result() can be used in run_job to set result to 'unstable' (executing `jenkinsflow set_build_result` has no effect)
                     This is mainly for compatibility with the other APIs, it is simpler to return 2 from run_job.
 
         job_prefix_filter (str): Passed to 'run_job'. ``jenkinsflow`` puts no meaning into this parameter.
-        securitytoken (str): Passed to 'run_job'. ``jenkinsflow`` puts no meaning into this parameter.
         username (str): Passed to 'run_job'. ``jenkinsflow`` puts no meaning into this parameter.
-        job_prefix_filter (str): Passed to 'run_job'. ``jenkinsflow`` puts no meaning into this parameter.
         password (str): Passed to 'run_job'. ``jenkinsflow`` puts no meaning into this parameter.
         **kwargs: Ignored for compatibility with the other jenkins apis
     """
