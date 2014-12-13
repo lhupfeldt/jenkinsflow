@@ -62,4 +62,4 @@ def test_just_dump_with_json():
 
         # Test json
         json = ctrl1.json(None)
-        _assert_json(json, _compact_json)
+        _assert_json(json, _compact_json, api.api_type)

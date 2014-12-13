@@ -5,12 +5,18 @@ from __future__ import print_function
 
 import os
 from os.path import join as jp
+import re
+
 from jenkinsflow.flow import serial
 
 from .framework import api_select, utils
 from .framework.utils import flow_graph_dir
+from .cfg import ApiType
 
 here = os.path.abspath(os.path.dirname(__file__))
+
+
+_timestamp_re = re.compile(r't": [0-9]+.[0-9]+')
 
 
 with open(jp(here, "json_test_compact.json")) as _jf:
@@ -21,16 +27,21 @@ with open(jp(here, "json_test_pretty.json")) as _jf:
     _pretty_json = _jf.read().strip()
 
 
-def _assert_json(got_json, expected_json):
+def _assert_json(got_json, expected_json, api_type):
     got_json = utils.replace_host_port(got_json)
-    expected_json = utils.replace_host_port(expected_json)
-    if not os.environ.get('JOB_NAME'):
-        print("--- expected json ---")
-        print(expected_json)
-        print("--- got json ---")
-        print(got_json)
-    assert got_json.strip() == expected_json
+    got_json = _timestamp_re.sub(r't": 12345.123', got_json)
 
+    if api_type == ApiType.SCRIPT:
+        expected_json = utils.replace_host_port(expected_json)
+
+    if got_json.strip() != expected_json:
+        if not os.environ.get('JOB_NAME'):
+            print("--- expected json ---")
+            print(expected_json)
+            print("--- got json ---")
+            print(got_json)
+        assert got_json.strip() == expected_json
+            
 
 def _flow(api, strip_prefix, json_dir):
     if not os.path.exists(json_dir):
@@ -75,15 +86,15 @@ def test_json_strip_prefix():
         json_file = jp(flow_graph_dir(flow_name), "pretty.json")
         ctrl1.json(json_file, indent=4)
         with open(json_file) as jf:
-            _assert_json(jf.read().strip(), _pretty_json)
+            _assert_json(jf.read().strip(), _pretty_json, api.api_type)
 
         # Test default compact json
         with open(ctrl1.json_file) as jf:
-            _assert_json(jf.read().strip(), _compact_json)
+            _assert_json(jf.read().strip(), _compact_json, api.api_type)
 
         # Test return json
         json = ctrl1.json(None)
-        _assert_json(json, _compact_json)
+        _assert_json(json, _compact_json, api.api_type)
 
 
 def test_json_no_strip_prefix():
@@ -107,7 +118,7 @@ def test_json_no_strip_prefix():
         with open(json_file) as jf:
             got_json = jf.read().strip()
             expect_json = _pretty_json.replace('strip_prefix', 'no_strip_prefix').replace('name": "', 'name": "jenkinsflow_test__json_no_strip_prefix__')
-            _assert_json(got_json, expect_json)
+            _assert_json(got_json, expect_json, api.api_type)
 
 
 def test_json_unchecked_only_in_flows():
@@ -142,4 +153,4 @@ def test_json_unchecked_only_in_flows():
 
         # Test default compact json
         with open(ctrl1.json_file) as got_jf, open(jp(here, "json_test_unchecked_compact.json")) as expected_jf:
-            _assert_json(got_jf.read().strip(), expected_jf.read().strip())
+            _assert_json(got_jf.read().strip(), expected_jf.read().strip(), api.api_type)

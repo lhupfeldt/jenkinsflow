@@ -247,6 +247,8 @@ class _SingleJob(_JobControl):
         self.jenkins_baseurl = None
         self._reported_invoked = False
         self._killed = False
+        self._display_params = []
+        self._set_display_params()
 
         print(self.indentation + repr(self))
 
@@ -271,7 +273,7 @@ class _SingleJob(_JobControl):
 
         print(self.indentation + self._status_message(progress, self.old_build_num, None, 'latest '))
 
-    def _show_job_definition(self):
+    def _set_display_params(self):
         first = current = OrderedDict()
         last = OrderedDict()
 
@@ -283,13 +285,17 @@ class _SingleJob(_JobControl):
                 current[name] = display_params[name]
                 del display_params[name]
 
+        for key, value in chain(first.iteritems(), sorted(display_params.iteritems()), last.iteritems()):
+            self._display_params.append((key, repr(value)))
+
+    def _show_job_definition(self):
         if self.job:
-            print('Defined Job', self.job.public_uri + (' - parameters:' if display_params else ''))
+            print('Defined Job', self.job.public_uri + (' - parameters:' if self._display_params else ''))
         else:
             print('Defined Job', repr(self.name) + " - MISSING JOB")
-        for key, value in chain(first.iteritems(), sorted(display_params.iteritems()), last.iteritems()):
-            print("    ", key, '=', repr(value))
-        if self.params:
+        for key, value in self._display_params:
+            print("    ", key, '=', value)
+        if self._display_params:
             print("")
 
     def __repr__(self):
@@ -435,7 +441,25 @@ class _SingleJob(_JobControl):
     def nodes(self, node_to_id):
         node_name = self.name[self.top_flow.json_strip_index:]
         url = self.job.baseurl if self.job is not None else None
-        return [OrderedDict((("id", node_to_id(self)), ("name", node_name), ("url", url)))]
+
+        # For performance reasons use abbreviations
+        return [
+            OrderedDict(
+                (
+                    ("id", node_to_id(self)),
+                    ("name", node_name),
+                    ("url", url),
+                    ("tr", [self.max_tries, self.tried_times, self.total_max_tries, self.total_tried_times]),
+                    ("nl", self.nesting_level),
+                    ("pr", self.propagation.name),
+                    # Pylint does not like Enum pylint: disable=maybe-no-member
+                    ("cs", self.checking_status.name),
+                    ("res", self.result.name),
+                    ("it", self.invocation_time),
+                    ("params", self._display_params),
+                )
+            )
+        ]
 
     def links(self, prev_jobs, node_to_id):
         return [OrderedDict((("source", node_to_id(job)), ("target", node_to_id(self)))) for job in prev_jobs]
@@ -459,6 +483,7 @@ class _Flow(_JobControl):
 
         self.jobs = []
         self.last_report_time = 0
+        self.last_json_time = 0
         self._failed_child_jobs = {}
 
     def parallel(self, timeout=0, securitytoken=None, job_name_prefix='', max_tries=1, propagation=Propagation.NORMAL, report_interval=None, secret_params=None, allow_missing_jobs=None):
@@ -920,12 +945,15 @@ class _TopLevelControllerMixin(object):
         # pylint: disable=attribute-defined-outside-init
         self.start_time = hyperspeed.time()
         self.last_report_time = self.start_time
+        last_json_time = self.start_time
+        json_interval = max(30, self.report_interval)
 
         print()
         if not self.kill:
             print("--- Starting flow ---")
         else:
             print("--- Starting kill of all builds in flow ---")
+
         sleep_time = min(self.poll_interval, self.report_interval)
         try:
             #while self.checking_status == Checking.MUST_CHECK or (self.kill and self.checking_status != Checking.FINISHED):
@@ -937,11 +965,19 @@ class _TopLevelControllerMixin(object):
                     self.api.queue_poll()
                     self._kill_check(None)
                 hyperspeed.sleep(sleep_time)
+                if self.json_file:
+                    now = hyperspeed.time()
+                    json_now = now - last_json_time >= json_interval
+                    if json_now:
+                        last_json_time = now
+                    self.json(self.json_file, self.json_indent)
         finally:
             print()
             print("--- Final status ---")
             self.api.quick_poll()
             self._final_status()
+            if self.json_file:
+                self.json(self.json_file, self.json_indent)
 
         if self.result == BuildResult.UNSTABLE:
             set_build_result(self.username, self.password, 'unstable', direct_url=self.top_flow.direct_url)
