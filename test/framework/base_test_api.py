@@ -233,8 +233,15 @@ class TestJenkins(AbstractApiJenkins):
                     expect_status = BuildResult.SUCCESS if job.final_result is None else job.final_result
                 else:
                     expect_status = BuildResult.FAILURE
-                # TODO job obj should be invocation obj!
-                invocation = job.invocations[-1]
+                # TODO job obj should be called invocation!
+                # Get last obj
+                try:
+                    key = next(reversed(job._invocations))
+                    invocation = job._invocations[key]
+                except TypeError:
+                    # script_api ?
+                    invocation = job._invocations[-1]
+
                 assert invocation.build_number is not None, "Job: " + repr(job) + " should have had build_number, but it has None"
                 result, progress = invocation.status()
                 assert result == expect_status, "Job: " + job.name + " expected result " + repr(expect_status) + " but got " + repr(result)

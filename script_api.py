@@ -199,7 +199,7 @@ class ApiJob(object):
         self.func = func
         self.log_file = jp(self.jenkins.log_dir, self.name + '.log')
         self.build_num = None
-        self.invocations = []
+        self._invocations = []
         self.queued_why = None
         self.old_build_number = None
 
@@ -212,7 +212,7 @@ class ApiJob(object):
         fixed_args.append(build_params if build_params else {})
         proc = LoggingProcess(target=self.func, output_file_name=self.log_file, workspace=self.workspace, name=self.name, args=fixed_args)
         self.build = Invocation(self, proc, self.build_num)
-        self.invocations.append(self.build)
+        self._invocations.append(self.build)
         return self.build
 
     def poll(self):

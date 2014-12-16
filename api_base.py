@@ -11,7 +11,8 @@ class BuildResult(OrderedEnum):
     ABORTED = 1
     UNSTABLE = 2
     SUCCESS = 3
-    UNKNOWN = 4
+    SUPERSEDED = 4
+    UNKNOWN = 5
 
 
 class Progress(Enum):

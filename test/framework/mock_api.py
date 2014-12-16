@@ -4,6 +4,7 @@
 from __future__ import print_function
 import os
 from os.path import join as jp
+from collections import OrderedDict
 
 from jenkinsflow.api_base import BuildResult, Progress, UnknownJobException, ApiInvocationMixin
 from jenkinsflow.mocked import hyperspeed
@@ -77,7 +78,8 @@ class MockJob(TestJob):
         self.last_build_number = initial_buildno
         self.params = params
         self.just_invoked = False
-        self.invocations = []
+        self._invocation_url = 0
+        self._invocations = OrderedDict()
         self.queued_why = "Why am I queued?"
 
     def job_status(self):
@@ -101,7 +103,7 @@ class MockJob(TestJob):
         if self.just_invoked and hyperspeed.time() >= self.start_time:
             self.just_invoked = False
             self.build_number = self.last_build_number + 1 if self.last_build_number else 1
-            self.invocations[-1].build_number = self.build_number
+            self._invocations[self._invocation_url - 1].build_number = self.build_number
 
     def _get_last_build_number_or_none(self):
         self.poll()
@@ -122,7 +124,8 @@ class MockJob(TestJob):
 
         inv = Invocation(self)
         inv.queued_why = "Why am I queued?"
-        self.invocations.append(inv)
+        self._invocations[self._invocation_url] = inv
+        self._invocation_url += 1
         self.poll()
         return inv
 

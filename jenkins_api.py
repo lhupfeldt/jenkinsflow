@@ -4,9 +4,14 @@
 from __future__ import print_function
 
 import time, json
+from collections import OrderedDict
+
 from restkit import Resource, BasicAuth, errors
 
 from .api_base import BuildResult, Progress, UnknownJobException, ApiInvocationMixin
+
+
+_superseded = -1
 
 
 def _result_and_progress(build_dct):
@@ -193,7 +198,7 @@ class ApiJob(object):
         else:
             self._build_trigger_path = self._path + "/build"
         self.old_build_number = None
-        self.invocations = []
+        self._invocations = OrderedDict()
         self.queued_why = None
 
     def invoke(self, securitytoken, build_params, cause, description):
@@ -210,14 +215,19 @@ class ApiJob(object):
             response = self.jenkins.post(self._build_trigger_path, **params)
         except errors.ResourceNotFound as ex:
             raise UnknownJobException(self.jenkins._public_job_url(self.name), ex)  # pylint: disable=protected-access
-        inv = Invocation(self, response.location[len(self.jenkins.direct_uri):] + 'api/json', description)
-        self.invocations.append(inv)
+
+        location = response.location[len(self.jenkins.direct_uri):] + 'api/json'
+        old_inv = self._invocations.get(location)
+        if old_inv:
+            old_inv.build_number = _superseded
+        inv = Invocation(self, location, description)
+        self._invocations[location] = inv
         return inv
 
     def poll(self):
-        for invocation in self.invocations:
+        for invocation in self._invocations.values():
             if not invocation.build_number:
-                # Husdon does not return queue item from invoke, instead it returns the job URL :(
+                # Hudson does not return queue item from invoke, instead it returns the job URL :(
                 query = "id,executable[number],why" if self.jenkins.is_jenkins else "queueItem[why,id],lastBuild[number]"
                 qi_response = self.jenkins.get(invocation.queued_item_path, tree=query)
                 dct = json.loads(qi_response.body_string())
@@ -231,6 +241,8 @@ class ApiJob(object):
                         invocation.set_description()
                     else:
                         invocation.queued_why = dct['why']
+                        # If we still have invocations in the queue, wait until next poll to query again
+                        break
                 else:  # Hudson
                     # Note, this is not guaranteed to be correct in case of simultaneously running flows!
                     # Should handle multiple invocations in same flow
@@ -246,6 +258,8 @@ class ApiJob(object):
                             invocation.build_number = last_build['number']
                             self.old_build_number = invocation.build_number
                             invocation.set_description()
+                        else:
+                            break
 
     def job_status(self):
         """Result, progress and latest buildnumber info for the JOB NOT the invocation
@@ -255,10 +269,7 @@ class ApiJob(object):
         """
         progress = None
 
-        query = "queueItem[why]"
-        response = self.jenkins.get(self._path + '/api/json', tree=query)
-        dct = json.loads(response.body_string())
-        qi = dct['queueItem']
+        qi = self.dct['queueItem']
         if qi:
             progress = Progress.QUEUED
             self.queued_why = qi['why']
@@ -311,6 +322,9 @@ class Invocation(ApiInvocationMixin):
         self.build_number = None
         self.queued_why = None
 
+    def __repr__(self):
+        return 'Invocation: ' + repr(self.qid) + ' ' + repr(self.build_number) + ' ' + repr(self.queued_why)
+
     def status(self):
         """Result and Progress info for the invocation
 
@@ -318,6 +332,9 @@ class Invocation(ApiInvocationMixin):
             If the build has not started or has not finished running, result will be BuildResult.UNKNOWN
         """
 
+        if self.build_number == _superseded:
+            return (BuildResult.SUPERSEDED, Progress.IDLE)
+            
         if self.build_number is None:
             return (BuildResult.UNKNOWN, Progress.QUEUED)
 
@@ -364,8 +381,8 @@ class Invocation(ApiInvocationMixin):
                 # Job has started
                 self.job.jenkins.post(self.job._path + '/' + repr(self.build_number) + '/stop')
             else:
-                # Job is queued self.qid
-                self.job.jenkins.post('/queue/cancelItem?id=' + repr(1))
+                # Job is queued 
+                self.job.jenkins.post('/queue/cancelItem?id=' + repr(self.qid))
         except errors.ResourceNotFound:  # pragma: no cover
             # Job is no longer queued or running, except that it may have just changed from queued to running
             # We leave it up to the flow logic to handle that

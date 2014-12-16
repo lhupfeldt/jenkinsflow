@@ -177,7 +177,7 @@ class _JobControl(object):
 
     @property
     def propagate_result(self):
-        if self.result == BuildResult.SUCCESS or self.propagation == Propagation.UNCHECKED:
+        if self.result in (BuildResult.SUCCESS, BuildResult.SUPERSEDED) or self.propagation == Propagation.UNCHECKED:
             return BuildResult.SUCCESS
         if self.result == BuildResult.UNSTABLE or self.propagation == Propagation.FAILURE_TO_UNSTABLE:
             return BuildResult.UNSTABLE
@@ -336,7 +336,8 @@ class _SingleJob(_JobControl):
 
         result, progress = self.job_invocation.status()
         if not self._reported_invoked and self.job_invocation.build_number is not None:
-            self._invoked_message()
+            if  result != BuildResult.SUPERSEDED:
+                self._invoked_message()
             self._reported_invoked = True
 
         if result == BuildResult.UNKNOWN:
@@ -346,17 +347,24 @@ class _SingleJob(_JobControl):
             return
 
         # The job has stopped running
-        print(self, "stopped running")
         self.checking_status = Checking.FINISHED
-        print(self._status_message(progress, self.job_invocation.build_number, self.job_invocation.queued_why))
         self.result = result
+
         # Pylint does not like Enum pylint: disable=no-member
         unchecked = (Propagation.UNCHECKED.name + ' ') if self.propagation == Propagation.UNCHECKED else ''
-        # Pylint does not like Enum pylint: disable=maybe-no-member
-        print(unchecked + self.result.name + ":", repr(self.job.name), "- build:", self.job_invocation.console_url(), self._time_msg())
 
-        if self.result in _build_result_failures:
-            raise FailedSingleJobException(self.job, self.propagation)
+        if result != BuildResult.SUPERSEDED:
+            print(self, "stopped running")
+            print(self._status_message(progress, self.job_invocation.build_number, self.job_invocation.queued_why))
+            # Pylint does not like Enum pylint: disable=maybe-no-member
+            print(unchecked + self.result.name + ":", repr(self.job.name), "- build:", self.job_invocation.console_url(), self._time_msg())
+            
+            if self.result in _build_result_failures:
+                raise FailedSingleJobException(self.job, self.propagation)
+            return
+
+        # Pylint does not like Enum pylint: disable=maybe-no-member
+        print(unchecked + self.result.name + ":", repr(self.job.name))
 
     def _kill_check(self, report_now):
         if self.job is None:
@@ -411,7 +419,7 @@ class _SingleJob(_JobControl):
     def _final_status(self):
         if self.job is not None:
             # Pylint does not like Enum pylint: disable=maybe-no-member
-            if self.result == BuildResult.SUCCESS and not self.top_flow.kill:
+            if self.result in (BuildResult.SUCCESS, BuildResult.SUPERSEDED) and not self.top_flow.kill:
                 print(self.indentation + repr(self), self.result.name)
                 return
 
@@ -956,7 +964,6 @@ class _TopLevelControllerMixin(object):
 
         sleep_time = min(self.poll_interval, self.report_interval)
         try:
-            #while self.checking_status == Checking.MUST_CHECK or (self.kill and self.checking_status != Checking.FINISHED):
             while self.checking_status == Checking.MUST_CHECK:
                 self.api.quick_poll()
                 if not self.kill:
