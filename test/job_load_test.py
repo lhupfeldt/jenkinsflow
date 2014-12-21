@@ -3,16 +3,13 @@
 
 import os, random
 
-from pytest import raises
-
 from jenkinsflow import jobload
 from .framework import api_select
-from .cfg import ApiType
 
 
 here = os.path.abspath(os.path.dirname(__file__))
 
-_context = dict(exec_time=1, params=(), script=None, securitytoken='abc', print_env=False, create_job=None)
+_context = dict(exec_time=1, params=(), script=None, securitytoken='abc', print_env=False, create_job=None, num_builds_to_keep=4)
 
 
 def _random_job_name(api, short_name=None):

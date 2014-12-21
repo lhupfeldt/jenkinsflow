@@ -280,7 +280,7 @@ class Invocation(ApiInvocationMixin):
             return (BuildResult.FAILURE, Progress.IDLE)
         return (BuildResult.UNSTABLE, Progress.IDLE)
 
-    def stop(self):
+    def stop(self, dequeue):  # pylint: disable=unused-argument
         self.proc.terminate()
 
     def console_url(self):

@@ -5,7 +5,7 @@
   <description></description>
   <logRotator class="hudson.tasks.LogRotator">
     <daysToKeep>-1</daysToKeep>
-    <numToKeep>4</numToKeep>
+    <numToKeep>{==num_builds_to_keep==}</numToKeep>
     <artifactDaysToKeep>-1</artifactDaysToKeep>
     <artifactNumToKeep>-1</artifactNumToKeep>
   </logRotator>
@@ -117,7 +117,8 @@ context = dict(
     api_type={==api_type==},
     direct_url="{==direct_url==}",
     username="{==username==}",
-    password="{==password==}")
+    password="{==password==}",
+    num_builds_to_keep=4)
 
 job_loader_jenkins = jenkins.Jenkins(direct_uri="{==direct_url==}", job_prefix_filter=None, username="{==username==}", password="{==password==}")
 update_job_from_template(job_loader_jenkins, "{==create_job.name==}", config_xml_template, context=context)

@@ -12,7 +12,8 @@ class BuildResult(OrderedEnum):
     UNSTABLE = 2
     SUCCESS = 3
     SUPERSEDED = 4
-    UNKNOWN = 5
+    DEQUEUED = 5
+    UNKNOWN = 6
 
 
 class Progress(Enum):

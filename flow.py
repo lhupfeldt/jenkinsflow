@@ -95,6 +95,10 @@ class FailedChildJobsException(JobControlFailException):
         super(FailedChildJobsException, self).__init__(msg, propagation)
 
 
+class Killed(Exception):
+    pass
+
+
 class _JobControl(object):
     __metaclass__ = abc.ABCMeta
 
@@ -336,7 +340,7 @@ class _SingleJob(_JobControl):
 
         result, progress = self.job_invocation.status()
         if not self._reported_invoked and self.job_invocation.build_number is not None:
-            if  result != BuildResult.SUPERSEDED:
+            if result != BuildResult.SUPERSEDED:
                 self._invoked_message()
             self._reported_invoked = True
 
@@ -358,7 +362,7 @@ class _SingleJob(_JobControl):
             print(self._status_message(progress, self.job_invocation.build_number, self.job_invocation.queued_why))
             # Pylint does not like Enum pylint: disable=maybe-no-member
             print(unchecked + self.result.name + ":", repr(self.job.name), "- build:", self.job_invocation.console_url(), self._time_msg())
-            
+
             if self.result in _build_result_failures:
                 raise FailedSingleJobException(self.job, self.propagation)
             return
@@ -366,7 +370,7 @@ class _SingleJob(_JobControl):
         # Pylint does not like Enum pylint: disable=maybe-no-member
         print(unchecked + self.result.name + ":", repr(self.job.name))
 
-    def _kill_check(self, report_now):
+    def _kill_check(self, report_now, dequeue):
         if self.job is None:
             print(self, "no job")
             self.checking_status = Checking.FINISHED
@@ -374,37 +378,39 @@ class _SingleJob(_JobControl):
 
         self.job.poll()
         if not self._killed:
-            self._killed = True
+            self._killed = not dequeue
             if self.top_flow.kill == KillType.ALL:
-                print("Killing all running builds for:", repr(self.name))
+                if not dequeue:
+                    print("Killing all running builds for:", repr(self.name))
                 self.old_build_num = self.job.old_build_number
                 self.job.stop_all()
             elif self.job_invocation:
-                print("Killing build:", repr(self.name), '-', self.job_invocation.console_url())
-                self.job_invocation.stop()
+                if not dequeue:
+                    print("Killing build:", repr(self.name), '-', self.job_invocation.console_url())
+                self.job_invocation.stop(dequeue)
             else:
                 print("Not invoked:", repr(self.name))
 
         if self.top_flow.kill == KillType.ALL:
             self.result, progress, current_build_num = self.job.job_status()
             if progress != Progress.IDLE and self.old_build_num == current_build_num:
-                if report_now:
+                if report_now and not dequeue:
                     print(self._status_message(progress, None, self.job.queued_why))
                 return
         elif self.job_invocation:
             self.result, progress = self.job_invocation.status()
             if progress != Progress.IDLE:
-                if report_now:
+                if report_now and not dequeue:
                     print(self._status_message(progress, self.job_invocation.build_number, self.job_invocation.queued_why))
                 return
 
         # The job has stopped running
         self.checking_status = Checking.FINISHED
         if self.top_flow.kill == KillType.ALL:
-            if self.old_build_num == current_build_num:            
+            if self.old_build_num == current_build_num:
                 print(self, "stopped running")
             else:
-                print(self, "was invoked again after kill")                
+                print(self, "was invoked again after kill")
             print(self._status_message(progress, current_build_num, self.job.queued_why))
         elif self.job_invocation:
             print(self, "stopped running")
@@ -435,7 +441,7 @@ class _SingleJob(_JobControl):
             if progress != Progress.IDLE or result == BuildResult.UNKNOWN or self.top_flow.kill:
                 progress_msg = "- " + progress.name
             console_url = ""
-            if self.result != BuildResult.UNKNOWN and not (self.top_flow.kill == KillType.ALL) and self.job_invocation:
+            if self.result not in (BuildResult.UNKNOWN, BuildResult.DEQUEUED) and not (self.top_flow.kill == KillType.ALL) and self.job_invocation:
                 console_url = self.job_invocation.console_url()
             assert isinstance(result, BuildResult)
             print(self.indentation + repr(self), result.name, progress_msg, console_url)
@@ -493,6 +499,7 @@ class _Flow(_JobControl):
         self.last_report_time = 0
         self.last_json_time = 0
         self._failed_child_jobs = {}
+        self._can_raise_kill = False
 
     def parallel(self, timeout=0, securitytoken=None, job_name_prefix='', max_tries=1, propagation=Propagation.NORMAL, report_interval=None, secret_params=None, allow_missing_jobs=None):
         """Defines a parallel flow where nested jobs or flows are executed simultaneously.
@@ -645,16 +652,17 @@ class _Flow(_JobControl):
             self._invocation_message('Flow', self)
         return self._check_report()
 
-    def _kill_check(self, report_now):
+    def _kill_check(self, report_now, dequeue):
         report_now = self._check_report()
 
-        self.checking_status = Checking.FINISHED
+        checking_status = Checking.FINISHED
         for job in self.jobs:
             if job.checking_status != Checking.FINISHED:
-                job._kill_check(report_now)
+                job._kill_check(report_now, dequeue)
                 job_propagate_checking_status = job.checking_status if job.checking_status != Checking.HAS_UNCHECKED else Checking.MUST_CHECK
-                self.checking_status = min(self.checking_status, job_propagate_checking_status)
+                checking_status = min(checking_status, job_propagate_checking_status)
 
+        self.checking_status = checking_status
         if self.checking_status == Checking.FINISHED:
             # All jobs have stopped running
             for job in self.jobs:
@@ -692,12 +700,12 @@ class _Parallel(_Flow):
     def _check(self, report_now):
         report_now = self._check_invoke_report()
 
-        self.checking_status = Checking.FINISHED
+        checking_status = Checking.FINISHED
         for job in self.jobs:
             try:
                 if job.checking_status != Checking.FINISHED:
                     job._check(report_now)
-                    self.checking_status = min(self.checking_status, job.propagate_checking_status)
+                    checking_status = min(checking_status, job.propagate_checking_status)
                     if id(job) in self._failed_child_jobs:
                         del self._failed_child_jobs[id(job)]
             except JobControlFailException:
@@ -711,7 +719,7 @@ class _Parallel(_Flow):
 
                 if job.remaining_tries:
                     print("RETRY:", job, "failed but will be retried. Up to", job.remaining_tries, "more times in current flow")
-                    self.checking_status = Checking.MUST_CHECK
+                    checking_status = Checking.MUST_CHECK
                     job._prepare_to_invoke()
                     continue
 
@@ -722,6 +730,7 @@ class _Parallel(_Flow):
 
                 job.checking_status = Checking.FINISHED
 
+        self.checking_status = checking_status
         if self.checking_status != Checking.MUST_CHECK and self.result == BuildResult.UNKNOWN:
             # All jobs have stopped running or are 'unchecked'
             for job in self.jobs:
@@ -774,12 +783,12 @@ class _Serial(_Flow):
     def _check(self, report_now):
         report_now = self._check_invoke_report()
 
-        self.checking_status = Checking.FINISHED
+        checking_status = Checking.FINISHED
         for job in self.jobs[0:self.job_index + 1]:
             try:
                 if job.checking_status != Checking.FINISHED:
                     job._check(report_now)
-                    self.checking_status = min(self.checking_status, job.propagate_checking_status)
+                    checking_status = min(checking_status, job.propagate_checking_status)
             except JobControlFailException:
                 if job.result == BuildResult.ABORTED:
                     if job.remaining_tries or job.remaining_total_tries:
@@ -795,7 +804,7 @@ class _Serial(_Flow):
                         print("MAY RETRY:", job, job.propagation, " failed, will only retry if checked failures. Up to", job.remaining_tries, "more times in current flow")
                         continue
                     print("RETRY:", job, "failed, retrying child jobs from beginning. Up to", job.remaining_tries, "more times in current flow")
-                    self.checking_status = Checking.MUST_CHECK
+                    checking_status = Checking.MUST_CHECK
                     for pre_job in self.jobs[0:self.job_index + 1]:
                         pre_job._prepare_to_invoke()
                     self.job_index = 0
@@ -815,6 +824,7 @@ class _Serial(_Flow):
                 if job.propagation != Propagation.UNCHECKED:
                     self.job_index = len(self.jobs)
 
+        self.checking_status = checking_status
         if self.checking_status != Checking.MUST_CHECK and self.result == BuildResult.UNKNOWN:
             for job in self.jobs[0:self.job_index + 1]:
                 self.result = min(self.result, job.propagate_result)
@@ -910,6 +920,8 @@ class _TopLevelControllerMixin(object):
         def set_kill(_sig, _frame):
             print("\nGot SIGTERM: Killing all builds belonging to current flow")
             self.kill = KillType.CURRENT
+            if self._can_raise_kill:
+                raise Killed()
         signal.signal(signal.SIGTERM, set_kill)
 
         # Allow test framework to set securitytoken, so that we won't have to litter all the testcases with it
@@ -944,7 +956,6 @@ class _TopLevelControllerMixin(object):
         print("--- Getting initial job status ---")
         self.api.poll()
         self._prepare_first()
-
         self._show_job_definition()
 
         if self.json_file:
@@ -964,13 +975,21 @@ class _TopLevelControllerMixin(object):
 
         sleep_time = min(self.poll_interval, self.report_interval)
         try:
+            dequeue = True
             while self.checking_status == Checking.MUST_CHECK:
                 self.api.quick_poll()
                 if not self.kill:
-                    self._check(None)
+                    try:
+                        self._can_raise_kill = True
+                        self._check(None)
+                        self._can_raise_kill = False
+                    except Killed:
+                        pass
                 else:
                     self.api.queue_poll()
-                    self._kill_check(None)
+                    self._kill_check(None, dequeue)
+                    dequeue = False
+
                 hyperspeed.sleep(sleep_time)
                 if self.json_file:
                     now = hyperspeed.time()

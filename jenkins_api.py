@@ -12,6 +12,7 @@ from .api_base import BuildResult, Progress, UnknownJobException, ApiInvocationM
 
 
 _superseded = -1
+_dequeued = -2
 
 
 def _result_and_progress(build_dct):
@@ -228,12 +229,11 @@ class ApiJob(object):
         for invocation in self._invocations.values():
             if not invocation.build_number:
                 # Hudson does not return queue item from invoke, instead it returns the job URL :(
-                query = "id,executable[number],why" if self.jenkins.is_jenkins else "queueItem[why,id],lastBuild[number]"
+                query = "executable[number],why" if self.jenkins.is_jenkins else "queueItem[why],lastBuild[number]"
                 qi_response = self.jenkins.get(invocation.queued_item_path, tree=query)
                 dct = json.loads(qi_response.body_string())
 
                 if self.jenkins.is_jenkins:
-                    invocation.qid = dct.get('id')
                     executable = dct.get('executable')
                     if executable:
                         invocation.build_number = executable['number']
@@ -248,7 +248,6 @@ class ApiJob(object):
                     # Should handle multiple invocations in same flow
                     qi = dct.get('queueItem')
                     if qi:
-                        invocation.qid = qi['id']
                         invocation.queued_why = qi['why']
 
                     last_build = dct.get('lastBuild')
@@ -287,9 +286,10 @@ class ApiJob(object):
         queue_item_ids = self.jenkins.queue_items.get(self.name) or []
         for qid in queue_item_ids:
             try:
-                self.jenkins.post('/queue/cancelItem?id=' + repr(qid))
+                self.jenkins.post('/queue/cancelItem', id=repr(qid))
             except errors.ResourceNotFound:
                 # Job is no longer queued, so just ignore
+                # NOTE: bug https://issues.jenkins-ci.org/browse/JENKINS-21311 also brings us here!
                 pass
 
         # Abort running builds
@@ -318,12 +318,11 @@ class Invocation(ApiInvocationMixin):
         self.job = job
         self.queued_item_path = queued_item_path
         self.description = description
-        self.qid = None
         self.build_number = None
         self.queued_why = None
 
     def __repr__(self):
-        return 'Invocation: ' + repr(self.qid) + ' ' + repr(self.build_number) + ' ' + repr(self.queued_why)
+        return 'Invocation: ' + repr(self.queued_item_path) + ' ' + repr(self.build_number) + ' ' + repr(self.queued_why)
 
     def status(self):
         """Result and Progress info for the invocation
@@ -332,11 +331,14 @@ class Invocation(ApiInvocationMixin):
             If the build has not started or has not finished running, result will be BuildResult.UNKNOWN
         """
 
-        if self.build_number == _superseded:
-            return (BuildResult.SUPERSEDED, Progress.IDLE)
-            
         if self.build_number is None:
             return (BuildResult.UNKNOWN, Progress.QUEUED)
+
+        if self.build_number == _superseded:
+            return (BuildResult.SUPERSEDED, Progress.IDLE)
+
+        if self.build_number == _dequeued:
+            return (BuildResult.DEQUEUED, Progress.IDLE)
 
         # It seems that even after the executor has been assigned a number in the queue item, the lastBuild might not yet exist
         dct = self.job.dct.get('lastBuild')
@@ -359,7 +361,7 @@ class Invocation(ApiInvocationMixin):
             if build['number'] == self.build_number:
                 return _result_and_progress(build)
 
-        raise Exception("Build deleted while flow running?")
+        raise Exception("Build deleted while flow running? This may happen if you invoke more builds than the job is configured to keep. " + repr(self))
 
     def set_description(self):
         """Sets the build description"""
@@ -375,15 +377,20 @@ class Invocation(ApiInvocationMixin):
         except errors.ResourceNotFound as ex:
             raise Exception("Build deleted while flow running? " + repr(build_url), ex)
 
-    def stop(self):
+    def stop(self, dequeue):
         try:
-            if self.build_number is not None:
+            if self.build_number is not None and self.build_number >= 0 and not dequeue:
                 # Job has started
                 self.job.jenkins.post(self.job._path + '/' + repr(self.build_number) + '/stop')
-            else:
-                # Job is queued 
-                self.job.jenkins.post('/queue/cancelItem?id=' + repr(self.qid))
-        except errors.ResourceNotFound:  # pragma: no cover
+                return
+
+            if self.build_number is None and dequeue:
+                # Job is queued
+                qid = self.queued_item_path.strip('/').split('/')[2]
+                self.job.jenkins.post('/queue/cancelItem', id=qid)
+                self.build_number = _dequeued
+        except errors.ResourceNotFound as ex:  # pragma: no cover
             # Job is no longer queued or running, except that it may have just changed from queued to running
             # We leave it up to the flow logic to handle that
+            # NOTE: bug https://issues.jenkins-ci.org/browse/JENKINS-21311 also brings us here!
             pass

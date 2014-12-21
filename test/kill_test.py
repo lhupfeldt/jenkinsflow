@@ -97,24 +97,29 @@ def test_kill_current(capsys):
         api.job('j3', exec_time=50, max_fails=0, expect_invocations=1, expect_order=None, kill=True)
         api.job('j4', exec_time=0.1, max_fails=1, expect_invocations=1, expect_order=2)
         api.job('j5', exec_time=50, max_fails=0, expect_invocations=1, expect_order=None, kill=True)
-        api.job('j6', exec_time=50, max_fails=0, expect_invocations=2, expect_order=None, kill=True)
+
+        num_j6_invocations = 20
+        api.job('j6', exec_time=50, max_fails=0, expect_invocations=num_j6_invocations, expect_order=None, kill=True,
+                num_builds_to_keep=num_j6_invocations*2 + 1, params=(('a', 0, 'integer'),))
         api.job('j7', exec_time=50, max_fails=0, expect_invocations=0, expect_order=None)
 
         pid = os.getpid()
         print("kill_test, pid:", pid, )
-        subprocess32.Popen([jp(here, "killer.py"), repr(pid), repr(10)])
+        subprocess32.Popen([jp(here, "killer.py"), repr(pid), repr(20), repr(1)])
 
         with serial(api, timeout=70, job_name_prefix=api.job_name_prefix, report_interval=0.05) as ctrl1:
             with ctrl1.parallel() as ctrl2:
                 ctrl2.invoke('j1')
-                ctrl2.invoke('j2')
-                ctrl2.invoke('j3')
+                with ctrl2.serial() as ctrl3:
+                    ctrl3.invoke('j2')
+                    ctrl3.invoke('j3')
                 ctrl2.invoke('j4')
                 ctrl2.invoke_unchecked('j5')
-                ctrl2.invoke('j6')
-                ctrl2.invoke('j6')  # Queue
-            with ctrl1.parallel() as ctrl3:
-                ctrl3.invoke('j7')
+                for ii in range(0, num_j6_invocations):
+                     # Queue a lot of jobs
+                    ctrl2.invoke('j6', a=ii)
+            with ctrl1.parallel() as ctrl4:
+                ctrl4.invoke('j7')
 
         if not capsys:
             return
@@ -130,19 +135,21 @@ def test_kill_current(capsys):
             "^serial flow: [",
             "^   parallel flow: (",
             "^      job: 'jenkinsflow_test__kill_current__j1' ABORTED - IDLE",
-            "^      job: 'jenkinsflow_test__kill_current__j2' SUCCESS - IDLE",
-            "^      job: 'jenkinsflow_test__kill_current__j3' ABORTED - IDLE",
+            "^      serial flow: [",
+            "^         job: 'jenkinsflow_test__kill_current__j2' SUCCESS - IDLE",
+            "^         job: 'jenkinsflow_test__kill_current__j3' ABORTED - IDLE",
+            "^      ]",
             "^      job: 'jenkinsflow_test__kill_current__j4' FAILURE - IDLE",
             "^      unchecked job: 'jenkinsflow_test__kill_current__j5' ABORTED - IDLE",
             "^      job: 'jenkinsflow_test__kill_current__j6' ABORTED - IDLE",
-            "^      job: 'jenkinsflow_test__kill_current__j6' ABORTED - IDLE",
+            "^      job: 'jenkinsflow_test__kill_current__j6' DEQUEUED - IDLE",
             "^   )",
             "^",
             "^   parallel flow: (",
             "^      job: 'jenkinsflow_test__kill_current__j7' UNKNOWN - IDLE",
             "^   )",
             "^",
-            "^]",
+            "^]"
         )
 
 
