@@ -261,7 +261,7 @@ class ApiJob(object):
                             break
 
     def job_status(self):
-        """Result, progress and latest buildnumber info for the JOB NOT the invocation
+        """Result, progress and latest buildnumber info for the JOB, NOT the invocation
 
         Return (result, progress_info, latest_build_number) (str, str, int or None):
             If there is no finished build, result will be BuildResult.UNKNOWN and latest_build_number will be None
