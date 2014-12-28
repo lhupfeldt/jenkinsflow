@@ -28,11 +28,13 @@ exclude_lines =
 
     <?py if api_type != ApiType.SCRIPT: ?>
     # Part of set_build_result only used for script_api
-    from . import script_api
+    from \. import script_api
+    from \.\. import script_api as api
     script_api.set_build_result\(result
     return
     <?py else: ?>
     # Parts of api_base not used in script_api (overridden methods)
+    from \.\. import jenkins_api as api
     return self.public_uri + '/' + str(buildno) + '/console'
     return self.job.console_url(self.buildno)
     <?py #endif ?>
