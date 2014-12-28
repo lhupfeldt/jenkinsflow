@@ -89,7 +89,7 @@ class MockJob(TestJob):
             return (BuildResult.UNKNOWN, Progress.RUNNING, latest_build_number)
 
         if self.invocation_time <= hyperspeed.time() < self.start_time:
-            return (BuildResult.UNKNOWN, Progress.QUEUD, latest_build_number)
+            return (BuildResult.UNKNOWN, Progress.QUEUED, latest_build_number)
 
         # Job is finished
         if self.invocation_number <= self.max_fails:
