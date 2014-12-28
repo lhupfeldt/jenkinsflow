@@ -31,7 +31,7 @@ def test_invoke_unchecked_serial():
     with api_select.api(__file__, login=True) as api:
         api.job('j11_unchecked', exec_time=30, max_fails=0, expect_invocations=1, expect_order=None, unknown_result=True)
         api.job('j12', exec_time=5, max_fails=0, expect_invocations=1, expect_order=1)
-        api.job('j13_unchecked', exec_time=30, max_fails=0, expect_invocations=1, expect_order=2, invocation_delay=0.0000000000001, unknown_result=True)
+        api.job('j13_unchecked', exec_time=30, max_fails=0, expect_invocations=1, expect_order=2, invocation_delay=0, unknown_result=True)
 
         with serial(api, timeout=70, job_name_prefix=api.job_name_prefix, report_interval=1) as ctrl1:
             ctrl1.invoke_unchecked('j11_unchecked')
@@ -91,7 +91,7 @@ def test_invoke_unchecked_mix_fails():
         api.job('j31', exec_time=0.01, max_fails=0, expect_invocations=1, expect_order=3)
         # Make sure result is available during first invocation of _check, only way to hit error handling code in unchecked job
         vfast = 0.00000000000000000000000000000000001
-        api.job('j32_fail_unchecked', exec_time=vfast, max_fails=1, expect_invocations=1, expect_order=3, invocation_delay=vfast)
+        api.job('j32_fail_unchecked', exec_time=vfast, max_fails=1, expect_invocations=1, expect_order=3, invocation_delay=0)
         api.job('j33_slow_unchecked', exec_time=100, max_fails=0, expect_invocations=1, expect_order=None, unknown_result=True)
         api.job('j34', exec_time=5, max_fails=0, expect_invocations=1, expect_order=3)
         api.job('j35_fail_unchecked', exec_time=0.01, max_fails=1, expect_invocations=1, expect_order=3)

@@ -8,7 +8,7 @@ from .framework import api_select
 def test_retry_unchecked_alone_serial_toplevel():
     with api_select.api(__file__, login=True) as api:
         api.flow_job()
-        api.job('j11_unchecked', 20, max_fails=1, expect_invocations=1, expect_order=1, invocation_delay=0.000000000000001, unknown_result=True)
+        api.job('j11_unchecked', 20, max_fails=1, expect_invocations=1, expect_order=1, invocation_delay=0, unknown_result=True)
 
         with serial(api, timeout=70, job_name_prefix=api.job_name_prefix, max_tries=2) as ctrl1:
             ctrl1.invoke_unchecked('j11_unchecked')

@@ -39,7 +39,7 @@ class TestJob(AbstractApiJob):
         assert expect_invocations >= 0
         assert expect_order >= 1 or expect_order is None
         assert initial_buildno is None or initial_buildno >= 1
-        assert invocation_delay > 0
+        assert invocation_delay >= 0
         assert unknown_result in (False, True)
         assert serial in (False, True)
         assert flow_created in (False, True)

@@ -13,7 +13,7 @@ from .framework.utils import assert_lines_in
 def test_no_running_jobs(capsys):
     with api_select.api(__file__, login=True) as api:
         api.flow_job()
-        api.job('j1', exec_time=50, max_fails=0, expect_invocations=1, expect_order=None, unknown_result=True)
+        api.job('j1', exec_time=50, max_fails=0, expect_invocations=1, expect_order=None, invocation_delay=0, unknown_result=True)
 
         with serial(api, timeout=70, job_name_prefix=api.job_name_prefix) as ctrl1:
             ctrl1.invoke_unchecked('j1')
@@ -34,15 +34,15 @@ def test_no_running_jobs(capsys):
 def test_no_running_jobs_unchecked(capsys):
     with api_select.api(__file__, login=True) as api:
         api.flow_job()
-        api.job('j1', exec_time=50, max_fails=0, expect_invocations=1, expect_order=None, unknown_result=True)
+        api.job('j1', exec_time=50, max_fails=0, expect_invocations=1, expect_order=None, invocation_delay=0, unknown_result=True)
 
         with serial(api, timeout=70, job_name_prefix=api.job_name_prefix) as ctrl1:
             ctrl1.invoke_unchecked('j1')
 
-        hyperspeed.sleep(1)
-
         sout, _ = capsys.readouterr()
         assert_lines_in(sout, "unchecked job: 'jenkinsflow_test__no_running_jobs_unchecked__j1' UNKNOWN - RUNNING")
+
+        hyperspeed.sleep(1)
 
         with raises(JobNotIdleException) as exinfo:
             with serial(api, timeout=70, job_name_prefix=api.job_name_prefix) as ctrl1:
@@ -56,7 +56,8 @@ def test_no_running_jobs_jobs_allowed():
         api.flow_job()
         exp_invocations = 2 if api.api_type != ApiType.MOCK else 1
         unknown_result = False if api.api_type != ApiType.MOCK else True
-        api.job('j1', exec_time=20, max_fails=0, expect_invocations=exp_invocations, expect_order=None, unknown_result=unknown_result)
+        api.job('j1', exec_time=20, max_fails=0, expect_invocations=exp_invocations, expect_order=None,
+                invocation_delay=0, unknown_result=unknown_result)
 
         with serial(api, timeout=70, job_name_prefix=api.job_name_prefix) as ctrl1:
             ctrl1.invoke_unchecked('j1')
