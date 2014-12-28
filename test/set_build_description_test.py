@@ -51,9 +51,6 @@ def test_set_build_description_flow_set():
 
 def test_set_build_description_util():
     with api_select.api(__file__, login=True) as api:
-        if api.api_type == ApiType.MOCK:
-            return
-
         api.flow_job()
         job_name = 'job-1'
         api.job(job_name, exec_time=0.01, max_fails=0, expect_invocations=1, expect_order=1)
