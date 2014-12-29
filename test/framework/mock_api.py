@@ -81,9 +81,16 @@ class MockJob(TestJob):
         self._invocation_url = 0
         self._invocations = OrderedDict()
         self.queued_why = "Why am I queued?"
+        self._killed = False
+        self._just_killed = False
 
     def job_status(self):
         latest_build_number = self._get_last_build_number_or_none()
+        if self._killed:
+            if not self._just_killed:
+                return (BuildResult.ABORTED, Progress.IDLE, latest_build_number)
+            self._just_killed = False
+
         if self.start_time <= hyperspeed.time() < self.end_time:
             assert latest_build_number
             return (BuildResult.UNKNOWN, Progress.RUNNING, latest_build_number)
@@ -130,7 +137,12 @@ class MockJob(TestJob):
         return inv
 
     def stop_all(self):
-        pass
+        for inv in self._invocations.values():
+            inv.stop(False)
+        if self._is_running():
+            if not self._killed:
+                self._just_killed = True
+            self._killed = True
 
     def update_config(self, config_xml):
         pass
@@ -145,14 +157,20 @@ class Invocation(ApiInvocationMixin):
         self.job = job
         self.build_number = None
         self.queued_why = None
+        self._killed = False
 
     def status(self):
         """Result and Progress info for the invocation"""
+        if self._killed:
+            return (BuildResult.ABORTED, Progress.IDLE)
+            
         if self.build_number is None:
             return (BuildResult.UNKNOWN, Progress.QUEUED)
 
         result, progress, _build_number = self.job.job_status()
         return result, progress
 
-    def stop(self):
-        pass
+    def stop(self, dequeue):
+        _, progress, _ = self.job.job_status()
+        if progress == Progress.RUNNING and not dequeue:
+            self._killed = True

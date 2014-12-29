@@ -20,7 +20,7 @@ here = os.path.abspath(os.path.dirname(__file__))
 def test_kill_all_unchecked(capsys):
     with api_select.api(__file__, login=True) as api:
         # TODO
-        if api.api_type in (ApiType.MOCK, ApiType.SCRIPT):
+        if api.api_type == ApiType.SCRIPT:
             return
 
         api.flow_job()

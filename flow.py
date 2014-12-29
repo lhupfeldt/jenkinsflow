@@ -382,7 +382,6 @@ class _SingleJob(_JobControl):
             if self.top_flow.kill == KillType.ALL:
                 if not dequeue:
                     print("Killing all running builds for:", repr(self.name))
-                self.old_build_num = self.job.old_build_number
                 self.job.stop_all()
             elif self.job_invocation:
                 if not dequeue:
