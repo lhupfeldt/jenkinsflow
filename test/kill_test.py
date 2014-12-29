@@ -41,7 +41,7 @@ def test_kill_all_unchecked(capsys):
                     ctrl3.invoke_unchecked('j3') # Queue
                     ctrl3.invoke_unchecked('j4')
                     ctrl3.invoke_unchecked('j5')
-        
+
         # Invoke the flow
         flow(api, False)
 
@@ -73,13 +73,13 @@ def test_kill_all_unchecked(capsys):
             "^      unchecked job: 'jenkinsflow_test__kill_all_unchecked__j1' ABORTED - IDLE",
             "^      unchecked job: 'jenkinsflow_test__kill_all_unchecked__j2' SUCCESS - IDLE",
             "^   )",
-             
+
             "^   parallel flow: (",
             "^      unchecked job: 'jenkinsflow_test__kill_all_unchecked__j3' ABORTED - IDLE",
             "^      unchecked job: 'jenkinsflow_test__kill_all_unchecked__j3' ABORTED - IDLE",
             "^      unchecked job: 'jenkinsflow_test__kill_all_unchecked__j3' ABORTED - IDLE",
-            "^      unchecked job: 'jenkinsflow_test__kill_all_unchecked__j4' SUCCESS - IDLE", 
-            "^      unchecked job: 'jenkinsflow_test__kill_all_unchecked__j5' FAILURE - IDLE", 
+            "^      unchecked job: 'jenkinsflow_test__kill_all_unchecked__j4' SUCCESS - IDLE",
+            "^      unchecked job: 'jenkinsflow_test__kill_all_unchecked__j5' FAILURE - IDLE",
             "^   )",
             "^]",
         )
@@ -90,7 +90,7 @@ def test_kill_current(capsys):
         # TODO
         if api.api_type in (ApiType.MOCK, ApiType.SCRIPT):
             return
-            
+
         api.flow_job()
         api.job('j1', exec_time=50, max_fails=0, expect_invocations=1, expect_order=None, kill=True)
         api.job('j2', exec_time=0.1, max_fails=0, expect_invocations=1, expect_order=1)
@@ -175,7 +175,7 @@ def test_kill_all_unchecked_no_job(capsys):
                     ctrl3.invoke('j3')
                     ctrl3.invoke('j4')
                     ctrl3.invoke('j5')
-        
+
         # Invoke the flow
         with raises(FailedChildJobException):
             flow(api, False, True)
@@ -207,11 +207,11 @@ def test_kill_all_unchecked_no_job(capsys):
             "^      unchecked job: 'jenkinsflow_test__kill_all_unchecked_no_job__j1' ABORTED - IDLE",
             "^      unchecked job: 'jenkinsflow_test__kill_all_unchecked_no_job__j2' SUCCESS - IDLE",
             "^   )",
-             
+
             "^   parallel flow: (",
             "^      job: 'jenkinsflow_test__kill_all_unchecked_no_job__j3' - MISSING JOB",
-            "^      job: 'jenkinsflow_test__kill_all_unchecked_no_job__j4' SUCCESS - IDLE", 
-            "^      job: 'jenkinsflow_test__kill_all_unchecked_no_job__j5' - MISSING JOB", 
+            "^      job: 'jenkinsflow_test__kill_all_unchecked_no_job__j4' SUCCESS - IDLE",
+            "^      job: 'jenkinsflow_test__kill_all_unchecked_no_job__j5' - MISSING JOB",
             "^   )",
             "^]",
         )
