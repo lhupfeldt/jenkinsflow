@@ -24,11 +24,11 @@ def test_kill_all_unchecked(capsys):
             return
 
         api.flow_job()
-        api.job('j1', exec_time=50, max_fails=0, expect_invocations=1, expect_order=None, unknown_result=False, kill=True)
-        api.job('j2', exec_time=0.1, max_fails=0, expect_invocations=1, expect_order=1, unknown_result=False, kill=True)
-        api.job('j3', exec_time=50, max_fails=0, expect_invocations=3, expect_order=None, unknown_result=False, kill=True)
-        api.job('j4', exec_time=0.1, max_fails=0, expect_invocations=1, expect_order=None, unknown_result=False, kill=True)
-        api.job('j5', exec_time=0.1, max_fails=1, expect_invocations=1, expect_order=2, unknown_result=False, kill=True)
+        api.job('j1', exec_time=50, max_fails=0, expect_invocations=1, expect_order=None, invocation_delay=0, unknown_result=False, kill=True)
+        api.job('j2', exec_time=0.1, max_fails=0, expect_invocations=1, expect_order=1, invocation_delay=0, unknown_result=False, kill=True)
+        api.job('j3', exec_time=50, max_fails=0, expect_invocations=3, expect_order=None, invocation_delay=0, unknown_result=False, kill=True, allow_running=True)
+        api.job('j4', exec_time=0.1, max_fails=0, expect_invocations=1, expect_order=None, invocation_delay=0, unknown_result=False, kill=True)
+        api.job('j5', exec_time=0.1, max_fails=1, expect_invocations=1, expect_order=2, invocation_delay=0, unknown_result=False, kill=True)
 
         def flow(api, kill_all):
             with serial(api, timeout=70, job_name_prefix=api.job_name_prefix, kill_all=kill_all) as ctrl1:
