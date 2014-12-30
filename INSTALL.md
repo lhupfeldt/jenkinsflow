@@ -1,5 +1,6 @@
 Installation
 ------------
+
 In the following Jenkins also means Hudson, unless otherwise stated.
 
 1. The easy way:
@@ -8,11 +9,13 @@ In the following Jenkins also means Hudson, unless otherwise stated.
    To uninstall:
    pip uninstall jenkinsflow
 
+   Read the file demo/demo_security.py if you have security enabled your Jenkins.
+
 Jenkinsflow uses it's own specialized 'jenkins_api' python module to access jenkins, using the jenkins rest api.
 
 2. Manually:
 2.1. Install dependencies:
-   pip install enum34 restkit subprocess32 docopt
+   pip install enum34 restkit subprocess32 click
    optional: pip install tenjin (if you want to use the template based job loader)
 
    Note: if you use Hudson (3.x): You need to install the REST API plugin and enable REST API
@@ -44,14 +47,17 @@ Test
 ----
 
 1. Install pytest and tenjin template engine:
-   pip install -U pytest pytest-cov pytest-cache pytest-instafail logilab-devtools pytest-xdist tenjin proxytypes
+   pip install -U pytest pytest-cov pytest-cache pytest-instafail logilab-devtools pytest-xdist tenjin proxytypes click
    
    Note: Requires pytest-cov 1.8.0 or later
 
 2. Some of the tests currently requires security enabled.
    Read the file demo/demo_security.py and create the user specified (or change the file)
 
-3. Run the tests:
+3. Read the file demo/demo_security.py for security setup you have security enabled your Jenkins.
+   Create the user mentioned in the file.
+
+4. Run the tests:
    You should use ./test/test.py to run the tests.
 
    JENKINS_URL=<your Jenkins> python ./test/test.py --mock-speedup=100 --direct-url <non proxied url different from JENKINS_URL>
@@ -62,7 +68,7 @@ Test
    Note: you may omit --direct-url if your jenkins or hudson is on http://localhost:8080      
    Note: Because of timing dependencies when creating new jobs in Hudson, the first test run or any test run with --job-delete against Hudson will likely fail.
 
-   I will first run the test suite with mocked jenkins api, not actually invoking any jenkins jobs, this tests the flow logic very fast.
+   The test script will first run the test suite with mocked jenkins api, not actually invoking any jenkins jobs, this is a very fast test of the flow logic.
    Mocked tests do not require Jenkins (but there will be a couple of xfails if jenkins is not running)
    If the mock test passes, the same testsuite is run with the real jenkins api invokin jenkins jobs. The test jobs are automatically created.
 
@@ -88,6 +94,7 @@ Test
 
    To see more test options, run ./test/test.py ---help
 
+
 Demos
 ----
 
@@ -99,14 +106,18 @@ Demos
 3. Demo scripts can be executed from the loaded 'jenkinsflow_demo__<demo-name>__0flow' Jenkins jobs.
    Jenkins needs to be able to find the scripts, the test.py script creates a test installation.
 
-4. To see a flow graph of the basic demo in your browser:
+
+Flow Graph Visualisation
+-----------------------
+
+1. To see a flow graph of the basic demo in your browser:
    Start 'python ./visual/server.py' --json-dir '/tmp/jenkinsflow-test/graphs/jenkinsflow_demo__basic' before running ./demo/basic.py
-   Open localhost:9090 in your browser
+   Open localhost:9090 in your browser.
 
-   The test suite also puts some other graps in subdirectories under '/tmp/jenkinsflow-test/graphs'
-   The 'visual' feature is still experimental and does not yet show live info about the running flow/jobs
+   The test suite also puts some other graps in subdirectories under '/tmp/jenkinsflow-test/graphs'.
+   The 'visual' feature is still experimental and does not yet show live info about the running flow/jobs.
 
-   If you run ...0flow jobs that generate graphs from Jenkins the json graph file will be put in the workspace
+   If you run ...0flow jobs that generate graphs from Jenkins the json graph file will be put in the workspace.
 
 
 Documentation

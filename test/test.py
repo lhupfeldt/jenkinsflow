@@ -2,33 +2,14 @@
 
 """
 Test jenkinsflow.
-First runs all tests mocked in hyperspeed, then runs against Jenkins, using jenkins_api, then run script_api jobs.
-
-Usage:
-test.py [--mock-speedup <speedup> --direct-url <direct_url> --pytest-args <pytest_args> --job-delete --skip-job-load <file>...]
-
-General Options:
--s, --mock-speedup <speedup>     Time speedup when running mocked tests. int. [default: %(speedup_default)i]
---direct-url <direct_url>    Direct Jenkins URL. Must be different from the URL set in Jenkins (and preferably non proxied) [default: %(direct_url)s]
---pytest-args <pytest_args>  py.test arguments. str.
-
-Job Load Options:  Control job loading and parallel test run.
---job-delete       Delete and re-load jobs into Jenkins
---skip-job-load    Don't load jobs into Jenkins (assumes all jobs already loaded and up to date).
-
-    Normally jobs will be run in parallel, specifying --job-delete disables this.
-    Default options assumes that re-loading without deletions generates correct job config
-    Tests that require jobs to be deleted/non-existing will delete the jobs regardless of the --job-delete option
-
-<file>...  File names to pass to py.test
 """
 
 from __future__ import print_function
 
 import sys, os, subprocess32 as subprocess, getpass, shutil
-from docopt import docopt
 from os.path import join as jp
 
+import click
 import tenjin
 from tenjin.helpers import *
 
@@ -37,7 +18,6 @@ here = os.path.abspath(os.path.dirname(__file__))
 extra_sys_path = [os.path.normpath(path) for path in [here, jp(here, '../..'), jp(here, '../demo'), jp(here, '../demo/jobs')]]
 sys.path = extra_sys_path + sys.path
 os.environ['PYTHONPATH'] = ':'.join(extra_sys_path)
-
 
 from jenkinsflow.test.framework import config
 from jenkinsflow.test import cfg as test_cfg
@@ -53,6 +33,7 @@ class TestLoader(object):
         return dummy
 
 
+test_cfg.select_api(ApiType.JENKINS)
 _cache_dir = jp(os.path.dirname(here), '.cache')
 
 
@@ -88,29 +69,34 @@ def run_tests(parallel, api_type):
         os.unlink(cov_rc_file_name)
 
 
-def args_parser():
-    test_cfg.select_api(ApiType.JENKINS)
-    doc = __doc__ % dict(speedup_default=1000, direct_url=test_cfg.direct_url())
-    args = docopt(doc, argv=None, help=True, version=None, options_first=False)
-
-    speedup = float(args['--mock-speedup'])
-    if speedup and speedup != 1:
-        test_cfg.mock(speedup)
-    if args['--direct-url']:
-        os.environ[test_cfg.DIRECT_URL_NAME] = args['--direct-url']
-    os.environ[test_cfg.SCRIPT_DIR_NAME] = test_cfg.script_dir()
-    os.environ[test_cfg.SKIP_JOB_DELETE_NAME] = 'false' if args['--job-delete'] else 'true'
-    os.environ[test_cfg.SKIP_JOB_LOAD_NAME] = 'true' if args['--skip-job-load'] else 'false'
-
-    return args['--pytest-args'], args['<file>']
-
-
 def start_msg(*msg):
     print("\n++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++\n", *msg)
 
 
-def main():
-    pytest_args, files = args_parser()
+@click.command()
+@click.option('--mock-speedup', '-s', help="Time speedup when running mocked tests.", default=1000)
+@click.option('--direct-url', help="Direct Jenkins URL. Must be different from the URL set in Jenkins (and preferably non proxied)", default=test_cfg.direct_url())
+@click.option('--pytest-args', help="py.test arguments.")
+@click.option('--job-delete/--no-job-delete', help="Delete and re-load jobs into Jenkins. Default is --no-job-delete.", default=False)
+@click.option('--job-load/--no-job-load', help="Load jobs into Jenkins (skipping job load assumes all jobs already loaded and up to date). Deafult is --job-load.", default=True)
+@click.argument('testfile', nargs=-1, type=click.Path(exists=True, readable=True))
+def cli(mock_speedup, direct_url, pytest_args, job_delete, job_load, testfile):
+    """
+    Test jenkinsflow.
+    First runs all tests mocked in hyperspeed, then runs against Jenkins, using jenkins_api, then run script_api jobs.
+
+    Normally jobs will be run in parallel, specifying --job-delete disables this.
+    The default options assumes that re-loading without deletions generates correct job config.
+    Tests that require jobs to be deleted/non-existing will delete the jobs, regardless of the --job-delete option.
+
+    [TESTFILE]... File names to pass to py.test
+    """
+
+    test_cfg.mock(mock_speedup)
+    os.environ[test_cfg.DIRECT_URL_NAME] = direct_url
+    os.environ[test_cfg.SKIP_JOB_DELETE_NAME] = 'false' if job_delete else 'true'
+    os.environ[test_cfg.SKIP_JOB_LOAD_NAME] = 'false' if job_load else 'true'
+    os.environ[test_cfg.SCRIPT_DIR_NAME] = test_cfg.script_dir()
 
     print("Creating temporary test installation in", repr(config.pseudo_install_dir), "to make files available to Jenkins.")
     install_script = jp(here, 'tmp_install.sh')
@@ -126,8 +112,8 @@ def main():
 
     print("\nRunning tests")
     try:
-        if pytest_args or files:
-            extra_args = pytest_args.split(' ') + files if pytest_args else files
+        if pytest_args or testfile:
+            extra_args = pytest_args.split(' ') + list(testfile) if pytest_args else list(testfile)
             subprocess.check_call(['py.test', '--capture=sys', '--instafail'] + extra_args)
             test_cfg.unmock()
             test_cfg.select_api(ApiType.JENKINS)
@@ -170,4 +156,4 @@ def main():
 
 
 if __name__ == '__main__':
-    main()
+    cli()  # pylint: disable=no-value-for-parameter
