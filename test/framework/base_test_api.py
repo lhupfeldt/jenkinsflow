@@ -72,7 +72,7 @@ class TestJob(AbstractApiJob):
     def has_force_result_param(self):
         return self.max_fails > 0 or self.final_result
 
-    def invoke(self, securitytoken=None, build_params=None, cause=None):
+    def invoke(self, securitytoken, build_params, cause, description):
         self.build_params = build_params
         self.invocation_number += 1
         self.actual_order = TestJob._current_order
