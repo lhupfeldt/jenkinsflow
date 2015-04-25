@@ -27,7 +27,7 @@ if __name__ == "__main__":
         install_requires=['restkit', 'enum34', 'tenjin', 'bottle', 'atomicfile', 'subprocess32', 'psutil', 'setproctitle', 'click'],
         test_suite='test',
         test_loader='test.test:TestLoader',
-        tests_require=['pytest', 'pytest-cov', 'pytest-cache', 'pytest-instafail', 'pytest-xdist', 'logilab-devtools', 'proxytypes', 'click'],
+        tests_require=['pytest', 'pytest-cov', 'pytest-cache', 'pytest-instafail', 'pytest-xdist', 'logilab-devtools', 'proxytypes', 'click', 'tenjin'],
         url=PROJECT_URL,
         description=SHORT_DESCRIPTION,
         long_description=LONG_DESCRIPTION,
