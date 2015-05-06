@@ -51,18 +51,33 @@ Test
    
    Note: Requires pytest-cov 1.8.0 or later
 
-2. Some of the tests currently requires security enabled.
-   Read the file demo/demo_security.py and create the user specified (or change the file)
+2. Important Jenkins/Hudson setup and test preparation:
+   Configure security -
+      Some of the tests requires security to be enabled.
+      Read the file demo/demo_security.py and create the user specified in Jenkins (or change the file)
 
-3. Read the file demo/demo_security.py for security setup you have security enabled your Jenkins.
-   Create the user mentioned in the file.
+   Set the number of executers -
+      Jenkins is default configured with only two executors on master. To avoid timeouts in the test cases this must be raised to at least 32.
+      This is necessary because some of the test cases will execute a large amount of jobs in parallel.
 
-4. Run the tests:
-   You should use ./test/test.py to run the tests.
+   Change the 'Quite period' -
+      Jenkins is default configured with a 'Quiet period' of 5 seconds. To avoid timeouts in the test cases this must be set to 0.
+
+   Set Jenkins URL or Hudson url -
+     Jenkins: Manage Jenkins -> Configure System -> Jenkins Location -> Jenkins URL
+     Hudson: Manage Hudson -> Configure System -> E-mail Notification -> Hudson url
+
+     The url should not use 'localhost'
+
+   Your Jenkins needs to be on the host where you are running the test. If it is not, you will need to make jenkinsflow available to Jenkins. See
+   test/tmp_install.sh
+
+3. Run the tests:
+   Use ./test/test.py to run the tests.
 
    JENKINS_URL=<your Jenkins> python ./test/test.py --mock-speedup=100 --direct-url <non proxied url different from JENKINS_URL>
    # Or if you are using Hudson:
-   HUDSON_URL=<your Hudson> python ./test/tests.py --mock-speedup=100  --direct-url <non proxied url different from HUDSON_URL>
+   HUDSON_URL=<your Hudson> python ./test/test.py --mock-speedup=100  --direct-url <non proxied url different from HUDSON_URL>
 
    Note: you may omit JENKINS_URL if your jenkins is on http://localhost:8080, but you have to specify HUDSON_URL if you are running hudson!
    Note: you may omit --direct-url if your jenkins or hudson is on http://localhost:8080      
@@ -80,12 +95,6 @@ Test
    You should have 32 executors or more for this, the cpu/disk load will be small, as the test jobs don't really do anything except sleep.
    Note: Parallel run is disabled when testing against Hudson, Hudson (3.2 at the time of writing) can't cope with the load, it throws NullPointerExceptions.
    To disable the use of xdist to run tests in parallel use --job-delete
-
-   Important:
-   Jenkins is default configured with only two executors on master. To avoid timeouts in the test cases this must be raised to at least 8.
-   Jenkins is default configured with a 'Quiet period' of 5 seconds. To avoid timeouts in the test cases this should be set to 0.
-   Your Jenkins needs to be on the host where you are running the test. If it is not, you will need to make jenkinsflow available to jenkins. See
-   test/tmp_install.sh
 
    All jobs created by the test script are prefixed with 'jenkinsflow_', so they can easily be removed.
 
