@@ -14,6 +14,8 @@ from .api_base import BuildResult, Progress, UnknownJobException, ApiInvocationM
 _superseded = -1
 _dequeued = -2
 
+_ct_url_enc = {'Content-Type': 'application/x-www-form-urlencoded'}
+
 
 def _result_and_progress(build_dct):
     result = build_dct['result']
@@ -175,10 +177,7 @@ class Jenkins(Resource):
                 if existing_description:
                     description = existing_description + separator + description
 
-            params = {}
-            params['headers'] = {'Content-Type': 'application/x-www-form-urlencoded'}
-            params['payload'] = {'description': description}
-            self.post(build_url + '/submitDescription', **params)
+            self.post(build_url + '/submitDescription', headers=_ct_url_enc, payload={'description': description})
         except errors.ResourceNotFound as ex:
             raise Exception("Build not found " + repr(build_url), ex)
 
@@ -204,16 +203,14 @@ class ApiJob(object):
 
     def invoke(self, securitytoken, build_params, cause, description):
         try:
-            params = {}
             if cause:
                 build_params = build_params or {}
                 build_params['cause'] = cause
-            if build_params:
-                params['headers'] = {'Content-Type': 'application/x-www-form-urlencoded'}
-                params['payload'] = build_params
+            headers = _ct_url_enc if build_params else None
+            params = {}
             if securitytoken:
                 params['token'] = securitytoken
-            response = self.jenkins.post(self._build_trigger_path, **params)
+            response = self.jenkins.post(self._build_trigger_path, headers=headers, payload=build_params, **params)
         except errors.ResourceNotFound as ex:
             raise UnknownJobException(self.jenkins._public_job_url(self.name), ex)  # pylint: disable=protected-access
 
@@ -370,10 +367,7 @@ class Invocation(ApiInvocationMixin):
 
         build_url = self.job._path + '/' + repr(self.build_number)
         try:
-            params = {}
-            params['headers'] = {'Content-Type': 'application/x-www-form-urlencoded'}
-            params['payload'] = {'description': self.description}
-            self.job.jenkins.post(build_url + '/submitDescription', **params)
+            self.job.jenkins.post(build_url + '/submitDescription', headers=_ct_url_enc, payload={'description': self.description})
         except errors.ResourceNotFound as ex:
             raise Exception("Build deleted while flow running? " + repr(build_url), ex)
 
