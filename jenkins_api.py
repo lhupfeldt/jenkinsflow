@@ -55,6 +55,10 @@ class Jenkins(Resource):
         self.is_jenkins = True
         self.ci_version = None
 
+    def get_json(self, path=None, headers=None, params_dict=None, **params):
+        response = super(Jenkins, self).get(path=path, headers=headers, params_dict=params_dict, **params)
+        return json.loads(response.body_string())
+
     @property
     def baseurl(self):
         return self.public_uri
@@ -63,8 +67,7 @@ class Jenkins(Resource):
     def public_uri(self):
         if not self._public_uri:
             query = "primaryView[url]"
-            response = self.get("/api/json", tree=query)
-            dct = json.loads(response.body_string())
+            dct = self.get_json("/api/json", tree=query)
             self._public_uri = self._baseurl = dct['primaryView']['url'].rstrip('/')
         return self._public_uri
 
@@ -103,8 +106,7 @@ class Jenkins(Resource):
 
     def quick_poll(self):
         query = "jobs[name,lastBuild[number,result],queueItem[why]]"
-        response = self.get("/api/json", tree=query)
-        dct = json.loads(response.body_string())
+        dct = self.get_json("/api/json", tree=query)
 
         for job_dct in dct.get('jobs') or []:
             job_name = str(job_dct['name'])
@@ -118,8 +120,7 @@ class Jenkins(Resource):
             # A new job was created while flow was running, get the remaining properties
             try:
                 query = "lastBuild[number,result],queueItem[why],actions[parameterDefinitions[name,type]]"
-                response = self.get("/job/" + job_name + "/api/json", tree=query)
-                job_dct = json.loads(response.body_string())
+                job_dct = self.get_json("/job/" + job_name + "/api/json", tree=query)
                 job = ApiJob(self, job_dct, job_name)
                 self.jobs[job_name] = job
             except errors.ResourceNotFound:  # pragma: no cover
@@ -128,8 +129,7 @@ class Jenkins(Resource):
 
     def queue_poll(self):
         query = "items[task[name],id]"
-        response = self.get("/queue/api/json", tree=query)
-        dct = json.loads(response.body_string())
+        dct = self.get_json("/queue/api/json", tree=query)
 
         queue_items = {}
         for qi_dct in dct.get('items') or []:
@@ -171,8 +171,7 @@ class Jenkins(Resource):
         build_url = job_path + '/' + str(build_number)
         try:
             if not replace:
-                response = self.get(build_url + '/api/json', tree="description")
-                dct = json.loads(response.body_string())
+                dct = self.get_json(build_url + '/api/json', tree="description")
                 existing_description = dct['description']
                 if existing_description:
                     description = existing_description + separator + description
@@ -227,8 +226,7 @@ class ApiJob(object):
             if not invocation.build_number:
                 # Hudson does not return queue item from invoke, instead it returns the job URL :(
                 query = "executable[number],why" if self.jenkins.is_jenkins else "queueItem[why],lastBuild[number]"
-                qi_response = self.jenkins.get(invocation.queued_item_path, tree=query)
-                dct = json.loads(qi_response.body_string())
+                dct = self.jenkins.get_json(invocation.queued_item_path, tree=query)
 
                 if self.jenkins.is_jenkins:
                     executable = dct.get('executable')
@@ -291,8 +289,7 @@ class ApiJob(object):
 
         # Abort running builds
         query = "builds[number,result]"
-        response = self.jenkins.get("/job/" + self.name + "/api/json", tree=query)
-        dct = json.loads(response.body_string())
+        dct = self.jenkins.get_json("/job/" + self.name + "/api/json", tree=query)
         for build in dct['builds']:
             _result, progress = _result_and_progress(build)
             if progress != Progress.IDLE:
@@ -352,8 +349,7 @@ class Invocation(ApiInvocationMixin):
 
         # Latest build is not ours, get the correct build
         query = "builds[number,result]"
-        response = self.job.jenkins.get("/job/" + self.job.name + "/api/json", tree=query)
-        dct = json.loads(response.body_string())
+        dct = self.job.jenkins.get_json("/job/" + self.job.name + "/api/json", tree=query)
         for build in dct['builds']:
             if build['number'] == self.build_number:
                 return _result_and_progress(build)
