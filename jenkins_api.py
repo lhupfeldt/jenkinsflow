@@ -55,8 +55,8 @@ class Jenkins(Resource):
         self.is_jenkins = True
         self.ci_version = None
 
-    def get_json(self, path=None, headers=None, params_dict=None, **params):
-        response = super(Jenkins, self).get(path=path, headers=headers, params_dict=params_dict, **params)
+    def get_json(self, path="", headers=None, params_dict=None, **params):
+        response = super(Jenkins, self).get(path=path + "/api/json", headers=headers, params_dict=params_dict, **params)
         return json.loads(response.body_string())
 
     @property
@@ -67,7 +67,7 @@ class Jenkins(Resource):
     def public_uri(self):
         if not self._public_uri:
             query = "primaryView[url]"
-            dct = self.get_json("/api/json", tree=query)
+            dct = self.get_json(tree=query)
             self._public_uri = self._baseurl = dct['primaryView']['url'].rstrip('/')
         return self._public_uri
 
@@ -106,7 +106,7 @@ class Jenkins(Resource):
 
     def quick_poll(self):
         query = "jobs[name,lastBuild[number,result],queueItem[why]]"
-        dct = self.get_json("/api/json", tree=query)
+        dct = self.get_json(tree=query)
 
         for job_dct in dct.get('jobs') or []:
             job_name = str(job_dct['name'])
@@ -120,7 +120,7 @@ class Jenkins(Resource):
             # A new job was created while flow was running, get the remaining properties
             try:
                 query = "lastBuild[number,result],queueItem[why],actions[parameterDefinitions[name,type]]"
-                job_dct = self.get_json("/job/" + job_name + "/api/json", tree=query)
+                job_dct = self.get_json("/job/" + job_name, tree=query)
                 job = ApiJob(self, job_dct, job_name)
                 self.jobs[job_name] = job
             except errors.ResourceNotFound:  # pragma: no cover
@@ -129,7 +129,7 @@ class Jenkins(Resource):
 
     def queue_poll(self):
         query = "items[task[name],id]"
-        dct = self.get_json("/queue/api/json", tree=query)
+        dct = self.get_json("/queue", tree=query)
 
         queue_items = {}
         for qi_dct in dct.get('items') or []:
@@ -171,7 +171,7 @@ class Jenkins(Resource):
         build_url = job_path + '/' + str(build_number)
         try:
             if not replace:
-                dct = self.get_json(build_url + '/api/json', tree="description")
+                dct = self.get_json(build_url, tree="description")
                 existing_description = dct['description']
                 if existing_description:
                     description = existing_description + separator + description
@@ -213,7 +213,7 @@ class ApiJob(object):
         except errors.ResourceNotFound as ex:
             raise UnknownJobException(self.jenkins._public_job_url(self.name), ex)  # pylint: disable=protected-access
 
-        location = response.location[len(self.jenkins.direct_uri):] + 'api/json'
+        location = response.location[len(self.jenkins.direct_uri):-1]
         old_inv = self._invocations.get(location)
         if old_inv:
             old_inv.build_number = _superseded
@@ -289,7 +289,7 @@ class ApiJob(object):
 
         # Abort running builds
         query = "builds[number,result]"
-        dct = self.jenkins.get_json("/job/" + self.name + "/api/json", tree=query)
+        dct = self.jenkins.get_json("/job/" + self.name, tree=query)
         for build in dct['builds']:
             _result, progress = _result_and_progress(build)
             if progress != Progress.IDLE:
@@ -349,7 +349,7 @@ class Invocation(ApiInvocationMixin):
 
         # Latest build is not ours, get the correct build
         query = "builds[number,result]"
-        dct = self.job.jenkins.get_json("/job/" + self.job.name + "/api/json", tree=query)
+        dct = self.job.jenkins.get_json("/job/" + self.job.name, tree=query)
         for build in dct['builds']:
             if build['number'] == self.build_number:
                 return _result_and_progress(build)
