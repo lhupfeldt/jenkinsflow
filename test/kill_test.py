@@ -85,6 +85,51 @@ def test_kill_all_unchecked(capsys):
         )
 
 
+def test_kill_mini(capsys):
+    """Cut down kill_current for debugging"""
+    with api_select.api(__file__, login=True) as api:
+        # TODO
+        if api.api_type in (ApiType.MOCK, ApiType.SCRIPT):
+            return
+
+        is_hudson = os.environ.get('HUDSON_URL')
+        if is_hudson:  # TODO investigate why this test fails in Hudson
+            xfail("Doesn't pass in Hudson")
+            return
+
+        api.flow_job()
+        num_j6_invocations = 2
+        api.job('j6', exec_time=50, max_fails=0, expect_invocations=num_j6_invocations, expect_order=None, kill=True,
+                num_builds_to_keep=num_j6_invocations*2 + 1, params=(('a', 0, 'integer'),))
+
+        pid = os.getpid()
+        print("kill_test, pid:", pid, )
+        subprocess32.Popen([jp(here, "killer.py"), repr(pid), repr(20), repr(1)])
+
+        with serial(api, timeout=70, job_name_prefix=api.job_name_prefix, report_interval=0.05) as ctrl1:
+            with ctrl1.parallel() as ctrl2:
+                for ii in range(0, num_j6_invocations):
+                     # Queue a lot of jobs
+                    ctrl2.invoke('j6', a=ii)
+
+        if not capsys:
+            return
+
+        sout, _ = capsys.readouterr()
+        assert_lines_in(
+            sout,
+            "^Got SIGTERM: Killing all builds belonging to current flow",
+            "^--- Final status ---",
+            "^serial flow: [",
+            "^   parallel flow: (",
+            "^      job: 'jenkinsflow_test__kill_mini__j6' ABORTED - IDLE",
+            "^      job: 'jenkinsflow_test__kill_mini__j6' DEQUEUED - IDLE",
+            "^   )",
+            "^",
+            "^]"
+        )
+
+
 def test_kill_current(capsys):
     with api_select.api(__file__, login=True) as api:
         # TODO

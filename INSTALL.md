@@ -15,10 +15,10 @@ Jenkinsflow uses it's own specialized 'jenkins_api' python module to access jenk
 
 2. Manually:
 2.1. Install dependencies:
-   pip install enum34 restkit subprocess32 click
+   pip install requests enum34 subprocess32 click
    optional: pip install tenjin (if you want to use the template based job loader)
 
-   Note: if you use Hudson (3.x): You need to install the REST API plugin and enable REST API
+   Note: if you use Hudson (3.x): You need to configure Hudson to install the REST API plugin and enable REST API.
 
 2.2. Install dependencies for experimental features:
    To use the experimental visualisation feature:

@@ -6,7 +6,7 @@ from __future__ import print_function
 import time, json
 from collections import OrderedDict
 
-from restkit import Resource, BasicAuth, errors
+import requests
 
 from .api_base import BuildResult, Progress, UnknownJobException, ApiInvocationMixin
 
@@ -24,7 +24,19 @@ def _result_and_progress(build_dct):
     return (result, progress)
 
 
-class Jenkins(Resource):
+class ResourceNotFound(Exception):
+    pass
+
+
+def _check_response(response, good_responses=(200,)):
+    if response.status_code in good_responses:
+        return response
+    if response.status_code == 404:
+        raise ResourceNotFound(response.request.url)
+    response.raise_for_status()
+
+
+class Jenkins(object):
     """Optimized minimal set of methods needed for jenkinsflow to access Jenkins jobs.
 
     Args:
@@ -37,14 +49,13 @@ class Jenkins(Resource):
         password (str): Password of user.
     """
 
-    def __init__(self, direct_uri, job_prefix_filter=None, username=None, password=None, **kwargs):
+    def __init__(self, direct_uri, job_prefix_filter=None, username=None, password=None):
+        self.session = requests.Session()
         if username or password:
             if not (username and password):
                 raise Exception("You must specify both username and password or neither")
-            filters = kwargs.get('filters', [])
-            filters.append(BasicAuth(username, password))
-            kwargs['filters'] = filters
-        super(Jenkins, self).__init__(direct_uri, **kwargs)
+            self.session.auth = requests.auth.HTTPBasicAuth(username, password)
+
         self.direct_uri = direct_uri
         self.username = username
         self.password = password
@@ -55,9 +66,32 @@ class Jenkins(Resource):
         self.is_jenkins = True
         self.ci_version = None
 
-    def get_json(self, path="", headers=None, params_dict=None, **params):
-        response = super(Jenkins, self).get(path=path + "/api/json", headers=headers, params_dict=params_dict, **params)
-        return json.loads(response.body_string())
+    def _get(self, url, params):
+        #print("get:", self.direct_uri + url, params)
+        return _check_response(self.session.get(self.direct_uri + url, params=params))
+
+    def get(self, url, **params):
+        response = self._get(url, params=params)
+        #print("get response:", response.json())
+        return response
+    
+    def get_json(self, url="", **params):
+        json_dct = self._get(url + "/api/json", params=params).json()
+        #print("get response:", json_dct)
+        return json_dct
+
+    def post(self, url, payload=None, headers=None, **params):
+        #print("post:", self.direct_uri + url, params)
+        response = self.session.post(self.direct_uri + url, headers=headers, data=payload, allow_redirects=False, params=params)
+        _check_response(response, (200, 201))
+        #print("post response:", response)
+        return response
+
+    def head(self):
+        #print("head:", self.direct_uri)
+        response = _check_response(self.session.head(self.direct_uri))
+        #print("head response:", response)
+        return response
 
     @property
     def baseurl(self):
@@ -86,15 +120,17 @@ class Jenkins(Resource):
             for _ in (1, 2, 3):
                 try:
                     head_response = self.head()
-                    self.ci_version = head_response.headers.get("X-Hudson")
-                    break
+                    self.ci_version = head_response.get("X-Hudson")
+                    if self.ci_version:
+                        break
                 except Exception:  # pragma: no cover
-                    time.sleep(0.1)
+                    pass
+                time.sleep(0.1)
             if not self.ci_version:
-                raise Exception("Not connected to Jenkins or Hudson (expected X-Jenkins or X-Hudson header, got: " + repr(head_response.headers))
+                raise Exception("Not connected to Jenkins or Hudson (expected X-Jenkins or X-Hudson header, got: " + repr(head_response))
             self.is_jenkins = False
 
-        dct = json.loads(response.body_string())
+        dct = response.json()
         self._public_uri = self._baseurl = dct['primaryView']['url'].rstrip('/')
 
         self.jobs = {}
@@ -123,7 +159,7 @@ class Jenkins(Resource):
                 job_dct = self.get_json("/job/" + job_name, tree=query)
                 job = ApiJob(self, job_dct, job_name)
                 self.jobs[job_name] = job
-            except errors.ResourceNotFound:  # pragma: no cover
+            except ResourceNotFound:  # pragma: no cover
                 # Ignore this, the job came and went
                 pass
 
@@ -152,7 +188,7 @@ class Jenkins(Resource):
     def delete_job(self, job_name):
         try:
             self.post('/job/' + job_name + '/doDelete')
-        except errors.ResourceNotFound as ex:
+        except ResourceNotFound as ex:
             # TODO: Check error
             raise UnknownJobException(self._public_job_url(job_name), ex)
 
@@ -177,7 +213,7 @@ class Jenkins(Resource):
                     description = existing_description + separator + description
 
             self.post(build_url + '/submitDescription', headers=_ct_url_enc, payload={'description': description})
-        except errors.ResourceNotFound as ex:
+        except ResourceNotFound as ex:
             raise Exception("Build not found " + repr(build_url), ex)
 
 
@@ -210,10 +246,10 @@ class ApiJob(object):
             if securitytoken:
                 params['token'] = securitytoken
             response = self.jenkins.post(self._build_trigger_path, headers=headers, payload=build_params, **params)
-        except errors.ResourceNotFound as ex:
+        except ResourceNotFound as ex:
             raise UnknownJobException(self.jenkins._public_job_url(self.name), ex)  # pylint: disable=protected-access
 
-        location = response.location[len(self.jenkins.direct_uri):-1]
+        location = response.headers['location'][len(self.jenkins.direct_uri):-1]
         old_inv = self._invocations.get(location)
         if old_inv:
             old_inv.build_number = _superseded
@@ -282,7 +318,7 @@ class ApiJob(object):
         for qid in queue_item_ids:
             try:
                 self.jenkins.post('/queue/cancelItem', id=repr(qid))
-            except errors.ResourceNotFound:
+            except ResourceNotFound:
                 # Job is no longer queued, so just ignore
                 # NOTE: bug https://issues.jenkins-ci.org/browse/JENKINS-21311 also brings us here!
                 pass
@@ -296,7 +332,7 @@ class ApiJob(object):
                 build_number = build['number']
                 try:
                     self.jenkins.post(self._path + '/' + repr(build_number) + '/stop')
-                except errors.ResourceNotFound:  # pragma: no cover
+                except ResourceNotFound:  # pragma: no cover
                     # Build was deleted, just ignore
                     pass
 
@@ -364,7 +400,7 @@ class Invocation(ApiInvocationMixin):
         build_url = self.job._path + '/' + repr(self.build_number)
         try:
             self.job.jenkins.post(build_url + '/submitDescription', headers=_ct_url_enc, payload={'description': self.description})
-        except errors.ResourceNotFound as ex:
+        except ResourceNotFound as ex:
             raise Exception("Build deleted while flow running? " + repr(build_url), ex)
 
     def stop(self, dequeue):
@@ -379,7 +415,7 @@ class Invocation(ApiInvocationMixin):
                 qid = self.queued_item_path.strip('/').split('/')[2]
                 self.job.jenkins.post('/queue/cancelItem', id=qid)
                 self.build_number = _dequeued
-        except errors.ResourceNotFound as ex:  # pragma: no cover
+        except ResourceNotFound as ex:  # pragma: no cover
             # Job is no longer queued or running, except that it may have just changed from queued to running
             # We leave it up to the flow logic to handle that
             # NOTE: bug https://issues.jenkins-ci.org/browse/JENKINS-21311 also brings us here!

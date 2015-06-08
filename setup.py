@@ -24,7 +24,7 @@ if __name__ == "__main__":
         package_dir={'jenkinsflow':'.', 'jenkinsflow.cli': 'cli'},
         zip_safe=True,
         include_package_data=False,
-        install_requires=['restkit', 'enum34', 'tenjin', 'bottle', 'atomicfile', 'subprocess32', 'psutil', 'setproctitle', 'click'],
+        install_requires=['requests', 'enum34', 'tenjin', 'bottle', 'atomicfile', 'subprocess32', 'psutil', 'setproctitle', 'click'],
         test_suite='test',
         test_loader='test.test:TestLoader',
         tests_require=['pytest', 'pytest-cov', 'pytest-cache', 'pytest-instafail', 'pytest-xdist', 'logilab-devtools', 'proxytypes', 'click', 'tenjin',
