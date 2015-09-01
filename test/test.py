@@ -14,8 +14,9 @@ import tenjin
 from tenjin.helpers import *
 
 here = os.path.abspath(os.path.dirname(__file__))
+top_dir = os.path.dirname(here)
 
-extra_sys_path = [os.path.normpath(path) for path in [here, jp(here, '../..'), jp(here, '../demo'), jp(here, '../demo/jobs')]]
+extra_sys_path = [os.path.normpath(path) for path in [here, jp(top_dir, '..'), jp(top_dir, 'demo'), jp(top_dir, 'demo/jobs')]]
 sys.path = extra_sys_path + sys.path
 os.environ['PYTHONPATH'] = ':'.join(extra_sys_path)
 
@@ -34,7 +35,7 @@ class TestLoader(object):
 
 
 test_cfg.select_api(ApiType.JENKINS)
-_cache_dir = jp(os.path.dirname(here), '.cache')
+_cache_dir = jp(top_dir, '.cache')
 
 
 def run_tests(parallel, api_type):
@@ -52,9 +53,9 @@ def run_tests(parallel, api_type):
     engine = tenjin.Engine()
     cov_rc_file_name = jp(here, '.coverage_rc_' +  api_type.env_name().lower())
     with open(cov_rc_file_name, 'w') as cov_rc_file:
-        cov_rc_file.write(engine.render(jp(here, "coverage_rc.tenjin"), dict(api_type=api_type)))
+        cov_rc_file.write(engine.render(jp(here, "coverage_rc.tenjin"), dict(api_type=api_type, top_dir=top_dir)))
 
-    cmd = ['py.test', '--capture=sys', '--cov=' + here + '/..', '--cov-report=term-missing', '--cov-config=' + cov_rc_file_name, '--instafail', '--ff']
+    cmd = ['py.test', '--capture=sys', '--cov=' + top_dir, '--cov-report=term-missing', '--cov-config=' + cov_rc_file_name, '--instafail', '--ff']
     try:
         if not parallel:
             if api_type == ApiType.MOCK:
@@ -106,7 +107,7 @@ def cli(mock_speedup, direct_url, pytest_args, job_delete, job_load, testfile):
         print("Warning: Some tests will fail!", file=sys.stderr)
 
     cov_file = ".coverage"
-    for cov_file in jp(here, cov_file), jp(here, '..', cov_file):
+    for cov_file in jp(here, cov_file), jp(top_dir, cov_file):
         if os.path.exists(cov_file):
             os.remove(cov_file)
 
@@ -142,11 +143,11 @@ def cli(mock_speedup, direct_url, pytest_args, job_delete, job_load, testfile):
         if os.path.exists(tmp_packages_dir):
             shutil.rmtree(tmp_packages_dir)
         os.makedirs(tmp_packages_dir)
-        subprocess.check_call([sys.executable, jp(here, '../setup.py'), 'install', '--prefix', install_prefix])
-        shutil.rmtree(jp(here, '../build'))
+        subprocess.check_call([sys.executable, jp(top_dir, 'setup.py'), 'install', '--prefix', install_prefix])
+        shutil.rmtree(jp(top_dir, 'build'))
 
         start_msg("Testing documentation generation")
-        os.chdir(jp(here, '../doc/source'))
+        os.chdir(jp(top_dir, 'doc/source'))
         subprocess.check_call(['make', 'html'])
     except Exception as ex:
         print('*** ERROR: There were errors! Check output! ***', repr(ex), file=sys.stderr)

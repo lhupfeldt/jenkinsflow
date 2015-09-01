@@ -43,15 +43,15 @@ exclude_lines =
     Exception\("Build deleted while flow running
 
 omit = 
-     test/*
-     demo/*
-     server.py
-     setup.py
-     ordered_enum.py
+     {==top_dir==}/test/*
+     {==top_dir==}/demo/*
+     {==top_dir==}/visual/server.py
+     {==top_dir==}/setup.py
+     {==top_dir==}/ordered_enum.py
      *_flymake.py
      <?py if api_type != ApiType.JENKINS: ?>
-     jenkins_api.py
+     {==top_dir==}/jenkins_api.py
      <?py #endif ?>
      <?py if api_type != ApiType.SCRIPT: ?>
-     script_api.py
+     {==top_dir==}/script_api.py
      <?py #endif ?>
