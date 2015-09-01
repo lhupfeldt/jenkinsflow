@@ -1,14 +1,14 @@
 # Copyright (c) 2012 - 2015 Lars Hupfeldt Nielsen, Hupfeldt IT
 # All rights reserved. This work is under a BSD license, see LICENSE.TXT.
 
-import os, sys, re, subprocess32
-from os.path import join as jp
+import os, re
 from pytest import raises
 
 from jenkinsflow.flow import parallel, FailedChildJobsException
 
 from .framework import api_select
 from .framework.utils import assert_lines_in
+from .framework.abort_job import abort
 
 from .cfg import ApiType
 
@@ -24,9 +24,8 @@ def test_abort(capsys):
         api.job('quick', exec_time=0.01, max_fails=0, expect_invocations=1, expect_order=1)
         api.job('wait10_abort', exec_time=10, max_fails=0, expect_invocations=1, expect_order=1, final_result='ABORTED')
         api.job('wait1_fail', exec_time=1, max_fails=1, expect_invocations=1, expect_order=1)
-        
-        if api.api_type != ApiType.MOCK:
-            subprocess32.Popen([sys.executable, jp(here, "abort_job.py"), __file__, 'abort', 'wait10_abort'])
+
+        abort(api, 'wait10_abort', 2)
         
         with raises(FailedChildJobsException) as exinfo:
             with parallel(api, timeout=40, job_name_prefix=api.job_name_prefix, report_interval=3) as ctrl:

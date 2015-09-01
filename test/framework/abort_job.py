@@ -4,15 +4,18 @@
 from __future__ import print_function
 
 import sys
+import subprocess32
 
 from jenkinsflow.mocked import hyperspeed
 
 from jenkinsflow.test.framework import api_select
+from jenkinsflow.test.cfg import ApiType
 
 
-def abort(test_file_name, fixed_prefix, job_name):
+def _abort(test_file_name, fixed_prefix, job_name, sleep_time):
     print("\nWaiting to abort job:", job_name)
-    hyperspeed.sleep(2)
+    print("args:", test_file_name, fixed_prefix, job_name, sleep_time)
+    hyperspeed.sleep(sleep_time)
     with api_select.api(test_file_name, fixed_prefix='jenkinsflow_test__' + fixed_prefix + '__', login=True) as api:
         api.job(job_name, 0.1, max_fails=0, expect_invocations=0, expect_order=None)
     api.poll()
@@ -24,4 +27,11 @@ def abort(test_file_name, fixed_prefix, job_name):
     print("Aborted")
 
 
-abort(sys.argv[1], sys.argv[2], sys.argv[3])
+if __name__ == '__main__':    
+    _abort(sys.argv[1], sys.argv[2], sys.argv[3], int(sys.argv[4]))
+
+
+def abort(api, job_name, sleep_time):
+    """Call this script as a subprocess"""
+    if api.api_type != ApiType.MOCK:
+        subprocess32.Popen([sys.executable, __file__, api.file_name, api.func_name.replace('test_', ''), job_name, str(sleep_time)])

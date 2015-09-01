@@ -9,6 +9,7 @@ from pytest import raises, fail
 from jenkinsflow.flow import parallel, serial, FailedChildJobException, FailedChildJobsException
 
 from .framework import api_select
+from .framework.abort_job import abort
 from .cfg import ApiType
 
 here = os.path.abspath(os.path.dirname(__file__))
@@ -24,8 +25,7 @@ def test_abort_retry_serial_toplevel():
         api.job('j12_abort', 10, max_fails=0, expect_invocations=1, expect_order=2, serial=True, final_result='ABORTED')
         api.job('j13', 0.01, max_fails=0, expect_invocations=0, expect_order=None, serial=True)
 
-        if api.api_type != ApiType.MOCK:
-            subprocess32.Popen([sys.executable, jp(here, "abort_job.py"), __file__, 'abort_retry_serial_toplevel', 'j12_abort'])
+        abort(api, 'j12_abort', 2)
 
         with raises(FailedChildJobException):
             with serial(api, timeout=70, job_name_prefix=api.job_name_prefix, max_tries=2) as ctrl1:
@@ -44,8 +44,7 @@ def test_abort_retry_parallel_toplevel():
         api.job('j12_abort', 10, max_fails=0, expect_invocations=1, expect_order=None, final_result='ABORTED')
         api.job('j13', 0.01, max_fails=0, expect_invocations=1, expect_order=None)
 
-        if api.api_type != ApiType.MOCK:
-            subprocess32.Popen([sys.executable, jp(here, "abort_job.py"), __file__, 'abort_retry_parallel_toplevel', 'j12_abort'])
+        abort(api, 'j12_abort', 2)
 
         with raises(FailedChildJobsException):
             with parallel(api, timeout=70, job_name_prefix=api.job_name_prefix, max_tries=2) as ctrl1:
@@ -54,3 +53,53 @@ def test_abort_retry_parallel_toplevel():
                 ctrl1.invoke('j13')
 
 
+def test_abort_retry_serial_parallel_nested():
+    with api_select.api(__file__) as api:
+        if api.api_type == ApiType.SCRIPT:
+            return
+
+        api.flow_job()
+        api.job('j11', 0.01, max_fails=0, expect_invocations=1, expect_order=1)
+        api.job('j21', 20, max_fails=0, expect_invocations=1, expect_order=2)
+        api.job('j22_abort', 10, max_fails=0, expect_invocations=1, expect_order=2, final_result='ABORTED')
+        api.job('j23', 5, max_fails=0, expect_invocations=1, expect_order=2)
+        api.job('j24', 0.01, max_fails=0, expect_invocations=1, expect_order=2)
+        api.job('j12', 0.01, max_fails=0, expect_invocations=0, expect_order=None, serial=True)
+
+        abort(api, 'j22_abort', 2)
+
+        with raises(FailedChildJobException):
+            with serial(api, timeout=70, job_name_prefix=api.job_name_prefix, max_tries=2) as sctrl1:
+                sctrl1.invoke('j11')
+                with sctrl1.parallel() as pctrl1:
+                    pctrl1.invoke('j21')
+                    pctrl1.invoke('j22_abort')
+                    pctrl1.invoke('j23')
+                    pctrl1.invoke('j24')
+                sctrl1.invoke('j12')
+
+
+def test_abort_retry_parallel_serial_nested():
+    with api_select.api(__file__) as api:
+        if api.api_type == ApiType.SCRIPT:
+            return
+
+        api.flow_job()
+        api.job('j11', 0.01, max_fails=0, expect_invocations=1, expect_order=1)
+        api.job('j21', 0.01, max_fails=0, expect_invocations=1, expect_order=None)
+        api.job('j22_abort', 10, max_fails=0, expect_invocations=1, expect_order=None, final_result='ABORTED')
+        api.job('j23', 0.01, max_fails=0, expect_invocations=0, expect_order=None)
+        api.job('j24', 0.01, max_fails=0, expect_invocations=0, expect_order=None)
+        api.job('j12', 0.01, max_fails=0, expect_invocations=1, expect_order=1, serial=True)
+
+        abort(api, 'j22_abort', 2)
+
+        with raises(FailedChildJobsException):
+            with parallel(api, timeout=70, job_name_prefix=api.job_name_prefix, max_tries=2) as sctrl1:
+                sctrl1.invoke('j11')
+                with sctrl1.serial() as pctrl1:
+                    pctrl1.invoke('j21')
+                    pctrl1.invoke('j22_abort')
+                    pctrl1.invoke('j23')
+                    pctrl1.invoke('j24')
+                sctrl1.invoke('j12')
