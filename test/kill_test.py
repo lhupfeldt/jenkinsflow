@@ -3,8 +3,7 @@
 
 from __future__ import print_function
 
-import subprocess32, os
-from os.path import join as jp
+import os
 
 from pytest import raises, xfail
 
@@ -13,6 +12,7 @@ from jenkinsflow.mocked import hyperspeed
 from .cfg import ApiType
 from .framework import api_select
 from .framework.utils import assert_lines_in, kill_current_msg
+from .framework.killer import kill
 
 here = os.path.abspath(os.path.dirname(__file__))
 
@@ -153,10 +153,8 @@ def test_kill_current(capsys):
                 num_builds_to_keep=num_j6_invocations*2 + 1, params=(('a', 0, 'integer'),))
         api.job('j7', exec_time=50, max_fails=0, expect_invocations=0, expect_order=None)
 
-        pid = os.getpid()
-        print("kill_test, pid:", pid, )
-        subprocess32.Popen([jp(here, "killer.py"), repr(pid), repr(20), repr(1)])
-
+        kill(20, 1)
+        
         with serial(api, timeout=70, job_name_prefix=api.job_name_prefix, report_interval=0.05) as ctrl1:
             with ctrl1.parallel() as ctrl2:
                 ctrl2.invoke('j1')
