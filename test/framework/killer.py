@@ -5,6 +5,9 @@ from __future__ import print_function
 
 import sys, os, signal, time, subprocess32
 
+sys.path.append('../../..')
+from jenkinsflow.mocked import hyperspeed
+
 
 def _killer(pid, sleep_time, num_kills):
     print("\nKiller going to sleep for", sleep_time, "seconds")
@@ -13,7 +16,7 @@ def _killer(pid, sleep_time, num_kills):
     for ii in range(0, num_kills):
         os.kill(pid, signal.SIGTERM)
         print("\nKiller sent", ii + 1, "of", num_kills, "SIGTERM signals to ", pid)
-        time.sleep(1)
+        hyperspeed.sleep(1)
 
 
 if __name__ == '__main__':    

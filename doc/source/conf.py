@@ -33,7 +33,7 @@ import jenkinsflow.setup
 extensions = [
     'sphinx.ext.autodoc',
     'sphinx.ext.viewcode',
-    'sphinxcontrib.napoleon',
+    'sphinx.ext.napoleon',
     'sphinxcontrib.programoutput',
 ]
 

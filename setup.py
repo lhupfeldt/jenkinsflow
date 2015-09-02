@@ -29,7 +29,7 @@ if __name__ == "__main__":
         test_loader='test.test:TestLoader',
         tests_require=['pytest', 'pytest-cov', 'pytest-cache', 'pytest-instafail', 'pytest-xdist', 'logilab-devtools', 'proxytypes', 'click', 'tenjin',
                        # The test also tests creation of the documentation
-                       'sphinx', 'sphinxcontrib-napoleon', 'sphinxcontrib-programoutput'],
+                       'sphinx>=1.3.1', 'sphinxcontrib-programoutput'],
         url=PROJECT_URL,
         description=SHORT_DESCRIPTION,
         long_description=LONG_DESCRIPTION,
