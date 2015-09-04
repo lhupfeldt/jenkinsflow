@@ -102,9 +102,7 @@ def test_kill_mini(capsys):
         api.job('j6', exec_time=50, max_fails=0, expect_invocations=num_j6_invocations, expect_order=None, kill=True,
                 num_builds_to_keep=num_j6_invocations*2 + 1, params=(('a', 0, 'integer'),))
 
-        pid = os.getpid()
-        print("kill_test, pid:", pid, )
-        subprocess32.Popen([jp(here, "killer.py"), repr(pid), repr(20), repr(1)])
+        kill(20, 1)
 
         with serial(api, timeout=70, job_name_prefix=api.job_name_prefix, report_interval=0.05) as ctrl1:
             with ctrl1.parallel() as ctrl2:
