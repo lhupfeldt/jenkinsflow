@@ -6,6 +6,7 @@ import time
 
 import bottle
 import requests
+import pytest
 from pytest import raises
 
 from jenkinsflow import jenkins_api
@@ -35,13 +36,11 @@ def _server():
     bottle.run(host=_host, port=_port, debug=True)
 
 
+@pytest.mark.apis(ApiType.JENKINS)
 def test_which_ci_server_not_ci():
     proc = None
     try:
         with api_select.api(__file__) as api:
-            if api.api_type != ApiType.JENKINS:
-                return
-
             proc = multiprocessing.Process(target=_server)
             proc.start()
 

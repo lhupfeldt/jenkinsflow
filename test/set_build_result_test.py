@@ -7,7 +7,8 @@
 import sys, os, urllib2, re, subprocess32
 from os.path import join as jp
 
-from pytest import raises, xfail  # pylint: disable=no-name-in-module
+import pytest
+from pytest import raises
 
 from jenkinsflow import set_build_result
 from jenkinsflow.flow import serial, Propagation
@@ -51,10 +52,8 @@ def no_pre_existing_cli():
 _setting_job_result_msg = "INFO: Setting job result to 'unstable'"
 
 
+@pytest.mark.not_apis(ApiType.MOCK)
 def test_set_build_result_no_cli_jar(fake_java, env_base_url, capfd):
-    if test_cfg.selected_api()  == ApiType.MOCK:
-        return
-
     with api_select.api(__file__) as api:
         no_pre_existing_cli()
         api.flow_job()
@@ -77,10 +76,8 @@ def test_set_build_result_no_cli_jar(fake_java, env_base_url, capfd):
     )
 
 
+@pytest.mark.not_apis(ApiType.MOCK)
 def test_set_build_result_no_cli_jar_env_base_url_trailing_slash(fake_java, env_base_url_trailing_slash, capfd):
-    if test_cfg.selected_api()  == ApiType.MOCK:
-        return
-    
     with api_select.api(__file__) as api:
         no_pre_existing_cli()
         api.flow_job()
@@ -103,10 +100,8 @@ def test_set_build_result_no_cli_jar_env_base_url_trailing_slash(fake_java, env_
     )
 
 
+@pytest.mark.not_apis(ApiType.MOCK)
 def test_set_build_result_no_cli_jar_env_base_url_trailing_slashes(fake_java, env_base_url_trailing_slashes, capfd):
-    if test_cfg.selected_api()  == ApiType.MOCK:
-        return
-    
     with api_select.api(__file__) as api:
         no_pre_existing_cli()
         api.flow_job()
@@ -129,10 +124,8 @@ def test_set_build_result_no_cli_jar_env_base_url_trailing_slashes(fake_java, en
     )
 
 
+@pytest.mark.not_apis(ApiType.MOCK)
 def test_set_build_result(fake_java, env_base_url):
-    if test_cfg.selected_api()  == ApiType.MOCK:
-        return
-
     with api_select.api(__file__) as api:
         pre_existing_cli()
         api.flow_job()
@@ -143,10 +136,8 @@ def test_set_build_result(fake_java, env_base_url):
             ctrl1.invoke('j1_fail')
 
 
+@pytest.mark.not_apis(ApiType.MOCK)
 def test_set_build_result_direct_url(fake_java, env_base_url):
-    if test_cfg.selected_api()  == ApiType.MOCK:
-        return
-
     with api_select.api(__file__) as api:
         pre_existing_cli()
         api.flow_job()
@@ -157,10 +148,8 @@ def test_set_build_result_direct_url(fake_java, env_base_url):
             ctrl1.invoke('j1_fail')
 
 
+@pytest.mark.not_apis(ApiType.MOCK)
 def test_set_build_result_no_cli_jar_env_base_url_eq_direct_url(fake_java, env_base_url, capfd):
-    if test_cfg.selected_api()  == ApiType.MOCK:
-        return
-    
     with api_select.api(__file__) as api:
         no_pre_existing_cli()
         api.flow_job()
@@ -184,10 +173,8 @@ def test_set_build_result_no_cli_jar_env_base_url_eq_direct_url(fake_java, env_b
     )
 
 
+@pytest.mark.not_apis(ApiType.MOCK)
 def test_set_build_result_direct_url_trailing_slash(fake_java, env_base_url, capfd):
-    if test_cfg.selected_api()  == ApiType.MOCK:
-        return
-    
     with api_select.api(__file__) as api:
         pre_existing_cli()
         api.flow_job()
@@ -204,10 +191,8 @@ def test_set_build_result_direct_url_trailing_slash(fake_java, env_base_url, cap
     )
 
 
+@pytest.mark.not_apis(ApiType.MOCK)
 def test_set_build_result_direct_url_different_from_proxied_url(fake_java, env_different_base_url, capfd):
-    if test_cfg.selected_api()  == ApiType.MOCK:
-        return
-    
     with api_select.api(__file__) as api:
         no_pre_existing_cli()
         api.flow_job()
@@ -232,10 +217,8 @@ def test_set_build_result_direct_url_different_from_proxied_url(fake_java, env_d
     )
 
 
+@pytest.mark.not_apis(ApiType.MOCK)
 def test_set_build_result_no_auth(fake_java, env_base_url):
-    if test_cfg.selected_api()  == ApiType.MOCK:
-        return
-
     with api_select.api(__file__) as api:
         pre_existing_cli()
         api.flow_job()
@@ -245,11 +228,8 @@ def test_set_build_result_no_auth(fake_java, env_base_url):
             ctrl1.invoke('j1_fail')
 
 
+@pytest.mark.not_apis(ApiType.SCRIPT)  # JENKINS_URL is always set for script_api
 def test_set_build_result_no_jenkinsurl(env_no_base_url):
-    if test_cfg.selected_api() == ApiType.SCRIPT:
-        # JENKINS_URL is always set for script_api
-        return
-
     with raises(Exception) as exinfo:
         with api_select.api(__file__) as api:
             api.flow_job()
@@ -265,20 +245,16 @@ def test_set_build_result_no_jenkinsurl(env_no_base_url):
     )
 
 
+@pytest.mark.not_apis(ApiType.MOCK)
 def test_set_build_result_call_cli_direct_url_trailing_slash(fake_java, env_base_url, cli_runner):
-    if test_cfg.selected_api()  == ApiType.MOCK:
-        return
-
     with api_select.api(__file__):
         pre_existing_cli()
         base_url = test_cfg.direct_url() + '/'
         _result = cli_runner.invoke(cli, ['set_build_result', '--direct-url', base_url])
 
 
+@pytest.mark.not_apis(ApiType.MOCK)
 def test_set_build_result_call_main_direct_url_no_trailing_slash(fake_java, env_base_url, cli_runner):
-    if test_cfg.selected_api()  == ApiType.MOCK:
-        return
-
     with api_select.api(__file__):
         pre_existing_cli()
         base_url = test_cfg.direct_url().rstrip('/')

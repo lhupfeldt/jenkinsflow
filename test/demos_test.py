@@ -10,11 +10,11 @@ here = os.path.abspath(os.path.dirname(__file__))
 extra_sys_path = [os.path.normpath(path) for path in [here, jp(here, '../..'), jp(here, '../demo'), jp(here, '../demo/jobs')]]
 sys.path = extra_sys_path + sys.path
 
+import pytest
 from pytest import raises
 
 from jenkinsflow.flow import parallel, JobControlFailException
-from .framework import api_select, utils
-from . import cfg as test_cfg
+from .framework import api_select
 from .cfg import ApiType
 
 import basic, calculated_flow, prefix, hide_password, errors
@@ -29,10 +29,6 @@ def load_demo_jobs(demo):
 
 
 def _test_demo(demo):
-    # TODO: script api is not configured to run demos
-    if test_cfg.selected_api() == ApiType.SCRIPT:
-        return
-
     load_demo_jobs(demo)
 
     with api_select.api(__file__, fixed_prefix="jenkinsflow_demo__") as api:
@@ -42,27 +38,28 @@ def _test_demo(demo):
             ctrl1.invoke(demo.__name__ + "__0flow")
 
 
+@pytest.mark.not_apis(ApiType.SCRIPT)  # TODO: script api is not configured to run demos
 def test_demos_basic():
     _test_demo(basic)
 
 
+@pytest.mark.not_apis(ApiType.SCRIPT)  # TODO: script api is not configured to run demos
 def test_demos_calculated_flow():
     _test_demo(calculated_flow)
 
 
+@pytest.mark.not_apis(ApiType.SCRIPT)  # TODO: script api is not configured to run demos
 def test_demos_prefix():
     _test_demo(prefix)
 
 
+@pytest.mark.not_apis(ApiType.SCRIPT)  # TODO: script api is not configured to run demos
 def test_demos_hide_password():
     _test_demo(hide_password)
 
 
+@pytest.mark.not_apis(ApiType.SCRIPT)  # TODO: script api is not configured to run demos
 def test_demos_with_errors():
-    # TODO
-    if test_cfg.selected_api() == ApiType.SCRIPT:
-        return
-
     demo = errors
     load_demo_jobs(demo)
 

@@ -2,13 +2,36 @@
 # All rights reserved. This work is under a BSD license, see LICENSE.TXT.
 
 import os
+
+import pytest
 from pytest import fixture  # pylint: disable=no-name-in-module
 from click.testing import CliRunner
 
 
 from . import cfg as test_cfg
+from .cfg import ApiType
 
 # Note: You can't (indirectly) import stuff from jenkinsflow here, it messes up the coverage
+
+
+def pytest_configure(config):
+    # Register api  marker
+    config.addinivalue_line("markers", "apis(*ApiType): mark test to run only when using specified apis")
+    config.addinivalue_line("markers", "not_apis(*ApiType): mark test NOT to run when using specified apis")
+
+
+def pytest_runtest_setup(item):
+    apimarker = item.get_marker("apis")
+    if apimarker is not None:
+        apis = apimarker.args
+        if test_cfg.selected_api() not in apis:
+            pytest.skip("test requires one the following apis {}".format(apis))
+    else:
+        not_apimarker = item.get_marker("not_apis")
+        if not_apimarker is not None:
+            not_apis = not_apimarker.args
+            if test_cfg.selected_api() in not_apis:
+                pytest.skip("test is not run for the following apis {}".format(not_apis))
 
 
 def _set_env_fixture(var_name, value, request):
