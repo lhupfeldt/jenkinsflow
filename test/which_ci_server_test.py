@@ -2,8 +2,10 @@
 # All rights reserved. This work is under a BSD license, see LICENSE.TXT.
 
 import os, multiprocessing
-import bottle
+import time
 
+import bottle
+import requests
 from pytest import raises
 
 from jenkinsflow import jenkins_api
@@ -16,12 +18,12 @@ here = os.path.abspath(os.path.dirname(__file__))
 
 
 @bottle.route('/')
-def index():
+def _index():
     return bottle.static_file('which_ci_server.html', root=here)
 
 
 @bottle.route('/api/json')
-def api():
+def _api():
     return bottle.static_file('which_ci_server.html', root=here)
 
 
@@ -29,7 +31,7 @@ _host = 'localhost'
 _port = 8082
 
 
-def server():
+def _server():
     bottle.run(host=_host, port=_port, debug=True)
 
 
@@ -40,12 +42,17 @@ def test_which_ci_server_not_ci():
             if api.api_type != ApiType.JENKINS:
                 return
 
-            proc = multiprocessing.Process(target=server)
+            proc = multiprocessing.Process(target=_server)
             proc.start()
 
             with raises(Exception) as exinfo:
-                jenkins_api.Jenkins("http://" + _host + ':' + repr(_port), "dummy").poll()
-    
+                for _ in range(0, 10):
+                    try:
+                        jenkins_api.Jenkins("http://" + _host + ':' + repr(_port), "dummy").poll()
+                    except requests.exceptions.ConnectionError:
+                        # Wait for bottle to start
+                        time.sleep(0.1)
+
             assert_lines_in(
                 exinfo.value.message,
                  "Not connected to Jenkins or Hudson (expected X-Jenkins or X-Hudson header, got: "
