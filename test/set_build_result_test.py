@@ -24,7 +24,7 @@ here = os.path.abspath(os.path.dirname(__file__))
 
 
 def pre_existing_cli():
-    if test_cfg.selected_api() == ApiType.SCRIPT:
+    if test_cfg.selected_api() != ApiType.JENKINS:
         return
 
     public_base_url = os.environ.get('HUDSON_URL')
@@ -52,21 +52,17 @@ _setting_job_result_msg = "INFO: Setting job result to 'unstable'"
 
 
 def test_set_build_result_no_cli_jar(fake_java, env_base_url, capfd):
+    if test_cfg.selected_api()  == ApiType.MOCK:
+        return
+
     with api_select.api(__file__) as api:
         no_pre_existing_cli()
-        try:
-            api.flow_job()
-            api.job('j1_fail', exec_time=0.01, max_fails=1, expect_invocations=1, expect_order=1)
+        api.flow_job()
+        api.job('j1_fail', exec_time=0.01, max_fails=1, expect_invocations=1, expect_order=1)
 
-            with serial(api, timeout=70, username=username, password=password, job_name_prefix=api.job_name_prefix, report_interval=3,
-                        propagation=Propagation.FAILURE_TO_UNSTABLE) as ctrl1:
-                ctrl1.invoke('j1_fail')
-
-        except urllib2.URLError:
-            # Jenkins is not running, so we cant test this
-            if api.api_type != ApiType.MOCK:
-                raise
-            xfail()
+        with serial(api, timeout=70, username=username, password=password, job_name_prefix=api.job_name_prefix, report_interval=3,
+                    propagation=Propagation.FAILURE_TO_UNSTABLE) as ctrl1:
+            ctrl1.invoke('j1_fail')
 
     sout, _ = capfd.readouterr()
 
@@ -82,21 +78,17 @@ def test_set_build_result_no_cli_jar(fake_java, env_base_url, capfd):
 
 
 def test_set_build_result_no_cli_jar_env_base_url_trailing_slash(fake_java, env_base_url_trailing_slash, capfd):
+    if test_cfg.selected_api()  == ApiType.MOCK:
+        return
+    
     with api_select.api(__file__) as api:
         no_pre_existing_cli()
-        try:
-            api.flow_job()
-            api.job('j1_fail', exec_time=0.01, max_fails=1, expect_invocations=1, expect_order=1)
+        api.flow_job()
+        api.job('j1_fail', exec_time=0.01, max_fails=1, expect_invocations=1, expect_order=1)
 
-            with serial(api, timeout=70, username=username, password=password, job_name_prefix=api.job_name_prefix, report_interval=3,
-                        propagation=Propagation.FAILURE_TO_UNSTABLE) as ctrl1:
-                ctrl1.invoke('j1_fail')
-
-        except urllib2.URLError:
-            # Jenkins is not running, so we cant test this
-            if api.api_type != ApiType.MOCK:
-                raise
-            xfail()
+        with serial(api, timeout=70, username=username, password=password, job_name_prefix=api.job_name_prefix, report_interval=3,
+                    propagation=Propagation.FAILURE_TO_UNSTABLE) as ctrl1:
+            ctrl1.invoke('j1_fail')
 
     sout, _ = capfd.readouterr()
 
@@ -112,21 +104,17 @@ def test_set_build_result_no_cli_jar_env_base_url_trailing_slash(fake_java, env_
 
 
 def test_set_build_result_no_cli_jar_env_base_url_trailing_slashes(fake_java, env_base_url_trailing_slashes, capfd):
+    if test_cfg.selected_api()  == ApiType.MOCK:
+        return
+    
     with api_select.api(__file__) as api:
         no_pre_existing_cli()
-        try:
-            api.flow_job()
-            api.job('j1_fail', exec_time=0.01, max_fails=1, expect_invocations=1, expect_order=1)
+        api.flow_job()
+        api.job('j1_fail', exec_time=0.01, max_fails=1, expect_invocations=1, expect_order=1)
 
-            with serial(api, timeout=70, username=username, password=password, job_name_prefix=api.job_name_prefix, report_interval=3,
-                        propagation=Propagation.FAILURE_TO_UNSTABLE) as ctrl1:
-                ctrl1.invoke('j1_fail')
-
-        except urllib2.URLError:
-            # Jenkins is not running, so we cant test this
-            if api.api_type != ApiType.MOCK:
-                raise
-            xfail()
+        with serial(api, timeout=70, username=username, password=password, job_name_prefix=api.job_name_prefix, report_interval=3,
+                    propagation=Propagation.FAILURE_TO_UNSTABLE) as ctrl1:
+            ctrl1.invoke('j1_fail')
 
     sout, _ = capfd.readouterr()
 
@@ -142,57 +130,45 @@ def test_set_build_result_no_cli_jar_env_base_url_trailing_slashes(fake_java, en
 
 
 def test_set_build_result(fake_java, env_base_url):
+    if test_cfg.selected_api()  == ApiType.MOCK:
+        return
+
     with api_select.api(__file__) as api:
         pre_existing_cli()
-        try:
-            api.flow_job()
-            api.job('j1_fail', exec_time=0.01, max_fails=1, expect_invocations=1, expect_order=1)
+        api.flow_job()
+        api.job('j1_fail', exec_time=0.01, max_fails=1, expect_invocations=1, expect_order=1)
 
-            with serial(api, timeout=70, username=username, password=password, job_name_prefix=api.job_name_prefix, report_interval=3,
-                        propagation=Propagation.FAILURE_TO_UNSTABLE) as ctrl1:
-                ctrl1.invoke('j1_fail')
-
-        except urllib2.URLError:
-            # Jenkins is not running, so we cant test this
-            if api.api_type != ApiType.MOCK:
-                raise
-            xfail()
+        with serial(api, timeout=70, username=username, password=password, job_name_prefix=api.job_name_prefix, report_interval=3,
+                    propagation=Propagation.FAILURE_TO_UNSTABLE) as ctrl1:
+            ctrl1.invoke('j1_fail')
 
 
 def test_set_build_result_direct_url(fake_java, env_base_url):
+    if test_cfg.selected_api()  == ApiType.MOCK:
+        return
+
     with api_select.api(__file__) as api:
         pre_existing_cli()
-        try:
-            api.flow_job()
-            api.job('j1_fail', exec_time=0.01, max_fails=1, expect_invocations=1, expect_order=1)
+        api.flow_job()
+        api.job('j1_fail', exec_time=0.01, max_fails=1, expect_invocations=1, expect_order=1)
 
-            with serial(api, timeout=70, username=username, password=password, job_name_prefix=api.job_name_prefix, report_interval=3,
-                        propagation=Propagation.FAILURE_TO_UNSTABLE, direct_url=test_cfg.direct_url()) as ctrl1:
-                ctrl1.invoke('j1_fail')
-
-        except urllib2.URLError:
-            # Jenkins is not running, so we cant test this
-            if api.api_type != ApiType.MOCK:
-                raise
-            xfail()
+        with serial(api, timeout=70, username=username, password=password, job_name_prefix=api.job_name_prefix, report_interval=3,
+                    propagation=Propagation.FAILURE_TO_UNSTABLE, direct_url=test_cfg.direct_url()) as ctrl1:
+            ctrl1.invoke('j1_fail')
 
 
 def test_set_build_result_no_cli_jar_env_base_url_eq_direct_url(fake_java, env_base_url, capfd):
+    if test_cfg.selected_api()  == ApiType.MOCK:
+        return
+    
     with api_select.api(__file__) as api:
         no_pre_existing_cli()
-        try:
-            api.flow_job()
-            api.job('j1_fail', exec_time=0.01, max_fails=1, expect_invocations=1, expect_order=1)
+        api.flow_job()
+        api.job('j1_fail', exec_time=0.01, max_fails=1, expect_invocations=1, expect_order=1)
 
-            with serial(api, timeout=70, username=username, password=password, job_name_prefix=api.job_name_prefix, report_interval=3,
-                        propagation=Propagation.FAILURE_TO_UNSTABLE, direct_url=test_cfg.public_url()) as ctrl1:
-                ctrl1.invoke('j1_fail')
-
-        except urllib2.URLError:
-            # Jenkins is not running, so we cant test this
-            if api.api_type != ApiType.MOCK:
-                raise
-            xfail()
+        with serial(api, timeout=70, username=username, password=password, job_name_prefix=api.job_name_prefix, report_interval=3,
+                    propagation=Propagation.FAILURE_TO_UNSTABLE, direct_url=test_cfg.public_url()) as ctrl1:
+            ctrl1.invoke('j1_fail')
 
     sout, _ = capfd.readouterr()
 
@@ -209,21 +185,17 @@ def test_set_build_result_no_cli_jar_env_base_url_eq_direct_url(fake_java, env_b
 
 
 def test_set_build_result_direct_url_trailing_slash(fake_java, env_base_url, capfd):
+    if test_cfg.selected_api()  == ApiType.MOCK:
+        return
+    
     with api_select.api(__file__) as api:
         pre_existing_cli()
-        try:
-            api.flow_job()
-            api.job('j1_fail', exec_time=0.01, max_fails=1, expect_invocations=1, expect_order=1)
+        api.flow_job()
+        api.job('j1_fail', exec_time=0.01, max_fails=1, expect_invocations=1, expect_order=1)
 
-            with serial(api, timeout=70, username=username, password=password, job_name_prefix=api.job_name_prefix, report_interval=3,
-                        propagation=Propagation.FAILURE_TO_UNSTABLE, direct_url=test_cfg.direct_url() + '/') as ctrl1:
-                ctrl1.invoke('j1_fail')
-
-        except urllib2.URLError:
-            # Jenkins is not running, so we cant test this
-            if api.api_type != ApiType.MOCK:
-                raise
-            xfail()
+        with serial(api, timeout=70, username=username, password=password, job_name_prefix=api.job_name_prefix, report_interval=3,
+                    propagation=Propagation.FAILURE_TO_UNSTABLE, direct_url=test_cfg.direct_url() + '/') as ctrl1:
+            ctrl1.invoke('j1_fail')
 
     sout, _ = capfd.readouterr()
     assert_lines_in(
@@ -233,21 +205,17 @@ def test_set_build_result_direct_url_trailing_slash(fake_java, env_base_url, cap
 
 
 def test_set_build_result_direct_url_different_from_proxied_url(fake_java, env_different_base_url, capfd):
+    if test_cfg.selected_api()  == ApiType.MOCK:
+        return
+    
     with api_select.api(__file__) as api:
         no_pre_existing_cli()
-        try:
-            api.flow_job()
-            api.job('j1_fail', exec_time=0.01, max_fails=1, expect_invocations=1, expect_order=1)
+        api.flow_job()
+        api.job('j1_fail', exec_time=0.01, max_fails=1, expect_invocations=1, expect_order=1)
 
-            with serial(api, timeout=70, username=username, password=password, job_name_prefix=api.job_name_prefix, report_interval=3,
-                        propagation=Propagation.FAILURE_TO_UNSTABLE, direct_url=test_cfg.direct_url() + '/') as ctrl1:
-                ctrl1.invoke('j1_fail')
-
-        except urllib2.URLError:
-            # Jenkins is not running, so we cant test this
-            if api.api_type != ApiType.MOCK:
-                raise
-            xfail()
+        with serial(api, timeout=70, username=username, password=password, job_name_prefix=api.job_name_prefix, report_interval=3,
+                    propagation=Propagation.FAILURE_TO_UNSTABLE, direct_url=test_cfg.direct_url() + '/') as ctrl1:
+            ctrl1.invoke('j1_fail')
 
     sout, _ = capfd.readouterr()
 
@@ -265,20 +233,16 @@ def test_set_build_result_direct_url_different_from_proxied_url(fake_java, env_d
 
 
 def test_set_build_result_no_auth(fake_java, env_base_url):
+    if test_cfg.selected_api()  == ApiType.MOCK:
+        return
+
     with api_select.api(__file__) as api:
         pre_existing_cli()
-        try:
-            api.flow_job()
-            api.job('j1_fail', exec_time=0.01, max_fails=1, expect_invocations=1, expect_order=1)
+        api.flow_job()
+        api.job('j1_fail', exec_time=0.01, max_fails=1, expect_invocations=1, expect_order=1)
 
-            with serial(api, timeout=70, job_name_prefix=api.job_name_prefix, report_interval=3, propagation=Propagation.FAILURE_TO_UNSTABLE) as ctrl1:
-                ctrl1.invoke('j1_fail')
-
-        except urllib2.URLError:
-            # Jenkins is not running, so we cant test this
-            if api.api_type != ApiType.MOCK:
-                raise
-            xfail()
+        with serial(api, timeout=70, job_name_prefix=api.job_name_prefix, report_interval=3, propagation=Propagation.FAILURE_TO_UNSTABLE) as ctrl1:
+            ctrl1.invoke('j1_fail')
 
 
 def test_set_build_result_no_jenkinsurl(env_no_base_url):
@@ -302,25 +266,23 @@ def test_set_build_result_no_jenkinsurl(env_no_base_url):
 
 
 def test_set_build_result_call_cli_direct_url_trailing_slash(fake_java, env_base_url, cli_runner):
+    if test_cfg.selected_api()  == ApiType.MOCK:
+        return
+
     with api_select.api(__file__):
         pre_existing_cli()
         base_url = test_cfg.direct_url() + '/'
-        _result = cli_runner.invoke(
-            cli,
-            ['set_build_result',
-             '--direct-url',
-             base_url])
+        _result = cli_runner.invoke(cli, ['set_build_result', '--direct-url', base_url])
 
 
 def test_set_build_result_call_main_direct_url_no_trailing_slash(fake_java, env_base_url, cli_runner):
+    if test_cfg.selected_api()  == ApiType.MOCK:
+        return
+
     with api_select.api(__file__):
         pre_existing_cli()
         base_url = test_cfg.direct_url().rstrip('/')
-        _result = cli_runner.invoke(
-            cli,
-            ['set_build_result',
-             '--direct-url',
-             base_url])
+        _result = cli_runner.invoke(cli, ['set_build_result', '--direct-url', base_url])
 
 
 def test_set_build_result_call_script_help(capfd):
