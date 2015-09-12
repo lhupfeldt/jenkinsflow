@@ -5,6 +5,7 @@ from __future__ import print_function
 
 import os
 
+import pytest
 from pytest import raises, xfail
 
 from jenkinsflow.flow import serial, FailedChildJobException
@@ -17,12 +18,9 @@ from .framework.killer import kill
 here = os.path.abspath(os.path.dirname(__file__))
 
 
+@pytest.mark.not_apis(ApiType.SCRIPT)  # TODO
 def test_kill_all_unchecked(capsys):
     with api_select.api(__file__, login=True) as api:
-        # TODO
-        if api.api_type == ApiType.SCRIPT:
-            return
-
         api.flow_job()
         api.job('j1', exec_time=50, max_fails=0, expect_invocations=1, expect_order=None, invocation_delay=0, unknown_result=False, kill=True)
         api.job('j2', exec_time=0.1, max_fails=0, expect_invocations=1, expect_order=1, invocation_delay=0, unknown_result=False, kill=True)
@@ -85,13 +83,10 @@ def test_kill_all_unchecked(capsys):
         )
 
 
+@pytest.mark.not_apis(ApiType.MOCK, ApiType.SCRIPT)
 def test_kill_mini(capsys):
     """Cut down kill_current for debugging"""
     with api_select.api(__file__, login=True) as api:
-        # TODO
-        if api.api_type in (ApiType.MOCK, ApiType.SCRIPT):
-            return
-
         is_hudson = os.environ.get('HUDSON_URL')
         if is_hudson:  # TODO investigate why this test fails in Hudson
             xfail("Doesn't pass in Hudson")
@@ -128,12 +123,9 @@ def test_kill_mini(capsys):
         )
 
 
+@pytest.mark.not_apis(ApiType.MOCK, ApiType.SCRIPT)  # TODO
 def test_kill_current(capsys):
     with api_select.api(__file__, login=True) as api:
-        # TODO
-        if api.api_type in (ApiType.MOCK, ApiType.SCRIPT):
-            return
-
         is_hudson = os.environ.get('HUDSON_URL')
         if is_hudson:  # TODO investigate why this test fails in Hudson
             xfail("Doesn't pass in Hudson")
@@ -152,7 +144,7 @@ def test_kill_current(capsys):
         api.job('j7', exec_time=50, max_fails=0, expect_invocations=0, expect_order=None)
 
         kill(20, 1)
-        
+
         with serial(api, timeout=70, job_name_prefix=api.job_name_prefix, report_interval=0.05) as ctrl1:
             with ctrl1.parallel() as ctrl2:
                 ctrl2.invoke('j1')
@@ -199,12 +191,9 @@ def test_kill_current(capsys):
         )
 
 
+@pytest.mark.not_apis(ApiType.MOCK, ApiType.SCRIPT)  # TODO
 def test_kill_all_unchecked_no_job(capsys):
     with api_select.api(__file__, login=True) as api:
-        # TODO
-        if api.api_type in (ApiType.MOCK, ApiType.SCRIPT):
-            return
-
         api.flow_job()
         api.job('j1', exec_time=50, max_fails=0, expect_invocations=1, expect_order=None, unknown_result=False, kill=True)
         api.job('j2', exec_time=0.1, max_fails=0, expect_invocations=1, expect_order=1, unknown_result=False, kill=True)

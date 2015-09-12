@@ -1,8 +1,6 @@
 # Copyright (c) 2012 - 2015 Lars Hupfeldt Nielsen, Hupfeldt IT
 # All rights reserved. This work is under a BSD license, see LICENSE.TXT.
 
-from pytest import raises
-
 from jenkinsflow.flow import serial
 from .cfg import ApiType
 from .framework import api_select

@@ -3,6 +3,7 @@
 
 import os, re
 
+import pytest
 from pytest import xfail
 
 from jenkinsflow.flow import serial, parallel
@@ -59,12 +60,9 @@ def test_multiple_invocations_new_flow_same_args():
             ctrl1.invoke('j1', password='a', s1='b')
 
 
+@pytest.mark.not_apis(ApiType.MOCK, ApiType.SCRIPT)
 def test_multiple_invocations_parallel_same_flow_queued(capsys):
     with api_select.api(__file__) as api:
-        if api.api_type in (ApiType.MOCK, ApiType.SCRIPT):
-            # TODO
-            return
-
         is_hudson = os.environ.get('HUDSON_URL')
         if is_hudson:  # TODO investigate why this test fails in Hudson
             xfail("Doesn't pass when using Hudson")
@@ -110,6 +108,7 @@ def test_multiple_invocations_parallel_same_flow_queued(capsys):
         )
 
 
+@pytest.mark.not_apis(ApiType.MOCK, ApiType.SCRIPT)
 def test_multiple_invocations_parallel_same_flow_no_args_singlequeued(capsys):
     """
     Jenkins automatically throws away queued builds of parameterless jobs when another build is invoked,
@@ -117,10 +116,6 @@ def test_multiple_invocations_parallel_same_flow_no_args_singlequeued(capsys):
     """
 
     with api_select.api(__file__) as api:
-        if api.api_type in (ApiType.MOCK, ApiType.SCRIPT):
-            # TODO
-            return
-
         is_hudson = os.environ.get('HUDSON_URL')
         if is_hudson:  # TODO investigate why this test fails in Hudson
             xfail("Doesn't pass in Hudson")

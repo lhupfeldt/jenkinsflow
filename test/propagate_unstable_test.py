@@ -23,6 +23,7 @@ def test_propagate_unstable_serial_single_unstable(env_base_url, fake_java):
 
         assert ctrl1.result == BuildResult.UNSTABLE
 
+
 def test_propagate_unstable_serial_single_unstable_user_pass(env_base_url, fake_java):
     with api_select.api(__file__) as api:
         pre_existing_fake_cli()

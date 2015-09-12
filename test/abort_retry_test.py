@@ -3,6 +3,7 @@
 
 import os
 
+import pytest
 from pytest import raises
 
 from jenkinsflow.flow import parallel, serial, FailedChildJobException, FailedChildJobsException
@@ -14,11 +15,9 @@ from .cfg import ApiType
 here = os.path.abspath(os.path.dirname(__file__))
 
 
+@pytest.mark.not_apis(ApiType.SCRIPT)
 def test_abort_retry_serial_toplevel():
     with api_select.api(__file__) as api:
-        if api.api_type == ApiType.SCRIPT:
-            return
-
         api.flow_job()
         api.job('j11', 0.01, max_fails=0, expect_invocations=1, expect_order=1)
         api.job('j12_abort', 10, max_fails=0, expect_invocations=1, expect_order=2, serial=True, final_result='ABORTED')
@@ -33,11 +32,9 @@ def test_abort_retry_serial_toplevel():
                 ctrl1.invoke('j13')
 
 
+@pytest.mark.not_apis(ApiType.SCRIPT)
 def test_abort_retry_parallel_toplevel():
     with api_select.api(__file__) as api:
-        if api.api_type == ApiType.SCRIPT:
-            return
-
         api.flow_job()
         api.job('j11', 0.01, max_fails=0, expect_invocations=1, expect_order=None)
         api.job('j12_abort', 10, max_fails=0, expect_invocations=1, expect_order=None, final_result='ABORTED')
@@ -52,11 +49,9 @@ def test_abort_retry_parallel_toplevel():
                 ctrl1.invoke('j13')
 
 
+@pytest.mark.not_apis(ApiType.SCRIPT)
 def test_abort_retry_serial_parallel_nested():
     with api_select.api(__file__) as api:
-        if api.api_type == ApiType.SCRIPT:
-            return
-
         api.flow_job()
         api.job('j11', 0.01, max_fails=0, expect_invocations=1, expect_order=1)
         api.job('j21', 20, max_fails=0, expect_invocations=1, expect_order=2)
@@ -78,11 +73,9 @@ def test_abort_retry_serial_parallel_nested():
                 sctrl1.invoke('j12')
 
 
+@pytest.mark.not_apis(ApiType.SCRIPT)
 def test_abort_retry_parallel_serial_nested():
     with api_select.api(__file__) as api:
-        if api.api_type == ApiType.SCRIPT:
-            return
-
         api.flow_job()
         api.job('j11', 0.01, max_fails=0, expect_invocations=1, expect_order=1)
         api.job('j21', 0.01, max_fails=0, expect_invocations=1, expect_order=None)
