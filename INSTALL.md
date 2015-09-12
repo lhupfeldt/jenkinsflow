@@ -47,9 +47,9 @@ Test
 ----
 
 1. Install pytest and tenjin template engine:
-   pip install -U pytest pytest-cov pytest-cache pytest-instafail logilab-devtools pytest-xdist tenjin proxytypes click
+   pip install -U 'pytest>=2.7.2' pytest-cov pytest-cache pytest-instafail logilab-devtools 'pytest-xdist>=1.12' tenjin proxytypes click
    # The test will also test the generation of documentation, for this you need:
-   pip install -U sphinx>=1.3.1 sphinxcontrib-programoutput
+   pip install -U 'sphinx>=1.3.1' sphinxcontrib-programoutput
    
    Note: Requires pytest-cov 1.8.0 or later
 

@@ -3,7 +3,7 @@
 
 from __future__ import print_function
 
-import sys, os, signal, time, subprocess32
+import sys, os, signal, subprocess32
 
 sys.path.append('../../..')
 from jenkinsflow.mocked import hyperspeed
@@ -11,7 +11,7 @@ from jenkinsflow.mocked import hyperspeed
 
 def _killer(pid, sleep_time, num_kills):
     print("\nKiller going to sleep for", sleep_time, "seconds")
-    time.sleep(sleep_time)
+    hyperspeed.sleep(sleep_time)
     print("\nKiller woke up")
     for ii in range(0, num_kills):
         os.kill(pid, signal.SIGTERM)

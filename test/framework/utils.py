@@ -62,7 +62,7 @@ def assert_lines_in(text, *expected_lines):
             Otherwise `expected line` must simply occur in a line in `text`
     """
     assert expected_lines
-    assert text 
+    assert text
     fixed_expected = []
     for expected in expected_lines:
         fixed_expected.append(replace_host_port(expected) if not hasattr(expected, 'match') else expected)
@@ -111,3 +111,21 @@ def flow_graph_dir(flow_name):
     Return: dir-name
     """
     return '.' if os.environ.get('JOB_NAME') else jp(flow_graph_root_dir, flow_name)
+
+
+def pre_existing_fake_cli():
+    """Fake presense of cli-jar"""
+    if test_cfg.selected_api() != ApiType.MOCK:
+        return
+
+    # Duplicated from set_build_result, we can't depend on that
+    jenkins_cli_jar = 'jenkins-cli.jar'
+    hudson_cli_jar = 'hudson-cli.jar'
+
+    if os.environ.get('HUDSON_URL'):
+        cli_jar = hudson_cli_jar
+    else:
+        cli_jar = jenkins_cli_jar
+
+    with open(cli_jar, 'w'):
+        pass

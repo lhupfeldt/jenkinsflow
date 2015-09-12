@@ -3,7 +3,7 @@ set -u
 
 source_dir=$(cd $(dirname $0)/.. && pwd)
 
-# Note: duplicated in mock_api.py, demo/basic.py and INSTALL.md
+# Note: duplicated in config.py, demo/basic.py and INSTALL.md
 target_dir=/tmp/jenkinsflow-test/jenkinsflow
 
 mkdir -p $target_dir
