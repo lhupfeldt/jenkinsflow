@@ -28,7 +28,7 @@ if __name__ == "__main__":
         test_suite='test',
         test_loader='test.test:TestLoader',
         tests_require=['pytest>=2.7.2', 'pytest-cov', 'pytest-cache', 'pytest-instafail', 'pytest-xdist>=1.12',
-                       'logilab-devtools', 'proxytypes', 'click', 'tenjin',
+                       'proxytypes', 'click', 'tenjin',
                        # The test also tests creation of the documentation
                        'sphinx>=1.3.1', 'sphinxcontrib-programoutput'],
         url=PROJECT_URL,
