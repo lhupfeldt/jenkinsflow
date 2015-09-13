@@ -42,8 +42,11 @@ class KillType(Enum):
     CURRENT = 1
     ALL = 2
 
-    def __nonzero__(self):
+    def __bool__(self):
         return self !=  KillType.NONE
+
+    # Python2 compatibility
+    __nonzero__ = __bool__
 
 
 class JobControlException(Exception):
@@ -80,7 +83,7 @@ class FailedSingleJobException(JobControlFailException):
 
 class MissingJobsException(JobControlFailException):
     def __init__(self, ex):
-        super(MissingJobsException, self).__init__(ex.message, propagation=Propagation.NORMAL)
+        super(MissingJobsException, self).__init__(str(ex), propagation=Propagation.NORMAL)
 
 
 class FailedChildJobException(JobControlFailException):
@@ -235,7 +238,7 @@ class _SingleJob(_JobControl):
     """
 
     def __init__(self, parent_flow, securitytoken, job_name_prefix, max_tries, job_name, params, propagation, secret_params_re, allow_missing_jobs):
-        for key, value in params.iteritems():
+        for key, value in params.items():
             # Handle parameters passed as int or bool. Booleans will be lowercased!
             if isinstance(value, (bool, int)):
                 params[key] = str(value).lower()
@@ -281,7 +284,7 @@ class _SingleJob(_JobControl):
         first = current = OrderedDict()
         last = OrderedDict()
 
-        display_params = dict((key, (value if not self.secret_params_re.search(key) else '******')) for key, value in self.params.iteritems())
+        display_params = dict((key, (value if not self.secret_params_re.search(key) else '******')) for key, value in self.params.items())
         for name in self.top_flow.params_display_order:
             if name == '*':
                 current = last
@@ -289,7 +292,7 @@ class _SingleJob(_JobControl):
                 current[name] = display_params[name]
                 del display_params[name]
 
-        for key, value in chain(first.iteritems(), sorted(display_params.iteritems()), last.iteritems()):
+        for key, value in chain(first.items(), sorted(display_params.items()), last.items()):
             self._display_params.append((key, repr(value)))
 
     def _show_job_definition(self):
@@ -676,20 +679,24 @@ class _Flow(_JobControl):
 
     def json(self, file_path, indent=None):
         node_to_id = lambda job: job.node_id
+        separators=None
         if indent:
             node_to_id = lambda job: job.name
+            separators=(',', ': ')            
 
         nodes = self.nodes(node_to_id)
         links = self.links([], node_to_id)
-        graph = {'nodes': nodes, 'links': links}
+        graph = OrderedDict((('nodes', nodes), ('links', links)))
 
         import json
         from atomicfile import AtomicFile
         if file_path is not None:
             with AtomicFile(file_path, 'w+') as out_file:
-                json.dump(graph, out_file, indent=indent)
+                # python3 doesn't need  separators=(',', ': ')                
+                json.dump(graph, out_file, indent=indent, separators=separators)
         else:
-            return json.dumps(graph, indent=indent)
+            # python3 doesn't need  separators=(',', ': ')            
+            return json.dumps(graph, indent=indent, separators=separators)
 
 
 class _Parallel(_Flow):

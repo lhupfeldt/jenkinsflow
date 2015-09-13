@@ -53,7 +53,7 @@ def test_which_ci_server_not_ci():
                         time.sleep(0.1)
 
             assert_lines_in(
-                exinfo.value.message,
+                str(exinfo.value),
                  "Not connected to Jenkins or Hudson (expected X-Jenkins or X-Hudson header, got: "
             )
 

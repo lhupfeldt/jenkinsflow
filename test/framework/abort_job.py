@@ -4,7 +4,11 @@
 from __future__ import print_function
 
 import sys
-import subprocess32
+major_version = sys.version_info.major
+if major_version < 3:
+    import subprocess32 as subprocess
+else:
+    import subprocess
 
 from jenkinsflow.mocked import hyperspeed
 
@@ -34,4 +38,4 @@ if __name__ == '__main__':
 def abort(api, job_name, sleep_time):
     """Call this script as a subprocess"""
     if api.api_type != ApiType.MOCK:
-        subprocess32.Popen([sys.executable, __file__, api.file_name, api.func_name.replace('test_', ''), job_name, str(sleep_time)])
+        subprocess.Popen([sys.executable, __file__, api.file_name, api.func_name.replace('test_', ''), job_name, str(sleep_time)])

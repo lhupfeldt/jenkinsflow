@@ -77,7 +77,7 @@ def test_abort_retry_serial_parallel_nested():
 def test_abort_retry_parallel_serial_nested():
     with api_select.api(__file__) as api:
         api.flow_job()
-        api.job('j11', 0.01, max_fails=0, expect_invocations=1, expect_order=1)
+        api.job('j11', 0.01, max_fails=0, expect_invocations=1, expect_order=None)
         api.job('j21', 0.01, max_fails=0, expect_invocations=1, expect_order=None)
         api.job('j22_abort', 10, max_fails=0, expect_invocations=1, expect_order=None, final_result='ABORTED')
         api.job('j23', 0.01, max_fails=0, expect_invocations=0, expect_order=None)

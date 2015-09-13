@@ -25,7 +25,7 @@ def test_missing_jobs_not_allowed():
                 ctrl1.invoke('j2')
 
         assert_lines_in(
-            exinfo.value.message,
+            str(exinfo.value),
             re.compile("^Job not found: .*jenkinsflow_test__missing_jobs_not_allowed__missingA")
         )
 

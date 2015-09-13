@@ -37,7 +37,7 @@ class TestJob(AbstractApiJob):
         assert exec_time > 0
         assert max_fails >= 0
         assert expect_invocations >= 0
-        assert expect_order >= 1 or expect_order is None
+        assert expect_order is None or expect_order >= 1
         assert initial_buildno is None or initial_buildno >= 1
         assert invocation_delay >= 0
         assert unknown_result in (False, True)
@@ -111,7 +111,7 @@ class Jobs(object):
                 else:
                     raise Exception("Job: " + repr(job_name) + " is supposed to be created by another job, but that job was not found")
 
-        for job_name, job in test_jobs.iteritems():
+        for job_name, job in test_jobs.items():
             if job.create_job and isinstance(job.create_job, str):
                 raise Exception("Job: " + repr(job_name) + " is supposed to create job: " + repr(job.create_job) + " but definition for that job was not found")
 

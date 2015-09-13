@@ -6,7 +6,11 @@ from __future__ import print_function
 import os, sys, time
 from os.path import join as jp
 
-from peak.util.proxies import ObjectWrapper  # pylint: disable=import-error
+major_version = sys.version_info.major
+if major_version < 3:
+    from peak.util.proxies import ObjectWrapper  # pylint: disable=import-error
+else:
+    from objproxies import ObjectWrapper
 
 from jenkinsflow.jobload import update_job_from_template
 import demo_security as security  # pylint: disable=import-error
@@ -89,7 +93,7 @@ class Jobs(TestJobs):
             return None
         super(Jobs, self).__exit__(exc_type, exc_value, traceback)
         test_jobs = self.api.test_jobs
-        for job_name, job in test_jobs.iteritems():
+        for job_name, job in test_jobs.items():
             if not (job.flow_created or job.non_existing):
                 self.api._jenkins_job(job_name, job.exec_time, job.params, None, job.print_env, job.create_job,
                                       always_load=job.disappearing, num_builds_to_keep=4)
@@ -211,7 +215,7 @@ class JenkinsTestWrapperApi(jenkins.Jenkins, TestJenkins):
                     msg += ", but test job has property non_existing: " + repr(name) + ", test job:" + repr(job)
                 print(msg, file=sys.stderr)
                 raise Exception(msg)
-                
+
             if isinstance(job, MockJob):
                 self.test_jobs[name] = job = WrapperJob(jenkins_job, job)
             assert isinstance(job, WrapperJob)

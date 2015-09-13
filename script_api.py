@@ -71,7 +71,7 @@ class LoggingProcess(multiprocessing.Process):
         sys.exit(1)
 
     def run(self):
-        sys.stdout = sys.stderr = open(self.output_file_name, 'w', buffering=0)
+        sys.stdout = sys.stderr = open(self.output_file_name, 'w', buffering=1)
         super(LoggingProcess, self).run()
 
 

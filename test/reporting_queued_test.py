@@ -1,6 +1,8 @@
 # Copyright (c) 2012 - 2015 Lars Hupfeldt Nielsen, Hupfeldt IT
 # All rights reserved. This work is under a BSD license, see LICENSE.TXT.
 
+from __future__ import print_function
+
 from jenkinsflow.flow import serial
 from .cfg import ApiType
 from .framework import api_select
@@ -20,7 +22,7 @@ def test_reporting_queued(capsys):
         with serial(api, timeout=70, job_name_prefix=api.job_name_prefix) as ctrl1:
             ctrl1.invoke_unchecked('j1')
 
-        print api.api_type, type(api.api_type)
+        print(api.api_type, type(api.api_type))
         if api.api_type in skip_apis:
             return
 

@@ -3,7 +3,7 @@
 
 from __future__ import print_function
 
-import time, json
+import time
 from collections import OrderedDict
 
 import requests

@@ -33,8 +33,8 @@ def test_abort(capsys):
                 ctrl.invoke('wait10_abort')
                 ctrl.invoke('wait1_fail')
 
-        assert "wait10_abort" in exinfo.value.message
-        assert "wait1_fail" in exinfo.value.message
+        assert "wait10_abort" in str(exinfo.value)
+        assert "wait1_fail" in str(exinfo.value)
 
         sout, _ = capsys.readouterr()
         assert_lines_in(

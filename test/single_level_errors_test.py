@@ -28,9 +28,9 @@ def test_single_level_errors_parallel(capsys):
                 ctrl.invoke('wait5')
                 ctrl.invoke('wait5_fail')
 
-        assert "quick_fail" in exinfo.value.message
-        assert "wait10_fail" in exinfo.value.message
-        assert "wait5_fail" in exinfo.value.message
+        assert "quick_fail" in str(exinfo.value)
+        assert "wait10_fail" in str(exinfo.value)
+        assert "wait5_fail" in str(exinfo.value)
 
         sout, _ = capsys.readouterr()
         assert_lines_in(

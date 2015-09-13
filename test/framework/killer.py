@@ -3,7 +3,12 @@
 
 from __future__ import print_function
 
-import sys, os, signal, subprocess32
+import sys, os, signal
+major_version = sys.version_info.major
+if major_version < 3:
+    import subprocess32 as subprocess
+else:
+    import subprocess
 
 sys.path.append('../../..')
 from jenkinsflow.mocked import hyperspeed
@@ -27,4 +32,4 @@ def kill(sleep_time, num_kills):
     """Kill this process"""
     pid = os.getpid()
     print("kill, pid:", pid)
-    subprocess32.Popen([sys.executable, __file__, repr(pid), repr(sleep_time), repr(num_kills)])
+    subprocess.Popen([sys.executable, __file__, repr(pid), repr(sleep_time), repr(num_kills)])

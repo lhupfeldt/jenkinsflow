@@ -1,4 +1,4 @@
-import os
+import sys, os
 
 from setuptools import setup
 
@@ -14,6 +14,15 @@ PROJECT_URL = "https://github.com/lhupfeldt/jenkinsflow"
 SHORT_DESCRIPTION = 'Python API with high level build flow constructs (parallel/serial) for Jenkins (and Hudson).'
 LONG_DESCRIPTION = open(os.path.join(PROJECT_ROOT, "README.md")).read()
 
+
+if sys.version_info.major < 3:
+    py_version_requires = ['enum34', 'subprocess32']
+    py_version_test_require = ['proxytypes']
+else:
+    py_version_requires = []
+    py_version_test_require = ['objproxies']
+
+
 if __name__ == "__main__":
     setup(
         name=PROJECT_NAME.lower(),
@@ -24,13 +33,13 @@ if __name__ == "__main__":
         package_dir={'jenkinsflow':'.', 'jenkinsflow.cli': 'cli'},
         zip_safe=True,
         include_package_data=False,
-        install_requires=['requests', 'enum34', 'tenjin', 'bottle', 'atomicfile', 'subprocess32', 'psutil', 'setproctitle', 'click'],
+        install_requires=['requests', 'atomicfile', 'psutil', 'setproctitle', 'click', 'tenjin', 'bottle'] + py_version_requires,
         test_suite='test',
         test_loader='test.test:TestLoader',
-        tests_require=['pytest>=2.7.2', 'pytest-cov', 'pytest-cache', 'pytest-instafail', 'pytest-xdist>=1.12',
-                       'proxytypes', 'click', 'tenjin',
+        tests_require=['pytest>=2.7.2', 'pytest-cov>=2.1.0', 'pytest-cache>=1.0', 'pytest-instafail>=0.3.0', 'pytest-xdist>=1.12',
+                       'click', 'tenjin', 'bottle',
                        # The test also tests creation of the documentation
-                       'sphinx>=1.3.1', 'sphinxcontrib-programoutput'],
+                       'sphinx>=1.3.1', 'sphinxcontrib-programoutput'] + py_version_test_require,
         url=PROJECT_URL,
         description=SHORT_DESCRIPTION,
         long_description=LONG_DESCRIPTION,

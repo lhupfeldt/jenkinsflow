@@ -1,7 +1,14 @@
 # Copyright (c) 2012 - 2015 Lars Hupfeldt Nielsen, Hupfeldt IT
 # All rights reserved. This work is under a BSD license, see LICENSE.TXT.
 
-import sys, os, subprocess32
+from __future__ import print_function
+
+import sys, os
+major_version = sys.version_info.major
+if major_version < 3:
+    import subprocess32 as subprocess
+else:
+    import subprocess
 from os.path import join as jp
 
 import pytest
@@ -110,7 +117,7 @@ def test_set_build_description_cli(cli_runner):
              '--username', username,
              '--password', password])
 
-        print result.output
+        print(result.output)
         assert not result.exception
 
         # TODO read back description and verify
@@ -167,14 +174,14 @@ def test_set_build_description_cli_no_env_url(env_no_base_url, cli_runner):
              '--description', 'BBB1'])
 
         assert result.exception
-        assert "Could not get env variable JENKINS_URL or HUDSON_URL" in result.exception.message
+        assert "Could not get env variable JENKINS_URL or HUDSON_URL" in str(result.exception)
         assert "You must specify '--direct-url'" in result.output
 
 
 def test_set_build_result_call_script_help(capfd):
     # Invoke this in a subprocess to ensure that calling the script works
     # This will not give coverage as it not not traced through the subprocess call
-    rc = subprocess32.call([sys.executable, jp(_here, '../cli/cli.py'), 'set_build_description', '--help'])
+    rc = subprocess.call([sys.executable, jp(_here, '../cli/cli.py'), 'set_build_description', '--help'])
     assert rc == 0
 
     sout, _ = capfd.readouterr()

@@ -1,6 +1,8 @@
 # Copyright (c) 2012 - 2015 Lars Hupfeldt Nielsen, Hupfeldt IT
 # All rights reserved. This work is under a BSD license, see LICENSE.TXT.
 
+from __future__ import print_function
+
 from pytest import raises
 
 from jenkinsflow.flow import serial, MessageRedefinedException
@@ -29,7 +31,7 @@ def test_messages(capsys):
                 pctrl.invoke('j23')
 
         sout, _ = capsys.readouterr()
-        print sout
+        print(sout)
         assert_lines_in(
             sout,
             "^--- Starting flow ---",
@@ -67,7 +69,7 @@ def test_messages_on_job(capsys):
             ctrl1.invoke('j12')
 
         sout, _ = capsys.readouterr()
-        print sout
+        print(sout)
         assert_lines_in(
             sout,
             "^--- Starting flow ---",
@@ -97,4 +99,4 @@ def test_messages_redefined():
                     sctrl2.message("New message")
                 ctrl1.invoke('j12')
 
-        assert exinfo.value.message == "Existing message: '**** Message 1 ****', new message: 'New message'"
+        assert str(exinfo.value) == "Existing message: '**** Message 1 ****', new message: 'New message'"

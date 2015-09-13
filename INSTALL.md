@@ -1,7 +1,8 @@
 Installation
 ------------
 
-In the following Jenkins also means Hudson, unless otherwise stated.
+In the following Jenkins also means Hudson, unless otherwise stated, python means python 2.7 or python3.4
+or later and pip means python 2 pip or python 3 pip, unless differences are mentioned.
 
 1. The easy way:
    python setup.py install
@@ -15,26 +16,30 @@ Jenkinsflow uses it's own specialized 'jenkins_api' python module to access jenk
 
 2. Manually:
 2.1. Install dependencies:
-   pip install requests enum34 subprocess32 click
+   pip2 install requests enum34 subprocess32 click atomicfile
+
+   or
+
+   pip3 install requests click atomicfile
+
    optional: pip install tenjin (if you want to use the template based job loader)
 
    Note: if you use Hudson (3.x): You need to configure Hudson to install the REST API plugin and enable REST API.
 
 2.2. Install dependencies for experimental features:
-   To use the experimental visualisation feature:
-     pip install bottle atomicfile
    To use the experimental script api:
      pip install psutil setproctitle
 
-2.3. Make jenkinsflow files (flow.py and possibly unbuffered.py) available to your Jenkins installation.
+   To use the experimental visualisation feature:
+     pip install bottle
 
-2.4. To use propagation=Propagation.FAILURE_TO_UNSTABLE feature, Jenkins URL must be set in Jenkins configuration.
+2.3. To use propagation=Propagation.FAILURE_TO_UNSTABLE feature, Jenkins URL must be set in Jenkins configuration.
    Note that this feature uses the 'cli' which has problems working over a proxy.
    This requires java to run the cli
 
-2.5. Read the file demo/demo_security.py for notes about security, if you have enabled security on your Jenkins
+2.4. Read the file demo/demo_security.py for notes about security, if you have enabled security on your Jenkins
 
-2.6. All set! You can now create jobs that have a shell execution step, which will a use this library to control the running of other jobs.
+2.5. All set! You can now create jobs that have a shell execution step, which will a use this library to control the running of other jobs.
    See the demo directory for example flows. The demo jobs can be loaded by running tests, see below.
 
 
@@ -46,12 +51,22 @@ Note: I think jenkinsflow should work on Windows, but it has not been tested.
 Test
 ----
 
-1. Install pytest and tenjin template engine:
-   pip install -U 'pytest>=2.7.2' pytest-cov pytest-cache pytest-instafail 'pytest-xdist>=1.12' tenjin proxytypes click
+1. Install python-devel
+   E.g on fedora:
+   sudo dnf install python-devel
+   or
+   sudo dnf install python3-devel
+
+   Install pytest and tenjin template engine:
+   pip install -U 'pytest>=2.7.2' 'pytest-cov>=2.1.0' 'pytest-cache>=1.0' 'pytest-instafail>=0.3.0' 'pytest-xdist>=1.12' tenjin click bottle
+
+   pip2 install -U proxytypes
+   or
+   pip3 install -U objproxies
+
    # The test will also test the generation of documentation, for this you need:
    pip install -U 'sphinx>=1.3.1' sphinxcontrib-programoutput
-   
-   Note: Requires pytest-cov 1.8.0 or later
+
 
 2. Important Jenkins/Hudson setup and test preparation:
    Configure security -
@@ -82,7 +97,7 @@ Test
    HUDSON_URL=<your Hudson> python ./test/test.py --mock-speedup=100  --direct-url <non proxied url different from HUDSON_URL>
 
    Note: you may omit JENKINS_URL if your jenkins is on http://localhost:8080, but you have to specify HUDSON_URL if you are running hudson!
-   Note: you may omit --direct-url if your jenkins or hudson is on http://localhost:8080      
+   Note: you may omit --direct-url if your jenkins or hudson is on http://localhost:8080
    Note: Because of timing dependencies when creating new jobs in Hudson, the first test run or any test run with --job-delete against Hudson will likely fail.
 
    The test script will first run the test suite with mocked jenkins api, not actually invoking any jenkins jobs, this is a very fast test of the flow logic.

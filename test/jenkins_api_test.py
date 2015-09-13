@@ -9,4 +9,4 @@ from jenkinsflow import jenkins_api
 def test_jenkins_api_init_api_no_password():
     with raises(Exception) as exinfo:
         jenkins_api.Jenkins("dummy", "dummy", username="hugo")
-    assert "You must specify both username and password or neither" in exinfo.value.message
+    assert "You must specify both username and password or neither" in str(exinfo.value)

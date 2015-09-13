@@ -42,8 +42,8 @@ def test_timeout_inner_level_serial():
                     ctrl2.invoke('quick21')
                     ctrl2.invoke('wait20')
 
-        assert "Timeout after:" in exinfo.value.message
-        assert ", in flow ['jenkinsflow_test__timeout_inner_level_serial__quick21', 'jenkinsflow_test__timeout_inner_level_serial__wait20']. Unfinished jobs:['jenkinsflow_test__timeout_inner_level_serial__wait20']" in exinfo.value.message
+        assert "Timeout after:" in str(exinfo.value)
+        assert ", in flow ['jenkinsflow_test__timeout_inner_level_serial__quick21', 'jenkinsflow_test__timeout_inner_level_serial__wait20']. Unfinished jobs:['jenkinsflow_test__timeout_inner_level_serial__wait20']" in str(exinfo.value)
 
 
 
@@ -60,8 +60,8 @@ def test_timeout_inner_level_parallel():
                     ctrl2.invoke('quick21')
                     ctrl2.invoke('wait20')
 
-        assert "Timeout after:" in exinfo.value.message
-        assert ", in flow ('jenkinsflow_test__timeout_inner_level_parallel__quick21', 'jenkinsflow_test__timeout_inner_level_parallel__wait20'). Unfinished jobs:['jenkinsflow_test__timeout_inner_level_parallel__wait20']" in exinfo.value.message
+        assert "Timeout after:" in str(exinfo.value)
+        assert ", in flow ('jenkinsflow_test__timeout_inner_level_parallel__quick21', 'jenkinsflow_test__timeout_inner_level_parallel__wait20'). Unfinished jobs:['jenkinsflow_test__timeout_inner_level_parallel__wait20']" in str(exinfo.value)
 
 
 def test_timeout_multi_level_mix():
@@ -80,5 +80,5 @@ def test_timeout_multi_level_mix():
                     with ctrl2.parallel() as ctrl3:
                         ctrl3.invoke('wait20_31')
 
-        assert "Timeout after:" in exinfo.value.message
-        assert ", in flow ('jenkinsflow_test__timeout_multi_level_mix__quick21', 'jenkinsflow_test__timeout_multi_level_mix__wait20_22', ('jenkinsflow_test__timeout_multi_level_mix__wait20_31',)). Unfinished jobs:['jenkinsflow_test__timeout_multi_level_mix__wait20_22', ('jenkinsflow_test__timeout_multi_level_mix__wait20_31',)]" in exinfo.value.message
+        assert "Timeout after:" in str(exinfo.value)
+        assert ", in flow ('jenkinsflow_test__timeout_multi_level_mix__quick21', 'jenkinsflow_test__timeout_multi_level_mix__wait20_22', ('jenkinsflow_test__timeout_multi_level_mix__wait20_31',)). Unfinished jobs:['jenkinsflow_test__timeout_multi_level_mix__wait20_22', ('jenkinsflow_test__timeout_multi_level_mix__wait20_31',)]" in str(exinfo.value)

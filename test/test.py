@@ -6,12 +6,23 @@ Test jenkinsflow.
 
 from __future__ import print_function
 
-import sys, os, subprocess32 as subprocess, getpass, shutil
+import sys, os, getpass, shutil
+major_version = sys.version_info.major
+if major_version < 3:
+    import subprocess32 as subprocess
+else:
+    import subprocess
 from os.path import join as jp
 
 import click
 import tenjin
 from tenjin.helpers import *
+
+try:
+    import pytest
+except ImportError:
+    print("See setup.py for test requirements, or use 'python setup.py test'", file=sys.stderr)
+    raise
 
 here = os.path.abspath(os.path.dirname(__file__))
 top_dir = os.path.dirname(here)
@@ -38,6 +49,13 @@ test_cfg.select_api(ApiType.JENKINS)
 _cache_dir = jp(top_dir, '.cache')
 
 
+def _pytest(args):
+    rc = pytest.main(args)
+    if rc:
+        sys.exit(rc)
+    return rc
+
+
 def run_tests(parallel, api_type):
     start_msg("Using " + str(api_type))
 
@@ -54,16 +72,16 @@ def run_tests(parallel, api_type):
     cov_rc_file_name = jp(here, '.coverage_rc_' +  api_type.env_name().lower())
     with open(cov_rc_file_name, 'w') as cov_rc_file:
         cov_rc_file.write(engine.render(jp(here, "coverage_rc.tenjin"), dict(api_type=api_type, top_dir=top_dir)))
-
-    cmd = ['py.test', '--capture=sys', '--cov=' + top_dir, '--cov-report=term-missing', '--cov-config=' + cov_rc_file_name, '--instafail', '--ff']
+        
+    args = ['--capture=sys', '--cov=' + top_dir, '--cov-report=term-missing', '--cov-config=' + cov_rc_file_name, '--instafail', '--ff']
     try:
         if not parallel:
             if api_type == ApiType.MOCK:
-                return subprocess.check_call(cmd)
+                return _pytest(args)
             else:
                 # Note: 'boxed' is required for the kill/abort_current test not to abort other tests
-                return subprocess.check_call(cmd + ['--boxed'])
-        subprocess.check_call(cmd + ['--boxed', '-n', '16'])
+                return _pytest(args + ['--boxed'])
+        _pytest(args + ['--boxed', '-n', '16'])
     finally:
         if os.path.exists(_cache_dir):
             shutil.move(_cache_dir, api_type_cache_dir)
@@ -115,14 +133,12 @@ def cli(mock_speedup, direct_url, pytest_args, job_delete, job_load, testfile):
     try:
         if pytest_args or testfile:
             extra_args = pytest_args.split(' ') + list(testfile) if pytest_args else list(testfile)
-            subprocess.check_call(['py.test', '--capture=sys', '--instafail'] + extra_args)
+            _pytest(['--capture=sys', '--instafail'] + extra_args)
             test_cfg.unmock()
             test_cfg.select_api(ApiType.JENKINS)
-            rc = subprocess.call(['py.test', '--capture=sys', '--instafail'] + extra_args)
-            if rc:
-                sys.exit(rc)
+            _pytest(['--capture=sys', '--instafail'] + extra_args)
             test_cfg.select_api(ApiType.SCRIPT)
-            sys.exit(subprocess.call(['py.test', '--capture=sys', '--instafail'] + extra_args))
+            sys.exit(_pytest(['--capture=sys', '--instafail'] + extra_args))
 
         run_tests(False, ApiType.MOCK)
         test_cfg.unmock()
@@ -138,7 +154,7 @@ def cli(mock_speedup, direct_url, pytest_args, job_delete, job_load, testfile):
         start_msg("Testing setup.py")
         user = getpass.getuser()
         install_prefix = '/tmp/' + user
-        tmp_packages_dir = install_prefix + '/lib/python2.7/site-packages'
+        tmp_packages_dir = install_prefix + '/lib/python{major}.{minor}/site-packages'.format(major=major_version, minor=sys.version_info.minor)
         os.environ['PYTHONPATH'] = tmp_packages_dir
         if os.path.exists(tmp_packages_dir):
             shutil.rmtree(tmp_packages_dir)

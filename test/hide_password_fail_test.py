@@ -28,6 +28,6 @@ def test_hide_password_failed_job(capsys):
         assert p2 not in sout
         assert p3 not in sout
 
-        assert p1 not in exinfo.value.message
-        assert p2 not in exinfo.value.message
-        assert p3 not in exinfo.value.message
+        assert p1 not in str(exinfo.value)
+        assert p2 not in str(exinfo.value)
+        assert p3 not in str(exinfo.value)

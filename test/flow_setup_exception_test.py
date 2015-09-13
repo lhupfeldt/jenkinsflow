@@ -17,11 +17,11 @@ def test_flow_setup_exception_job():
                 raise Exception("Not good")
             ctrl1.invoke('j1')
 
-        assert exinfo.value.message == "Not good"
+        assert str(exinfo.value) == "Not good"
 
         with raises(Exception) as exinfo:
             with parallel(api, 10, job_name_prefix=api.job_name_prefix) as ctrl1:
                 raise Exception("Not good")
             ctrl1.invoke('j1')
 
-        assert exinfo.value.message == "Not good"
+        assert str(exinfo.value) == "Not good"

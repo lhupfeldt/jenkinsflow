@@ -4,7 +4,14 @@
 # NOTE: the tests here all raise exceptions because they can not really be run outside of a jenkinsjob
 # TODO: Test that the script actually does what expected! The test here just assure that the script can be run :(
 
-import sys, os, urllib2, re, subprocess32
+import sys, os, re
+major_version = sys.version_info.major
+if major_version < 3:
+    import subprocess32 as subprocess
+    import urllib2 as urllib
+else:
+    import subprocess, urllib
+
 from os.path import join as jp
 
 import pytest
@@ -240,7 +247,7 @@ def test_set_build_result_no_jenkinsurl(env_no_base_url):
                 ctrl1.invoke('j1_fail')
 
     assert_lines_in(
-        exinfo.value.message,
+        str(exinfo.value),
         "Could not get env variable JENKINS_URL or HUDSON_URL. You must set 'Jenkins Location' in Jenkins setup for JENKINS_URL to be exported. You must set 'Hudson URL' in Hudson setup for HUDSON_URL to be exported."
     )
 
@@ -264,7 +271,7 @@ def test_set_build_result_call_main_direct_url_no_trailing_slash(fake_java, env_
 def test_set_build_result_call_script_help(capfd):
     # Invoke this in a subprocess to ensure that calling the script works
     # This will not give coverage as it not not traced through the subprocess call
-    rc = subprocess32.call([sys.executable, jp(here, '../cli/cli.py'), 'set_build_result', '--help'])
+    rc = subprocess.call([sys.executable, jp(here, '../cli/cli.py'), 'set_build_result', '--help'])
     assert rc == 0
 
     sout, _ = capfd.readouterr()

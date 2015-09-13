@@ -2,18 +2,25 @@
 # All rights reserved. This work is under a BSD license, see LICENSE.TXT.
 
 from __future__ import print_function
-import os, tempfile
+
+import sys, os, tempfile
 
 from .utils import base_url_jenkins
 
+major_version = sys.version_info.major
 
 jenkins_cli_jar = 'jenkins-cli.jar'
 hudson_cli_jar = 'hudson-cli.jar'
 
 
 def download_cli(cli_jar, direct_base_url, public_base_url):
-    import urllib2
-    
+    if major_version < 3:
+        from urllib2 import urlopen
+        save_mode = 'w'
+    else:
+        from urllib.request import urlopen
+        save_mode = 'w+b'
+
     path = '/jnlpJars/' + cli_jar
     if direct_base_url and direct_base_url != public_base_url:
         download_cli_url = direct_base_url + path
@@ -22,8 +29,8 @@ def download_cli(cli_jar, direct_base_url, public_base_url):
         download_cli_url = public_base_url + path
         print("INFO: Downloading cli:", repr(download_cli_url))
 
-    response = urllib2.urlopen(download_cli_url)
-    with open(cli_jar, 'w') as ff:
+    response = urlopen(download_cli_url)
+    with open(cli_jar, save_mode) as ff:
         ff.write(response.read())
     print("INFO: Download finished:", repr(cli_jar))
 
@@ -54,7 +61,10 @@ def set_build_result(username, password, result, direct_url=None, java='java'):
         script_api.set_build_result(result)
         return
 
-    import subprocess32 as subprocess
+    if major_version < 3:
+        import subprocess32 as subprocess
+    else:
+        import subprocess
 
     def set_res():
         command = [java, '-jar', cli_jar, '-s', direct_url if direct_url else public_base_url, 'set-build-result', result]
