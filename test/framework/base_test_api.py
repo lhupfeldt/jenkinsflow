@@ -11,7 +11,7 @@ from os.path import join as jp
 from .abstract_api import AbstractApiJob, AbstractApiJenkins
 
 from jenkinsflow.api_base import UnknownJobException, BuildResult, Progress
-from jenkinsflow.mocked import hyperspeed
+from jenkinsflow import hyperspeed
 
 from .config import test_tmp_dir
 

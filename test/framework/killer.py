@@ -11,7 +11,7 @@ else:
     import subprocess
 
 sys.path.append('../../..')
-from jenkinsflow.mocked import hyperspeed
+from jenkinsflow import hyperspeed
 
 
 def _killer(pid, sleep_time, num_kills):

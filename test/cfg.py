@@ -1,13 +1,10 @@
 import os, socket
 from enum import Enum
 
-# Duplicated from .. mocked, can't import that here because of coverage test issues
 env_var_prefix = "JENKINSFLOW_"
-mock_speedup_env_var_name = env_var_prefix + 'MOCK_SPEEDUP'
 
 from .framework import config
 
-MOCK_SPEEDUP_NAME = mock_speedup_env_var_name
 DIRECT_URL_NAME = env_var_prefix + 'DIRECT_URL'
 SCRIPT_DIR_NAME = env_var_prefix + 'SCRIPT_DIR'
 
@@ -23,15 +20,6 @@ class ApiType(Enum):
     def env_name(self):
         return str(self).replace('.', '_')
     
-
-def mock(speedup):
-    assert isinstance(speedup, (int, float))
-    os.environ[MOCK_SPEEDUP_NAME] = str(speedup)
-
-
-def unmock():
-    del os.environ[MOCK_SPEEDUP_NAME]
-
 
 def direct_url():
     if selected_api() != ApiType.SCRIPT:

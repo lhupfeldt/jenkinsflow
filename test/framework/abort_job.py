@@ -10,7 +10,7 @@ if major_version < 3:
 else:
     import subprocess
 
-from jenkinsflow.mocked import hyperspeed
+from jenkinsflow import hyperspeed
 
 from jenkinsflow.test.framework import api_select
 from jenkinsflow.test.cfg import ApiType

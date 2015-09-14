@@ -4,7 +4,7 @@
 from pytest import raises
 
 from jenkinsflow.flow import serial, JobNotIdleException
-from jenkinsflow.mocked import hyperspeed
+from jenkinsflow import hyperspeed
 from .cfg import ApiType
 from .framework import api_select
 from .framework.utils import assert_lines_in

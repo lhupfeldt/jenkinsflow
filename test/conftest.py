@@ -90,21 +90,6 @@ def _unset_env_fixture(var_name, request):
 
 
 @fixture
-def mock_speedup_bad_value(request):
-    _set_env_fixture("JENKINSFLOW_MOCK_SPEEDUP", 'true', request)
-
-
-@fixture
-def mock_speedup_307(request):
-    _set_env_fixture("JENKINSFLOW_MOCK_SPEEDUP", '307', request)
-
-
-@fixture
-def mock_speedup_none(request):
-    _unset_env_fixture("JENKINSFLOW_MOCK_SPEEDUP", request)
-
-
-@fixture
 def env_base_url(request):
     # Fake that we are running from inside jenkins job
     _set_jenkins_url_env_if_not_set_fixture(test_cfg.public_url(), request)

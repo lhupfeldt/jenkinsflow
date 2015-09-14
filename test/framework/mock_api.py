@@ -7,7 +7,7 @@ from os.path import join as jp
 from collections import OrderedDict
 
 from jenkinsflow.api_base import BuildResult, Progress, UnknownJobException, ApiInvocationMixin
-from jenkinsflow.mocked import hyperspeed
+from jenkinsflow import hyperspeed
 
 from .base_test_api import TestJob, TestJenkins
 from jenkinsflow.test.cfg import ApiType
@@ -123,7 +123,10 @@ class MockJob(TestJob):
 
     def invoke(self, securitytoken, build_params, cause, description):
         if not self._allow_running:
-            assert not self._is_running()
+            if self._is_running():
+                print("start_time:", self.start_time, "hyperspeed.time:", hyperspeed.time(), "end_time:", self.end_time)
+                assert False
+
         super(MockJob, self).invoke(securitytoken, build_params, cause, description)
         self.invocation_time = hyperspeed.time()
         self.start_time = self.invocation_time + self.invocation_delay

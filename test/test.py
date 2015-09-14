@@ -35,6 +35,8 @@ from jenkinsflow.test.framework import config
 from jenkinsflow.test import cfg as test_cfg
 from jenkinsflow.test.cfg import ApiType
 
+from jenkinsflow import hyperspeed
+
 
 def dummy(*_args):
     print("*** Please use test/tests.py to run tests", file=sys.stderr)
@@ -72,7 +74,7 @@ def run_tests(parallel, api_type):
     cov_rc_file_name = jp(here, '.coverage_rc_' +  api_type.env_name().lower())
     with open(cov_rc_file_name, 'w') as cov_rc_file:
         cov_rc_file.write(engine.render(jp(here, "coverage_rc.tenjin"), dict(api_type=api_type, top_dir=top_dir)))
-        
+
     args = ['--capture=sys', '--cov=' + top_dir, '--cov-report=term-missing', '--cov-config=' + cov_rc_file_name, '--instafail', '--ff']
     try:
         if not parallel:
@@ -111,7 +113,7 @@ def cli(mock_speedup, direct_url, pytest_args, job_delete, job_load, testfile):
     [TESTFILE]... File names to pass to py.test
     """
 
-    test_cfg.mock(mock_speedup)
+    hyperspeed.set_speedup(mock_speedup)
     os.environ[test_cfg.DIRECT_URL_NAME] = direct_url
     os.environ[test_cfg.SKIP_JOB_DELETE_NAME] = 'false' if job_delete else 'true'
     os.environ[test_cfg.SKIP_JOB_LOAD_NAME] = 'false' if job_load else 'true'
@@ -134,14 +136,14 @@ def cli(mock_speedup, direct_url, pytest_args, job_delete, job_load, testfile):
         if pytest_args or testfile:
             extra_args = pytest_args.split(' ') + list(testfile) if pytest_args else list(testfile)
             _pytest(['--capture=sys', '--instafail'] + extra_args)
-            test_cfg.unmock()
+            hyperspeed.set_speedup(1)
             test_cfg.select_api(ApiType.JENKINS)
             _pytest(['--capture=sys', '--instafail'] + extra_args)
             test_cfg.select_api(ApiType.SCRIPT)
             sys.exit(_pytest(['--capture=sys', '--instafail'] + extra_args))
 
         run_tests(False, ApiType.MOCK)
-        test_cfg.unmock()
+        hyperspeed.set_speedup(1)
 
         hudson = os.environ.get('HUDSON_URL')
         if hudson:
@@ -159,11 +161,14 @@ def cli(mock_speedup, direct_url, pytest_args, job_delete, job_load, testfile):
         if os.path.exists(tmp_packages_dir):
             shutil.rmtree(tmp_packages_dir)
         os.makedirs(tmp_packages_dir)
+
+        os.chdir(top_dir)
         subprocess.check_call([sys.executable, jp(top_dir, 'setup.py'), 'install', '--prefix', install_prefix])
         shutil.rmtree(jp(top_dir, 'build'))
 
         start_msg("Testing documentation generation")
-        os.chdir(jp(top_dir, 'doc/source'))
+
+        os.chdir('doc/source')
         subprocess.check_call(['make', 'html'])
     except Exception as ex:
         print('*** ERROR: There were errors! Check output! ***', repr(ex), file=sys.stderr)

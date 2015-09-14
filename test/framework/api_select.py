@@ -9,7 +9,7 @@ from os.path import join as jp
 here = os.path.abspath(os.path.dirname(__file__))
 sys.path.extend([jp(here, '../../..'), jp(here, '../../demo')])
 
-from jenkinsflow.mocked import mocked
+from jenkinsflow import hyperspeed
 from jenkinsflow.test import cfg as test_cfg
 
 from jenkinsflow.unbuffered import UnBuffered
@@ -41,7 +41,7 @@ def api(file_name, login=False, fixed_prefix=None):
 
     print()
     print("--- Preparing api for ", repr(job_name_prefix), "---")
-    if mocked:
+    if hyperspeed.mocked():
         print('Using Mocked API')
         from .mock_api import MockApi
         return MockApi(job_name_prefix, test_cfg.direct_url())
