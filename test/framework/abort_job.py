@@ -4,13 +4,12 @@
 from __future__ import print_function
 
 import sys
+import time
 major_version = sys.version_info.major
 if major_version < 3:
     import subprocess32 as subprocess
 else:
     import subprocess
-
-from jenkinsflow import hyperspeed
 
 from jenkinsflow.test.framework import api_select
 from jenkinsflow.test.cfg import ApiType
@@ -19,7 +18,7 @@ from jenkinsflow.test.cfg import ApiType
 def _abort(test_file_name, fixed_prefix, job_name, sleep_time):
     print("\nWaiting to abort job:", job_name)
     print("args:", test_file_name, fixed_prefix, job_name, sleep_time)
-    hyperspeed.sleep(sleep_time)
+    time.sleep(sleep_time)
     with api_select.api(test_file_name, fixed_prefix='jenkinsflow_test__' + fixed_prefix + '__', login=True) as api:
         api.job(job_name, 0.1, max_fails=0, expect_invocations=0, expect_order=None)
     api.poll()

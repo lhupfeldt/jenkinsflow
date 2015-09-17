@@ -19,7 +19,10 @@ class ApiType(Enum):
 
     def env_name(self):
         return str(self).replace('.', '_')
-    
+
+
+_speedup = 1
+
 
 def direct_url():
     if selected_api() != ApiType.SCRIPT:
@@ -83,10 +86,14 @@ def script_dir():
     return config.job_script_dir if sdir is None else sdir.rstrip('/')
 
 
-def select_api(api):
+def select_api(api, speedup):
+    """speedup if used by the mock api"""
+    global _speedup
+
     for aa in ApiType:
         os.environ[aa.env_name()] = 'false'
     os.environ[api.env_name()] = 'true'
+    _speedup = speedup
 
 
 def selected_api():
@@ -99,6 +106,10 @@ def selected_api():
     if count == 1:
         return found_api
     raise Exception("Error: " + ("No api selected" if not count else repr(count) + " apis selected"))
+
+
+def speedup():
+    return _speedup
 
 
 def skip_job_delete():

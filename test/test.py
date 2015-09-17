@@ -6,7 +6,7 @@ Test jenkinsflow.
 
 from __future__ import print_function
 
-import sys, os, getpass, shutil
+import sys, os, getpass, shutil, copy
 major_version = sys.version_info.major
 if major_version < 3:
     import subprocess32 as subprocess
@@ -35,8 +35,6 @@ from jenkinsflow.test.framework import config
 from jenkinsflow.test import cfg as test_cfg
 from jenkinsflow.test.cfg import ApiType
 
-from jenkinsflow import hyperspeed
-
 
 def dummy(*_args):
     print("*** Please use test/tests.py to run tests", file=sys.stderr)
@@ -47,19 +45,13 @@ class TestLoader(object):
         return dummy
 
 
-test_cfg.select_api(ApiType.JENKINS)
+test_cfg.select_api(ApiType.JENKINS, 1)
 _cache_dir = jp(top_dir, '.cache')
 
 
-def _pytest(args):
-    rc = pytest.main(args)
-    if rc:
-        sys.exit(rc)
-    return rc
-
-
-def run_tests(parallel, api_type):
+def run_tests(parallel, api_type, args, coverage=True, mock_speedup=1):
     start_msg("Using " + str(api_type))
+    args = copy.copy(args)
 
     # Running the test suite multiple times (for each api) breaks the run failed first, preserve the cache dir for each type
     api_type_cache_dir = _cache_dir + '-' + api_type.name
@@ -68,26 +60,32 @@ def run_tests(parallel, api_type):
             shutil.rmtree(_cache_dir)
         shutil.move(api_type_cache_dir, _cache_dir)
 
-    test_cfg.select_api(api_type)
+    test_cfg.select_api(api_type, mock_speedup)
 
-    engine = tenjin.Engine()
-    cov_rc_file_name = jp(here, '.coverage_rc_' +  api_type.env_name().lower())
-    with open(cov_rc_file_name, 'w') as cov_rc_file:
-        cov_rc_file.write(engine.render(jp(here, "coverage_rc.tenjin"), dict(api_type=api_type, top_dir=top_dir)))
+    if coverage:
+        engine = tenjin.Engine()
+        cov_rc_file_name = jp(here, '.coverage_rc_' +  api_type.env_name().lower())
+        with open(cov_rc_file_name, 'w') as cov_rc_file:
+            cov_rc_file.write(engine.render(jp(here, "coverage_rc.tenjin"), dict(api_type=api_type, top_dir=top_dir)))
+            args.extend(['--cov=' + top_dir, '--cov-report=term-missing', '--cov-config=' + cov_rc_file_name])
 
-    args = ['--capture=sys', '--cov=' + top_dir, '--cov-report=term-missing', '--cov-config=' + cov_rc_file_name, '--instafail', '--ff']
     try:
-        if not parallel:
-            if api_type == ApiType.MOCK:
-                return _pytest(args)
-            else:
-                # Note: 'boxed' is required for the kill/abort_current test not to abort other tests
-                return _pytest(args + ['--boxed'])
-        _pytest(args + ['--boxed', '-n', '16'])
+        if api_type != ApiType.MOCK:
+            # Note: 'boxed' is required for the kill/abort_current test not to abort other tests
+            args.append('--boxed')
+
+        if parallel:
+            args.extend(['-n', '16'])
+
+        print('pytest.main', args)
+        rc = pytest.main(args)
+        if rc:
+            raise Exception("pytest {args} failed with code {rc}".format(args=args, rc=rc))
     finally:
         if os.path.exists(_cache_dir):
             shutil.move(_cache_dir, api_type_cache_dir)
-        os.unlink(cov_rc_file_name)
+        if coverage:
+            os.unlink(cov_rc_file_name)
 
 
 def start_msg(*msg):
@@ -113,7 +111,6 @@ def cli(mock_speedup, direct_url, pytest_args, job_delete, job_load, testfile):
     [TESTFILE]... File names to pass to py.test
     """
 
-    hyperspeed.set_speedup(mock_speedup)
     os.environ[test_cfg.DIRECT_URL_NAME] = direct_url
     os.environ[test_cfg.SKIP_JOB_DELETE_NAME] = 'false' if job_delete else 'true'
     os.environ[test_cfg.SKIP_JOB_LOAD_NAME] = 'false' if job_load else 'true'
@@ -133,25 +130,23 @@ def cli(mock_speedup, direct_url, pytest_args, job_delete, job_load, testfile):
 
     print("\nRunning tests")
     try:
+        args = ['--capture=sys', '--instafail']
+
         if pytest_args or testfile:
-            extra_args = pytest_args.split(' ') + list(testfile) if pytest_args else list(testfile)
-            _pytest(['--capture=sys', '--instafail'] + extra_args)
-            hyperspeed.set_speedup(1)
-            test_cfg.select_api(ApiType.JENKINS)
-            _pytest(['--capture=sys', '--instafail'] + extra_args)
-            test_cfg.select_api(ApiType.SCRIPT)
-            sys.exit(_pytest(['--capture=sys', '--instafail'] + extra_args))
+            coverage = False
+            args.extend(pytest_args.split(' ') + list(testfile) if pytest_args else list(testfile))
+        else:
+            coverage = True
+            args.append('--ff')
 
-        run_tests(False, ApiType.MOCK)
-        hyperspeed.set_speedup(1)
-
+        run_tests(False, ApiType.MOCK, args, coverage, mock_speedup)
         hudson = os.environ.get('HUDSON_URL')
         if hudson:
             print("Disabling parallel run, Hudson can't handle it :(")
         parallel = test_cfg.skip_job_load() or test_cfg.skip_job_delete() and not hudson
         # TODO run all types in parallel, use extra job prefix and separate .cache
-        run_tests(parallel, ApiType.JENKINS)
-        run_tests(True, ApiType.SCRIPT)
+        run_tests(parallel, ApiType.JENKINS, args, coverage)
+        run_tests(True, ApiType.SCRIPT, args, coverage)
 
         start_msg("Testing setup.py")
         user = getpass.getuser()

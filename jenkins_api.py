@@ -9,7 +9,7 @@ from collections import OrderedDict
 import requests
 
 from .api_base import BuildResult, Progress, UnknownJobException, ApiInvocationMixin
-
+from .speed import Speed
 
 _superseded = -1
 _dequeued = -2
@@ -36,7 +36,7 @@ def _check_response(response, good_responses=(200,)):
     response.raise_for_status()
 
 
-class Jenkins(object):
+class Jenkins(Speed):
     """Optimized minimal set of methods needed for jenkinsflow to access Jenkins jobs.
 
     Args:

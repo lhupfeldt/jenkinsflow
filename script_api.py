@@ -6,9 +6,13 @@ from __future__ import print_function
 import sys, os, shutil, importlib, datetime, tempfile, psutil, setproctitle
 from os.path import join as jp
 import multiprocessing
+
 from .api_base import BuildResult, Progress, UnknownJobException, ApiInvocationMixin
+from .speed import Speed
+
 
 here = os.path.abspath(os.path.dirname(__file__))
+
 
 def _mkdir(path):
     try:
@@ -75,7 +79,7 @@ class LoggingProcess(multiprocessing.Process):
         super(LoggingProcess, self).run()
 
 
-class Jenkins(object):
+class Jenkins(Speed):
     """Optimized minimal set of methods needed for jenkinsflow to directly execute python code instead of invoking Jenkins jobs.
 
     THIS IS CONSIDERED EXPERIMENTAL

@@ -8,11 +8,8 @@ from collections import OrderedDict
 import os
 from os.path import join as jp
 
-from .abstract_api import AbstractApiJob, AbstractApiJenkins
-
 from jenkinsflow.api_base import UnknownJobException, BuildResult, Progress
-from jenkinsflow import hyperspeed
-
+from .abstract_api import AbstractApiJob, AbstractApiJenkins
 from .config import test_tmp_dir
 
 
@@ -119,7 +116,8 @@ class Jobs(object):
 class TestJenkins(AbstractApiJenkins):
     __metaclass__ = abc.ABCMeta
 
-    def __init__(self, job_name_prefix):
+    def __init__(self, job_name_prefix, **kwargs):
+        super(TestJenkins, self).__init__(**kwargs)
         self.job_name_prefix = job_name_prefix
         TestJob._current_order = 1
         self.test_jobs = OrderedDict()
@@ -214,16 +212,18 @@ class TestJenkins(AbstractApiJenkins):
 
             if job.unknown_result:
                 # The job must still be running, but maybe it has not been started yet, so wait up to 3 seconds for it to start
-                for _ in range(1, 300):
+                for ii in range(1, 300):
                     # TODO: job obj should be invocation obj!
                     _result, progress, _last_build_number = job.job_status()
                     # print("FW: last build status:", _result, progress, _last_build_number)
                     if progress == Progress.RUNNING:
                         break
-                    hyperspeed.sleep(0.01)
+                    self.sleep(0.01)
                     if hasattr(job, 'jenkins'):
                         job.jenkins.quick_poll()
                     job.poll()
+                if ii > 2:
+                    raise Exception("Opps: " + repr(ii))
                 # pylint: disable=maybe-no-member
                 assert progress == Progress.RUNNING, "Job: " + job.name + " is expected to be running, but state is " + progress.name
                 # Now stop the job, so that it won't be running after the testsuite is finished

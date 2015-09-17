@@ -9,7 +9,6 @@ from os.path import join as jp
 here = os.path.abspath(os.path.dirname(__file__))
 sys.path.extend([jp(here, '../../..'), jp(here, '../../demo')])
 
-from jenkinsflow import hyperspeed
 from jenkinsflow.test import cfg as test_cfg
 
 from jenkinsflow.unbuffered import UnBuffered
@@ -41,15 +40,15 @@ def api(file_name, login=False, fixed_prefix=None):
 
     print()
     print("--- Preparing api for ", repr(job_name_prefix), "---")
-    if hyperspeed.mocked():
-        print('Using Mocked API')
-        from .mock_api import MockApi
-        return MockApi(job_name_prefix, test_cfg.direct_url())
-    else:
-        api_type = test_cfg.selected_api()
-        print('Using:', api_type)
-        url_or_dir = test_cfg.direct_url()
 
+    api_type = test_cfg.selected_api()
+    print('Using:', api_type)
+
+    if api_type == test_cfg.ApiType.MOCK:
+        from .mock_api import MockApi
+        return MockApi(job_name_prefix, test_cfg.speedup(), test_cfg.direct_url())
+    else:
+        url_or_dir = test_cfg.direct_url()
         reload_jobs = not test_cfg.skip_job_load() and not fixed_prefix
         pre_delete_jobs = not test_cfg.skip_job_delete()
         import demo_security as security

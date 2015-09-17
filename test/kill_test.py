@@ -9,7 +9,6 @@ import pytest
 from pytest import raises, xfail
 
 from jenkinsflow.flow import serial, FailedChildJobException
-from jenkinsflow import hyperspeed
 from .cfg import ApiType
 from .framework import api_select
 from .framework.utils import assert_lines_in, kill_current_msg
@@ -44,7 +43,7 @@ def test_kill_all_unchecked(capsys):
         flow(api, False)
 
         # Make sure job has actually started before entering new flow
-        hyperspeed.sleep(5)
+        api.sleep(5)
 
         if capsys:
             sout, _ = capsys.readouterr()
@@ -97,7 +96,7 @@ def test_kill_mini(capsys):
         api.job('j6', exec_time=50, max_fails=0, expect_invocations=num_j6_invocations, expect_order=None, kill=True,
                 num_builds_to_keep=num_j6_invocations*2 + 1, params=(('a', 0, 'integer'),))
 
-        kill(20, 1)
+        kill(api, 20, 1)
 
         with serial(api, timeout=70, job_name_prefix=api.job_name_prefix, report_interval=0.05) as ctrl1:
             with ctrl1.parallel() as ctrl2:
@@ -143,7 +142,7 @@ def test_kill_current(capsys):
                 num_builds_to_keep=num_j6_invocations*2 + 1, params=(('a', 0, 'integer'),))
         api.job('j7', exec_time=50, max_fails=0, expect_invocations=0, expect_order=None)
 
-        kill(20, 1)
+        kill(api, 20, 1)
 
         with serial(api, timeout=70, job_name_prefix=api.job_name_prefix, report_interval=0.05) as ctrl1:
             with ctrl1.parallel() as ctrl2:
@@ -216,7 +215,7 @@ def test_kill_all_unchecked_no_job(capsys):
             flow(api, False, True)
 
         # Make sure job has actually started before entering new flow
-        hyperspeed.sleep(5)
+        api.sleep(5)
 
         if capsys:
             sout, _ = capsys.readouterr()

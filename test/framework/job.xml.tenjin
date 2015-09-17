@@ -97,7 +97,7 @@ mock_job = MockJob(
     expect_invocations={==cj.expect_invocations==}, expect_order={==cj.expect_order==},
     initial_buildno=None, invocation_delay={==cj.invocation_delay==}, unknown_result={==cj.unknown_result==},
     final_result="{==fr==}", serial={==cj.serial==}, params=(), flow_created={==cj.flow_created==}, create_job=None, disappearing=False,
-    non_existing=False, kill=False, allow_running=False)
+    non_existing=False, kill=False, allow_running=False, api=None)
 <?py else: ?>
 mock_job = None
 <?py #endif ?>

@@ -12,10 +12,9 @@ from enum import Enum
 from .ordered_enum import OrderedEnum
 from .set_build_result import set_build_result
 from .jenkins_api import BuildResult, Progress, UnknownJobException
-from . import hyperspeed
 
 
-_default_poll_interval = 0.5 if not hyperspeed.mocked() else 0.001
+_default_poll_interval = 0.5
 _default_report_interval = 5
 _default_secret_params = '.*passw.*|.*PASSW.*'
 _default_secret_params_re = re.compile(_default_secret_params)
@@ -159,7 +158,7 @@ class _JobControl(object):
         if self.invocation_time:
             return False
 
-        self.invocation_time = hyperspeed.time()
+        self.invocation_time = self.api.time()
         return True
 
     @abc.abstractmethod
@@ -167,7 +166,7 @@ class _JobControl(object):
         """Polled by flow controller until the job reaches state 'successful' or tried_times == parent.max_tries * self.max_tries"""
 
     def _time_msg(self):
-        now = hyperspeed.time()
+        now = self.api.time()
         return "after: %.3fs/%.3fs" % (now - self.invocation_time, now - self.top_flow.start_time)
 
     @abc.abstractmethod
@@ -617,7 +616,7 @@ class _Flow(_JobControl):
         print(self.indentation + self._exit_str)
 
     def _check_timeout(self):
-        now = hyperspeed.time()
+        now = self.api.time()
         if self.timeout and now - self.invocation_time > self.timeout:
             unfinished_msg = ". Unfinished jobs:" + repr([job.sequence() for job in self.jobs if job.checking_status == Checking.MUST_CHECK])
             raise FlowTimeoutException("Timeout " + self._time_msg() + ", in flow " + str(self) + unfinished_msg, self.propagation)
@@ -643,7 +642,7 @@ class _Flow(_JobControl):
         print()
 
     def _check_report(self):
-        now = hyperspeed.time()
+        now = self.api.time()
         report_now = now - self.last_report_time >= self.report_interval
         if report_now:
             self.last_report_time = now
@@ -968,7 +967,7 @@ class _TopLevelControllerMixin(object):
             self.json(self.json_file, self.json_indent)
 
         # pylint: disable=attribute-defined-outside-init
-        self.start_time = hyperspeed.time()
+        self.start_time = self._api.time()
         self.last_report_time = self.start_time
         last_json_time = self.start_time
         json_interval = max(30, self.report_interval)
@@ -996,9 +995,9 @@ class _TopLevelControllerMixin(object):
                     self._kill_check(None, dequeue)
                     dequeue = False
 
-                hyperspeed.sleep(sleep_time)
+                self._api.sleep(sleep_time)
                 if self.json_file:
-                    now = hyperspeed.time()
+                    now = self._api.time()
                     json_now = now - last_json_time >= json_interval
                     if json_now:
                         last_json_time = now

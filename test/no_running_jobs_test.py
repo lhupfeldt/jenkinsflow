@@ -4,7 +4,6 @@
 from pytest import raises
 
 from jenkinsflow.flow import serial, JobNotIdleException
-from jenkinsflow import hyperspeed
 from .cfg import ApiType
 from .framework import api_select
 from .framework.utils import assert_lines_in
@@ -22,7 +21,7 @@ def test_no_running_jobs(capsys):
         assert_lines_in(sout, "unchecked job: 'jenkinsflow_test__no_running_jobs__j1' UNKNOWN - RUNNING")
 
         # Make sure job has actually started before entering new flow
-        hyperspeed.sleep(1)
+        api.sleep(1)
 
         with raises(JobNotIdleException) as exinfo:
             with serial(api, timeout=70, job_name_prefix=api.job_name_prefix) as ctrl1:
@@ -42,7 +41,7 @@ def test_no_running_jobs_unchecked(capsys):
         sout, _ = capsys.readouterr()
         assert_lines_in(sout, "unchecked job: 'jenkinsflow_test__no_running_jobs_unchecked__j1' UNKNOWN - RUNNING")
 
-        hyperspeed.sleep(1)
+        api.sleep(1)
 
         with raises(JobNotIdleException) as exinfo:
             with serial(api, timeout=70, job_name_prefix=api.job_name_prefix) as ctrl1:
@@ -62,7 +61,7 @@ def test_no_running_jobs_jobs_allowed():
         with serial(api, timeout=70, job_name_prefix=api.job_name_prefix) as ctrl1:
             ctrl1.invoke_unchecked('j1')
 
-        hyperspeed.sleep(1)
+        api.sleep(1)
 
         # TODO
         if api.api_type != ApiType.MOCK:

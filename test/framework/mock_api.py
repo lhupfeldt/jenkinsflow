@@ -7,20 +7,20 @@ from os.path import join as jp
 from collections import OrderedDict
 
 from jenkinsflow.api_base import BuildResult, Progress, UnknownJobException, ApiInvocationMixin
-from jenkinsflow import hyperspeed
 
 from .base_test_api import TestJob, TestJenkins
 from jenkinsflow.test.cfg import ApiType
+from .hyperspeed import HyperSpeed
 
 here = os.path.abspath(os.path.dirname(__file__))
 
 
-class MockApi(TestJenkins):
+class MockApi(TestJenkins, HyperSpeed):
     job_xml_template = jp(here, 'job.xml.tenjin')
     api_type = ApiType.MOCK
 
-    def __init__(self, job_name_prefix, baseurl):
-        super(MockApi, self).__init__(job_name_prefix)
+    def __init__(self, job_name_prefix, speedup, baseurl):
+        super(MockApi, self).__init__(job_name_prefix=job_name_prefix, speedup=speedup)
         self.baseurl = baseurl
         self.username = 'dummy'
         self.password = 'dummy'
@@ -33,7 +33,7 @@ class MockApi(TestJenkins):
         job = MockJob(name=job_name, exec_time=exec_time, max_fails=max_fails, expect_invocations=expect_invocations, expect_order=expect_order,
                       initial_buildno=initial_buildno, invocation_delay=invocation_delay, unknown_result=unknown_result,
                       final_result=final_result, serial=serial, params=params, flow_created=flow_created, create_job=create_job,
-                      disappearing=disappearing, non_existing=non_existing, kill=kill, allow_running=allow_running)
+                      disappearing=disappearing, non_existing=non_existing, kill=kill, allow_running=allow_running, api=self)
         self.test_jobs[job_name] = job
 
     def flow_job(self, name=None, params=None):
@@ -66,7 +66,7 @@ class MockApi(TestJenkins):
 
 class MockJob(TestJob):
     def __init__(self, name, exec_time, max_fails, expect_invocations, expect_order, initial_buildno, invocation_delay, unknown_result,
-                 final_result, serial, params, flow_created, create_job, disappearing, non_existing, kill, allow_running):
+                 final_result, serial, params, flow_created, create_job, disappearing, non_existing, kill, allow_running, api):
         super(MockJob, self).__init__(exec_time=exec_time, max_fails=max_fails, expect_invocations=expect_invocations, expect_order=expect_order,
                                       initial_buildno=initial_buildno, invocation_delay=invocation_delay, unknown_result=unknown_result, final_result=final_result,
                                       serial=serial, print_env=False, flow_created=flow_created, create_job=create_job, disappearing=disappearing,
@@ -78,6 +78,7 @@ class MockJob(TestJob):
         self.last_build_number = initial_buildno
         self.params = params
         self._allow_running = allow_running
+        self.api = api
 
         self.just_invoked = False
         self._invocation_url = 0
@@ -93,11 +94,11 @@ class MockJob(TestJob):
                 return (BuildResult.ABORTED, Progress.IDLE, latest_build_number)
             self._just_killed = False
 
-        if self.start_time <= hyperspeed.time() < self.end_time:
+        if self.start_time <= self.api.time() < self.end_time:
             assert latest_build_number
             return (BuildResult.UNKNOWN, Progress.RUNNING, latest_build_number)
 
-        if self.invocation_time <= hyperspeed.time() < self.start_time:
+        if self.invocation_time <= self.api.time() < self.start_time:
             return (BuildResult.UNKNOWN, Progress.QUEUED, latest_build_number)
 
         # Job is finished
@@ -109,7 +110,7 @@ class MockJob(TestJob):
 
     def poll(self):
         # If has been invoked and started running or already (supposed to be) finished
-        if self.just_invoked and hyperspeed.time() >= self.start_time:
+        if self.just_invoked and self.api.time() >= self.start_time:
             self.just_invoked = False
             self.build_number = self.last_build_number + 1 if self.last_build_number else 1
             self._invocations[self._invocation_url - 1].build_number = self.build_number
@@ -119,16 +120,16 @@ class MockJob(TestJob):
         return self.build_number or self.last_build_number
 
     def _is_running(self):
-        return self.start_time <= hyperspeed.time() < self.end_time
+        return self.start_time <= self.api.time() < self.end_time
 
     def invoke(self, securitytoken, build_params, cause, description):
         if not self._allow_running:
             if self._is_running():
-                print("start_time:", self.start_time, "hyperspeed.time:", hyperspeed.time(), "end_time:", self.end_time)
+                print("start_time:", self.start_time, "self.api.time:", self.api.time(), "end_time:", self.end_time)
                 assert False
 
         super(MockJob, self).invoke(securitytoken, build_params, cause, description)
-        self.invocation_time = hyperspeed.time()
+        self.invocation_time = self.api.time()
         self.start_time = self.invocation_time + self.invocation_delay
         self.end_time = self.start_time + self.exec_time
         self.just_invoked = True

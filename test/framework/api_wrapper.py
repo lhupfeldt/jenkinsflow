@@ -159,7 +159,7 @@ class JenkinsTestWrapperApi(jenkins.Jenkins, TestJenkins):
         job = MockJob(name=job_name, exec_time=exec_time, max_fails=max_fails, expect_invocations=expect_invocations, expect_order=expect_order,
                       initial_buildno=initial_buildno, invocation_delay=invocation_delay, unknown_result=unknown_result, final_result=final_result,
                       serial=serial, params=params, flow_created=flow_created, create_job=create_job, disappearing=disappearing,
-                      non_existing=non_existing, kill=kill, allow_running=allow_running)
+                      non_existing=non_existing, kill=kill, allow_running=allow_running, api=self)
         self.test_jobs[job_name] = job
 
     def flow_job(self, name=None, params=None):

@@ -9,13 +9,7 @@ exclude_lines =
     # This is hopefully covered by a subprocess call, but it won't be collected
     if __name__ == "__main__":
 
-    <?py if api_type == ApiType.MOCK: ?>
-    # Parts of 'mocked' not used when not mocked
-    hyperspeed = time
-    <?py else: ?>
-    # Parts of 'mocked' only used when mocked
-    from .test.framework.hyperspeed
-    hyperspeed = _HyperSpeed
+    <?py if api_type != ApiType.MOCK: ?>
     <?py if os.environ.get('HUDSON_URL'): ?>
     # Parts of jenkins_api not used when hudson
     if self.jenkins.is_jenkins

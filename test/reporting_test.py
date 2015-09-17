@@ -5,7 +5,6 @@ import re
 from pytest import raises
 
 from jenkinsflow.flow import serial, parallel, FailedChildJobException
-from jenkinsflow.hyperspeed import get_speedup
 from .cfg import ApiType
 from .framework import api_select
 from .framework.utils import assert_lines_in, replace_host_port, result_msg, build_started_msg
@@ -17,7 +16,7 @@ def test_reporting_job_status(capsys):
         api.job('j11', 0.1, max_fails=0, expect_invocations=1, expect_order=1)
         api.job('j12', 1.5, max_fails=0, expect_invocations=1, invocation_delay=1.0, initial_buildno=7, expect_order=2, serial=True)
 
-        with serial(api, timeout=70, job_name_prefix=api.job_name_prefix, report_interval=0.5/get_speedup()) as ctrl1:
+        with serial(api, timeout=70, job_name_prefix=api.job_name_prefix, report_interval=0.5/api.speedup) as ctrl1:
             ctrl1.invoke('j11')
             ctrl1.invoke('j12')
 
@@ -42,7 +41,7 @@ def test_reporting_invocation_serial(capsys):
         api.job('j11', 0.1, max_fails=0, expect_invocations=1, expect_order=1)
         api.job('j12', 1.5, max_fails=0, expect_invocations=1, invocation_delay=1.0, initial_buildno=7, expect_order=2, serial=True)
 
-        with serial(api, timeout=70, job_name_prefix=api.job_name_prefix, report_interval=0.5/get_speedup()) as ctrl1:
+        with serial(api, timeout=70, job_name_prefix=api.job_name_prefix, report_interval=0.5/api.speedup) as ctrl1:
             ctrl1.invoke('j11')
             ctrl1.invoke('j12')
 
@@ -69,7 +68,7 @@ def test_reporting_invocation_parallel(capsys):
         api.job('j11', 0.1, max_fails=0, expect_invocations=1, expect_order=1)
         api.job('j12', 1.5, max_fails=0, expect_invocations=1, invocation_delay=1.0, initial_buildno=7, expect_order=2)
 
-        with parallel(api, timeout=70, job_name_prefix=api.job_name_prefix, report_interval=0.5/get_speedup()) as ctrl1:
+        with parallel(api, timeout=70, job_name_prefix=api.job_name_prefix, report_interval=0.5/api.speedup) as ctrl1:
             ctrl1.invoke('j11')
             ctrl1.invoke('j12')
 
@@ -176,7 +175,7 @@ def test_reporting_result_unchecked(capsys):
         api.job('j23', 1.5, max_fails=0, expect_invocations=1, invocation_delay=0, initial_buildno=7, expect_order=4)
         api.job('j12', 5, max_fails=0, expect_invocations=1, invocation_delay=0, initial_buildno=7, expect_order=5)
 
-        with serial(api, timeout=70, job_name_prefix=api.job_name_prefix, report_interval=0.5/get_speedup()) as ctrl1:
+        with serial(api, timeout=70, job_name_prefix=api.job_name_prefix, report_interval=0.5/api.speedup) as ctrl1:
             ctrl1.invoke('j11')
             with ctrl1.serial() as ctrl2:
                 ctrl2.invoke_unchecked('j21_unchecked')
@@ -204,7 +203,7 @@ def test_reporting_defined_job_parameters(capsys):
         api.job('j1', 1.5, max_fails=0, expect_invocations=1, invocation_delay=1.0, initial_buildno=7, expect_order=1, serial=True,
                 params=(('s1', '', 'desc'), ('c1', 'what', 'desc'), ('i1', 1, 'integer'), ('b1', False, 'boolean')))
 
-        with serial(api, timeout=70, job_name_prefix=api.job_name_prefix, report_interval=0.5/get_speedup()) as ctrl1:
+        with serial(api, timeout=70, job_name_prefix=api.job_name_prefix, report_interval=0.5/api.speedup) as ctrl1:
             ctrl1.invoke('j1', s1="hi", c1='why?', i1=2, b1=True)
 
         sout, _ = capsys.readouterr()
@@ -241,7 +240,7 @@ def test_reporting_ordered_job_parameters(capsys):
                         ('unknown1', 'Hello', 'd'), ('aaa', 17, 'd'), ('unknown2', False, 'd')))
 
         order = ['s1', 's2', 'c1', 'i1', 'b1', 's4', '*', 's3']
-        with serial(api, timeout=70, job_name_prefix=api.job_name_prefix, report_interval=0.5/get_speedup(), params_display_order=order) as ctrl1:
+        with serial(api, timeout=70, job_name_prefix=api.job_name_prefix, report_interval=0.5/api.speedup, params_display_order=order) as ctrl1:
             ctrl1.invoke('j1', s1="hi", c1='why?', i1=2, b1=True, s2='not-last', s3='last', unknown1='Hello', aaa=3, unknown2=True, s4='was last')
 
         sout, _ = capsys.readouterr()
@@ -253,7 +252,7 @@ def test_reporting_defined_non_existing(capsys):
         api.flow_job()
         # TODO
         with raises(FailedChildJobException):
-            with serial(api, timeout=70, job_name_prefix=api.job_name_prefix, report_interval=0.5/get_speedup(), allow_missing_jobs=True) as ctrl1:
+            with serial(api, timeout=70, job_name_prefix=api.job_name_prefix, report_interval=0.5/api.speedup, allow_missing_jobs=True) as ctrl1:
                 ctrl1.invoke('j1', a="b", c='d')
 
         sout, _ = capsys.readouterr()
