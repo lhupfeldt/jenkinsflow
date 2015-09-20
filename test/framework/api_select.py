@@ -17,7 +17,7 @@ sys.stdout = UnBuffered(sys.stdout)
 _file_name_subst = re.compile(r'(_jobs|_test)?\.py')
 
 
-def api(file_name, login=False, fixed_prefix=None):
+def api(file_name, login=False, fixed_prefix=None, url_or_dir=None):
     """Factory to create either Mock or Wrap api"""
     base_name = os.path.basename(file_name).replace('.pyc', '.py')
     job_name_prefix = _file_name_subst.sub('', base_name)
@@ -48,7 +48,7 @@ def api(file_name, login=False, fixed_prefix=None):
         from .mock_api import MockApi
         return MockApi(job_name_prefix, test_cfg.speedup(), test_cfg.direct_url())
     else:
-        url_or_dir = test_cfg.direct_url()
+        url_or_dir = url_or_dir or test_cfg.direct_url()
         reload_jobs = not test_cfg.skip_job_load() and not fixed_prefix
         pre_delete_jobs = not test_cfg.skip_job_delete()
         import demo_security as security

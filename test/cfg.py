@@ -49,7 +49,7 @@ def direct_cli_url():
         if purl:
             return direct_url() + '/jnlpJars/hudson-cli.jar'
         # If neither JENKINS nor HUDSON URL is set, assume jenkins for testing
-        return direct_url() + '/jenkins-cli.jar'
+        return direct_url() + '/jnlpJars/jenkins-cli.jar'
     else:
         return script_dir()
 
@@ -63,7 +63,7 @@ def public_cli_url():
         if purl:
             return purl.rstrip('/') + '/jnlpJars/hudson-cli.jar'
         # If neither JENKINS nor HUDSON URL is set, assume jenkins for testing
-        return "http://" + socket.getfqdn() + ':' + repr(8080) + '/jenkins-cli.jar'
+        return "http://" + socket.getfqdn() + ':' + repr(8080) + '/jnlpJars/jenkins-cli.jar'
     else:
         return script_dir()
 

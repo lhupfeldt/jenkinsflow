@@ -5,7 +5,6 @@ import os
 from pytest import raises
 
 from jenkinsflow.flow import parallel, serial, BuildResult, FailedChildJobException
-from jenkinsflow import set_build_result
 
 from demo_security import username, password
 from .framework import api_select

@@ -36,15 +36,6 @@ def _pgrep(proc_name):
 _build_res = None
 
 
-def set_build_result(res):
-    global _build_res
-    _build_res = res
-
-
-def _get_build_result():
-    return _build_res
-
-
 class LoggingProcess(multiprocessing.Process):
     proc_name_prefix = "jenkinsflow_script_api_"
 
@@ -55,10 +46,11 @@ class LoggingProcess(multiprocessing.Process):
         self.workspace = workspace
 
     def run_job_wrapper(self, *args):
+        global _build_res
         setproctitle.setproctitle(self.proc_name_prefix + self.name)
 
         rc = 0
-        set_build_result(None)
+        _build_res = None
         os.chdir(self.workspace)
         try:
             rc = self.user_target(*args)
@@ -66,7 +58,7 @@ class LoggingProcess(multiprocessing.Process):
             print("jenkinsflow.script_api: Caught exception from job script:", ex)
             rc = 1
 
-        sbr = _get_build_result()
+        sbr = _build_res
         if sbr == None:
             sys.exit(rc)
         if sbr == 'unstable':
@@ -99,7 +91,7 @@ class Jenkins(Speed):
                 A return value of 1 or any exception raised is 'FAILURE'
                 Other return values means 'UNSTABLE'
 
-                set_build_result.set_build_result() can be used in run_job to set result to 'unstable' (executing `jenkinsflow set_build_result` has no effect)
+                set_build_result() can be used in run_job to set result to 'unstable' (executing `jenkinsflow set_build_result` has no effect)
                     This is mainly for compatibility with the other APIs, it is simpler to return 2 from run_job.
 
         job_prefix_filter (str): Passed to 'run_job'. ``jenkinsflow`` puts no meaning into this parameter.
@@ -190,6 +182,11 @@ class Jenkins(Speed):
         mode = 'w' if replace else 'a'
         with open(jp(workspace, 'description.txt'), mode) as ff:
             ff.write(description)
+
+    def set_build_result(self, res, java='java'):
+        global _build_res
+        print("INFO: Setting job result to", repr(res))
+        _build_res = res
 
 
 class ApiJob(object):

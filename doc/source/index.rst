@@ -19,7 +19,6 @@ Module contents
    jenkinsflow.flow
    jenkinsflow.jenkins_api
    jenkinsflow.script_api
-   jenkinsflow.set_build_result
    jenkinsflow.jobload
    jenkinsflow.unbuffered
 

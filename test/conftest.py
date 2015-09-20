@@ -92,7 +92,9 @@ def _unset_env_fixture(var_name, request):
 @fixture
 def env_base_url(request):
     # Fake that we are running from inside jenkins job
-    _set_jenkins_url_env_if_not_set_fixture(test_cfg.public_url(), request)
+    public_url = test_cfg.public_url()
+    _set_jenkins_url_env_if_not_set_fixture(public_url, request)
+    return public_url
 
 
 @fixture

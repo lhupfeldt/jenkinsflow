@@ -5,7 +5,8 @@ from __future__ import print_function
 
 import click
 
-from ..set_build_result import set_build_result as _set_build_result
+from jenkinsflow.jenkins_api import Jenkins
+from ..utils import env_base_url
 
 
 @click.command()
@@ -13,7 +14,7 @@ from ..set_build_result import set_build_result as _set_build_result
 @click.option('--java', help="Alternative 'java' executable", default='java')
 @click.option('--direct-url', help="Jenkins URL. Default is JENKINS_URL/HUDSON_URL env var value. Use this argument if JENKINS_URL is a proxy [default: None]")
 @click.option('--username', help="Name of jenkins user with access to the job")
-@click.option('--password', help="Password of jenkins user with access to the job. *** Warning Insecure, will show up in process listing! ***")
+@click.option('--password', help="Password of jenkins user with access to the job.")
 def set_build_result(username, password, result, direct_url=None, java='java'):
     """Change the result of a Jenkins job.
 
@@ -23,5 +24,8 @@ def set_build_result(username, password, result, direct_url=None, java='java'):
     This command uses the Jenkins `cli` to change the result. It requires a java executable to run the Jnkins `cli`.
     """
     # %(file)s [--result <result>] [--java <java>] [--direct-url <direct_url>] [(--username <user_name> --password <password>)]
-    direct_url = direct_url + '/' if direct_url is not None and direct_url[-1] != '/' else direct_url
-    _set_build_result(username, password, result, direct_url, java)
+
+    if direct_url is not None:
+        direct_url = direct_url + '/' if direct_url[-1] != '/' else direct_url
+    jenkins = Jenkins(direct_url or env_base_url(), username=username, password=password)
+    jenkins.set_build_result(result, java)

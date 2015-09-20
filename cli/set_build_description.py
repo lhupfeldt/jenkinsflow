@@ -6,7 +6,7 @@ import sys
 
 import click
 
-from ..utils import base_url_jenkins
+from ..utils import env_base_url
 
 
 @click.command()
@@ -28,7 +28,7 @@ def set_build_description(job_name, build_number, description, replace, separato
     base_url = direct_url
     if not base_url:
         try:
-            base_url, _ = base_url_jenkins()
+            base_url = env_base_url()
         except Exception:
             print("*** ERROR: You must specify '--direct-url' if not running from Jenkins job", file=sys.stderr)
             raise

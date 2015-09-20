@@ -3,13 +3,19 @@
 
 from __future__ import print_function
 
-import time
+import sys, os, tempfile, time
 from collections import OrderedDict
 
 import requests
 
 from .api_base import BuildResult, Progress, UnknownJobException, ApiInvocationMixin
 from .speed import Speed
+
+
+major_version = sys.version_info.major
+
+jenkins_cli_jar = 'jenkins-cli.jar'
+hudson_cli_jar = 'hudson-cli.jar'
 
 _superseded = -1
 _dequeued = -2
@@ -215,6 +221,73 @@ class Jenkins(Speed):
             self.post(build_url + '/submitDescription', headers=_ct_url_enc, payload={'description': description})
         except ResourceNotFound as ex:
             raise Exception("Build not found " + repr(build_url), ex)
+
+    def _download_cli(self, cli_jar):
+        public_uri = self.public_uri if self.public_uri.endswith('/') else self.public_uri + '/'
+        direct_uri = self.direct_uri if self.direct_uri.endswith('/') else self.direct_uri + '/'
+
+        path = 'jnlpJars/' + cli_jar
+        public_cli_url = public_uri + path
+        if direct_uri != public_uri:
+            download_cli_url = direct_uri + path
+            print("INFO: Downloading cli: '{public_cli_url}' (using direct url: '{direct_cli_url}')".format(
+                public_cli_url=public_cli_url, direct_cli_url=download_cli_url))
+        else:
+            download_cli_url = public_cli_url
+            print("INFO: Downloading cli: '{download_cli_url}'".format(download_cli_url=download_cli_url))
+
+        response = requests.get(download_cli_url)
+        with open(cli_jar, 'w' if major_version < 3 else 'w+b') as ff:
+            ff.write(response.content)
+        print("INFO: Download finished:", repr(cli_jar))
+
+    def set_build_result(self, result, java='java'):
+        """Change the result of a Jenkins job.
+
+        Note: set_build_result can only be done from within the job, not after the job has finished.
+        Note: Only available if URL is set in `Jenkins <http://jenkins-ci.org/>`_ system configuration.
+
+        This command uses the Jenkins `cli` to change the result. It requires a java executable to run the cli.
+
+        Args:
+            result (str): The result to set. Should probably be 'unstable'
+            java (str): Alternative `java` executable. Use this if you don't wish to use the java in the PATH.
+        """
+
+        print("INFO: Setting job result to", repr(result))
+        cli_jar = jenkins_cli_jar if self.is_jenkins else hudson_cli_jar
+
+        if major_version < 3:
+            import subprocess32 as subprocess
+        else:
+            import subprocess
+
+        def set_res():
+            command = [java, '-jar', cli_jar, '-s', self.direct_uri, 'set-build-result', result]
+            if self.username:
+                fname = None
+                try:
+                    fhandle, fname = tempfile.mkstemp()
+                    fhandle = os.fdopen(fhandle, 'w')
+                    fhandle.write(self.password)
+                    fhandle.close()
+                    subprocess.check_call(command + ['--username', self.username, '--password-file', fname])
+                finally:
+                    try:
+                        os.remove(fname)
+                        fhandle.close()
+                    except IOError:  # pragma: no cover
+                        pass
+            else:
+                subprocess.check_call(command)
+
+        try:
+            # If cli_jar is already present attempt to use it
+            set_res()
+        except subprocess.CalledProcessError:
+            # We failed for some reason, try again with updated cli_jar
+            self._download_cli(cli_jar)
+            set_res()
 
 
 class ApiJob(object):

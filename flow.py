@@ -10,7 +10,6 @@ from itertools import chain
 from enum import Enum
 
 from .ordered_enum import OrderedEnum
-from .set_build_result import set_build_result
 from .jenkins_api import BuildResult, Progress, UnknownJobException
 
 
@@ -1011,7 +1010,7 @@ class _TopLevelControllerMixin(object):
                 self.json(self.json_file, self.json_indent)
 
         if self.result == BuildResult.UNSTABLE:
-            set_build_result(self.username, self.password, 'unstable', direct_url=self.top_flow.direct_url)
+            self.api.set_build_result('unstable')
 
 
 class parallel(_Parallel, _TopLevelControllerMixin):

@@ -63,6 +63,9 @@ class MockApi(TestJenkins, HyperSpeed):
     def set_build_description(self, job_name, build_number, description, replace=False, separator='\n'):
         pass
 
+    def set_build_result(self, result, java='java'):
+        pass
+
 
 class MockJob(TestJob):
     def __init__(self, name, exec_time, max_fails, expect_invocations, expect_order, initial_buildno, invocation_delay, unknown_result,

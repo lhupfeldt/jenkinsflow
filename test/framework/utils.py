@@ -113,14 +113,15 @@ def flow_graph_dir(flow_name):
     return '.' if os.environ.get('JOB_NAME') else jp(flow_graph_root_dir, flow_name)
 
 
+# Duplicated from set_build_result, we can't depend on that
+jenkins_cli_jar = 'jenkins-cli.jar'
+hudson_cli_jar = 'hudson-cli.jar'
+
+
 def pre_existing_fake_cli():
     """Fake presense of cli-jar"""
     if test_cfg.selected_api() != ApiType.MOCK:
         return
-
-    # Duplicated from set_build_result, we can't depend on that
-    jenkins_cli_jar = 'jenkins-cli.jar'
-    hudson_cli_jar = 'hudson-cli.jar'
 
     if os.environ.get('HUDSON_URL'):
         cli_jar = hudson_cli_jar
