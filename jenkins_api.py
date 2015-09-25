@@ -66,7 +66,7 @@ class Jenkins(Speed):
         self.username = username
         self.password = password
         self.job_prefix_filter = job_prefix_filter
-        self._public_uri = self._baseurl = None
+        self._public_uri = None
         self.jobs = None
         self.queue_items = {}
         self.is_jenkins = True
@@ -100,15 +100,11 @@ class Jenkins(Speed):
         return response
 
     @property
-    def baseurl(self):
-        return self.public_uri
-
-    @property
     def public_uri(self):
         if not self._public_uri:
             query = "primaryView[url]"
             dct = self.get_json(tree=query)
-            self._public_uri = self._baseurl = dct['primaryView']['url'].rstrip('/')
+            self._public_uri = dct['primaryView']['url'].rstrip('/')
         return self._public_uri
 
     def _public_job_url(self, job_name):
@@ -137,7 +133,7 @@ class Jenkins(Speed):
             self.is_jenkins = False
 
         dct = response.json()
-        self._public_uri = self._baseurl = dct['primaryView']['url'].rstrip('/')
+        self._public_uri = dct['primaryView']['url'].rstrip('/')
 
         self.jobs = {}
         for job_dct in dct.get('jobs') or []:
@@ -295,7 +291,7 @@ class ApiJob(object):
         self.jenkins = jenkins
         self.dct = dct.copy()
         self.name = name
-        self.public_uri = self.baseurl = self.jenkins._public_job_url(self.name)  # pylint: disable=protected-access
+        self.public_uri = self.jenkins._public_job_url(self.name)  # pylint: disable=protected-access
 
         actions = self.dct.get('actions') or []
         self._path = "/job/" + self.name

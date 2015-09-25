@@ -454,7 +454,7 @@ class _SingleJob(_JobControl):
 
     def nodes(self, node_to_id):
         node_name = self.name[self.top_flow.json_strip_index:]
-        url = self.job.baseurl if self.job is not None else None
+        url = self.job.public_uri if self.job is not None else None
 
         # For performance reasons use abbreviations
         return [

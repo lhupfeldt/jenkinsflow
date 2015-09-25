@@ -19,9 +19,9 @@ class MockApi(TestJenkins, HyperSpeed):
     job_xml_template = jp(here, 'job.xml.tenjin')
     api_type = ApiType.MOCK
 
-    def __init__(self, job_name_prefix, speedup, baseurl):
+    def __init__(self, job_name_prefix, speedup, public_uri):
         super(MockApi, self).__init__(job_name_prefix=job_name_prefix, speedup=speedup)
-        self.baseurl = baseurl
+        self.public_uri = public_uri
         self.username = 'dummy'
         self.password = 'dummy'
 
@@ -75,7 +75,7 @@ class MockJob(TestJob):
                                       serial=serial, print_env=False, flow_created=flow_created, create_job=create_job, disappearing=disappearing,
                                       non_existing=non_existing, kill=kill)
         self.name = name
-        self.public_uri = self.baseurl = 'http://hupfeldtit.dk/job/' + self.name
+        self.public_uri = 'http://hupfeldtit.dk/job/' + self.name
         self.build_number = None
         self.initial_build_number = initial_buildno
         self.last_build_number = initial_buildno

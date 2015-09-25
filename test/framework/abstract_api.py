@@ -16,7 +16,6 @@ class AbstractApiJob(object):
         raise Exception("AbstractNotImplemented")
 
     # The following should be declare abstract, but since they are 'implemented' by proxy we can't do that (conveniently)
-    # baseurl
     # def is_running(self):
     # def is_queued(self):
     # def get_last_build_or_none(self):

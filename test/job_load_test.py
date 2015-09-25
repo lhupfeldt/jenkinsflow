@@ -22,7 +22,7 @@ def _assert_job(api, job_name, cleanup=False):
     job = api.get_job(job_name)
     assert job is not None
     assert job.name == job_name
-    assert job.baseurl is not None and job_name in job.baseurl
+    assert job.public_uri is not None and job_name in job.public_uri
 
     if cleanup:
         api.delete_job(job_name)

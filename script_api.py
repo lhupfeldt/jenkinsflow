@@ -104,7 +104,7 @@ class Jenkins(Speed):
         self.job_prefix_filter = job_prefix_filter
         self.username = username
         self.password = password
-        self.public_uri = self.baseurl = direct_uri
+        self.public_uri = direct_uri
         self.log_dir = log_dir
         self.jobs = {}
 
@@ -195,7 +195,7 @@ class ApiJob(object):
         self.name = name
 
         self.build = None
-        self.public_uri = self.baseurl = script_file
+        self.public_uri = script_file
         self.workspace = workspace
         self.func = func
         self.log_file = jp(self.jenkins.log_dir, self.name + '.log')
