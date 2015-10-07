@@ -7,8 +7,8 @@ from jenkinsflow.flow import parallel, serial, FlowScopeException
 from .framework import api_select
 
 
-def test_flow_scope_job():
-    with api_select.api(__file__) as api:
+def test_flow_scope_job(api_type):
+    with api_select.api(__file__, api_type) as api:
         api.flow_job()
         api.job('j1', 0.01, max_fails=0, expect_invocations=0, expect_order=None)
         api.job('j2', 0.01, max_fails=0, expect_invocations=0, expect_order=None)
@@ -36,8 +36,8 @@ def test_flow_scope_job():
                 ctrl2.invoke('j2')
 
 
-def test_flow_scope_serial():
-    with api_select.api(__file__) as api:
+def test_flow_scope_serial(api_type):
+    with api_select.api(__file__, api_type) as api:
         api.flow_job()
 
         with raises(FlowScopeException):
@@ -64,8 +64,8 @@ def test_flow_scope_serial():
                     ctrl1.serial(1)
 
 
-def test_flow_scope_parallel():
-    with api_select.api(__file__) as api:
+def test_flow_scope_parallel(api_type):
+    with api_select.api(__file__, api_type) as api:
         api.flow_job()
 
         with raises(FlowScopeException):

@@ -5,8 +5,8 @@ from jenkinsflow.flow import serial
 from .framework import api_select
 
 
-def test_boolean_and_int_params():
-    with api_select.api(__file__) as api:
+def test_boolean_and_int_params(api_type):
+    with api_select.api(__file__, api_type) as api:
         api.flow_job()
         api.job('job-1', exec_time=0.01, max_fails=0, expect_invocations=1, expect_order=1, params=(('b1', False, 'boolean'), ('b2', True, 'boolean')))
         api.job('job-2', exec_time=0.01, max_fails=0, expect_invocations=1, expect_order=2, params=(('i1', 1, 'integer'), ('i2', 2, 'integer')), serial=True)

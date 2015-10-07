@@ -5,24 +5,24 @@ from jenkinsflow.flow import serial, parallel
 from .framework import api_select
 
 
-def test_empty_flow_top_level_serial():
-    with api_select.api(__file__) as api:
+def test_empty_flow_top_level_serial(api_type):
+    with api_select.api(__file__, api_type) as api:
         api.flow_job()
 
         with serial(api, timeout=70):
             pass
 
 
-def test_empty_flow_top_level_parallel():
-    with api_select.api(__file__) as api:
+def test_empty_flow_top_level_parallel(api_type):
+    with api_select.api(__file__, api_type) as api:
         api.flow_job()
 
         with parallel(api, timeout=70):
             pass
 
 
-def test_empty_flow_serial_parallel():
-    with api_select.api(__file__) as api:
+def test_empty_flow_serial_parallel(api_type):
+    with api_select.api(__file__, api_type) as api:
         api.flow_job()
         api.job('j1', exec_time=0.01, max_fails=0, expect_invocations=1, expect_order=1)
         api.job('j2', exec_time=0.01, max_fails=0, expect_invocations=1, expect_order=2, serial=True)
@@ -34,8 +34,8 @@ def test_empty_flow_serial_parallel():
             ctrl1.invoke('j2')
 
 
-def test_empty_flow_parallel_serial():
-    with api_select.api(__file__) as api:
+def test_empty_flow_parallel_serial(api_type):
+    with api_select.api(__file__, api_type) as api:
         api.flow_job()
         api.job('j1', exec_time=0.01, max_fails=0, expect_invocations=1, expect_order=1)
         api.job('j2', exec_time=0.01, max_fails=0, expect_invocations=1, expect_order=1)
@@ -47,8 +47,8 @@ def test_empty_flow_parallel_serial():
             ctrl1.invoke('j2')
 
 
-def test_empty_flow_mix():
-    with api_select.api(__file__) as api:
+def test_empty_flow_mix(api_type):
+    with api_select.api(__file__, api_type) as api:
         api.flow_job()
         api.job('j11', exec_time=0.01, max_fails=0, expect_invocations=1, expect_order=1)
         api.job('j31', exec_time=0.01, max_fails=0, expect_invocations=1, expect_order=2)

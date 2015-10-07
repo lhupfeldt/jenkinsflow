@@ -5,8 +5,8 @@ from jenkinsflow.flow import serial
 from .framework import api_select
 
 
-def test_multi_level_mixed():
-    with api_select.api(__file__) as api:
+def test_multi_level_mixed(api_type):
+    with api_select.api(__file__, api_type) as api:
         api.flow_job()
         _params = (('password', '', 'Some password'), ('s1', '', 'Some string argument'))
         api.job('job-1', exec_time=0.01, max_fails=0, expect_invocations=1, expect_order=1, params=_params)

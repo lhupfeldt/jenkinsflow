@@ -16,8 +16,8 @@ here = os.path.abspath(os.path.dirname(__file__))
 
 
 @pytest.mark.not_apis(ApiType.SCRIPT)
-def test_abort_retry_serial_toplevel():
-    with api_select.api(__file__) as api:
+def test_abort_retry_serial_toplevel(api_type):
+    with api_select.api(__file__, api_type) as api:
         api.flow_job()
         api.job('j11', 0.01, max_fails=0, expect_invocations=1, expect_order=1)
         api.job('j12_abort', 10, max_fails=0, expect_invocations=1, expect_order=2, serial=True, final_result='ABORTED')
@@ -33,8 +33,8 @@ def test_abort_retry_serial_toplevel():
 
 
 @pytest.mark.not_apis(ApiType.SCRIPT)
-def test_abort_retry_parallel_toplevel():
-    with api_select.api(__file__) as api:
+def test_abort_retry_parallel_toplevel(api_type):
+    with api_select.api(__file__, api_type) as api:
         api.flow_job()
         api.job('j11', 0.01, max_fails=0, expect_invocations=1, expect_order=None)
         api.job('j12_abort', 10, max_fails=0, expect_invocations=1, expect_order=None, final_result='ABORTED')
@@ -50,8 +50,8 @@ def test_abort_retry_parallel_toplevel():
 
 
 @pytest.mark.not_apis(ApiType.SCRIPT)
-def test_abort_retry_serial_parallel_nested():
-    with api_select.api(__file__) as api:
+def test_abort_retry_serial_parallel_nested(api_type):
+    with api_select.api(__file__, api_type) as api:
         api.flow_job()
         api.job('j11', 0.01, max_fails=0, expect_invocations=1, expect_order=1)
         api.job('j21', 20, max_fails=0, expect_invocations=1, expect_order=2)
@@ -74,8 +74,8 @@ def test_abort_retry_serial_parallel_nested():
 
 
 @pytest.mark.not_apis(ApiType.SCRIPT)
-def test_abort_retry_parallel_serial_nested():
-    with api_select.api(__file__) as api:
+def test_abort_retry_parallel_serial_nested(api_type):
+    with api_select.api(__file__, api_type) as api:
         api.flow_job()
         api.job('j11', 0.01, max_fails=0, expect_invocations=1, expect_order=None)
         api.job('j21', 0.01, max_fails=0, expect_invocations=1, expect_order=None)

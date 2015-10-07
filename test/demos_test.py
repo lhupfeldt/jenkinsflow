@@ -20,18 +20,18 @@ from .cfg import ApiType
 import basic, calculated_flow, prefix, hide_password, errors
 
 
-def load_demo_jobs(demo):
+def load_demo_jobs(demo, api_type):
     print("\nLoad jobs for demo:", demo.__name__)
     job_load_module_name = demo.__name__ + '_jobs'
     job_load = imp.load_source(job_load_module_name, jp(here, '../demo/jobs', job_load_module_name + '.py'))
-    api = job_load.create_jobs()
+    api = job_load.create_jobs(api_type)
     return api
 
 
-def _test_demo(demo):
-    load_demo_jobs(demo)
+def _test_demo(demo, api_type):
+    load_demo_jobs(demo, api_type)
 
-    with api_select.api(__file__, fixed_prefix="jenkinsflow_demo__") as api:
+    with api_select.api(__file__, api_type, fixed_prefix="jenkinsflow_demo__") as api:
         api.job(demo.__name__ + "__0flow", 0.01, max_fails=0, expect_invocations=1, expect_order=1)
 
         with parallel(api, timeout=70, job_name_prefix=api.job_name_prefix) as ctrl1:
@@ -39,31 +39,31 @@ def _test_demo(demo):
 
 
 @pytest.mark.not_apis(ApiType.SCRIPT)  # TODO: script api is not configured to run demos
-def test_demos_basic():
-    _test_demo(basic)
+def test_demos_basic(api_type):
+    _test_demo(basic, api_type)
 
 
 @pytest.mark.not_apis(ApiType.SCRIPT)  # TODO: script api is not configured to run demos
-def test_demos_calculated_flow():
-    _test_demo(calculated_flow)
+def test_demos_calculated_flow(api_type):
+    _test_demo(calculated_flow, api_type)
 
 
 @pytest.mark.not_apis(ApiType.SCRIPT)  # TODO: script api is not configured to run demos
-def test_demos_prefix():
-    _test_demo(prefix)
+def test_demos_prefix(api_type):
+    _test_demo(prefix, api_type)
 
 
 @pytest.mark.not_apis(ApiType.SCRIPT)  # TODO: script api is not configured to run demos
-def test_demos_hide_password():
-    _test_demo(hide_password)
+def test_demos_hide_password(api_type):
+    _test_demo(hide_password, api_type)
 
 
 @pytest.mark.not_apis(ApiType.SCRIPT)  # TODO: script api is not configured to run demos
-def test_demos_with_errors():
+def test_demos_with_errors(api_type):
     demo = errors
-    load_demo_jobs(demo)
+    load_demo_jobs(demo, api_type)
 
-    with api_select.api(__file__, fixed_prefix="jenkinsflow_demo__") as api:
+    with api_select.api(__file__, api_type, fixed_prefix="jenkinsflow_demo__") as api:
         api.job(demo.__name__ + "__0flow", 0.01, max_fails=1, expect_invocations=1, expect_order=1)
 
         with raises(JobControlFailException):

@@ -7,8 +7,8 @@ from .framework import api_select
 from jenkinsflow.flow import serial, FailedChildJobException
 
 
-def test_hide_password_failed_job(capsys):
-    with api_select.api(__file__) as api:
+def test_hide_password_failed_job(api_type, capsys):
+    with api_select.api(__file__, api_type) as api:
         api.flow_job()
         api.job('passwd_args', exec_time=0.01, max_fails=1, expect_invocations=1, expect_order=1,
                 params=(('s1', 'no-secret', 'desc'), ('passwd', 'p2', 'desc'), ('PASS', 'p3', 'desc')))

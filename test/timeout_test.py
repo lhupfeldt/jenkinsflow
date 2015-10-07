@@ -7,8 +7,8 @@ from jenkinsflow.flow import parallel, serial, FlowTimeoutException
 from .framework import api_select
 
 
-def test_timeout_top_level_serial():
-    with api_select.api(__file__, login=True) as api:
+def test_timeout_top_level_serial(api_type):
+    with api_select.api(__file__, api_type, login=True) as api:
         api.job('quick', exec_time=0.01, max_fails=0, expect_invocations=1, expect_order=None, params=(('s1', '', 'desc'), ('c1', 'false', 'desc')))
         api.job('wait20', exec_time=20, max_fails=0, expect_invocations=1, expect_order=None, unknown_result=True, serial=True)
 
@@ -18,8 +18,8 @@ def test_timeout_top_level_serial():
                 ctrl.invoke('wait20')
 
 
-def test_timeout_top_level_parallel():
-    with api_select.api(__file__, login=True) as api:
+def test_timeout_top_level_parallel(api_type):
+    with api_select.api(__file__, api_type, login=True) as api:
         api.job('quick', exec_time=0.01, max_fails=0, expect_invocations=1, expect_order=None, params=(('s1', '', 'desc'), ('c1', 'false', 'desc')))
         api.job('wait20', exec_time=20, max_fails=0, expect_invocations=1, expect_order=None, unknown_result=True)
 
@@ -29,8 +29,8 @@ def test_timeout_top_level_parallel():
                 ctrl.invoke('wait20')
 
 
-def test_timeout_inner_level_serial():
-    with api_select.api(__file__, login=True) as api:
+def test_timeout_inner_level_serial(api_type):
+    with api_select.api(__file__, api_type, login=True) as api:
         api.job('quick11', exec_time=0.01, max_fails=0, expect_invocations=1, expect_order=None)
         api.job('quick21', exec_time=0.01, max_fails=0, expect_invocations=1, expect_order=None)
         api.job('wait20', exec_time=20, max_fails=0, expect_invocations=1, expect_order=None, unknown_result=True, serial=True)
@@ -47,8 +47,8 @@ def test_timeout_inner_level_serial():
 
 
 
-def test_timeout_inner_level_parallel():
-    with api_select.api(__file__, login=True) as api:
+def test_timeout_inner_level_parallel(api_type):
+    with api_select.api(__file__, api_type, login=True) as api:
         api.job('quick11', exec_time=0.01, max_fails=0, expect_invocations=1, expect_order=None)
         api.job('quick21', exec_time=0.01, max_fails=0, expect_invocations=1, expect_order=None)
         api.job('wait20', exec_time=30, max_fails=0, expect_invocations=1, expect_order=None, unknown_result=True)
@@ -64,8 +64,8 @@ def test_timeout_inner_level_parallel():
         assert ", in flow ('jenkinsflow_test__timeout_inner_level_parallel__quick21', 'jenkinsflow_test__timeout_inner_level_parallel__wait20'). Unfinished jobs:['jenkinsflow_test__timeout_inner_level_parallel__wait20']" in str(exinfo.value)
 
 
-def test_timeout_multi_level_mix():
-    with api_select.api(__file__, login=True) as api:
+def test_timeout_multi_level_mix(api_type):
+    with api_select.api(__file__, api_type, login=True) as api:
         api.job('quick11', exec_time=0.01, max_fails=0, expect_invocations=1, expect_order=None)
         api.job('quick21', exec_time=0.01, max_fails=0, expect_invocations=1, expect_order=None)
         api.job('wait20_22', exec_time=30, max_fails=0, expect_invocations=1, expect_order=None, unknown_result=True)

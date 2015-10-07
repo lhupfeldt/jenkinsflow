@@ -20,7 +20,7 @@ if sys.version_info.major < 3:
     py_version_test_require = ['proxytypes']
 else:
     py_version_requires = []
-    py_version_test_require = ['objproxies']
+    py_version_test_require = ['objproxies>=0.9.4']
 
 
 if __name__ == "__main__":
@@ -33,10 +33,16 @@ if __name__ == "__main__":
         package_dir={'jenkinsflow':'.', 'jenkinsflow.cli': 'cli'},
         zip_safe=True,
         include_package_data=False,
-        install_requires=['requests', 'atomicfile', 'psutil', 'setproctitle', 'click', 'tenjin', 'bottle'] + py_version_requires,
+        install_requires=['requests>=2.7.0',
+                          'atomicfile>=1.0',
+                          'psutil>=3.2.1',
+                          'setproctitle>=1.1.9',
+                          'click>=5.1',
+                          'tenjin>=1.1.1',
+                          'bottle>=0.12.8'] + py_version_requires,
         test_suite='test',
         test_loader='test.test:TestLoader',
-        tests_require=['pytest>=2.7.2', 'pytest-cov>=2.1.0', 'pytest-cache>=1.0', 'pytest-instafail>=0.3.0', 'pytest-xdist>=1.12',
+        tests_require=['pytest>=2.8.0', 'pytest-cov>=2.1.0', 'pytest-cache>=1.0', 'pytest-instafail>=0.3.0', 'pytest-xdist>=1.13.1',
                        'click', 'tenjin', 'bottle',
                        # The test also tests creation of the documentation
                        'sphinx>=1.3.1', 'sphinxcontrib-programoutput'] + py_version_test_require,

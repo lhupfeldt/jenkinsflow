@@ -5,8 +5,8 @@ from jenkinsflow.flow import serial
 from .framework import api_select
 
 
-def test_no_args():
-    with api_select.api(__file__) as api:
+def test_no_args(api_type):
+    with api_select.api(__file__, api_type) as api:
         api.flow_job()
         api.job('job-1', exec_time=0.01, max_fails=0, expect_invocations=1, expect_order=1)
 

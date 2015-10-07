@@ -10,8 +10,8 @@ from .framework import api_select
 from .framework.utils import assert_lines_in, result_msg
 
 
-def test_messages(capsys):
-    with api_select.api(__file__) as api:
+def test_messages(api_type, capsys):
+    with api_select.api(__file__, api_type) as api:
         api.flow_job()
         api.job('j11', 0.01, max_fails=0, expect_invocations=1, invocation_delay=1.0, expect_order=1, serial=True)
         api.job('j21', 0.01, max_fails=0, expect_invocations=1, invocation_delay=1.0, expect_order=2, serial=True)
@@ -33,7 +33,7 @@ def test_messages(capsys):
         sout, _ = capsys.readouterr()
         print(sout)
         assert_lines_in(
-            sout,
+            api_type, sout,
             "^--- Starting flow ---",
             "^Invoking Flow (1/1,1/1): ['jenkinsflow_test__messages__j11', ['jenkinsflow_test__messages__j21'], 'jenkinsflow_test__messages__j12', (",
             "^Invoking Job (1/1,1/1): http://x.x/job/jenkinsflow_test__messages__j11",
@@ -56,8 +56,8 @@ def test_messages(capsys):
         )
 
 
-def test_messages_on_job(capsys):
-    with api_select.api(__file__) as api:
+def test_messages_on_job(api_type, capsys):
+    with api_select.api(__file__, api_type) as api:
         api.flow_job()
         api.job('j21', 0.01, max_fails=0, expect_invocations=1, invocation_delay=1.0, expect_order=1, serial=True)
         api.job('j12', 0.01, max_fails=0, expect_invocations=1, invocation_delay=1.0, expect_order=2, serial=True)
@@ -71,7 +71,7 @@ def test_messages_on_job(capsys):
         sout, _ = capsys.readouterr()
         print(sout)
         assert_lines_in(
-            sout,
+            api_type, sout,
             "^--- Starting flow ---",
             "^Invoking Flow (1/1,1/1): [['jenkinsflow_test__messages_on_job__j21'], 'jenkinsflow_test__messages_on_job__j12'",
             "^Invoking Flow (1/1,1/1): ['jenkinsflow_test__messages_on_job__j21']",
@@ -84,8 +84,8 @@ def test_messages_on_job(capsys):
         )
 
 
-def test_messages_redefined():
-    with api_select.api(__file__) as api:
+def test_messages_redefined(api_type):
+    with api_select.api(__file__, api_type) as api:
         api.flow_job()
         api.job('j11', 0.01, max_fails=0, expect_invocations=0, invocation_delay=1.0, expect_order=None)
         api.job('j21', 0.01, max_fails=0, expect_invocations=0, invocation_delay=1.0, expect_order=None)

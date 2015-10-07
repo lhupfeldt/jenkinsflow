@@ -37,10 +37,10 @@ def _server():
 
 
 @pytest.mark.apis(ApiType.JENKINS)
-def test_which_ci_server_not_ci():
+def test_which_ci_server_not_ci(api_type):
     proc = None
     try:
-        with api_select.api(__file__) as api:
+        with api_select.api(__file__, api_type) as api:
             proc = multiprocessing.Process(target=_server)
             proc.start()
 
@@ -55,7 +55,7 @@ def test_which_ci_server_not_ci():
                         time.sleep(0.1)
 
             assert_lines_in(
-                str(exinfo.value),
+                api_type, str(exinfo.value),
                  "Not connected to Jenkins or Hudson (expected X-Jenkins or X-Hudson header, got: "
             )
 

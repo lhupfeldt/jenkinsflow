@@ -12,32 +12,24 @@ if major_version < 3:
 else:
     from objproxies import ObjectWrapper
 
+from jenkinsflow.api_base import UnknownJobException
+from jenkinsflow import script_api
+from jenkinsflow import jenkins_api
 from jenkinsflow.jobload import update_job_from_template
+
 import demo_security as security  # pylint: disable=import-error
 from jenkinsflow.test import cfg as test_cfg
 from jenkinsflow.test.cfg import ApiType
-
-
-api_type = test_cfg.selected_api()
-here = os.path.abspath(os.path.dirname(__file__))
-
-if api_type == ApiType.JENKINS:
-    from jenkinsflow import jenkins_api as jenkins
-    _job_xml_template = jp(here, 'job.xml.tenjin')
-elif api_type == ApiType.SCRIPT:
-    from jenkinsflow import script_api as jenkins
-    _job_xml_template = jp(here, 'job_script.py.tenjin')
-else:
-    raise Exception("Don't know which API to use!")
-
-from jenkinsflow.api_base import UnknownJobException
 
 from .base_test_api import TestJob, TestJenkins, Jobs as TestJobs
 from .config import test_tmp_dir, pseudo_install_dir
 from .mock_api import MockJob
 
 
-class WrapperJob(TestJob, jenkins.ApiJob, ObjectWrapper):
+here = os.path.abspath(os.path.dirname(__file__))
+
+
+class WrapperJob(TestJob, ObjectWrapper):
     # NOTE: ObjectWrapper class requires all attributes which are NOT proxied to be declared statically and overridden at instance level
     exec_time = None
     max_fails = None
@@ -99,19 +91,8 @@ class Jobs(TestJobs):
                                       always_load=job.disappearing, num_builds_to_keep=4)
 
 
-class JenkinsTestWrapperApi(jenkins.Jenkins, TestJenkins):
-    job_xml_template = _job_xml_template
-    api_type = api_type
-
-    def __init__(self, file_name, func_name, func_num_params, job_name_prefix, reload_jobs, pre_delete_jobs, direct_url,
-                 username, password, securitytoken, login):
-        TestJenkins.__init__(self, job_name_prefix=job_name_prefix)
-        if login:
-            jenkins.Jenkins.__init__(self, direct_uri=direct_url, job_prefix_filter=job_name_prefix, username=username, password=password)
-        else:
-            jenkins.Jenkins.__init__(self, direct_uri=direct_url, job_prefix_filter=job_name_prefix)
-        self.job_loader_jenkins = jenkins.Jenkins(direct_uri=direct_url, job_prefix_filter=job_name_prefix, username=username, password=password)
-
+class _TestWrapperApi(object):
+    def __init__(self, file_name, func_name, func_num_params, reload_jobs, pre_delete_jobs, securitytoken, direct_url, fake_public_uri):
         self.file_name = file_name
         self.func_name = func_name
         self.func_num_params = func_num_params
@@ -119,8 +100,9 @@ class JenkinsTestWrapperApi(jenkins.Jenkins, TestJenkins):
         self.pre_delete_jobs = pre_delete_jobs
         self.securitytoken = securitytoken
         self.direct_url = direct_url
+        self.fake_public_uri = fake_public_uri
         self.using_job_creator = False
-
+    
     def _jenkins_job(self, name, exec_time, params, script, print_env, create_job, always_load, num_builds_to_keep):
         # Create job in Jenkins
         if self.reload_jobs or always_load:
@@ -172,14 +154,14 @@ class JenkinsTestWrapperApi(jenkins.Jenkins, TestJenkins):
         name = '0flow_' + name if name else '0flow'
         job_name = (self.job_name_prefix or '') + name
         # TODO Handle script api
-        if api_type == ApiType.SCRIPT:
+        if self.api_type == ApiType.SCRIPT:
             return job_name
 
         #  Note: Use -B to avoid permission problems with .pyc files created from commandline test
         if self.func_name:
             script = "export PYTHONPATH=" + test_tmp_dir + "\n"
             script += test_cfg.skip_job_load_sh_export_str() + "\n"
-            script += "export " + ApiType.JENKINS.env_name() + "=true\n"  # pylint: disable=no-member
+            # script += "export " + ApiType.JENKINS.env_name() + "=true\n"  # pylint: disable=no-member
             # Supply dummy args for the py.test fixtures
             dummy_args = ','.join(['0' for _ in range(self.func_num_params)])
             script += sys.executable + " -Bc &quot;from jenkinsflow.test." + self.file_name.replace('.py', '') + " import *; test_" + self.func_name + "(" + dummy_args + ")&quot;"
@@ -206,7 +188,7 @@ class JenkinsTestWrapperApi(jenkins.Jenkins, TestJenkins):
         job = None
         try:
             job = self.test_jobs.get(name)
-            jenkins_job = super(JenkinsTestWrapperApi, self).get_job(name)
+            jenkins_job = super(_TestWrapperApi, self).get_job(name)
             if job is None or job.non_existing:
                 msg = "InternalError in api_wrapper get_job. Job exists in Jenkins"
                 if job is None:
@@ -228,3 +210,38 @@ class JenkinsTestWrapperApi(jenkins.Jenkins, TestJenkins):
                 print(msg, file=sys.stderr)
                 raise Exception(msg)
             raise
+
+    def poll(self):
+        super(_TestWrapperApi, self).poll()
+        if self.fake_public_uri:
+            self._public_uri = self.fake_public_uri
+
+
+class JenkinsTestWrapperApi(_TestWrapperApi, jenkins_api.Jenkins, TestJenkins):
+    api_type = ApiType.JENKINS
+    job_xml_template = jp(here, 'job.xml.tenjin')
+
+    def __init__(self, file_name, func_name, func_num_params, job_name_prefix, reload_jobs, pre_delete_jobs, direct_url, fake_public_uri,
+                 username, password, securitytoken, login):
+        TestJenkins.__init__(self, job_name_prefix=job_name_prefix)
+        if login:
+            jenkins_api.Jenkins.__init__(self, direct_uri=direct_url, job_prefix_filter=job_name_prefix, username=username, password=password)
+        else:
+            jenkins_api.Jenkins.__init__(self, direct_uri=direct_url, job_prefix_filter=job_name_prefix)
+        self.job_loader_jenkins = jenkins_api.Jenkins(direct_uri=direct_url, job_prefix_filter=job_name_prefix, username=username, password=password)
+        _TestWrapperApi.__init__(self, file_name, func_name, func_num_params, reload_jobs, pre_delete_jobs, securitytoken, direct_url, fake_public_uri)
+
+
+class ScriptTestWrapperApi(_TestWrapperApi, script_api.Jenkins, TestJenkins):
+    api_type = ApiType.SCRIPT
+    job_xml_template = jp(here, 'job_script.py.tenjin')
+
+    def __init__(self, file_name, func_name, func_num_params, job_name_prefix, reload_jobs, pre_delete_jobs, direct_url, fake_public_uri,
+                 username, password, securitytoken, login):
+        TestJenkins.__init__(self, job_name_prefix=job_name_prefix)
+        if login:
+            script_api.Jenkins.__init__(self, direct_uri=direct_url, job_prefix_filter=job_name_prefix, username=username, password=password)
+        else:
+            script_api.Jenkins.__init__(self, direct_uri=direct_url, job_prefix_filter=job_name_prefix)
+        self.job_loader_jenkins = script_api.Jenkins(direct_uri=direct_url, job_prefix_filter=job_name_prefix, username=username, password=password)
+        _TestWrapperApi.__init__(self, file_name, func_name, func_num_params, reload_jobs, pre_delete_jobs, securitytoken, direct_url, fake_public_uri)

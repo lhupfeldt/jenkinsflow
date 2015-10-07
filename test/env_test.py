@@ -9,8 +9,8 @@ from .framework import api_select
 
 
 @pytest.mark.not_apis(ApiType.SCRIPT)
-def test_env_variables():
-    with api_select.api(__file__) as api:
+def test_env_variables(api_type):
+    with api_select.api(__file__, api_type) as api:
         api.flow_job()
         api.job('j11', 0.1, max_fails=0, expect_invocations=1, expect_order=1, print_env=True)
         api.job('j12', 1.5, max_fails=0, expect_invocations=1, invocation_delay=1.0, initial_buildno=7, expect_order=2, serial=True, print_env=True)

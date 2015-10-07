@@ -5,8 +5,8 @@ from jenkinsflow.flow import serial, parallel
 from .framework import api_select
 
 
-def test_invoke_unchecked_dont_wait_serial():
-    with api_select.api(__file__, login=True) as api:
+def test_invoke_unchecked_dont_wait_serial(api_type):
+    with api_select.api(__file__, api_type, login=True) as api:
         api.flow_job()
         api.job('j11_slow_unchecked', exec_time=100, max_fails=0, expect_invocations=1, expect_order=1, unknown_result=True)
         api.job('j12', exec_time=0.01, max_fails=0, expect_invocations=1, expect_order=2)
@@ -16,8 +16,8 @@ def test_invoke_unchecked_dont_wait_serial():
             ctrl1.invoke('j12')
 
 
-def test_invoke_unchecked_dont_wait_parallel():
-    with api_select.api(__file__, login=True) as api:
+def test_invoke_unchecked_dont_wait_parallel(api_type):
+    with api_select.api(__file__, api_type, login=True) as api:
         api.flow_job()
         api.job('j11_slow_unchecked', exec_time=100, max_fails=0, expect_invocations=1, expect_order=1, unknown_result=True)
         api.job('j12', exec_time=5, max_fails=0, expect_invocations=1, expect_order=2)
@@ -27,8 +27,8 @@ def test_invoke_unchecked_dont_wait_parallel():
             ctrl1.invoke('j12')
 
 
-def test_invoke_unchecked_serial():
-    with api_select.api(__file__, login=True) as api:
+def test_invoke_unchecked_serial(api_type):
+    with api_select.api(__file__, api_type, login=True) as api:
         api.job('j11_unchecked', exec_time=30, max_fails=0, expect_invocations=1, expect_order=None, unknown_result=True)
         api.job('j12', exec_time=5, max_fails=0, expect_invocations=1, expect_order=1)
         api.job('j13_unchecked', exec_time=30, max_fails=0, expect_invocations=1, expect_order=2, invocation_delay=0, unknown_result=True)
@@ -39,8 +39,8 @@ def test_invoke_unchecked_serial():
             ctrl1.invoke_unchecked('j13_unchecked')
 
 
-def test_invoke_unchecked_parallel():
-    with api_select.api(__file__, login=True) as api:
+def test_invoke_unchecked_parallel(api_type):
+    with api_select.api(__file__, api_type, login=True) as api:
         api.job('j11_unchecked', exec_time=30, max_fails=0, expect_invocations=1, expect_order=None, unknown_result=True)
         api.job('j12', exec_time=5, max_fails=0, expect_invocations=1, expect_order=1)
         api.job('j13_unchecked', exec_time=0.01, max_fails=0, expect_invocations=1, expect_order=1)
@@ -51,8 +51,8 @@ def test_invoke_unchecked_parallel():
             ctrl1.invoke_unchecked('j13_unchecked')
 
 
-def test_invoke_unchecked_serial_fails():
-    with api_select.api(__file__, login=True) as api:
+def test_invoke_unchecked_serial_fails(api_type):
+    with api_select.api(__file__, api_type, login=True) as api:
         api.job('j11_unchecked', exec_time=30, max_fails=0, expect_invocations=1, expect_order=None, unknown_result=True)
         api.job('j12', exec_time=0.01, max_fails=0, expect_invocations=1, expect_order=1)
         api.job('j13_fail_unchecked', exec_time=0.01, max_fails=1, expect_invocations=1, expect_order=2)
@@ -67,8 +67,8 @@ def test_invoke_unchecked_serial_fails():
             ctrl1.invoke_unchecked('j15_unchecked')
 
 
-def test_invoke_unchecked_parallel_fails():
-    with api_select.api(__file__, login=True) as api:
+def test_invoke_unchecked_parallel_fails(api_type):
+    with api_select.api(__file__, api_type, login=True) as api:
         api.job('j11_unchecked', exec_time=30, max_fails=0, expect_invocations=1, expect_order=None, unknown_result=True)
         api.job('j12', exec_time=0.01, max_fails=0, expect_invocations=1, expect_order=1)
         api.job('j13_fail_unchecked', exec_time=0.01, max_fails=1, expect_invocations=1, expect_order=1)
@@ -83,8 +83,8 @@ def test_invoke_unchecked_parallel_fails():
             ctrl1.invoke_unchecked('j15_unchecked')
 
 
-def test_invoke_unchecked_mix_fails():
-    with api_select.api(__file__, login=True) as api:
+def test_invoke_unchecked_mix_fails(api_type):
+    with api_select.api(__file__, api_type, login=True) as api:
         api.flow_job()
         api.job('j11_unchecked', exec_time=0.01, max_fails=0, expect_invocations=1, expect_order=None)
         api.job('j12', exec_time=0.01, max_fails=0, expect_invocations=1, expect_order=2)
@@ -114,8 +114,8 @@ def test_invoke_unchecked_mix_fails():
             ctrl1.invoke('j13')
 
 
-def test_invoke_unchecked_mix_no_fails():
-    with api_select.api(__file__, login=True) as api:
+def test_invoke_unchecked_mix_no_fails(api_type):
+    with api_select.api(__file__, api_type, login=True) as api:
         api.job('j31_unchecked', exec_time=30, max_fails=0, expect_invocations=1, expect_order=1, unknown_result=True)
         api.job('j32_unchecked', exec_time=30, max_fails=0, expect_invocations=1, expect_order=1, unknown_result=True)
         api.job('j11', exec_time=0.01, max_fails=0, expect_invocations=1, expect_order=2)

@@ -6,13 +6,13 @@ from collections import OrderedDict
 from framework import api_select
 
 
-def create_jobs():
+def create_jobs(api_type):
     g1_components = range(1)
     g2_components = range(2)
     g3_components = range(2)
     component_groups = OrderedDict((('g1', g1_components), ('g2', g2_components), ('g3', g3_components)))
 
-    api = api_select.api(__file__)
+    api = api_select.api(__file__, api_type)
     def job(name, expect_order, params=None):
         api.job(name, exec_time=0.5, max_fails=0, expect_invocations=1, expect_order=expect_order, params=params)
 
@@ -34,4 +34,4 @@ def create_jobs():
 
 
 if __name__ == '__main__':
-    create_jobs()
+    create_jobs(api_select.ApiType.JENKINS)

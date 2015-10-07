@@ -6,7 +6,7 @@ import sys
 
 import click
 
-from ..utils import env_base_url
+from .utils import env_base_url
 
 
 @click.command()

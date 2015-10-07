@@ -6,7 +6,7 @@ from pytest import raises
 from jenkinsflow import jenkins_api
 
 
-def test_jenkins_api_init_api_no_password():
+def test_jenkins_api_init_api_no_password(api_type):
     with raises(Exception) as exinfo:
         jenkins_api.Jenkins("dummy", "dummy", username="hugo")
     assert "You must specify both username and password or neither" in str(exinfo.value)

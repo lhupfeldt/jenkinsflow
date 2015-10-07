@@ -9,11 +9,11 @@ from .framework import api_select
 from .framework.utils import assert_lines_in, build_started_msg, build_queued_msg
 
 
-def test_reporting_queued(capsys):
+def test_reporting_queued(api_type, capsys):
     # TODO
     skip_apis = (ApiType.SCRIPT, ApiType.MOCK)
 
-    with api_select.api(__file__, login=True) as api:
+    with api_select.api(__file__, api_type, login=True) as api:
         api.flow_job()
         exp_invocations = 2 if api.api_type not in skip_apis else 1
         unknown_result = False if api.api_type not in skip_apis else True
@@ -31,7 +31,7 @@ def test_reporting_queued(capsys):
 
         sout, _ = capsys.readouterr()
         assert_lines_in(
-            sout,
+            api_type, sout,
             "^Invoking Job (1/1,1/1): http://x.x/job/jenkinsflow_test__reporting_queued__j1",
             build_queued_msg(api, "jenkinsflow_test__reporting_queued__j1", 1),
             build_started_msg(api, "jenkinsflow_test__reporting_queued__j1", 2),

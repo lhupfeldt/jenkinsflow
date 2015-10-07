@@ -52,23 +52,23 @@ def _download_cli(cli_jar, direct_base_url, public_base_url):
     print("Prereqs: Download finished:", repr(cli_jar))
 
 
-def pre_existing_cli():
-    if test_cfg.selected_api() != ApiType.JENKINS:
+def pre_existing_cli(api_type):
+    if api_type != ApiType.JENKINS:
         return
 
     public_base_url = os.environ.get('HUDSON_URL')
     cli_jar = hudson_cli_jar
 
     if public_base_url is None:
-        public_base_url = os.environ.get('JENKINS_URL') or test_cfg.public_url()
+        public_base_url = test_cfg.public_url(api_type)
         cli_jar = jenkins_cli_jar
 
     if not os.path.exists(cli_jar):
-        _download_cli(cli_jar, test_cfg.direct_url(), public_base_url)
+        _download_cli(cli_jar, test_cfg.direct_url(api_type), public_base_url)
 
 
-def no_pre_existing_cli():
-    if test_cfg.selected_api() == ApiType.SCRIPT:
+def no_pre_existing_cli(api_type):
+    if api_type == ApiType.SCRIPT:
         return
 
     if os.path.exists(jenkins_cli_jar):
@@ -78,15 +78,21 @@ def no_pre_existing_cli():
 
 
 _setting_job_result_msg = "INFO: Setting job result to 'unstable'"
-_download_same_url = "^INFO: Downloading cli: {download_url!r}".format(download_url=test_cfg.public_cli_url())
-_download_different_urls = "^INFO: Downloading cli: {public_url!r} (using direct url: {direct_url!r})".format(
-    public_url=test_cfg.public_cli_url(), direct_url=test_cfg.direct_cli_url())
+
+
+def _download_same_url(download_url):
+    return "^INFO: Downloading cli: {download_url!r}".format(download_url=download_url)
+
+
+def _download_different_urls(api_type):
+    return "^INFO: Downloading cli: {public_url!r} (using direct url: {direct_url!r})".format(
+        public_url=test_cfg.proxied_public_cli_url(api_type), direct_url=test_cfg.direct_cli_url(api_type))
 
 
 @pytest.mark.not_apis(ApiType.MOCK)
-def test_set_build_result_no_cli_jar(fake_java, env_base_url, capfd):
-    with api_select.api(__file__) as api:
-        no_pre_existing_cli()
+def test_set_build_result_no_cli_jar(api_type, fake_java, env_base_url, capfd):
+    with api_select.api(__file__, api_type, fake_public_uri=test_cfg.direct_url(api_type)) as api:
+        no_pre_existing_cli(api_type)
         api.flow_job()
         api.job('j1_fail', exec_time=0.01, max_fails=1, expect_invocations=1, expect_order=1)
 
@@ -98,19 +104,19 @@ def test_set_build_result_no_cli_jar(fake_java, env_base_url, capfd):
 
     expected = [_setting_job_result_msg]
     if api.api_type != ApiType.SCRIPT:
-        expected.append(_download_different_urls)
+        expected.append(_download_same_url(test_cfg.direct_cli_url(api_type)))
         assert '/jnlpJars/' in sout
 
     assert_lines_in(
-        sout,
+        api_type, sout,
         *expected
     )
 
 
 @pytest.mark.not_apis(ApiType.MOCK)
-def test_set_build_result_no_cli_jar_env_base_url_trailing_slash(fake_java, env_base_url_trailing_slash, capfd):
-    with api_select.api(__file__) as api:
-        no_pre_existing_cli()
+def test_set_build_result_no_cli_jar_env_base_url_trailing_slash(api_type, fake_java, env_base_url_trailing_slash, capfd):
+    with api_select.api(__file__, api_type, fake_public_uri=test_cfg.direct_url(api_type) + '/') as api:
+        no_pre_existing_cli(api_type)
         api.flow_job()
         api.job('j1_fail', exec_time=0.01, max_fails=1, expect_invocations=1, expect_order=1)
 
@@ -122,19 +128,19 @@ def test_set_build_result_no_cli_jar_env_base_url_trailing_slash(fake_java, env_
 
     expected = [_setting_job_result_msg]
     if api.api_type != ApiType.SCRIPT:
-        expected.append(_download_different_urls)
+        expected.append(_download_same_url(test_cfg.direct_cli_url(api_type)))
         assert '/jnlpJars/' in sout
 
     assert_lines_in(
-        sout,
+        api_type, sout,
         *expected
     )
 
 
 @pytest.mark.not_apis(ApiType.MOCK)
-def test_set_build_result_no_cli_jar_env_base_url_trailing_slashes(fake_java, env_base_url_trailing_slashes, capfd):
-    with api_select.api(__file__) as api:
-        no_pre_existing_cli()
+def test_set_build_result_no_cli_jar_env_base_url_trailing_slashes(api_type, fake_java, capfd):
+    with api_select.api(__file__, api_type, fake_public_uri=test_cfg.direct_url(api_type) + '//') as api:
+        no_pre_existing_cli(api_type)
         api.flow_job()
         api.job('j1_fail', exec_time=0.01, max_fails=1, expect_invocations=1, expect_order=1)
 
@@ -146,19 +152,19 @@ def test_set_build_result_no_cli_jar_env_base_url_trailing_slashes(fake_java, en
 
     expected = [_setting_job_result_msg]
     if api.api_type != ApiType.SCRIPT:
-        expected.append(_download_different_urls)
+        expected.append(_download_same_url(test_cfg.direct_cli_url(api_type)))
         assert '/jnlpJars/' in sout
 
     assert_lines_in(
-        sout,
+        api_type, sout,
         *expected
     )
 
 
 @pytest.mark.not_apis(ApiType.MOCK)
-def test_set_build_result(fake_java, env_base_url):
-    with api_select.api(__file__) as api:
-        pre_existing_cli()
+def test_set_build_result(api_type, fake_java):
+    with api_select.api(__file__, api_type) as api:
+        pre_existing_cli(api_type)
         api.flow_job()
         api.job('j1_fail', exec_time=0.01, max_fails=1, expect_invocations=1, expect_order=1)
 
@@ -168,89 +174,87 @@ def test_set_build_result(fake_java, env_base_url):
 
 
 @pytest.mark.not_apis(ApiType.MOCK)
-def test_set_build_result_direct_url(fake_java, env_base_url):
-    with api_select.api(__file__) as api:
-        pre_existing_cli()
+def test_set_build_result_direct_url(api_type, fake_java):
+    with api_select.api(__file__, api_type) as api:
+        pre_existing_cli(api_type)
         api.flow_job()
         api.job('j1_fail', exec_time=0.01, max_fails=1, expect_invocations=1, expect_order=1)
 
         with serial(api, timeout=70, username=username, password=password, job_name_prefix=api.job_name_prefix, report_interval=3,
-                    propagation=Propagation.FAILURE_TO_UNSTABLE, direct_url=test_cfg.direct_url()) as ctrl1:
+                    propagation=Propagation.FAILURE_TO_UNSTABLE, direct_url=test_cfg.direct_url(api_type)) as ctrl1:
             ctrl1.invoke('j1_fail')
 
 
 @pytest.mark.not_apis(ApiType.MOCK)
-def test_set_build_result_no_cli_jar_env_base_url_eq_direct_url(fake_java, env_base_url, capfd):
-    with api_select.api(__file__, url_or_dir=env_base_url) as api:
-        no_pre_existing_cli()
+def test_set_build_result_no_cli_jar_env_base_url_eq_direct_url(api_type, fake_java, env_base_url, capfd):
+    with api_select.api(__file__, api_type, fake_public_uri=test_cfg.direct_url(api_type)) as api:
+        no_pre_existing_cli(api_type)
         api.flow_job()
         api.job('j1_fail', exec_time=0.01, max_fails=1, expect_invocations=1, expect_order=1)
 
         with serial(api, timeout=70, username=username, password=password, job_name_prefix=api.job_name_prefix, report_interval=3,
-                    propagation=Propagation.FAILURE_TO_UNSTABLE, direct_url=test_cfg.public_url()) as ctrl1:
+                    propagation=Propagation.FAILURE_TO_UNSTABLE, direct_url=test_cfg.public_url(api_type)) as ctrl1:
             ctrl1.invoke('j1_fail')
 
     sout, _ = capfd.readouterr()
 
     expected = [_setting_job_result_msg]
     if api.api_type != ApiType.SCRIPT:
-        expected.append(re.compile(_download_same_url + '$'))
+        expected.append(re.compile(_download_same_url(test_cfg.direct_cli_url(api_type)) + '$'))
         expected.append("^INFO: Download finished: ")
         assert '/jnlpJars/' in sout
 
     assert_lines_in(
-        sout,
+        api_type, sout,
         *expected
     )
 
 
 @pytest.mark.not_apis(ApiType.MOCK)
-def test_set_build_result_direct_url_trailing_slash(fake_java, env_base_url, capfd):
-    with api_select.api(__file__) as api:
-        pre_existing_cli()
+def test_set_build_result_direct_url_trailing_slash(api_type, fake_java, env_base_url, capfd):
+    with api_select.api(__file__, api_type) as api:
+        pre_existing_cli(api_type)
         api.flow_job()
         api.job('j1_fail', exec_time=0.01, max_fails=1, expect_invocations=1, expect_order=1)
 
         with serial(api, timeout=70, username=username, password=password, job_name_prefix=api.job_name_prefix, report_interval=3,
-                    propagation=Propagation.FAILURE_TO_UNSTABLE, direct_url=test_cfg.direct_url() + '/') as ctrl1:
+                    propagation=Propagation.FAILURE_TO_UNSTABLE, direct_url=test_cfg.direct_url(api_type) + '/') as ctrl1:
             ctrl1.invoke('j1_fail')
 
     sout, _ = capfd.readouterr()
     assert_lines_in(
-        sout,
+        api_type, sout,
         _setting_job_result_msg
     )
 
 
 @pytest.mark.not_apis(ApiType.MOCK)
-def test_set_build_result_direct_url_different_from_proxied_url(fake_java, env_different_base_url, capfd):
-    with api_select.api(__file__) as api:
-        no_pre_existing_cli()
+def test_set_build_result_direct_url_different_from_proxied_url(api_type, fake_java, capfd):
+    with api_select.api(__file__, api_type, fake_public_uri=test_cfg.proxied_public_url) as api:
+        no_pre_existing_cli(api_type)
         api.flow_job()
         api.job('j1_fail', exec_time=0.01, max_fails=1, expect_invocations=1, expect_order=1)
 
         with serial(api, timeout=70, username=username, password=password, job_name_prefix=api.job_name_prefix, report_interval=3,
-                    propagation=Propagation.FAILURE_TO_UNSTABLE, direct_url=test_cfg.direct_url() + '/') as ctrl1:
+                    propagation=Propagation.FAILURE_TO_UNSTABLE, direct_url=test_cfg.direct_url(api_type) + '/') as ctrl1:
             ctrl1.invoke('j1_fail')
 
     sout, _ = capfd.readouterr()
 
     expected = [_setting_job_result_msg]
     if api.api_type != ApiType.SCRIPT:
-        public_url = test_cfg.proxied_public_cli_url()
-        direct_url = test_cfg.direct_cli_url()
-        expected.append(_download_different_urls)
+        expected.append(_download_different_urls(api_type))
 
     assert_lines_in(
-        sout,
+        api_type, sout,
         *expected
     )
 
 
 @pytest.mark.not_apis(ApiType.MOCK)
-def test_set_build_result_no_auth(fake_java, env_base_url):
-    with api_select.api(__file__) as api:
-        pre_existing_cli()
+def test_set_build_result_no_auth(api_type, fake_java, env_base_url):
+    with api_select.api(__file__, api_type) as api:
+        pre_existing_cli(api_type)
         api.flow_job()
         api.job('j1_fail', exec_time=0.01, max_fails=1, expect_invocations=1, expect_order=1)
 
@@ -259,26 +263,25 @@ def test_set_build_result_no_auth(fake_java, env_base_url):
 
 
 @pytest.mark.not_apis(ApiType.SCRIPT)  # JENKINS_URL is always set for script_api
-def test_set_build_result_no_jenkinsurl(fake_java, env_no_base_url, cli_runner):
-    print os.environ
-    with api_select.api(__file__):
-        pre_existing_cli()
+def test_set_build_result_no_jenkinsurl(api_type, fake_java, env_no_base_url, cli_runner):
+    with api_select.api(__file__, api_type):
+        pre_existing_cli(api_type)
         result = cli_runner.invoke(cli, ['set_build_result'])
 
     assert result.exit_code != 0
     assert result.exception
 
     assert_lines_in(
-        str(result.exception),
+        api_type, str(result.exception),
         "Could not get env variable JENKINS_URL or HUDSON_URL. You must set 'Jenkins Location' in Jenkins setup for JENKINS_URL to be exported. You must set 'Hudson URL' in Hudson setup for HUDSON_URL to be exported."
     )
 
 
 @pytest.mark.not_apis(ApiType.MOCK)
-def test_set_build_result_call_cli_direct_url_trailing_slash(fake_java, env_base_url, cli_runner):
-    with api_select.api(__file__):
-        pre_existing_cli()
-        base_url = test_cfg.direct_url() + '/'
+def test_set_build_result_call_cli_direct_url_trailing_slash(api_type, fake_java, env_base_url, cli_runner):
+    with api_select.api(__file__, api_type):
+        pre_existing_cli(api_type)
+        base_url = test_cfg.direct_url(api_type) + '/'
         result = cli_runner.invoke(cli, ['set_build_result', '--direct-url', base_url])
 
     assert result.exit_code == 0
@@ -286,10 +289,10 @@ def test_set_build_result_call_cli_direct_url_trailing_slash(fake_java, env_base
 
 
 @pytest.mark.not_apis(ApiType.MOCK)
-def test_set_build_result_call_main_direct_url_no_trailing_slash(fake_java, env_base_url, cli_runner):
-    with api_select.api(__file__):
-        pre_existing_cli()
-        base_url = test_cfg.direct_url().rstrip('/')
+def test_set_build_result_call_main_direct_url_no_trailing_slash(api_type, fake_java, env_base_url, cli_runner):
+    with api_select.api(__file__, api_type):
+        pre_existing_cli(api_type)
+        base_url = test_cfg.direct_url(api_type).rstrip('/')
         result = cli_runner.invoke(cli, ['set_build_result', '--direct-url', base_url])
 
     assert result.exit_code == 0

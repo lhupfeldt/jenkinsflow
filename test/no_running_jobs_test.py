@@ -9,8 +9,8 @@ from .framework import api_select
 from .framework.utils import assert_lines_in
 
 
-def test_no_running_jobs(capsys):
-    with api_select.api(__file__, login=True) as api:
+def test_no_running_jobs(api_type, capsys):
+    with api_select.api(__file__, api_type, login=True) as api:
         api.flow_job()
         api.job('j1', exec_time=50, max_fails=0, expect_invocations=1, expect_order=None, invocation_delay=0, unknown_result=True)
 
@@ -18,7 +18,7 @@ def test_no_running_jobs(capsys):
             ctrl1.invoke_unchecked('j1')
 
         sout, _ = capsys.readouterr()
-        assert_lines_in(sout, "unchecked job: 'jenkinsflow_test__no_running_jobs__j1' UNKNOWN - RUNNING")
+        assert_lines_in(api_type, sout, "unchecked job: 'jenkinsflow_test__no_running_jobs__j1' UNKNOWN - RUNNING")
 
         # Make sure job has actually started before entering new flow
         api.sleep(1)
@@ -30,8 +30,8 @@ def test_no_running_jobs(capsys):
         assert "job: 'jenkinsflow_test__no_running_jobs__j1' is in state RUNNING. It must be IDLE." in str(exinfo.value)
 
 
-def test_no_running_jobs_unchecked(capsys):
-    with api_select.api(__file__, login=True) as api:
+def test_no_running_jobs_unchecked(api_type, capsys):
+    with api_select.api(__file__, api_type, login=True) as api:
         api.flow_job()
         api.job('j1', exec_time=50, max_fails=0, expect_invocations=1, expect_order=None, invocation_delay=0, unknown_result=True)
 
@@ -39,7 +39,7 @@ def test_no_running_jobs_unchecked(capsys):
             ctrl1.invoke_unchecked('j1')
 
         sout, _ = capsys.readouterr()
-        assert_lines_in(sout, "unchecked job: 'jenkinsflow_test__no_running_jobs_unchecked__j1' UNKNOWN - RUNNING")
+        assert_lines_in(api_type, sout, "unchecked job: 'jenkinsflow_test__no_running_jobs_unchecked__j1' UNKNOWN - RUNNING")
 
         api.sleep(1)
 
@@ -50,8 +50,8 @@ def test_no_running_jobs_unchecked(capsys):
         assert "unchecked job: 'jenkinsflow_test__no_running_jobs_unchecked__j1' is in state RUNNING. It must be IDLE." in str(exinfo.value)
 
 
-def test_no_running_jobs_jobs_allowed():
-    with api_select.api(__file__, login=True) as api:
+def test_no_running_jobs_jobs_allowed(api_type):
+    with api_select.api(__file__, api_type, login=True) as api:
         api.flow_job()
         exp_invocations = 2 if api.api_type != ApiType.MOCK else 1
         unknown_result = False if api.api_type != ApiType.MOCK else True

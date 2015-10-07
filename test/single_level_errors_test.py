@@ -9,8 +9,8 @@ from .framework import api_select
 from .framework.utils import assert_lines_in
 
 
-def test_single_level_errors_parallel(capsys):
-    with api_select.api(__file__) as api:
+def test_single_level_errors_parallel(api_type, capsys):
+    with api_select.api(__file__, api_type) as api:
         api.flow_job()
         api.job('quick', exec_time=0.01, max_fails=0, expect_invocations=1, expect_order=1, params=(('s1', '', 'desc'), ('c1', 'false', 'desc')))
         api.job('quick_fail', exec_time=0.01, max_fails=1, expect_invocations=1, expect_order=1)
@@ -34,13 +34,13 @@ def test_single_level_errors_parallel(capsys):
 
         sout, _ = capsys.readouterr()
         assert_lines_in(
-            sout,
+            api_type, sout,
             re.compile("^FAILURE: 'jenkinsflow_test__single_level_errors_parallel__quick_fail' - build: .*/jenkinsflow_test__single_level_errors_parallel__quick_fail.* after:"),
         )
 
 
-def test_single_level_errors_serial():
-    with api_select.api(__file__) as api:
+def test_single_level_errors_serial(api_type):
+    with api_select.api(__file__, api_type) as api:
         api.job('quick', exec_time=0.01, max_fails=0, expect_invocations=1, expect_order=1, params=(('s1', '', 'desc'), ('c1', 'false', 'desc')))
         api.job('quick_fail', exec_time=0.01, max_fails=1, expect_invocations=1, expect_order=2, serial=True)
         api.job('wait5', exec_time=5, max_fails=0, expect_invocations=0, expect_order=None)

@@ -7,31 +7,36 @@ import pytest
 from pytest import fixture  # pylint: disable=no-name-in-module
 from click.testing import CliRunner
 
-
 from . import cfg as test_cfg
 from .cfg import ApiType
 
 # Note: You can't (indirectly) import stuff from jenkinsflow here, it messes up the coverage
 
 
+@pytest.fixture(params=[ApiType.MOCK, ApiType.JENKINS, ApiType.SCRIPT])
+def api_type(request):
+    """ApiType fixture"""
+    selected_api_type = request.param    
+
+    apimarker = request.node.get_marker("apis")
+    if apimarker is not None:
+        apis = apimarker.args
+        if selected_api_type not in apis:
+            pytest.skip("test requires one the following apis {apis}, current {api_type}".format(apis=apis, api_type=selected_api_type))
+
+    not_apimarker = request.node.get_marker("not_apis")
+    if not_apimarker is not None:
+        not_apis = not_apimarker.args
+        if selected_api_type in not_apis:
+            pytest.skip("test is not run for the following apis {apis}, current {api_type}".format(apis=not_apis, api_type=selected_api_type))
+
+    return selected_api_type
+
+
 def pytest_configure(config):
     # Register api  marker
     config.addinivalue_line("markers", "apis(*ApiType): mark test to run only when using specified apis")
     config.addinivalue_line("markers", "not_apis(*ApiType): mark test NOT to run when using specified apis")
-
-
-def pytest_runtest_setup(item):
-    apimarker = item.get_marker("apis")
-    if apimarker is not None:
-        apis = apimarker.args
-        if test_cfg.selected_api() not in apis:
-            pytest.skip("test requires one the following apis {}".format(apis))
-    else:
-        not_apimarker = item.get_marker("not_apis")
-        if not_apimarker is not None:
-            not_apis = not_apimarker.args
-            if test_cfg.selected_api() in not_apis:
-                pytest.skip("test is not run for the following apis {}".format(not_apis))
 
 
 def _set_env_fixture(var_name, value, request):
@@ -90,21 +95,21 @@ def _unset_env_fixture(var_name, request):
 
 
 @fixture
-def env_base_url(request):
+def env_base_url(request, api_type):
     # Fake that we are running from inside jenkins job
-    public_url = test_cfg.public_url()
+    public_url = test_cfg.public_url(api_type)
     _set_jenkins_url_env_if_not_set_fixture(public_url, request)
     return public_url
 
 
 @fixture
-def env_base_url_trailing_slash(request):
-    _set_jenkins_url_env_if_not_set_fixture(test_cfg.public_url() + '/', request)
+def env_base_url_trailing_slash(request, api_type):
+    _set_jenkins_url_env_if_not_set_fixture(test_cfg.public_url(api_type) + '/', request)
 
 
 @fixture
-def env_base_url_trailing_slashes(request):
-    _set_jenkins_url_env_if_not_set_fixture(test_cfg.public_url() + '//', request)
+def env_base_url_trailing_slashes(request, api_type):
+    _set_jenkins_url_env_if_not_set_fixture(test_cfg.public_url(api_type) + '//', request)
 
 
 @fixture

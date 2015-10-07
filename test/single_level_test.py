@@ -5,8 +5,8 @@ from jenkinsflow.flow import parallel, serial
 from .framework import api_select
 
 
-def test_single_level_serial():
-    with api_select.api(__file__) as api:
+def test_single_level_serial(api_type):
+    with api_select.api(__file__, api_type) as api:
         api.job('quick', 0.01, max_fails=0, expect_invocations=1, expect_order=1, params=(('s1', 'Hi', 'desc'), ('c1', ('true', 'maybe', 'false'), 'desc')))
         api.job('wait10', 10, max_fails=0, expect_invocations=1, expect_order=2, serial=True)
         api.job('wait5', 5, max_fails=0, expect_invocations=1, expect_order=3, serial=True)
@@ -17,8 +17,8 @@ def test_single_level_serial():
             ctrl.invoke('wait5')
 
 
-def test_single_level_parallel():
-    with api_select.api(__file__) as api:
+def test_single_level_parallel(api_type):
+    with api_select.api(__file__, api_type) as api:
         api.job('quick', 0.01, max_fails=0, expect_invocations=1, expect_order=1, params=(('s1', 'Hi', 'desc'), ('c1', ('true', 'maybe', 'false'), 'desc')))
         api.job('wait10', 10, max_fails=0, expect_invocations=1, expect_order=1)
         api.job('wait5', 5, max_fails=0, expect_invocations=1, expect_order=1)

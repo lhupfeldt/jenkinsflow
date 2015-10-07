@@ -80,7 +80,7 @@ class Jenkins(Speed):
         response = self._get(url, params=params)
         #print("get response:", response.json())
         return response
-    
+
     def get_json(self, url="", **params):
         json_dct = self._get(url + "/api/json", params=params).json()
         #print("get response:", json_dct)
@@ -219,8 +219,8 @@ class Jenkins(Speed):
             raise Exception("Build not found " + repr(build_url), ex)
 
     def _download_cli(self, cli_jar):
-        public_uri = self.public_uri if self.public_uri.endswith('/') else self.public_uri + '/'
-        direct_uri = self.direct_uri if self.direct_uri.endswith('/') else self.direct_uri + '/'
+        public_uri = self.public_uri.rstrip('/') + '/'
+        direct_uri = self.direct_uri.rstrip('/') + '/'
 
         path = 'jnlpJars/' + cli_jar
         public_cli_url = public_uri + path

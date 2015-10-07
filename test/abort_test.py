@@ -18,8 +18,8 @@ here = os.path.abspath(os.path.dirname(__file__))
 
 
 @pytest.mark.not_apis(ApiType.SCRIPT)
-def test_abort(capsys):
-    with api_select.api(__file__, login=True) as api:
+def test_abort(api_type, capsys):
+    with api_select.api(__file__, api_type, login=True) as api:
         api.flow_job()
         api.job('quick', exec_time=0.01, max_fails=0, expect_invocations=1, expect_order=1)
         api.job('wait10_abort', exec_time=10, max_fails=0, expect_invocations=1, expect_order=1, final_result='ABORTED')
@@ -38,6 +38,6 @@ def test_abort(capsys):
 
         sout, _ = capsys.readouterr()
         assert_lines_in(
-            sout,
+            api_type, sout,
             re.compile("^ABORTED: 'jenkinsflow_test__abort__wait10_abort' - build: .*/jenkinsflow_test__abort__wait10_abort.* after:"),
         )

@@ -17,7 +17,7 @@ sys.stdout = UnBuffered(sys.stdout)
 _file_name_subst = re.compile(r'(_jobs|_test)?\.py')
 
 
-def api(file_name, login=False, fixed_prefix=None, url_or_dir=None):
+def api(file_name, api_type, login=False, fixed_prefix=None, url_or_dir=None, fake_public_uri=None):
     """Factory to create either Mock or Wrap api"""
     base_name = os.path.basename(file_name).replace('.pyc', '.py')
     job_name_prefix = _file_name_subst.sub('', base_name)
@@ -41,17 +41,23 @@ def api(file_name, login=False, fixed_prefix=None, url_or_dir=None):
     print()
     print("--- Preparing api for ", repr(job_name_prefix), "---")
 
-    api_type = test_cfg.selected_api()
     print('Using:', api_type)
 
-    if api_type == test_cfg.ApiType.MOCK:
-        from .mock_api import MockApi
-        return MockApi(job_name_prefix, test_cfg.speedup(), test_cfg.direct_url())
-    else:
-        url_or_dir = url_or_dir or test_cfg.direct_url()
-        reload_jobs = not test_cfg.skip_job_load() and not fixed_prefix
-        pre_delete_jobs = not test_cfg.skip_job_delete()
-        import demo_security as security
+    url_or_dir = url_or_dir or test_cfg.direct_url(api_type)
+    reload_jobs = not test_cfg.skip_job_load() and not fixed_prefix
+    pre_delete_jobs = not test_cfg.skip_job_delete()
+    import demo_security as security
+
+    if api_type == test_cfg.ApiType.JENKINS:
         from .api_wrapper import JenkinsTestWrapperApi
         return JenkinsTestWrapperApi(file_name, func_name, func_num_params, job_name_prefix, reload_jobs, pre_delete_jobs,
-                                     url_or_dir, security.username, security.password, security.securitytoken, login=login)
+                                     url_or_dir, fake_public_uri, security.username, security.password, security.securitytoken, login=login)
+    if api_type == test_cfg.ApiType.SCRIPT:
+        from .api_wrapper import ScriptTestWrapperApi
+        return ScriptTestWrapperApi(file_name, func_name, func_num_params, job_name_prefix, reload_jobs, pre_delete_jobs,
+                                    url_or_dir, fake_public_uri, security.username, security.password, security.securitytoken, login=login)
+    if api_type == test_cfg.ApiType.MOCK:
+        from .mock_api import MockApi
+        return MockApi(job_name_prefix, test_cfg.speedup(), test_cfg.direct_url(api_type))
+    else:
+        raise Exception("Unhandled api_type:" + repr(api_type))

@@ -12,8 +12,8 @@ from .framework.utils import assert_lines_in
 from .cfg import ApiType
 
 
-def test_missing_jobs_not_allowed():
-    with api_select.api(__file__) as api:
+def test_missing_jobs_not_allowed(api_type):
+    with api_select.api(__file__, api_type) as api:
         api.flow_job()
         api.job('j1', 0.01, max_fails=0, expect_invocations=0, expect_order=None)
         api.job('j2', 0.01, max_fails=0, expect_invocations=0, expect_order=None)
@@ -25,7 +25,7 @@ def test_missing_jobs_not_allowed():
                 ctrl1.invoke('j2')
 
         assert_lines_in(
-            str(exinfo.value),
+            api_type, str(exinfo.value),
             re.compile("^Job not found: .*jenkinsflow_test__missing_jobs_not_allowed__missingA")
         )
 
@@ -39,8 +39,8 @@ def test_missing_jobs_not_allowed():
                 ctrl1.invoke('missingC')
 
 
-def test_missing_jobs_allowed_still_missing_parallel():
-    with api_select.api(__file__) as api:
+def test_missing_jobs_allowed_still_missing_parallel(api_type):
+    with api_select.api(__file__, api_type) as api:
         api.flow_job()
         api.job('j1', 0.01, max_fails=0, expect_invocations=1, expect_order=1)
         api.job('j2', 0.01, max_fails=0, expect_invocations=1, expect_order=1)
@@ -52,8 +52,8 @@ def test_missing_jobs_allowed_still_missing_parallel():
                 ctrl1.invoke('j2')
 
 
-def test_missing_jobs_allowed_still_missing_serial():
-    with api_select.api(__file__) as api:
+def test_missing_jobs_allowed_still_missing_serial(api_type):
+    with api_select.api(__file__, api_type) as api:
         api.flow_job()
         api.job('j1', 0.01, max_fails=0, expect_invocations=1, expect_order=1)
         api.job('j2', 0.01, max_fails=0, expect_invocations=0, expect_order=None)
@@ -65,8 +65,8 @@ def test_missing_jobs_allowed_still_missing_serial():
                 ctrl1.invoke('j2')
 
 
-def test_missing_jobs_allowed_still_missing_parallel_serial():
-    with api_select.api(__file__) as api:
+def test_missing_jobs_allowed_still_missing_parallel_serial(api_type):
+    with api_select.api(__file__, api_type) as api:
         api.flow_job()
         api.job('j1', 0.01, max_fails=0, expect_invocations=1, expect_order=1)
         api.job('j2', 0.01, max_fails=0, expect_invocations=0, expect_order=None)
@@ -82,8 +82,8 @@ def test_missing_jobs_allowed_still_missing_parallel_serial():
 
 
 @pytest.mark.not_apis(ApiType.SCRIPT)  # TODO: Handle ApiType.SCRIPT
-def test_missing_jobs_allowed_created_serial_parallel():
-    with api_select.api(__file__) as api:
+def test_missing_jobs_allowed_created_serial_parallel(api_type):
+    with api_select.api(__file__, api_type) as api:
         with api.job_creator():
             api.flow_job()
             api.job('j1', 0.01, max_fails=0, expect_invocations=1, expect_order=1, create_job='missingA')
@@ -104,8 +104,8 @@ def test_missing_jobs_allowed_created_serial_parallel():
 
 
 @pytest.mark.not_apis(ApiType.MOCK, ApiType.SCRIPT)  # TODO: Handle ApiTypes
-def test_missing_jobs_job_disappeared():
-    with api_select.api(__file__) as api:
+def test_missing_jobs_job_disappeared(api_type):
+    with api_select.api(__file__, api_type) as api:
         with api.job_creator():
             api.flow_job()
             api.job('j1', 0.01, max_fails=0, expect_invocations=1, expect_order=1)

@@ -45,26 +45,21 @@ class TestLoader(object):
         return dummy
 
 
-test_cfg.select_api(ApiType.JENKINS, 1)
-_cache_dir = jp(top_dir, '.cache')
-
-
-def run_tests(parallel, api_type, args, coverage=True, mock_speedup=1):
-    start_msg("Using " + str(api_type))
+def run_tests(parallel, api, args, coverage=True, mock_speedup=1):
     args = copy.copy(args)
 
-    # Running the test suite multiple times (for each api) breaks the run failed first, preserve the cache dir for each type
-    api_type_cache_dir = _cache_dir + '-' + api_type.name
-    if os.path.exists(api_type_cache_dir):
-        if os.path.exists(_cache_dir):
-            shutil.rmtree(_cache_dir)
-        shutil.move(api_type_cache_dir, _cache_dir)
-
-    test_cfg.select_api(api_type, mock_speedup)
+    test_cfg.select_speedup(mock_speedup)
+    if api is not None:
+        api_name = api.upper()
+        api_type = ApiType[api_name]
+        args.extend(['-k', 'ApiType.' + api_name])
+    else:
+        # We still run for all apis, but we need this to generate the coverage_rc
+        api_type = ApiType.JENKINS
 
     if coverage:
         engine = tenjin.Engine()
-        cov_rc_file_name = jp(here, '.coverage_rc_' +  api_type.env_name().lower())
+        cov_rc_file_name = jp(here, '.coverage_rc_' +  api_type.name.lower())
         with open(cov_rc_file_name, 'w') as cov_rc_file:
             cov_rc_file.write(engine.render(jp(here, "coverage_rc.tenjin"), dict(api_type=api_type, top_dir=top_dir)))
             args.extend(['--cov=' + top_dir, '--cov-report=term-missing', '--cov-config=' + cov_rc_file_name])
@@ -74,7 +69,7 @@ def run_tests(parallel, api_type, args, coverage=True, mock_speedup=1):
             # Note: 'boxed' is required for the kill/abort_current test not to abort other tests
             args.append('--boxed')
 
-        if parallel:
+        if parallel and api_type != ApiType.MOCK:
             args.extend(['-n', '16'])
 
         print('pytest.main', args)
@@ -82,8 +77,6 @@ def run_tests(parallel, api_type, args, coverage=True, mock_speedup=1):
         if rc:
             raise Exception("pytest {args} failed with code {rc}".format(args=args, rc=rc))
     finally:
-        if os.path.exists(_cache_dir):
-            shutil.move(_cache_dir, api_type_cache_dir)
         if coverage:
             os.unlink(cov_rc_file_name)
 
@@ -94,12 +87,14 @@ def start_msg(*msg):
 
 @click.command()
 @click.option('--mock-speedup', '-s', help="Time speedup when running mocked tests.", default=1000)
-@click.option('--direct-url', help="Direct Jenkins URL. Must be different from the URL set in Jenkins (and preferably non proxied)", default=test_cfg.direct_url())
+@click.option('--direct-url', help="Direct Jenkins URL. Must be different from the URL set in Jenkins (and preferably non proxied)",
+              default=test_cfg.direct_url(test_cfg.ApiType.JENKINS))
+@click.option('--api', help="Select which api to use/test. Possible values: 'jenkins, 'script', 'mock'. Default is all.", default=None)
 @click.option('--pytest-args', help="py.test arguments.")
 @click.option('--job-delete/--no-job-delete', help="Delete and re-load jobs into Jenkins. Default is --no-job-delete.", default=False)
 @click.option('--job-load/--no-job-load', help="Load jobs into Jenkins (skipping job load assumes all jobs already loaded and up to date). Deafult is --job-load.", default=True)
 @click.argument('testfile', nargs=-1, type=click.Path(exists=True, readable=True))
-def cli(mock_speedup, direct_url, pytest_args, job_delete, job_load, testfile):
+def cli(mock_speedup, direct_url, api, pytest_args, job_delete, job_load, testfile):
     """
     Test jenkinsflow.
     First runs all tests mocked in hyperspeed, then runs against Jenkins, using jenkins_api, then run script_api jobs.
@@ -139,14 +134,11 @@ def cli(mock_speedup, direct_url, pytest_args, job_delete, job_load, testfile):
             coverage = True
             args.append('--ff')
 
-        run_tests(False, ApiType.MOCK, args, coverage, mock_speedup)
         hudson = os.environ.get('HUDSON_URL')
         if hudson:
             print("Disabling parallel run, Hudson can't handle it :(")
         parallel = test_cfg.skip_job_load() or test_cfg.skip_job_delete() and not hudson
-        # TODO run all types in parallel, use extra job prefix and separate .cache
-        run_tests(parallel, ApiType.JENKINS, args, coverage)
-        run_tests(True, ApiType.SCRIPT, args, coverage)
+        run_tests(parallel, api, args, coverage, mock_speedup)
 
         start_msg("Testing setup.py")
         user = getpass.getuser()

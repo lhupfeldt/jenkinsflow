@@ -7,8 +7,8 @@ from jenkinsflow.flow import serial, FailedChildJobException
 from .framework import api_select
 
 
-def test_multi_level_errors():
-    with api_select.api(__file__) as api:
+def test_multi_level_errors(api_type):
+    with api_select.api(__file__, api_type) as api:
         api.flow_job()
         api.job('wait2', 2, max_fails=0, expect_invocations=1, expect_order=1)
         api.job('wait5', 5, max_fails=0, expect_invocations=1, expect_order=2)

@@ -12,8 +12,8 @@ from .framework import api_select
 from .framework.utils import assert_lines_in, build_started_msg
 
 
-def test_multiple_invocations_serial_same_flow():
-    with api_select.api(__file__) as api:
+def test_multiple_invocations_serial_same_flow(api_type):
+    with api_select.api(__file__, api_type) as api:
         api.flow_job()
         _params = (('password', '', 'Some password'), ('s1', '', 'Some string argument'))
         api.job('j1', exec_time=0.01, max_fails=0, expect_invocations=2, expect_order=1, params=_params)
@@ -23,8 +23,8 @@ def test_multiple_invocations_serial_same_flow():
             ctrl1.invoke('j1', password='something else', s1='asdasdasdasdad')
 
 
-def test_multiple_invocations_serial_same_flow_same_args():
-    with api_select.api(__file__) as api:
+def test_multiple_invocations_serial_same_flow_same_args(api_type):
+    with api_select.api(__file__, api_type) as api:
         api.flow_job()
         _params = (('password', '', 'Some password'), ('s1', '', 'Some string argument'))
         api.job('j1', exec_time=0.01, max_fails=0, expect_invocations=2, expect_order=1, params=_params)
@@ -34,8 +34,8 @@ def test_multiple_invocations_serial_same_flow_same_args():
             ctrl1.invoke('j1', password='a', s1='b')
 
 
-def test_multiple_invocations_new_flow():
-    with api_select.api(__file__) as api:
+def test_multiple_invocations_new_flow(api_type):
+    with api_select.api(__file__, api_type) as api:
         api.flow_job()
         _params = (('password', '', 'Some password'), ('s1', '', 'Some string argument'))
         api.job('j1', exec_time=0.01, max_fails=0, expect_invocations=2, expect_order=1, params=_params)
@@ -47,8 +47,8 @@ def test_multiple_invocations_new_flow():
             ctrl1.invoke('j1', password='something else', s1='asdasdasdasdad')
 
 
-def test_multiple_invocations_new_flow_same_args():
-    with api_select.api(__file__) as api:
+def test_multiple_invocations_new_flow_same_args(api_type):
+    with api_select.api(__file__, api_type) as api:
         api.flow_job()
         _params = (('password', '', 'Some password'), ('s1', '', 'Some string argument'))
         api.job('j1', exec_time=0.01, max_fails=0, expect_invocations=2, expect_order=1, params=_params)
@@ -61,8 +61,8 @@ def test_multiple_invocations_new_flow_same_args():
 
 
 @pytest.mark.not_apis(ApiType.MOCK, ApiType.SCRIPT)
-def test_multiple_invocations_parallel_same_flow_queued(capsys):
-    with api_select.api(__file__) as api:
+def test_multiple_invocations_parallel_same_flow_queued(api_type, capsys):
+    with api_select.api(__file__, api_type) as api:
         is_hudson = os.environ.get('HUDSON_URL')
         if is_hudson:  # TODO investigate why this test fails in Hudson
             xfail("Doesn't pass when using Hudson")
@@ -80,7 +80,7 @@ def test_multiple_invocations_parallel_same_flow_queued(capsys):
         # Note: This output order depends on the job NOT allowing concurrent builds, AND on the order of polling in jenkins_api!
         sout, _ = capsys.readouterr()
         assert_lines_in(
-            sout,
+            api_type, sout,
             "^Invoking Job (1/1,1/1): http://x.x/job/jenkinsflow_test__multiple_invocations_parallel_same_flow_queued__j1",
             "^Invoking Job (1/1,1/1): http://x.x/job/jenkinsflow_test__multiple_invocations_parallel_same_flow_queued__j1",
             "^Invoking Job (1/1,1/1): http://x.x/job/jenkinsflow_test__multiple_invocations_parallel_same_flow_queued__j1",
@@ -109,13 +109,13 @@ def test_multiple_invocations_parallel_same_flow_queued(capsys):
 
 
 @pytest.mark.not_apis(ApiType.MOCK, ApiType.SCRIPT)
-def test_multiple_invocations_parallel_same_flow_no_args_singlequeued(capsys):
+def test_multiple_invocations_parallel_same_flow_no_args_singlequeued(api_type, capsys):
     """
     Jenkins automatically throws away queued builds of parameterless jobs when another build is invoked,
     so that a max of one build can be queued
     """
 
-    with api_select.api(__file__) as api:
+    with api_select.api(__file__, api_type) as api:
         is_hudson = os.environ.get('HUDSON_URL')
         if is_hudson:  # TODO investigate why this test fails in Hudson
             xfail("Doesn't pass in Hudson")
@@ -132,7 +132,7 @@ def test_multiple_invocations_parallel_same_flow_no_args_singlequeued(capsys):
         # Note: This output order depends on the job NOT allowing concurrent builds, AND on the order of polling in jenkins_api!
         sout, _ = capsys.readouterr()
         assert_lines_in(
-            sout,
+            api_type, sout,
             "^Invoking Job (1/1,1/1): http://x.x/job/jenkinsflow_test__multiple_invocations_parallel_same_flow_no_args_singlequeued__j1",
             "^Invoking Job (1/1,1/1): http://x.x/job/jenkinsflow_test__multiple_invocations_parallel_same_flow_no_args_singlequeued__j1",
             "^Invoking Job (1/1,1/1): http://x.x/job/jenkinsflow_test__multiple_invocations_parallel_same_flow_no_args_singlequeued__j1",
@@ -166,6 +166,6 @@ def test_multiple_invocations_parallel_same_flow_no_args_singlequeued(capsys):
         re.match("job: 'jenkinsflow_test__multiple_invocations_parallel_same_flow_no_args_singlequeued__j1' SUCCESS\n *\\)", sout)
 
 
-def test_multiple_invocations_parallel_same_flow_running(capsys):
+def test_multiple_invocations_parallel_same_flow_running(api_type, capsys):
     """Requires job to be setup allowing simultaneous executions"""
     xfail("TODO Note: Test job allowing concurrent builds!")

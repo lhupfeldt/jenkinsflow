@@ -8,9 +8,9 @@ from jenkinsflow.flow import serial
 from jenkinsflow.unbuffered import UnBuffered
 
 
-def test_unbuffered():
+def test_unbuffered(api_type):
     sys.stdout = UnBuffered(sys.stdout)
-    with api_select.api(__file__) as api:
+    with api_select.api(__file__, api_type) as api:
         api.flow_job()
         api.job('unbuf', exec_time=0.01, max_fails=0, expect_invocations=1, expect_order=1)
 

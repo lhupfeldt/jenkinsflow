@@ -5,8 +5,8 @@ from jenkinsflow.flow import serial
 from .framework import api_select
 
 
-def test_direct_url_is_public_url(capsys):
-    with api_select.api(__file__) as api:
+def test_direct_url_is_public_url(api_type, capsys):
+    with api_select.api(__file__, api_type) as api:
         api.job('j1', 0.01, max_fails=0, expect_invocations=1, expect_order=1, params=(('s1', 'Hi', 'desc'), ('c1', ('true', 'maybe', 'false'), 'desc')))
         api.job('j2', 0.01, max_fails=0, expect_invocations=1, expect_order=2, serial=True)
 
@@ -19,8 +19,8 @@ def test_direct_url_is_public_url(capsys):
     assert '/job/' in sout
 
 
-def test_direct_url_trailing_slash(capsys):
-    with api_select.api(__file__) as api:
+def test_direct_url_trailing_slash(api_type, capsys):
+    with api_select.api(__file__, api_type) as api:
         api.job('j1', 0.01, max_fails=0, expect_invocations=1, expect_order=1, params=(('s1', 'Hi', 'desc'),))
         api.job('j2', 0.01, max_fails=0, expect_invocations=1, expect_order=2, serial=True)
 

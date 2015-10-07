@@ -44,15 +44,14 @@ def build_queued_msg(api, job_name, num):
 
 
 _http_re = re.compile(r'https?://.*?/job/([^/" ]*)(/?)')
-if test_cfg.selected_api() != ApiType.SCRIPT:
-    def replace_host_port(contains_url):
+def replace_host_port(api_type, contains_url):
+    if api_type != ApiType.SCRIPT:
         return _http_re.sub(r'http://x.x/job/\1\2', contains_url)
-else:
-    def replace_host_port(contains_url):
+    else:
         return _http_re.sub(r'/tmp/jenkinsflow-test/job/\1.py', contains_url)
 
 
-def assert_lines_in(text, *expected_lines):
+def assert_lines_in(api_type, text, *expected_lines):
     """Assert that `*expected_lines` occur in order in the lines of `text`.
 
     Args:
@@ -61,17 +60,20 @@ def assert_lines_in(text, *expected_lines):
             Otherwise, if the `expected_line` starts with '^', a line in `text` must start with `expected_line[1:]`
             Otherwise `expected line` must simply occur in a line in `text`
     """
-    assert expected_lines
+
+    assert isinstance(api_type, test_cfg.ApiType)
     assert text
+    assert expected_lines
+
     fixed_expected = []
     for expected in expected_lines:
-        fixed_expected.append(replace_host_port(expected) if not hasattr(expected, 'match') else expected)
+        fixed_expected.append(replace_host_port(api_type, expected) if not hasattr(expected, 'match') else expected)
 
     max_index = len(fixed_expected)
     index = 0
 
     for line in text.split('\n'):
-        line = replace_host_port(line)
+        line = replace_host_port(api_type, line)
         expected = fixed_expected[index]
 
         if hasattr(expected, 'match'):
@@ -118,9 +120,9 @@ jenkins_cli_jar = 'jenkins-cli.jar'
 hudson_cli_jar = 'hudson-cli.jar'
 
 
-def pre_existing_fake_cli():
+def pre_existing_fake_cli(api_type):
     """Fake presense of cli-jar"""
-    if test_cfg.selected_api() != ApiType.MOCK:
+    if api_type != ApiType.MOCK:
         return
 
     if os.environ.get('HUDSON_URL'):

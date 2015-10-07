@@ -15,11 +15,11 @@ from jenkinsflow.test.framework import api_select
 from jenkinsflow.test.cfg import ApiType
 
 
-def _abort(test_file_name, fixed_prefix, job_name, sleep_time):
+def _abort(test_file_name, api_type, fixed_prefix, job_name, sleep_time):
     print("\nWaiting to abort job:", job_name)
     print("args:", test_file_name, fixed_prefix, job_name, sleep_time)
     time.sleep(sleep_time)
-    with api_select.api(test_file_name, fixed_prefix='jenkinsflow_test__' + fixed_prefix + '__', login=True) as api:
+    with api_select.api(test_file_name, api_type, fixed_prefix='jenkinsflow_test__' + fixed_prefix + '__', login=True) as api:
         api.job(job_name, 0.1, max_fails=0, expect_invocations=0, expect_order=None)
     api.poll()
     api.quick_poll()
@@ -30,11 +30,11 @@ def _abort(test_file_name, fixed_prefix, job_name, sleep_time):
     print("Aborted")
 
 
-if __name__ == '__main__':    
-    _abort(sys.argv[1], sys.argv[2], sys.argv[3], int(sys.argv[4]))
+if __name__ == '__main__':
+    _abort(sys.argv[1], ApiType[sys.argv[2]], sys.argv[3], sys.argv[4], int(sys.argv[5]))
 
 
 def abort(api, job_name, sleep_time):
     """Call this script as a subprocess"""
     if api.api_type != ApiType.MOCK:
-        subprocess.Popen([sys.executable, __file__, api.file_name, api.func_name.replace('test_', ''), job_name, str(sleep_time)])
+        subprocess.Popen([sys.executable, __file__, api.file_name, api.api_type.name, api.func_name.replace('test_', ''), job_name, str(sleep_time)])

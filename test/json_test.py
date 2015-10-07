@@ -28,11 +28,11 @@ with open(jp(here, "json_test_pretty.json")) as _jf:
 
 
 def _assert_json(got_json, expected_json, api_type):
-    got_json = utils.replace_host_port(got_json)
+    got_json = utils.replace_host_port(api_type, got_json)
     got_json = _timestamp_re.sub(r't": 12345.123', got_json)
 
     if api_type == ApiType.SCRIPT:
-        expected_json = utils.replace_host_port(expected_json)
+        expected_json = utils.replace_host_port(api_type, expected_json)
 
     if got_json.strip() != expected_json:
         if not os.environ.get('JOB_NAME'):
@@ -67,8 +67,8 @@ def _flow(api, strip_prefix, json_dir):
     return ctrl1
 
 
-def test_json_strip_prefix():
-    with api_select.api(__file__, login=True) as api:
+def test_json_strip_prefix(api_type):
+    with api_select.api(__file__, api_type, login=True) as api:
         flow_name = api.flow_job()
         api.job('j1', exec_time=0.01, max_fails=0, expect_invocations=1, expect_order=1)
         api.job('j2', exec_time=0.01, max_fails=0, expect_invocations=1, expect_order=2)
@@ -97,8 +97,8 @@ def test_json_strip_prefix():
         _assert_json(json, _compact_json, api.api_type)
 
 
-def test_json_no_strip_prefix():
-    with api_select.api(__file__, login=True) as api:
+def test_json_no_strip_prefix(api_type):
+    with api_select.api(__file__, api_type, login=True) as api:
         flow_name = api.flow_job()
         api.job('j1', exec_time=0.01, max_fails=0, expect_invocations=1, expect_order=1)
         api.job('j2', exec_time=0.01, max_fails=0, expect_invocations=1, expect_order=2)
@@ -121,8 +121,8 @@ def test_json_no_strip_prefix():
             _assert_json(got_json, expect_json, api.api_type)
 
 
-def test_json_unchecked_only_in_flows():
-    with api_select.api(__file__, login=True) as api:
+def test_json_unchecked_only_in_flows(api_type):
+    with api_select.api(__file__, api_type, login=True) as api:
         flow_name = api.flow_job()
         api.job('j1_unchecked', exec_time=40, max_fails=0, expect_invocations=1, invocation_delay=0, expect_order=None, unknown_result=True)
         api.job('j2_unchecked', exec_time=0.01, max_fails=0, expect_invocations=1, expect_order=None)

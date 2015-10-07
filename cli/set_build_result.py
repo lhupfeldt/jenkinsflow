@@ -6,7 +6,7 @@ from __future__ import print_function
 import click
 
 from jenkinsflow.jenkins_api import Jenkins
-from ..utils import env_base_url
+from .utils import env_base_url
 
 
 @click.command()

@@ -26,8 +26,8 @@ from demo_security import username, password
 _here = os.path.dirname(os.path.abspath(__file__))
 
 
-def test_set_build_description_flow_set():
-    with api_select.api(__file__, login=True) as api:
+def test_set_build_description_flow_set(api_type):
+    with api_select.api(__file__, api_type, login=True) as api:
         api.flow_job()
         _params = (('password', '', 'Some password'), ('s1', '', 'Some string argument'))
         api.job('job-1', exec_time=0.01, max_fails=0, expect_invocations=1, expect_order=1, params=_params)
@@ -56,8 +56,8 @@ def test_set_build_description_flow_set():
         # TODO read description back to validate that it was set!
 
 
-def test_set_build_description_util():
-    with api_select.api(__file__, login=True) as api:
+def test_set_build_description_util(api_type):
+    with api_select.api(__file__, api_type, login=True) as api:
         api.flow_job()
         job_name = 'job-1'
         api.job(job_name, exec_time=0.01, max_fails=0, expect_invocations=1, expect_order=1)
@@ -79,8 +79,8 @@ def test_set_build_description_util():
 
 
 @pytest.mark.not_apis(ApiType.MOCK, ApiType.SCRIPT)
-def test_set_build_description_cli(cli_runner):
-    with api_select.api(__file__, login=True) as api:
+def test_set_build_description_cli(api_type, cli_runner):
+    with api_select.api(__file__, api_type, login=True) as api:
         api.flow_job()
         job_name = 'job-1'
         api.job(job_name, exec_time=0.01, max_fails=0, expect_invocations=1, expect_order=1)
@@ -91,7 +91,7 @@ def test_set_build_description_cli(cli_runner):
         # Need to read the build number
         job = api.get_job(api.job_name_prefix + job_name)
         _, _, build_num = job.job_status()
-        base_url = test_cfg.direct_url() + '/'
+        base_url = test_cfg.direct_url(api_type) + '/'
 
         result = cli_runner.invoke(
             cli,
@@ -124,8 +124,8 @@ def test_set_build_description_cli(cli_runner):
 
 
 @pytest.mark.not_apis(ApiType.MOCK, ApiType.SCRIPT)
-def test_set_build_description_cli_env_url(env_base_url, cli_runner):
-    with api_select.api(__file__, login=True) as api:
+def test_set_build_description_cli_env_url(api_type, env_base_url, cli_runner):
+    with api_select.api(__file__, api_type, login=True) as api:
         api.flow_job()
         job_name = 'j1'
         api.job(job_name, exec_time=0.01, max_fails=0, expect_invocations=1, expect_order=1)
@@ -153,8 +153,8 @@ def test_set_build_description_cli_env_url(env_base_url, cli_runner):
 
 
 @pytest.mark.not_apis(ApiType.MOCK, ApiType.SCRIPT)
-def test_set_build_description_cli_no_env_url(env_no_base_url, cli_runner):
-    with api_select.api(__file__, login=True) as api:
+def test_set_build_description_cli_no_env_url(api_type, env_no_base_url, cli_runner):
+    with api_select.api(__file__, api_type, login=True) as api:
         api.flow_job()
         job_name = 'j1'
         api.job(job_name, exec_time=0.01, max_fails=0, expect_invocations=1, expect_order=1)

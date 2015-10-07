@@ -4,8 +4,8 @@
 from framework import api_select
 
 
-def create_jobs():
-    api = api_select.api(__file__)
+def create_jobs(api_type):
+    api = api_select.api(__file__, api_type)
     def job(name, expect_order, params=None):
         api.job(name, exec_time=0.5, max_fails=0, expect_invocations=1, expect_order=expect_order, params=params)
 
@@ -21,4 +21,4 @@ def create_jobs():
 
 
 if __name__ == '__main__':
-    create_jobs()
+    create_jobs(api_select.ApiType.JENKINS)
