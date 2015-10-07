@@ -20,21 +20,11 @@ exclude_lines =
     <?py #endif ?>
     <?py #endif ?>
 
-    <?py if api_type != ApiType.SCRIPT: ?>
-    # Part of set_build_result only used for script_api
-    from \. import script_api
-    from \.\. import script_api as api
-    script_api.set_build_result\(result
-    return
-    <?py else: ?>
+    <?py if api_type == ApiType.SCRIPT: ?>
     # Parts of api_base not used in script_api (overridden methods)
-    from \.\. import jenkins_api as api
     return self.public_uri + '/' + str(buildno) + '/console'
     return self.job.console_url(self.buildno)
     <?py #endif ?>
-
-    # TODO tests this 
-    Exception\("Build deleted while flow running
 
 omit = 
      {==top_dir==}/test/*
@@ -43,9 +33,9 @@ omit =
      {==top_dir==}/setup.py
      {==top_dir==}/ordered_enum.py
      *_flymake.py
-     <?py if api_type != ApiType.JENKINS: ?>
+     <?py if api_type and api_type != ApiType.JENKINS: ?>
      {==top_dir==}/jenkins_api.py
      <?py #endif ?>
-     <?py if api_type != ApiType.SCRIPT: ?>
+     <?py if api_type and api_type != ApiType.SCRIPT: ?>
      {==top_dir==}/script_api.py
      <?py #endif ?>

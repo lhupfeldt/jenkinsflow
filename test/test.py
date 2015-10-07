@@ -54,12 +54,12 @@ def run_tests(parallel, api, args, coverage=True, mock_speedup=1):
         api_type = ApiType[api_name]
         args.extend(['-k', 'ApiType.' + api_name])
     else:
-        # We still run for all apis, but we need this to generate the coverage_rc
-        api_type = ApiType.JENKINS
+        # We run for all apis
+        api_type = None
 
     if coverage:
         engine = tenjin.Engine()
-        cov_rc_file_name = jp(here, '.coverage_rc_' +  api_type.name.lower())
+        cov_rc_file_name = jp(here, '.coverage_rc_' +  api_type.name.lower() if api_type else 'all')
         with open(cov_rc_file_name, 'w') as cov_rc_file:
             cov_rc_file.write(engine.render(jp(here, "coverage_rc.tenjin"), dict(api_type=api_type, top_dir=top_dir)))
             args.extend(['--cov=' + top_dir, '--cov-report=term-missing', '--cov-config=' + cov_rc_file_name])
