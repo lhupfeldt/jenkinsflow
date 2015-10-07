@@ -12,6 +12,7 @@ else:
 from os.path import join as jp
 
 import pytest
+from pytest import raises
 
 from jenkinsflow.flow import serial
 from jenkinsflow.cli.cli import cli
@@ -76,6 +77,17 @@ def test_set_build_description_util(api_type):
         api.set_build_description(job.name, build_num, 'BBB5', separator='!!')
 
         # TODO read back description and verify
+
+
+@pytest.mark.not_apis(ApiType.MOCK, ApiType.SCRIPT)
+def test_set_build_description_unknown_job(api_type):
+    with api_select.api(__file__, api_type, login=True) as api:
+        job_name = 'job-1'
+
+        with raises(Exception) as exinfo:
+            api.set_build_description(job_name, 17, 'Oops')
+
+        assert "Build not found " in str(exinfo.value)
 
 
 @pytest.mark.not_apis(ApiType.MOCK, ApiType.SCRIPT)
