@@ -26,6 +26,12 @@ exclude_lines =
     return self.job.console_url(self.buildno)
     <?py #endif ?>
 
+    <?py if major_version >= 3: ?>
+    if major_version < 3
+    <?py else: ?>
+    import subprocess
+    <?py #endif ?>
+
 omit = 
      {==top_dir==}/test/*
      {==top_dir==}/demo/*

@@ -61,7 +61,8 @@ def run_tests(parallel, api, args, coverage=True, mock_speedup=1):
         engine = tenjin.Engine()
         cov_rc_file_name = jp(here, '.coverage_rc_' +  api_type.name.lower() if api_type else 'all')
         with open(cov_rc_file_name, 'w') as cov_rc_file:
-            cov_rc_file.write(engine.render(jp(here, "coverage_rc.tenjin"), dict(api_type=api_type, top_dir=top_dir)))
+            context = dict(api_type=api_type, top_dir=top_dir, major_version=major_version)
+            cov_rc_file.write(engine.render(jp(here, "coverage_rc.tenjin"), context))
             args.extend(['--cov=' + top_dir, '--cov-report=term-missing', '--cov-config=' + cov_rc_file_name])
 
     try:
