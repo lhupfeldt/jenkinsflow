@@ -21,7 +21,7 @@ def set_build_result(username, password, result, direct_url=None, java='java'):
     Note: set_build_result can only be done from within the job, not after the job has finished.
     Note: Only available if URL is set in `Jenkins <http://jenkins-ci.org/>`_ system configuration.
 
-    This command uses the Jenkins `cli` to change the result. It requires a java executable to run the Jnkins `cli`.
+    This command uses the Jenkins `cli` to change the result. It requires a java executable to run the Jenkins `cli`.
     """
     # %(file)s [--result <result>] [--java <java>] [--direct-url <direct_url>] [(--username <user_name> --password <password>)]
 
