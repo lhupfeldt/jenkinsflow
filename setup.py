@@ -42,8 +42,8 @@ if __name__ == "__main__":
                           'bottle>=0.12.8'] + py_version_requires,
         test_suite='test',
         test_loader='test.test:TestLoader',
-        tests_require=['pytest>=2.8.0', 'pytest-cov>=2.1.0', 'pytest-cache>=1.0', 'pytest-instafail>=0.3.0', 'pytest-xdist>=1.13.1',
-                       'click', 'tenjin', 'bottle',
+        tests_require=['pytest>=2.8.2', 'pytest-cov>=2.1.0', 'pytest-instafail>=0.3.0', 'pytest-xdist>=1.13.1',
+                       'click>=5.1', 'tenjin>=1.1.1', 'bottle>=0.12.8',
                        # The test also tests creation of the documentation
                        'sphinx>=1.3.1', 'sphinxcontrib-programoutput'] + py_version_test_require,
         url=PROJECT_URL,
