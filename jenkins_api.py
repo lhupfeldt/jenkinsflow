@@ -244,6 +244,8 @@ class Jenkins(Speed):
         Note: Only available if URL is set in `Jenkins <http://jenkins-ci.org/>`_ system configuration.
 
         This command uses the Jenkins `cli` to change the result. It requires a java executable to run the cli.
+        Note: In some versions of Jenkins the `cli` is broken, it has no manifest file! This is the case for
+        e.g. 1.625.1, the version installed on Fedora 23 using `dnf` at the time of Fedora 23 release.
 
         Args:
             result (str): The result to set. Should probably be 'unstable'
