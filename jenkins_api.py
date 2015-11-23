@@ -53,9 +53,10 @@ class Jenkins(Speed):
             which only has access to the jobs in the flow that it is executing. That way the job list will be filtered serverside.
         username (str): Name of user authorized to execute all jobs in flow.
         password (str): Password of user.
+        invocation_class (class): Defaults to `Invocation`.
     """
 
-    def __init__(self, direct_uri, job_prefix_filter=None, username=None, password=None):
+    def __init__(self, direct_uri, job_prefix_filter=None, username=None, password=None, invocation_class=None):
         self.session = requests.Session()
         if username or password:
             if not (username and password):
@@ -65,6 +66,7 @@ class Jenkins(Speed):
         self.direct_uri = direct_uri
         self.username = username
         self.password = password
+        self.invocation_class = invocation_class or Invocation
         self.job_prefix_filter = job_prefix_filter
         self._public_uri = None
         self.jobs = None
@@ -324,7 +326,7 @@ class ApiJob(object):
         old_inv = self._invocations.get(location)
         if old_inv:
             old_inv.build_number = _superseded
-        inv = Invocation(self, location, description)
+        inv = self.jenkins.invocation_class(self, location, description)
         self._invocations[location] = inv
         return inv
 
@@ -491,3 +493,5 @@ class Invocation(ApiInvocationMixin):
             # We leave it up to the flow logic to handle that
             # NOTE: bug https://issues.jenkins-ci.org/browse/JENKINS-21311 also brings us here!
             pass
+
+

@@ -97,15 +97,17 @@ class Jenkins(Speed):
         job_prefix_filter (str): Passed to 'run_job'. ``jenkinsflow`` puts no meaning into this parameter.
         username (str): Passed to 'run_job'. ``jenkinsflow`` puts no meaning into this parameter.
         password (str): Passed to 'run_job'. ``jenkinsflow`` puts no meaning into this parameter.
+        invocation_class (class): Defaults to `Invocation`.
         **kwargs: Ignored for compatibility with the other jenkins apis
     """
 
-    def __init__(self, direct_uri, job_prefix_filter=None, username=None, password=None, log_dir=tempfile.gettempdir(), **kwargs):
+    def __init__(self, direct_uri, job_prefix_filter=None, username=None, password=None, invocation_class=None, log_dir=tempfile.gettempdir(), **kwargs):
         self.job_prefix_filter = job_prefix_filter
         self.username = username
         self.password = password
         self.public_uri = direct_uri
         self.log_dir = log_dir
+        self.invocation_class = invocation_class or Invocation
         self.jobs = {}
 
     def poll(self):
@@ -212,7 +214,7 @@ class ApiJob(object):
         fixed_args = [self.name, self.jenkins.job_prefix_filter, self.jenkins.username, self.jenkins.password, securitytoken, cause]
         fixed_args.append(build_params if build_params else {})
         proc = LoggingProcess(target=self.func, output_file_name=self.log_file, workspace=self.workspace, name=self.name, args=fixed_args)
-        self.build = Invocation(self, proc, self.build_num)
+        self.build = self.jenkins.invocation_class(self, proc, self.build_num)
         self._invocations.append(self.build)
         return self.build
 
@@ -290,3 +292,5 @@ class Invocation(ApiInvocationMixin):
 
     def __repr__(self):
         return self.job.name + " #" + repr(self.build_number)
+
+
