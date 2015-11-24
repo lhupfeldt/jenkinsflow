@@ -102,7 +102,7 @@ class _TestWrapperApi(object):
         self.direct_url = direct_url
         self.fake_public_uri = fake_public_uri
         self.using_job_creator = False
-    
+
     def _jenkins_job(self, name, exec_time, params, script, print_env, create_job, always_load, num_builds_to_keep):
         # Create job in Jenkins
         if self.reload_jobs or always_load:
@@ -222,12 +222,13 @@ class JenkinsTestWrapperApi(_TestWrapperApi, jenkins_api.Jenkins, TestJenkins):
     job_xml_template = jp(here, 'job.xml.tenjin')
 
     def __init__(self, file_name, func_name, func_num_params, job_name_prefix, reload_jobs, pre_delete_jobs, direct_url, fake_public_uri,
-                 username, password, securitytoken, login):
+                 username, password, securitytoken, login, invocation_class):
         TestJenkins.__init__(self, job_name_prefix=job_name_prefix)
         if login:
-            jenkins_api.Jenkins.__init__(self, direct_uri=direct_url, job_prefix_filter=job_name_prefix, username=username, password=password)
+            jenkins_api.Jenkins.__init__(self, direct_uri=direct_url, job_prefix_filter=job_name_prefix, username=username, password=password,
+                                         invocation_class=invocation_class)
         else:
-            jenkins_api.Jenkins.__init__(self, direct_uri=direct_url, job_prefix_filter=job_name_prefix)
+            jenkins_api.Jenkins.__init__(self, direct_uri=direct_url, job_prefix_filter=job_name_prefix, invocation_class=invocation_class)
         self.job_loader_jenkins = jenkins_api.Jenkins(direct_uri=direct_url, job_prefix_filter=job_name_prefix, username=username, password=password)
         _TestWrapperApi.__init__(self, file_name, func_name, func_num_params, reload_jobs, pre_delete_jobs, securitytoken, direct_url, fake_public_uri)
 
@@ -237,11 +238,12 @@ class ScriptTestWrapperApi(_TestWrapperApi, script_api.Jenkins, TestJenkins):
     job_xml_template = jp(here, 'job_script.py.tenjin')
 
     def __init__(self, file_name, func_name, func_num_params, job_name_prefix, reload_jobs, pre_delete_jobs, direct_url, fake_public_uri,
-                 username, password, securitytoken, login):
+                 username, password, securitytoken, login, invocation_class):
         TestJenkins.__init__(self, job_name_prefix=job_name_prefix)
         if login:
-            script_api.Jenkins.__init__(self, direct_uri=direct_url, job_prefix_filter=job_name_prefix, username=username, password=password)
+            script_api.Jenkins.__init__(self, direct_uri=direct_url, job_prefix_filter=job_name_prefix, username=username, password=password,
+                                        invocation_class=invocation_class)
         else:
-            script_api.Jenkins.__init__(self, direct_uri=direct_url, job_prefix_filter=job_name_prefix)
+            script_api.Jenkins.__init__(self, direct_uri=direct_url, job_prefix_filter=job_name_prefix, invocation_class=invocation_class)
         self.job_loader_jenkins = script_api.Jenkins(direct_uri=direct_url, job_prefix_filter=job_name_prefix, username=username, password=password)
         _TestWrapperApi.__init__(self, file_name, func_name, func_num_params, reload_jobs, pre_delete_jobs, securitytoken, direct_url, fake_public_uri)
