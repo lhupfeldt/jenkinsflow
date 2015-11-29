@@ -90,7 +90,7 @@ def test_set_build_description_unknown_job(api_type):
         assert "Build not found " in str(exinfo.value)
 
 
-@pytest.mark.not_apis(ApiType.MOCK, ApiType.SCRIPT)
+@pytest.mark.not_apis(ApiType.MOCK)
 def test_set_build_description_cli(api_type, cli_runner):
     with api_select.api(__file__, api_type, login=True) as api:
         api.flow_job()
@@ -105,37 +105,40 @@ def test_set_build_description_cli(api_type, cli_runner):
         _, _, build_num = job.job_status()
         base_url = test_cfg.direct_url(api_type) + '/'
 
-        result = cli_runner.invoke(
-            cli,
-            ['set_build_description',
-             '--job-name', job.name,
-             '--build-number', repr(build_num),
-             '--description', 'BBB1',
-             '--direct-url', base_url,
-             '--separator', '\n',
-             '--username', username,
-             '--password', password])
-
+        cli_args = [
+            'set_build_description',
+            '--job-name', job.name,
+            '--build-number', repr(build_num),
+            '--description', 'BBB1',
+            '--direct-url', base_url,
+            '--separator', '\n',
+            '--username', username,
+            '--password', password]
+        print("cli args:", cli_args)
+            
+        result = cli_runner.invoke(cli, cli_args)
+        print(result.output)
         assert not result.exception
 
-        result = cli_runner.invoke(
-            cli,
-            ['set_build_description',
-             '--job-name', job.name,
-             '--build-number', repr(build_num),
-             '--description', 'BBB2',
-             '--direct-url', base_url,
-             '--replace',
-             '--username', username,
-             '--password', password])
-
+        cli_args = [
+            'set_build_description',
+            '--job-name', job.name,
+            '--build-number', repr(build_num),
+            '--description', 'BBB2',
+            '--direct-url', base_url,
+            '--replace',
+            '--username', username,
+            '--password', password]
+        print("cli args:", cli_args)
+        
+        result = cli_runner.invoke(cli, cli_args)
         print(result.output)
         assert not result.exception
 
         # TODO read back description and verify
 
 
-@pytest.mark.not_apis(ApiType.MOCK, ApiType.SCRIPT)
+@pytest.mark.not_apis(ApiType.MOCK)
 def test_set_build_description_cli_env_url(api_type, env_base_url, cli_runner):
     with api_select.api(__file__, api_type, login=True) as api:
         api.flow_job()
@@ -149,22 +152,24 @@ def test_set_build_description_cli_env_url(api_type, env_base_url, cli_runner):
         job = api.get_job(api.job_name_prefix + job_name)
         _, _, build_num = job.job_status()
 
-        result = cli_runner.invoke(
-            cli,
-            ['set_build_description',
-             '--job-name', job.name,
-             '--build-number', repr(build_num),
-             '--description', 'BBB1',
-             '--separator', '\n',
-             '--username', username,
-             '--password', password])
-
+        cli_args = [
+            'set_build_description',
+            '--job-name', job.name,
+            '--build-number', repr(build_num),
+            '--description', 'BBB1',
+            '--separator', '\n',
+            '--username', username,
+            '--password', password]
+        print("cli args:", cli_args)
+        
+        result = cli_runner.invoke(cli, cli_args)
+        print(result.output)
         assert not result.exception
 
         # TODO read back description and verify
 
 
-@pytest.mark.not_apis(ApiType.MOCK, ApiType.SCRIPT)
+@pytest.mark.not_apis(ApiType.MOCK)
 def test_set_build_description_cli_no_env_url(api_type, env_no_base_url, cli_runner):
     with api_select.api(__file__, api_type, login=True) as api:
         api.flow_job()
@@ -178,13 +183,15 @@ def test_set_build_description_cli_no_env_url(api_type, env_no_base_url, cli_run
         job = api.get_job(api.job_name_prefix + job_name)
         _, _, build_num = job.job_status()
 
-        result = cli_runner.invoke(
-            cli,
-            ['set_build_description',
-             '--job-name', job.name,
-             '--build-number', repr(build_num),
-             '--description', 'BBB1'])
+        cli_args = [
+            'set_build_description',
+            '--job-name', job.name,
+            '--build-number', repr(build_num),
+            '--description', 'BBB1']
+        print("cli args:", cli_args)
 
+        result = cli_runner.invoke(cli, cli_args)
+        print(result.output)
         assert result.exception
         assert "Could not get env variable JENKINS_URL or HUDSON_URL" in str(result.exception)
         assert "You must specify '--direct-url'" in result.output

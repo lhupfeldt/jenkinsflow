@@ -39,11 +39,12 @@ _build_res = None
 class LoggingProcess(multiprocessing.Process):
     proc_name_prefix = "jenkinsflow_script_api_"
 
-    def __init__(self, group=None, target=None, output_file_name=None, workspace=None, name=None, args=()):
+    def __init__(self, group=None, target=None, output_file_name=None, workspace=None, name=None, args=(), env=None):
         self.user_target = target
         super(LoggingProcess, self).__init__(group=group, target=self.run_job_wrapper, name=name, args=args)
         self.output_file_name = output_file_name
         self.workspace = workspace
+        self.env = env
 
     def run_job_wrapper(self, *args):
         global _build_res
@@ -52,6 +53,10 @@ class LoggingProcess(multiprocessing.Process):
         rc = 0
         _build_res = None
         os.chdir(self.workspace)
+
+        os.environ.update(self.env)
+        os.environ['EXECUTOR_NUMBER'] = repr(self.pid)
+
         try:
             rc = self.user_target(*args)
         except Exception as ex:  # pylint: disable=broad-except
@@ -209,12 +214,31 @@ class ApiJob(object):
     def invoke(self, securitytoken, build_params, cause, description):
         _mkdir(self.jenkins.log_dir)
         _mkdir(self.workspace)
-        self.build_num = self.build_num or 0
-        self.build_num += 1
+        build_number = (self.build_num or 0) + 1
+        self.build_num = build_number
+
         fixed_args = [self.name, self.jenkins.job_prefix_filter, self.jenkins.username, self.jenkins.password, securitytoken, cause]
         fixed_args.append(build_params if build_params else {})
-        proc = LoggingProcess(target=self.func, output_file_name=self.log_file, workspace=self.workspace, name=self.name, args=fixed_args)
-        self.build = self.jenkins.invocation_class(self, proc, self.build_num)
+
+        # Export some of the same variables that Jenkins does
+        extra_env = dict(
+            BUILD_NUMBER=repr(build_number),
+            BUILD_ID=datetime.datetime.isoformat(datetime.datetime.utcnow()),
+            BUILD_DISPLAY_NAME='#' + repr(build_number),
+            JOB_NAME=self.name,
+            BUILD_TAG='jenkinsflow-' + self.name + '-' + repr(build_number),
+            NODE_NAME='master',
+            NODE_LABELS='',
+            WORKSPACE=self.workspace,
+            JENKINS_HOME=self.jenkins.public_uri,
+            JENKINS_URL=self.jenkins.public_uri,
+            HUDSON_URL=self.jenkins.public_uri,
+            BUILD_URL=jp(self.public_uri, repr(build_number)),
+            JOB_URL=self.public_uri,
+        )
+
+        proc = LoggingProcess(target=self.func, output_file_name=self.log_file, workspace=self.workspace, name=self.name, args=fixed_args, env=extra_env)
+        self.build = self.jenkins.invocation_class(self, proc, build_number)
         self._invocations.append(self.build)
         return self.build
 
@@ -225,12 +249,12 @@ class ApiJob(object):
         """Result, progress and latest buildnumber info for the JOB NOT the invocation
 
         Return (result, progress_info, latest_build_number) (str, str, int or None):
-            Note: Always returns result == BuildResult.UNKNOWN and latest_build_number == None
+            Note: Always returns result == BuildResult.UNKNOWN and latest_build_number == 0
         """
 
         progress = Progress.RUNNING if _pgrep(LoggingProcess.proc_name_prefix + self.name) else Progress.IDLE
         result = BuildResult.UNKNOWN
-        return (result, progress, None)
+        return (result, progress, 0)
 
     def stop_all(self):
         # TODO stop ALL
@@ -253,24 +277,6 @@ class Invocation(ApiInvocationMixin):
         self.build_number = build_number
         self.queued_why = None
 
-        # Export some of the same variables that Jenkins does
-        os.environ.update(dict(
-            BUILD_NUMBER=repr(self.build_number),
-            BUILD_ID=datetime.datetime.isoformat(datetime.datetime.utcnow()),
-            BUILD_DISPLAY_NAME='#' + repr(self.build_number),
-            JOB_NAME=self.job.name,
-            BUILD_TAG='jenkinsflow-' + self.job.name + '-' + repr(self.build_number),
-            EXECUTOR_NUMBER=repr(self.proc.pid),
-            NODE_NAME='master',
-            NODE_LABELS='',
-            WORKSPACE=self.job.workspace,
-            JENKINS_HOME=self.job.jenkins.public_uri,
-            JENKINS_URL=self.job.jenkins.public_uri,
-            HUDSON_URL=self.job.jenkins.public_uri,
-            BUILD_URL=jp(self.job.public_uri, repr(self.build_number)),
-            JOB_URL=self.job.public_uri,
-        ))
-
         self.proc.start()
 
     def status(self):
@@ -292,5 +298,4 @@ class Invocation(ApiInvocationMixin):
 
     def __repr__(self):
         return self.job.name + " #" + repr(self.build_number)
-
 
