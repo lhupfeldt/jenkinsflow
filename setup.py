@@ -66,5 +66,3 @@ if __name__ == "__main__":
             jenkinsflow=jenkinsflow.cli.cli:cli
         ''',
     )
-
-
