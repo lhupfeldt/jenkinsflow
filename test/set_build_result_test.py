@@ -17,7 +17,7 @@ from os.path import join as jp
 import pytest
 from pytest import raises
 
-from jenkinsflow.flow import serial, Propagation
+from jenkinsflow.flow import serial, Propagation, BuildResult
 from jenkinsflow.cli.cli import cli
 
 from .framework import api_select
@@ -262,6 +262,18 @@ def test_set_build_result_no_auth(api_type, fake_java, env_base_url):
             ctrl1.invoke('j1_fail')
 
 
+@pytest.mark.apis(ApiType.SCRIPT)
+def test_set_build_result_unstable_script_api(api_type):
+    with api_select.api(__file__, api_type) as api:
+        api.flow_job()
+        api.job('j11_unstable', 0.01, max_fails=0, expect_invocations=1, expect_order=1, final_result='UNSTABLE', final_result_use_cli=True)
+
+        with serial(api, timeout=70, job_name_prefix=api.job_name_prefix) as ctrl1:
+            ctrl1.invoke('j11_unstable')
+
+        assert ctrl1.result == BuildResult.UNSTABLE
+
+
 @pytest.mark.not_apis(ApiType.SCRIPT)  # JENKINS_URL is always set for script_api
 def test_set_build_result_no_jenkinsurl(api_type, fake_java, env_no_base_url, cli_runner):
     with api_select.api(__file__, api_type):
@@ -277,7 +289,7 @@ def test_set_build_result_no_jenkinsurl(api_type, fake_java, env_no_base_url, cl
     )
 
 
-@pytest.mark.not_apis(ApiType.MOCK)
+@pytest.mark.not_apis(ApiType.MOCK, ApiType.SCRIPT)
 def test_set_build_result_call_cli_direct_url_trailing_slash(api_type, fake_java, env_base_url, cli_runner):
     with api_select.api(__file__, api_type):
         pre_existing_cli_jar(api_type)
@@ -288,7 +300,23 @@ def test_set_build_result_call_cli_direct_url_trailing_slash(api_type, fake_java
     assert not result.exception
 
 
-@pytest.mark.not_apis(ApiType.MOCK)
+@pytest.mark.apis(ApiType.SCRIPT)
+def test_set_build_result_call_cli_direct_url_trailing_slash_script_api(api_type, env_base_url, cli_runner):
+    with api_select.api(__file__, api_type):
+        pre_existing_cli_jar(api_type)
+        base_url = test_cfg.direct_url(api_type) + '/'
+        result = cli_runner.invoke(cli, ['set_build_result', '--direct-url', base_url])
+
+    assert result.exit_code != 0
+    assert result.exception
+
+    assert_lines_in(
+        api_type, str(result.exception),
+        "Could not get EXECUTOR_NUMBER from env. 'set_build_result' must be invoked from within a running job"
+    )
+
+
+@pytest.mark.not_apis(ApiType.MOCK, ApiType.SCRIPT)
 def test_set_build_result_call_main_direct_url_no_trailing_slash(api_type, fake_java, env_base_url, cli_runner):
     with api_select.api(__file__, api_type):
         pre_existing_cli_jar(api_type)

@@ -37,6 +37,7 @@ class WrapperJob(TestJob, ObjectWrapper):
     expect_order = None
     unknown_result = None
     final_result = None
+    final_result_use_cli = None
     serial = None
     disappearing = None
     non_existing = None
@@ -88,7 +89,7 @@ class Jobs(TestJobs):
         for job_name, job in test_jobs.items():
             if not (job.flow_created or job.non_existing):
                 self.api._jenkins_job(job_name, job.exec_time, job.params, None, job.print_env, job.create_job,
-                                      always_load=job.disappearing, num_builds_to_keep=4)
+                                      always_load=job.disappearing, num_builds_to_keep=4, final_result_use_cli=False)
 
 
 class _TestWrapperApi(object):
@@ -103,7 +104,7 @@ class _TestWrapperApi(object):
         self.fake_public_uri = fake_public_uri
         self.using_job_creator = False
 
-    def _jenkins_job(self, name, exec_time, params, script, print_env, create_job, always_load, num_builds_to_keep):
+    def _jenkins_job(self, name, exec_time, params, script, print_env, create_job, always_load, num_builds_to_keep, final_result_use_cli):
         # Create job in Jenkins
         if self.reload_jobs or always_load:
             context = dict(exec_time=exec_time, params=params or (), script=script, pseudo_install_dir=pseudo_install_dir,
@@ -112,12 +113,13 @@ class _TestWrapperApi(object):
                            create_job=create_job,
                            test_file_name=self.file_name,
                            test_tmp_dir=test_tmp_dir, api_type=self.api_type,
-                           num_builds_to_keep=num_builds_to_keep)
+                           num_builds_to_keep=num_builds_to_keep,
+                           final_result_use_cli=final_result_use_cli)
             update_job_from_template(self.job_loader_jenkins, name, self.job_xml_template, pre_delete=self.pre_delete_jobs, context=context)
 
     def job(self, name, exec_time, max_fails, expect_invocations, expect_order, initial_buildno=None, invocation_delay=0.1, params=None,
             script=None, unknown_result=False, final_result=None, serial=False, print_env=False, flow_created=False, create_job=None, disappearing=False,
-            non_existing=False, kill=False, num_builds_to_keep=4, allow_running=False):
+            non_existing=False, kill=False, num_builds_to_keep=4, allow_running=False, final_result_use_cli=False):
         job_name = self.job_name_prefix + name
         assert not self.test_jobs.get(job_name)
 
@@ -136,12 +138,13 @@ class _TestWrapperApi(object):
                 pass
         elif not self.using_job_creator and not non_existing:
             # TODO: Remove and convert all to use job_creator?
-            self._jenkins_job(job_name, exec_time, params, script, print_env, create_job=create_job, always_load=disappearing, num_builds_to_keep=num_builds_to_keep)
+            self._jenkins_job(job_name, exec_time, params, script, print_env, create_job=create_job, always_load=disappearing,
+                              num_builds_to_keep=num_builds_to_keep, final_result_use_cli=final_result_use_cli)
 
         job = MockJob(name=job_name, exec_time=exec_time, max_fails=max_fails, expect_invocations=expect_invocations, expect_order=expect_order,
                       initial_buildno=initial_buildno, invocation_delay=invocation_delay, unknown_result=unknown_result, final_result=final_result,
                       serial=serial, params=params, flow_created=flow_created, create_job=create_job, disappearing=disappearing,
-                      non_existing=non_existing, kill=kill, allow_running=allow_running, api=self)
+                      non_existing=non_existing, kill=kill, allow_running=allow_running, api=self, final_result_use_cli=final_result_use_cli)
         self.test_jobs[job_name] = job
 
     def flow_job(self, name=None, params=None):
@@ -167,7 +170,8 @@ class _TestWrapperApi(object):
             script += sys.executable + " -Bc &quot;from jenkinsflow.test." + self.file_name.replace('.py', '') + " import *; test_" + self.func_name + "(" + dummy_args + ")&quot;"
         else:
             script = sys.executable + " -B " + jp(pseudo_install_dir, 'demo', self.file_name)
-        self._jenkins_job(job_name, exec_time=0.5, params=params, script=script, print_env=False, create_job=None, always_load=False, num_builds_to_keep=4)
+        self._jenkins_job(job_name, exec_time=0.5, params=params, script=script, print_env=False, create_job=None, always_load=False,
+                          num_builds_to_keep=4, final_result_use_cli=False)
         return job_name
 
     def job_creator(self):

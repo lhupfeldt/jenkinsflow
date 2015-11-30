@@ -5,8 +5,7 @@ from __future__ import print_function
 
 import click
 
-from jenkinsflow.jenkins_api import Jenkins
-from .utils import env_base_url
+from .utils import base_url_and_api
 
 
 @click.command()
@@ -26,7 +25,6 @@ def set_build_result(username, password, result, direct_url=None, java='java'):
     """
     # %(file)s [--result <result>] [--java <java>] [--direct-url <direct_url>] [(--username <user_name> --password <password>)]
 
-    if direct_url is not None:
-        direct_url = direct_url + '/' if direct_url[-1] != '/' else direct_url
-    jenkins = Jenkins(direct_url or env_base_url(), username=username, password=password)
-    jenkins.set_build_result(result, java)
+    base_url, api = base_url_and_api(direct_url)
+    jenkins = api.Jenkins(base_url, username=username, password=password)
+    jenkins.set_build_result(result, java, cli_call=True)

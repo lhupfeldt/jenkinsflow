@@ -3,7 +3,7 @@
 
 from __future__ import print_function
 
-import sys, os, shutil, importlib, datetime, tempfile, psutil, setproctitle
+import sys, os, shutil, importlib, datetime, tempfile, psutil, setproctitle, signal
 from os.path import join as jp
 import multiprocessing
 
@@ -33,9 +33,6 @@ def _pgrep(proc_name):
     return False
 
 
-_build_res = None
-
-
 class LoggingProcess(multiprocessing.Process):
     proc_name_prefix = "jenkinsflow_script_api_"
 
@@ -45,15 +42,18 @@ class LoggingProcess(multiprocessing.Process):
         self.output_file_name = output_file_name
         self.workspace = workspace
         self.env = env
+        self._build_res_unstable = False
 
     def run_job_wrapper(self, *args):
-        global _build_res
         setproctitle.setproctitle(self.proc_name_prefix + self.name)
 
-        rc = 0
-        _build_res = None
-        os.chdir(self.workspace)
+        # Set signalhandler for changing job result
+        def set_result(_sig, _frame):
+            print("\nGot SIGUSR1: Changing result to 'unstable'")
+            self._build_res_unstable = True
+        signal.signal(signal.SIGUSR1, set_result)
 
+        os.chdir(self.workspace)
         os.environ.update(self.env)
         os.environ['EXECUTOR_NUMBER'] = repr(self.pid)
 
@@ -63,13 +63,9 @@ class LoggingProcess(multiprocessing.Process):
             print("jenkinsflow.script_api: Caught exception from job script:", ex)
             rc = 1
 
-        sbr = _build_res
-        if sbr == None:
-            sys.exit(rc)
-        if sbr == 'unstable':
+        if self._build_res_unstable:
             sys.exit(2)
-        print("jenkinsflow.script_api: Unknown requested build result:", sbr)
-        sys.exit(1)
+        sys.exit(rc)
 
     def run(self):
         sys.stdout = sys.stderr = open(self.output_file_name, 'w', buffering=1)
@@ -96,7 +92,7 @@ class Jenkins(Speed):
                 A return value of 1 or any exception raised is 'FAILURE'
                 Other return values means 'UNSTABLE'
 
-                set_build_result() can be used in run_job to set result to 'unstable' (executing `jenkinsflow set_build_result` has no effect)
+                set_build_result() can be used in run_job to set result to 'unstable'.
                     This is mainly for compatibility with the other APIs, it is simpler to return 2 from run_job.
 
         job_prefix_filter (str): Passed to 'run_job'. ``jenkinsflow`` puts no meaning into this parameter.
@@ -190,10 +186,15 @@ class Jenkins(Speed):
         with open(jp(workspace, 'description.txt'), mode) as ff:
             ff.write(description)
 
-    def set_build_result(self, res, java='java'):
-        global _build_res
+    def set_build_result(self, res, java='java', cli_call=False):
         print("INFO: Setting job result to", repr(res))
-        _build_res = res
+
+        if cli_call:
+            # Get the running script process
+            pid = os.environ.get('EXECUTOR_NUMBER')
+            if pid is None:
+                raise Exception("Could not get EXECUTOR_NUMBER from env. 'set_build_result' must be invoked from within a running job")
+            os.kill(int(pid), signal.SIGUSR1)
 
 
 class ApiJob(object):
@@ -298,4 +299,3 @@ class Invocation(ApiInvocationMixin):
 
     def __repr__(self):
         return self.job.name + " #" + repr(self.build_number)
-

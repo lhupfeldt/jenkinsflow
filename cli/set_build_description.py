@@ -2,11 +2,10 @@
 # All rights reserved. This work is under a BSD license, see LICENSE.TXT.
 
 from __future__ import print_function
-import sys
 
 import click
 
-from .utils import env_base_url
+from .utils import base_url_and_api
 
 
 @click.command()
@@ -25,20 +24,6 @@ def set_build_description(job_name, build_number, description, replace, separato
     """Utility to set/append build description on a job build."""
     # %(file)s --job-name <job_name> --build-number <build_number> --description <description> [--direct-url <direct_url>] [--replace | --separator <separator>] [(--username <user_name> --password <password>)]
 
-    base_url = direct_url
-    if not base_url:
-        try:
-            base_url = env_base_url()
-        except Exception:
-            print("*** ERROR: You must specify '--direct-url' if not running from Jenkins job", file=sys.stderr)
-            raise
-
-    if base_url.startswith('http:'):
-        # Using jenkins_api
-        from .. import jenkins_api as api
-    else:
-        # Using script_api
-        from .. import script_api as api
-
+    base_url, api = base_url_and_api(direct_url)
     jenkins = api.Jenkins(direct_uri=base_url, username=username, password=password)
     jenkins.set_build_description(job_name, build_number, description, replace, separator)

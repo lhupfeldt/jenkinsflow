@@ -239,7 +239,7 @@ class Jenkins(Speed):
             ff.write(response.content)
         print("INFO: Download finished:", repr(cli_jar))
 
-    def set_build_result(self, result, java='java'):
+    def set_build_result(self, result, java='java', cli_call=False):
         """Change the result of a Jenkins job.
 
         Note: set_build_result can only be done from within the job, not after the job has finished.
@@ -493,5 +493,3 @@ class Invocation(ApiInvocationMixin):
             # We leave it up to the flow logic to handle that
             # NOTE: bug https://issues.jenkins-ci.org/browse/JENKINS-21311 also brings us here!
             pass
-
-

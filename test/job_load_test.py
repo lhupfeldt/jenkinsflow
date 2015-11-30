@@ -9,7 +9,7 @@ from .framework import api_select
 
 here = os.path.abspath(os.path.dirname(__file__))
 
-_context = dict(exec_time=1, params=(), script=None, securitytoken='abc', print_env=False, create_job=None, num_builds_to_keep=4)
+_context = dict(exec_time=1, params=(), script=None, securitytoken='abc', print_env=False, create_job=None, num_builds_to_keep=4, final_result_use_cli=False)
 
 
 def _random_job_name(api, short_name=None):
