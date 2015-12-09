@@ -174,7 +174,8 @@ class Jenkins(Speed):
 
     def set_build_description(self, job_name, build_number, description, replace=False, separator='\n'):
         """Utility to set/append build description. :py:obj:`description` will be written to a file in the workspace.
-        Args
+
+        Args:
             job_name (str)
             build_number (int)
             description (str): The description to set on the build

@@ -198,7 +198,8 @@ class Jenkins(Speed):
 
     def set_build_description(self, job_name, build_number, description, replace=False, separator='\n'):
         """Utility to set/append build description
-        Args
+
+        Args:
             job_name (str):     Name of the Jenkins job
             build_number (int): The build number for which to set the description
             description (str):  The description to set on the build

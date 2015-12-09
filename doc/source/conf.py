@@ -66,7 +66,7 @@ copyright = jenkinsflow.setup.COPYRIGHT
 # built documents.
 #
 # The short X.Y version.
-version = subprocess.check_output([sys.executable, jp(_top_dir, 'setup.py'), '--version'])
+version = str(subprocess.check_output([sys.executable, jp(_top_dir, 'setup.py'), '--version']))
 # The full version, including alpha/beta/rc tags.
 release = version
 
