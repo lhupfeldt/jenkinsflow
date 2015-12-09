@@ -10,6 +10,7 @@ import requests
 
 from .api_base import BuildResult, Progress, UnknownJobException, ApiInvocationMixin
 from .speed import Speed
+from .rest_api_wrapper import ResourceNotFound, RequestsRestApi
 
 
 major_version = sys.version_info.major
@@ -30,18 +31,6 @@ def _result_and_progress(build_dct):
     return (result, progress)
 
 
-class ResourceNotFound(Exception):
-    pass
-
-
-def _check_response(response, good_responses=(200,)):
-    if response.status_code in good_responses:
-        return response
-    if response.status_code == 404:
-        raise ResourceNotFound(response.request.url)
-    response.raise_for_status()
-
-
 class Jenkins(Speed):
     """Optimized minimal set of methods needed for jenkinsflow to access Jenkins jobs.
 
@@ -56,12 +45,11 @@ class Jenkins(Speed):
         invocation_class (class): Defaults to `Invocation`.
     """
 
-    def __init__(self, direct_uri, job_prefix_filter=None, username=None, password=None, invocation_class=None):
-        self.session = requests.Session()
+    def __init__(self, direct_uri, job_prefix_filter=None, username=None, password=None, invocation_class=None, rest_access_provider=RequestsRestApi):
         if username or password:
             if not (username and password):
                 raise Exception("You must specify both username and password or neither")
-            self.session.auth = requests.auth.HTTPBasicAuth(username, password)
+        self.rest_api = rest_access_provider(direct_uri, username, password)
 
         self.direct_uri = direct_uri
         self.username = username
@@ -74,32 +62,17 @@ class Jenkins(Speed):
         self.is_jenkins = True
         self.ci_version = None
 
-    def _get(self, url, params):
-        #print("get:", self.direct_uri + url, params)
-        return _check_response(self.session.get(self.direct_uri + url, params=params))
-
     def get(self, url, **params):
-        response = self._get(url, params=params)
-        #print("get response:", response.json())
-        return response
+        return self.rest_api.get(url, **params)
 
     def get_json(self, url="", **params):
-        json_dct = self._get(url + "/api/json", params=params).json()
-        #print("get response:", json_dct)
-        return json_dct
+        return self.rest_api.get_json(url, **params)
 
     def post(self, url, payload=None, headers=None, **params):
-        #print("post:", self.direct_uri + url, params)
-        response = self.session.post(self.direct_uri + url, headers=headers, data=payload, allow_redirects=False, params=params)
-        _check_response(response, (200, 201))
-        #print("post response:", response)
-        return response
+        return self.rest_api.post(url, payload, headers, **params)
 
     def head(self):
-        #print("head:", self.direct_uri)
-        response = _check_response(self.session.head(self.direct_uri))
-        #print("head response:", response)
-        return response
+        return self.rest_api.head()
 
     @property
     def public_uri(self):
