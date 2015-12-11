@@ -6,8 +6,6 @@ from __future__ import print_function
 import sys, os, tempfile, time
 from collections import OrderedDict
 
-import requests
-
 from .api_base import BuildResult, Progress, UnknownJobException, ApiInvocationMixin
 from .speed import Speed
 from .rest_api_wrapper import ResourceNotFound, RequestsRestApi
@@ -59,11 +57,10 @@ class Jenkins(Speed):
         self._public_uri = None
         self.jobs = None
         self.queue_items = {}
-        self.is_jenkins = True
-        self.ci_version = None
+        self.is_jenkins = None
 
-    def get(self, url, **params):
-        return self.rest_api.get(url, **params)
+    def get_content(self, url, **params):
+        return self.rest_api.get_content(url, **params)
 
     def get_json(self, url="", **params):
         return self.rest_api.get_json(url, **params)
@@ -71,8 +68,8 @@ class Jenkins(Speed):
     def post(self, url, payload=None, headers=None, **params):
         return self.rest_api.post(url, payload, headers, **params)
 
-    def head(self):
-        return self.rest_api.head()
+    def headers(self):
+        return self.rest_api.headers()
 
     @property
     def public_uri(self):
@@ -86,28 +83,26 @@ class Jenkins(Speed):
         return self.public_uri + '/job/' + job_name
 
     def poll(self):
-        query = "jobs[name,lastBuild[number,result],queueItem[why],actions[parameterDefinitions[name,type]]],primaryView[url]"
-        response = self.get("/api/json", tree=query)
-
         # Determine whether we are talking to Jenkins or Hudson
-        self.ci_version = response.headers.get("X-Jenkins")
-        if not self.ci_version:
+        if self.is_jenkins is None:
             # TODO: A lot of Nonsense here because Hudson does not respond reliably
-            head_response = "HEAD request failed: " + repr(self.direct_uri)
             for _ in (1, 2, 3):
                 try:
-                    head_response = self.head()
-                    self.ci_version = head_response.get("X-Hudson")
-                    if self.ci_version:
+                    head_response = self.headers()
+                    if head_response.get("X-Jenkins"):
+                        self.is_jenkins = True
                         break
-                except Exception:  # pragma: no cover
-                    pass
+                    if head_response.get("X-Hudson"):
+                        self.is_jenkins = False
+                        break
+                except Exception as ex:
+                    head_response = "HEAD request to " + repr(self.direct_uri) + " failed:" + str(ex)
                 time.sleep(0.1)
-            if not self.ci_version:
+            else:
                 raise Exception("Not connected to Jenkins or Hudson (expected X-Jenkins or X-Hudson header, got: " + repr(head_response))
-            self.is_jenkins = False
 
-        dct = response.json()
+        query = "jobs[name,lastBuild[number,result],queueItem[why],actions[parameterDefinitions[name,type]]],primaryView[url]"
+        dct = self.get_json(tree=query)
         self._public_uri = dct['primaryView']['url'].rstrip('/')
 
         self.jobs = {}
@@ -208,9 +203,8 @@ class Jenkins(Speed):
             download_cli_url = public_cli_url
             print("INFO: Downloading cli: '{download_cli_url}'".format(download_cli_url=download_cli_url))
 
-        response = requests.get(download_cli_url)
         with open(cli_jar, 'w' if major_version < 3 else 'w+b') as ff:
-            ff.write(response.content)
+            ff.write(self.get_content('/' + path))
         print("INFO: Download finished:", repr(cli_jar))
 
     def set_build_result(self, result, java='java', cli_call=False):
