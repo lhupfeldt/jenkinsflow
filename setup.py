@@ -31,6 +31,7 @@ if __name__ == "__main__":
         package_dir={'jenkinsflow':'.', 'jenkinsflow.cli': 'cli'},
         zip_safe=True,
         include_package_data=False,
+        # You need to install python(3)-devel to be be able to install psutil, see INSTALL.md
         install_requires=['requests~=2.7.0',
                           'atomicfile~=1.0',
                           'psutil~=3.2.1',
