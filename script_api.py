@@ -184,7 +184,10 @@ class Jenkins(Speed):
         """
         workspace = self._workspace(job_name)
         mode = 'w' if replace else 'a'
-        with open(jp(workspace, 'description.txt'), mode) as ff:
+        fname = jp(workspace, 'description.txt')
+        if not replace and os.path.exists(fname) and os.stat(fname).st_size:
+            description = separator + description
+        with open(fname, mode) as ff:
             ff.write(description)
 
     def set_build_result(self, res, java='java', cli_call=False):
@@ -241,6 +244,8 @@ class ApiJob(object):
 
         proc = LoggingProcess(target=self.func, output_file_name=self.log_file, workspace=self.workspace, name=self.name, args=fixed_args, env=extra_env)
         self.build = self.jenkins.invocation_class(self, proc, build_number)
+        if description:
+            self.jenkins.set_build_description(self.name, build_number, description, replace=True, separator='')
         self._invocations.append(self.build)
         return self.build
 
