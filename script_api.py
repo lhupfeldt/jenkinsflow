@@ -188,7 +188,10 @@ class Jenkins(Speed):
         if not replace and os.path.exists(fname) and os.stat(fname).st_size:
             description = separator + description
         with open(fname, mode) as ff:
-            ff.write(description)
+            try:
+                ff.write(description)
+            except UnicodeEncodeError:
+                ff.write(description.encode('utf-8'))
 
     def set_build_result(self, res, java='java', cli_call=False):
         print("INFO: Setting job result to", repr(res))

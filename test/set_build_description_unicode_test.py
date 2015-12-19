@@ -1,0 +1,67 @@
+# -*- coding: utf-8 -*-
+
+# Copyright (c) 2012 - 2015 Lars Hupfeldt Nielsen, Hupfeldt IT
+# All rights reserved. This work is under a BSD license, see LICENSE.TXT.
+
+from __future__ import print_function
+
+import sys, os, codecs
+major_version = sys.version_info.major
+from os.path import join as jp
+
+from jenkinsflow.flow import serial
+
+from .framework import api_select
+from .cfg import ApiType
+
+
+_here = os.path.dirname(os.path.abspath(__file__))
+
+
+from .set_build_description_test import _clear_description
+
+
+def _verify_description(api, job, build_number, expected):
+    if api.api_type == ApiType.MOCK:
+        return
+
+    # Read back description and verify
+    if api.api_type == ApiType.JENKINS:
+        build_url = "/job/" + job.name + '/' + str(build_number)
+        dct = api.get_json(build_url, tree="description")
+        description = dct['description']
+
+    if api.api_type == ApiType.SCRIPT:
+        with codecs.open(jp(job.workspace, 'description.txt'), encoding='utf-8') as ff:
+            description = ff.read()
+
+    assert description == expected
+
+
+def test_set_build_description_unicode_set_build_description_util(api_type):
+    with api_select.api(__file__, api_type, login=True) as api:
+        api.flow_job()
+        job_name = 'job-1'
+        api.job(job_name, exec_time=0.01, max_fails=0, expect_invocations=1, expect_order=1)
+
+        # Need to read the build number
+        if api.api_type == ApiType.SCRIPT:
+            # TODO: This can't be called here for Jenkins API. Why?
+            job = api.get_job(api.job_name_prefix + job_name)
+            _clear_description(api, job)
+
+        with serial(api, timeout=70, job_name_prefix=api.job_name_prefix, report_interval=1, description="«©º") as ctrl1:
+            ctrl1.invoke(job_name, password='a', s1='b')
+
+        if api.api_type != ApiType.SCRIPT:
+            job = api.get_job(api.job_name_prefix + job_name)
+        _, _, build_num = job.job_status()
+
+        api.set_build_description(job.name, build_num, u'ÆØÅ')            
+        api.set_build_description(job.name, build_num, u'æøå', replace=False)
+        _verify_description(api, job, build_num, u'«©º\nÆØÅ\næøå')
+        
+        api.set_build_description(job.name, build_num, u'¶¹²', replace=True)
+        api.set_build_description(job.name, build_num, u'³¼¢', replace=False, separator='#')
+        api.set_build_description(job.name, build_num, u'¬<>©‘’Nº', separator='!!')
+        _verify_description(api, job, build_num, u'¶¹²#³¼¢!!¬<>©‘’Nº')

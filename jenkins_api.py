@@ -155,7 +155,9 @@ class Jenkins(Speed):
             raise UnknownJobException(self._public_job_url(name))
 
     def create_job(self, job_name, config_xml):
-        self.post('/createItem', name=job_name, headers={'Content-Type': 'application/xml header'}, payload=config_xml)
+        self.post('/createItem', name=job_name,
+                  headers={'Content-Type': 'application/xml header;charset=utf-8'},
+                  payload=config_xml if major_version < 3 else config_xml.encode('utf-8'))
 
     def delete_job(self, job_name):
         try:
@@ -378,7 +380,9 @@ class ApiJob(object):
                     pass
 
     def update_config(self, config_xml):
-        self.jenkins.post("/job/" + self.name + "/config.xml", payload=config_xml)
+        self.jenkins.post("/job/" + self.name + "/config.xml",
+                          headers={'Content-Type': 'application/xml header;charset=utf-8'},
+                          payload=config_xml if major_version < 3 else config_xml.encode('utf-8'))
 
     def __repr__(self):
         return str(dict(name=self.name, dct=self.dct))
