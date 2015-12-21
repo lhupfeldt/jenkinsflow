@@ -232,7 +232,7 @@ def test_set_build_description_cli_no_env_url(api_type, env_no_base_url, cli_run
         assert "You must specify '--direct-url'" in result.output
 
 
-def test_set_build_result_call_script_help(capfd):
+def test_set_build_description_call_script_help(capfd):
     # Invoke this in a subprocess to ensure that calling the script works
     # This will not give coverage as it not not traced through the subprocess call
     rc = subprocess.call([sys.executable, jp(_here, '../cli/cli.py'), 'set_build_description', '--help'])
