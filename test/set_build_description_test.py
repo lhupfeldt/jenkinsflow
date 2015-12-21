@@ -64,6 +64,11 @@ def test_set_build_description_flow_set(api_type):
         api.job('job-6', exec_time=0.01, max_fails=0, expect_invocations=1, expect_order=4, params=_params)
         api.job('job-7', exec_time=0.01, max_fails=0, expect_invocations=1, expect_order=5, params=_params, serial=True)
 
+        if api.api_type == ApiType.SCRIPT:
+            for job_num in range(1, 7):
+                job = api.get_job(api.job_name_prefix + 'job-' + str(job_num))
+                _clear_description(api, job)
+
         with serial(api, timeout=70, job_name_prefix=api.job_name_prefix, report_interval=1, description="AAA") as ctrl1:
             ctrl1.invoke('job-1', password='a', s1='b')
             ctrl1.invoke('job-2', password='a', s1='b')
@@ -79,7 +84,10 @@ def test_set_build_description_flow_set(api_type):
 
             ctrl1.invoke('job-7', password='a', s1='b')
 
-        # TODO read description back to validate that it was set!
+        for job_num in range(1, 7):
+            job = api.get_job(api.job_name_prefix + 'job-' + str(job_num))
+            _, _, build_num = job.job_status()
+            _verify_description(api, job, build_num, 'AAA')
 
 
 def test_set_build_description_util(api_type):
