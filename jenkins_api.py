@@ -270,6 +270,8 @@ class ApiJob(object):
         actions = self.dct.get('actions') or []
         self._path = "/job/" + self.name
         for action in actions:
+            if action is None:
+                continue
             if action.get('parameterDefinitions'):
                 self._build_trigger_path = self._path + "/buildWithParameters"
                 break
