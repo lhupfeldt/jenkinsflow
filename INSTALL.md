@@ -74,7 +74,9 @@ Test
 2. Important Jenkins/Hudson setup and test preparation:
    Configure security -
       Some of the tests requires security to be enabled.
-      Read the file demo/demo_security.py and create the user specified in Jenkins (or change the file)
+      You need to create two users in Jenkins:
+      Read the file demo/demo_security.py and create the user specified.
+      Create a user called 'jenkinsflow_authtest1', password 'abcæøåÆØÅ'. ( u'\u00e6\u00f8\u00e5\u00c6\u00d8\u00c5' )
 
    Set the number of executers -
       Jenkins is default configured with only two executors on master. To avoid timeouts in the test cases this must be raised to at least 32.

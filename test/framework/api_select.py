@@ -17,7 +17,8 @@ sys.stdout = UnBuffered(sys.stdout)
 _file_name_subst = re.compile(r'(_jobs|_test)?\.py')
 
 
-def api(file_name, api_type, login=False, fixed_prefix=None, url_or_dir=None, fake_public_uri=None, invocation_class=None):
+def api(file_name, api_type, login=False, fixed_prefix=None, url_or_dir=None, fake_public_uri=None, invocation_class=None,
+        username=None, password=None):
     """Factory to create either Mock or Wrap api"""
     base_name = os.path.basename(file_name).replace('.pyc', '.py')
     job_name_prefix = _file_name_subst.sub('', base_name)
@@ -46,17 +47,26 @@ def api(file_name, api_type, login=False, fixed_prefix=None, url_or_dir=None, fa
     url_or_dir = url_or_dir or test_cfg.direct_url(api_type)
     reload_jobs = not test_cfg.skip_job_load() and not fixed_prefix
     pre_delete_jobs = not test_cfg.skip_job_delete()
+
     import demo_security as security
+    if password is not None or username is not None:
+        assert password is not None and username is not None
+        login = True
+
+    if username is None:
+        assert password is None
+        username = security.username
+        password = security.password
 
     if api_type == test_cfg.ApiType.JENKINS:
         from .api_wrapper import JenkinsTestWrapperApi
         return JenkinsTestWrapperApi(file_name, func_name, func_num_params, job_name_prefix, reload_jobs, pre_delete_jobs,
-                                     url_or_dir, fake_public_uri, security.username, security.password, security.securitytoken, login=login,
+                                     url_or_dir, fake_public_uri, username, password, security.securitytoken, login=login,
                                      invocation_class=invocation_class)
     if api_type == test_cfg.ApiType.SCRIPT:
         from .api_wrapper import ScriptTestWrapperApi
         return ScriptTestWrapperApi(file_name, func_name, func_num_params, job_name_prefix, reload_jobs, pre_delete_jobs,
-                                    url_or_dir, fake_public_uri, security.username, security.password, security.securitytoken, login=login,
+                                    url_or_dir, fake_public_uri, username, password, security.securitytoken, login=login,
                                     invocation_class=invocation_class)
     if api_type == test_cfg.ApiType.MOCK:
         from .mock_api import MockApi

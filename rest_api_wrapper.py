@@ -8,7 +8,7 @@ class RequestsRestApi(object):
         import requests
         self.session = requests.Session()
         if username or password:
-            self.session.auth = requests.auth.HTTPBasicAuth(username, password)
+            self.session.auth = requests.auth.HTTPBasicAuth(username, unicode(password, 'latin-1'))
         self.direct_uri = direct_uri
 
     @staticmethod
