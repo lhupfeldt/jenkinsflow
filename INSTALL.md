@@ -36,6 +36,7 @@ Jenkinsflow uses it's own specialized 'jenkins_api' python module to access jenk
 2.3. To use propagation=Propagation.FAILURE_TO_UNSTABLE feature, Jenkins URL must be set in Jenkins configuration.
    Note that this feature uses the 'cli' which has problems working over a proxy.
    This requires java to run the cli
+   # NOTE: Some versions of Jenkins, e.g. 1.651.2, come with a broken cli, missing the main manifest attribute!
 
 2.4. Read the file demo/demo_security.py for notes about security, if you have enabled security on your Jenkins
 
@@ -50,6 +51,8 @@ Note: I think jenkinsflow should work on Windows, but it has not been tested.
 
 Test
 ----
+
+# NOTE: Some versions of Jenkins, e.g. 1.651.2, come with a broken cli, missing the main manifest attribute, making some tests fail!
 
 1. Install python-devel
    E.g on fedora:
