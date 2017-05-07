@@ -157,6 +157,7 @@ def cli(mock_speedup, direct_url, api, pytest_args, job_delete, job_load, testfi
         start_msg("Testing documentation generation")
 
         os.chdir('doc/source')
+        del os.environ['PYTHONPATH']
         subprocess.check_call(['make', 'html'])
     except Exception as ex:
         print('*** ERROR: There were errors! Check output! ***', repr(ex), file=sys.stderr)
