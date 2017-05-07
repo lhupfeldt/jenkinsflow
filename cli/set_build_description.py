@@ -5,13 +5,13 @@ from __future__ import print_function
 
 import click
 
-from .utils import base_url_and_api
+from ..utils import set_build_description as usbd
 
 
 @click.command()
-@click.option('--job-name', help='Job Name', envvar='JOB_NAME')
-@click.option('--build-number', help="Build Number", type=click.INT)
 @click.option('--description', help="The description to set on the build")
+@click.option('--job-name', help='Job Name', envvar='JOB_NAME')
+@click.option('--build-number', help="Build Number", type=click.INT, envvar='BUILD_NUMBER')
 @click.option(
     '--direct-url',
     default=None,
@@ -20,10 +20,8 @@ from .utils import base_url_and_api
 @click.option('--separator', default='\n', help="A separator to insert between any existing description and the new 'description' if 'replace' is not specified.")
 @click.option('--username', help="User Name for Jenkin authentication with secured Jenkins")
 @click.option('--password', help="Password of Jenkins User")
-def set_build_description(job_name, build_number, description, replace, separator, direct_url, username, password):
+def set_build_description(description, job_name, build_number, replace, separator, direct_url, username, password):
     """Utility to set/append build description on a job build."""
     # %(file)s --job-name <job_name> --build-number <build_number> --description <description> [--direct-url <direct_url>] [--replace | --separator <separator>] [(--username <user_name> --password <password>)]
 
-    base_url, api = base_url_and_api(direct_url)
-    jenkins = api.Jenkins(direct_uri=base_url, username=username, password=password)
-    jenkins.set_build_description(job_name, build_number, description, replace, separator)
+    usbd.set_build_description(description, job_name, build_number, username, password, replace, separator, direct_url)

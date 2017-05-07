@@ -5,16 +5,16 @@ from __future__ import print_function
 
 import click
 
-from .utils import base_url_and_api
+from ..utils import set_build_result as usbr
 
 
 @click.command()
 @click.option('--result', help="The result to set. Should probably be 'unstable'", default='unstable')
-@click.option('--java', help="Alternative 'java' executable", default='java')
-@click.option('--direct-url', help="Jenkins URL. Default is JENKINS_URL/HUDSON_URL env var value. Use this argument if JENKINS_URL is a proxy [default: None]")
 @click.option('--username', help="Name of jenkins user with access to the job")
 @click.option('--password', help="Password of jenkins user with access to the job.")
-def set_build_result(username, password, result, direct_url=None, java='java'):
+@click.option('--java', help="Alternative 'java' executable", default='java')
+@click.option('--direct-url', help="Jenkins URL. Default is JENKINS_URL/HUDSON_URL env var value. Use this argument if JENKINS_URL is a proxy [default: None]")
+def set_build_result(result, username, password, direct_url=None, java='java'):
     """Change the result of a Jenkins job.
 
     Note: set_build_result can only be done from within the job, not after the job has finished.
@@ -25,6 +25,4 @@ def set_build_result(username, password, result, direct_url=None, java='java'):
     """
     # %(file)s [--result <result>] [--java <java>] [--direct-url <direct_url>] [(--username <user_name> --password <password>)]
 
-    base_url, api = base_url_and_api(direct_url)
-    jenkins = api.Jenkins(base_url, username=username, password=password)
-    jenkins.set_build_result(result, java, cli_call=True)
+    usbr.set_build_result(result, username, password, direct_url, java)

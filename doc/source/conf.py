@@ -33,7 +33,7 @@ import jenkinsflow.setup
 # -- General configuration ------------------------------------------------
 
 # If your documentation needs a minimal Sphinx version, state it here.
-#needs_sphinx = '1.0'
+needs_sphinx = '1.3'
 
 # Add any Sphinx extension module names here, as strings. They can be
 # extensions coming with Sphinx (named 'sphinx.ext.*') or your custom
@@ -60,6 +60,7 @@ master_doc = 'index'
 # General information about the project.
 project = jenkinsflow.setup.PROJECT_NAME
 copyright = jenkinsflow.setup.COPYRIGHT
+author = u'Lars Hupfeldt Nielsen'
 
 # The version info for the project you're documenting, acts as replacement for
 # |version| and |release|, also used in various other places throughout the
@@ -212,7 +213,7 @@ latex_elements = {
 #  author, documentclass [howto, manual, or own class]).
 latex_documents = [
   ('index', 'jenkinsflow.tex', u'jenkinsflow Documentation',
-   u'Lars Hupfeldt Nielsen', 'manual'),
+   author, 'manual'),
 ]
 
 # The name of an image file (relative to this directory) to place at the top of
@@ -242,7 +243,7 @@ latex_documents = [
 # (source start file, name, description, authors, manual section).
 man_pages = [
     ('index', 'jenkinsflow', u'jenkinsflow Documentation',
-     [u'Lars Hupfeldt Nielsen'], 1)
+     [author], 1)
 ]
 
 # If true, show URL addresses after external links.
@@ -256,7 +257,7 @@ man_pages = [
 #  dir menu entry, description, category)
 texinfo_documents = [
   ('index', 'jenkinsflow', u'jenkinsflow Documentation',
-   u'Lars Hupfeldt Nielsen', 'jenkinsflow', 'One line description of project.',
+   author, 'jenkinsflow', 'One line description of project.',
    'Miscellaneous'),
 ]
 
@@ -277,8 +278,8 @@ texinfo_documents = [
 
 # Bibliographic Dublin Core info.
 epub_title = u'jenkinsflow'
-epub_author = u'Lars Hupfeldt Nielsen'
-epub_publisher = u'Lars Hupfeldt Nielsen'
+epub_author = author
+epub_publisher = author
 epub_copyright = jenkinsflow.setup.COPYRIGHT
 
 # The basename for the epub file. It defaults to the project name.
