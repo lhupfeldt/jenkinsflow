@@ -10,8 +10,8 @@ The jenkinsflow package is used for controlling the invocation of `Jenkins <http
 This effectively replaces the upstream/downstream dependencies in Jenkins with a fully scripted flow.
 Despite the name, this package may also be used with `Hudson <http://hudson-ci.org/>`_.
 
-Module contents
----------------
+Package contents
+----------------
 
 .. toctree::
    :maxdepth: 2
@@ -21,6 +21,8 @@ Module contents
    jenkinsflow.script_api
    jenkinsflow.jobload
    jenkinsflow.unbuffered
+   jenkinsflow.utils.set_build_description
+   jenkinsflow.utils.set_build_result
 
 
 Utility Scripts

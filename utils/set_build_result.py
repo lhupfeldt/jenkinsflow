@@ -19,8 +19,8 @@ def set_build_result(result, username, password, direct_url=None, java='java'):
         result (str): The result to set. Should probably be 'unstable'.
         username (str): Name of jenkins user with access to the job.
         password(str): Password of jenkins user with access to the job.
-        java (str): Alternative 'java' executable", default='java'.
         direct-url (str): Jenkins URL. Default is JENKINS_URL/HUDSON_URL env var value. Use this argument if JENKINS_URL is a proxy.
+        java (str): Alternative 'java' executable.
     """
 
     base_url, api = base_url_and_api(direct_url)

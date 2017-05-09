@@ -15,6 +15,7 @@ import pytest
 from pytest import raises
 
 from jenkinsflow.flow import serial
+from jenkinsflow.utils.set_build_description import set_build_description
 from jenkinsflow.cli.cli import cli
 
 from .framework import api_select
@@ -29,7 +30,7 @@ _here = os.path.dirname(os.path.abspath(__file__))
 
 def _clear_description(api, job):
     if api.api_type == ApiType.SCRIPT:
-        # TODO: There is no build number concept for script api, so we need ensure clean start
+        # TODO: There is no build number concept for script api, so we need to ensure a clean start
         description_file = jp(job.workspace, 'description.txt')
         if os.path.exists(description_file):
             os.remove(description_file)
@@ -90,7 +91,7 @@ def test_set_build_description_flow_set(api_type):
             _verify_description(api, job, build_num, 'AAA')
 
 
-def test_set_build_description_util(api_type):
+def test_set_build_description_api(api_type):
     with api_select.api(__file__, api_type, login=True) as api:
         api.flow_job()
         job_name = 'job-1'
@@ -116,6 +117,37 @@ def test_set_build_description_util(api_type):
         api.set_build_description(job.name, build_num, 'BBB3', replace=True)
         api.set_build_description(job.name, build_num, 'BBB4', replace=False, separator='#')
         api.set_build_description(job.name, build_num, 'BBB5', separator='!!')
+        _verify_description(api, job, build_num, 'BBB3#BBB4!!BBB5')
+
+
+@pytest.mark.not_apis(ApiType.MOCK)
+def test_set_build_description_utils(api_type):
+    with api_select.api(__file__, api_type, login=True) as api:
+        api.flow_job()
+        job_name = 'job-1'
+        api.job(job_name, exec_time=0.01, max_fails=0, expect_invocations=1, expect_order=1)
+
+        # Need to read the build number
+        if api.api_type == ApiType.SCRIPT:
+            # TODO: This can't be called here for Jenkins API. Why?
+            job = api.get_job(api.job_name_prefix + job_name)
+            _clear_description(api, job)
+
+        with serial(api, timeout=70, job_name_prefix=api.job_name_prefix, report_interval=1, description="AAA") as ctrl1:
+            ctrl1.invoke(job_name, password='a', s1='b')
+
+        if api.api_type != ApiType.SCRIPT:
+            job = api.get_job(api.job_name_prefix + job_name)
+        _, _, build_num = job.job_status()
+        direct_url = test_cfg.direct_url(api_type)
+
+        set_build_description('BBB1', job_name=job.name, build_number=build_num, direct_url=direct_url)
+        set_build_description('BBB2', replace=False, job_name=job.name, build_number=build_num, direct_url=direct_url)
+        _verify_description(api, job, build_num, 'AAA\nBBB1\nBBB2')
+
+        set_build_description('BBB3', replace=True, job_name=job.name, build_number=build_num, direct_url=direct_url)
+        set_build_description('BBB4', replace=False, separator='#', job_name=job.name, build_number=build_num, direct_url=direct_url)
+        set_build_description('BBB5', separator='!!', job_name=job.name, build_number=build_num, direct_url=direct_url)
         _verify_description(api, job, build_num, 'BBB3#BBB4!!BBB5')
 
 
@@ -237,7 +269,7 @@ def test_set_build_description_cli_no_env_url(api_type, env_no_base_url, cli_run
         print(result.output)
         assert result.exception
         assert "Could not get env variable JENKINS_URL or HUDSON_URL" in str(result.exception)
-        assert "You must specify '--direct-url'" in result.output
+        assert "You must specify 'direct-url'" in result.output
 
 
 def test_set_build_description_call_script_help(capfd):

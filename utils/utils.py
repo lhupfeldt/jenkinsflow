@@ -30,7 +30,7 @@ def base_url_and_api(direct_url):
     try:
         base_url = direct_url.rstrip('/') if direct_url else env_base_url()
     except Exception:
-        print("*** ERROR: You must specify '--direct-url' if not running from Jenkins job", file=sys.stderr)
+        print("*** ERROR: You must specify 'direct-url' if not running from Jenkins job", file=sys.stderr)
         raise
 
     if base_url.startswith('http:'):
