@@ -12,7 +12,7 @@ from pytest import raises
 from jenkinsflow import jenkins_api
 from .cfg import ApiType
 from .framework import api_select
-from .framework.utils import assert_lines_in
+from .framework.utils import lines_in
 
 
 here = os.path.abspath(os.path.dirname(__file__))
@@ -54,7 +54,7 @@ def test_which_ci_server_not_ci(api_type):
                         print(ex)
                         time.sleep(0.1)
 
-            assert_lines_in(
+            assert lines_in(
                 api_type, str(exinfo.value),
                  "Not connected to Jenkins or Hudson (expected X-Jenkins or X-Hudson header, got: "
             )

@@ -9,7 +9,7 @@ from pytest import xfail
 from jenkinsflow.flow import serial, parallel
 from .cfg import ApiType
 from .framework import api_select
-from .framework.utils import assert_lines_in, build_started_msg
+from .framework.utils import lines_in, build_started_msg
 
 
 def test_multiple_invocations_serial_same_flow(api_type):
@@ -79,7 +79,7 @@ def test_multiple_invocations_parallel_same_flow_queued(api_type, capsys):
 
         # Note: This output order depends on the job NOT allowing concurrent builds, AND on the order of polling in jenkins_api!
         sout, _ = capsys.readouterr()
-        assert_lines_in(
+        assert lines_in(
             api_type, sout,
             "^Invoking Job (1/1,1/1): http://x.x/job/jenkinsflow_test__multiple_invocations_parallel_same_flow_queued__j1",
             "^Invoking Job (1/1,1/1): http://x.x/job/jenkinsflow_test__multiple_invocations_parallel_same_flow_queued__j1",
@@ -131,7 +131,7 @@ def test_multiple_invocations_parallel_same_flow_no_args_singlequeued(api_type, 
 
         # Note: This output order depends on the job NOT allowing concurrent builds, AND on the order of polling in jenkins_api!
         sout, _ = capsys.readouterr()
-        assert_lines_in(
+        assert lines_in(
             api_type, sout,
             "^Invoking Job (1/1,1/1): http://x.x/job/jenkinsflow_test__multiple_invocations_parallel_same_flow_no_args_singlequeued__j1",
             "^Invoking Job (1/1,1/1): http://x.x/job/jenkinsflow_test__multiple_invocations_parallel_same_flow_no_args_singlequeued__j1",

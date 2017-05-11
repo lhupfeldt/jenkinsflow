@@ -9,7 +9,7 @@ from pytest import raises
 from jenkinsflow.flow import parallel, FailedChildJobsException
 
 from .framework import api_select
-from .framework.utils import assert_lines_in
+from .framework.utils import lines_in
 from .framework.abort_job import abort
 
 from .cfg import ApiType
@@ -37,7 +37,7 @@ def test_abort(api_type, capsys):
         assert "wait1_fail" in str(exinfo.value)
 
         sout, _ = capsys.readouterr()
-        assert_lines_in(
+        assert lines_in(
             api_type, sout,
             re.compile("^ABORTED: 'jenkinsflow_test__abort__wait10_abort' - build: .*/jenkinsflow_test__abort__wait10_abort.* after:"),
         )

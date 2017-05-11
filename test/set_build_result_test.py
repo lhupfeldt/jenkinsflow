@@ -21,7 +21,7 @@ from jenkinsflow.flow import serial, Propagation, BuildResult
 from jenkinsflow.cli.cli import cli
 
 from .framework import api_select
-from .framework.utils import assert_lines_in, jenkins_cli_jar, hudson_cli_jar
+from .framework.utils import lines_in, jenkins_cli_jar, hudson_cli_jar
 from . import cfg as test_cfg
 from .cfg import ApiType
 
@@ -107,7 +107,7 @@ def test_set_build_result_no_cli_jar(api_type, fake_java, env_base_url, capfd):
         expected.append(_download_same_url(test_cfg.direct_cli_url(api_type)))
         assert '/jnlpJars/' in sout
 
-    assert_lines_in(
+    assert lines_in(
         api_type, sout,
         *expected
     )
@@ -131,7 +131,7 @@ def test_set_build_result_no_cli_jar_env_base_url_trailing_slash(api_type, fake_
         expected.append(_download_same_url(test_cfg.direct_cli_url(api_type)))
         assert '/jnlpJars/' in sout
 
-    assert_lines_in(
+    assert lines_in(
         api_type, sout,
         *expected
     )
@@ -155,7 +155,7 @@ def test_set_build_result_no_cli_jar_env_base_url_trailing_slashes(api_type, fak
         expected.append(_download_same_url(test_cfg.direct_cli_url(api_type)))
         assert '/jnlpJars/' in sout
 
-    assert_lines_in(
+    assert lines_in(
         api_type, sout,
         *expected
     )
@@ -204,7 +204,7 @@ def test_set_build_result_no_cli_jar_env_base_url_eq_direct_url(api_type, fake_j
         expected.append("^INFO: Download finished: ")
         assert '/jnlpJars/' in sout
 
-    assert_lines_in(
+    assert lines_in(
         api_type, sout,
         *expected
     )
@@ -222,7 +222,7 @@ def test_set_build_result_direct_url_trailing_slash(api_type, fake_java, env_bas
             ctrl1.invoke('j1_fail')
 
     sout, _ = capfd.readouterr()
-    assert_lines_in(
+    assert lines_in(
         api_type, sout,
         _setting_job_result_msg
     )
@@ -245,7 +245,7 @@ def test_set_build_result_direct_url_different_from_proxied_url(api_type, fake_j
     if api.api_type != ApiType.SCRIPT:
         expected.append(_download_different_urls(api_type))
 
-    assert_lines_in(
+    assert lines_in(
         api_type, sout,
         *expected
     )
@@ -283,7 +283,7 @@ def test_set_build_result_no_jenkinsurl(api_type, fake_java, env_no_base_url, cl
     assert result.exit_code != 0
     assert result.exception
 
-    assert_lines_in(
+    assert lines_in(
         api_type, str(result.exception),
         "Could not get env variable JENKINS_URL or HUDSON_URL. You must set 'Jenkins Location' in Jenkins setup for JENKINS_URL to be exported. You must set 'Hudson URL' in Hudson setup for HUDSON_URL to be exported."
     )
@@ -310,7 +310,7 @@ def test_set_build_result_call_cli_direct_url_trailing_slash_script_api(api_type
     assert result.exit_code != 0
     assert result.exception
 
-    assert_lines_in(
+    assert lines_in(
         api_type, str(result.exception),
         "Could not get EXECUTOR_NUMBER from env. 'set_build_result' must be invoked from within a running job"
     )

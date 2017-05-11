@@ -6,7 +6,7 @@ from __future__ import print_function
 from jenkinsflow.flow import serial
 from .cfg import ApiType
 from .framework import api_select
-from .framework.utils import assert_lines_in, build_started_msg, build_queued_msg
+from .framework.utils import lines_in, build_started_msg, build_queued_msg
 
 
 def test_reporting_queued(api_type, capsys):
@@ -30,7 +30,7 @@ def test_reporting_queued(api_type, capsys):
             ctrl1.invoke('j1')
 
         sout, _ = capsys.readouterr()
-        assert_lines_in(
+        assert lines_in(
             api_type, sout,
             "^Invoking Job (1/1,1/1): http://x.x/job/jenkinsflow_test__reporting_queued__j1",
             build_queued_msg(api, "jenkinsflow_test__reporting_queued__j1", 1),

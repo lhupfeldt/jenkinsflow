@@ -6,7 +6,7 @@ from pytest import raises
 from jenkinsflow.flow import serial, JobNotIdleException
 from .cfg import ApiType
 from .framework import api_select
-from .framework.utils import assert_lines_in
+from .framework.utils import lines_in
 
 
 def test_no_running_jobs(api_type, capsys):
@@ -18,7 +18,7 @@ def test_no_running_jobs(api_type, capsys):
             ctrl1.invoke_unchecked('j1')
 
         sout, _ = capsys.readouterr()
-        assert_lines_in(api_type, sout, "unchecked job: 'jenkinsflow_test__no_running_jobs__j1' UNKNOWN - RUNNING")
+        assert lines_in(api_type, sout, "unchecked job: 'jenkinsflow_test__no_running_jobs__j1' UNKNOWN - RUNNING")
 
         # Make sure job has actually started before entering new flow
         api.sleep(1)
@@ -39,7 +39,7 @@ def test_no_running_jobs_unchecked(api_type, capsys):
             ctrl1.invoke_unchecked('j1')
 
         sout, _ = capsys.readouterr()
-        assert_lines_in(api_type, sout, "unchecked job: 'jenkinsflow_test__no_running_jobs_unchecked__j1' UNKNOWN - RUNNING")
+        assert lines_in(api_type, sout, "unchecked job: 'jenkinsflow_test__no_running_jobs_unchecked__j1' UNKNOWN - RUNNING")
 
         api.sleep(1)
 

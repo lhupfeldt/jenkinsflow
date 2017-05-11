@@ -6,7 +6,7 @@ from pytest import raises
 
 from jenkinsflow.flow import parallel, serial, FailedChildJobException, FailedChildJobsException
 from .framework import api_select
-from .framework.utils import assert_lines_in
+from .framework.utils import lines_in
 
 
 def test_single_level_errors_parallel(api_type, capsys):
@@ -33,7 +33,7 @@ def test_single_level_errors_parallel(api_type, capsys):
         assert "wait5_fail" in str(exinfo.value)
 
         sout, _ = capsys.readouterr()
-        assert_lines_in(
+        assert lines_in(
             api_type, sout,
             re.compile("^FAILURE: 'jenkinsflow_test__single_level_errors_parallel__quick_fail' - build: .*/jenkinsflow_test__single_level_errors_parallel__quick_fail.* after:"),
         )

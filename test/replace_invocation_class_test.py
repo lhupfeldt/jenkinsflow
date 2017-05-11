@@ -6,7 +6,7 @@ import pytest
 
 from jenkinsflow.flow import parallel, serial, FailedChildJobException, FailedChildJobsException
 from .framework import api_select
-from .framework.utils import assert_lines_in
+from .framework.utils import lines_in
 from .cfg import ApiType
 
 

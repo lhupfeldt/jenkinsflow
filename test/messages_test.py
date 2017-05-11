@@ -7,7 +7,7 @@ from pytest import raises
 
 from jenkinsflow.flow import serial, MessageRedefinedException
 from .framework import api_select
-from .framework.utils import assert_lines_in, result_msg
+from .framework.utils import lines_in, result_msg
 
 
 def test_messages(api_type, capsys):
@@ -32,7 +32,7 @@ def test_messages(api_type, capsys):
 
         sout, _ = capsys.readouterr()
         print(sout)
-        assert_lines_in(
+        assert lines_in(
             api_type, sout,
             "^--- Starting flow ---",
             "^Invoking Flow (1/1,1/1): ['jenkinsflow_test__messages__j11', ['jenkinsflow_test__messages__j21'], 'jenkinsflow_test__messages__j12', (",
@@ -70,7 +70,7 @@ def test_messages_on_job(api_type, capsys):
 
         sout, _ = capsys.readouterr()
         print(sout)
-        assert_lines_in(
+        assert lines_in(
             api_type, sout,
             "^--- Starting flow ---",
             "^Invoking Flow (1/1,1/1): [['jenkinsflow_test__messages_on_job__j21'], 'jenkinsflow_test__messages_on_job__j12'",

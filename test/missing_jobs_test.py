@@ -8,7 +8,7 @@ from pytest import raises
 
 from jenkinsflow.flow import parallel, serial, MissingJobsException, FailedChildJobsException, FailedChildJobException, UnknownJobException
 from .framework import api_select
-from .framework.utils import assert_lines_in
+from .framework.utils import lines_in
 from .cfg import ApiType
 
 
@@ -24,7 +24,7 @@ def test_missing_jobs_not_allowed(api_type):
                 ctrl1.invoke('missingA')
                 ctrl1.invoke('j2')
 
-        assert_lines_in(
+        assert lines_in(
             api_type, str(exinfo.value),
             re.compile("^Job not found: .*jenkinsflow_test__missing_jobs_not_allowed__missingA")
         )

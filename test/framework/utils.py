@@ -10,7 +10,7 @@ import pytest
 from jenkinsflow.test import cfg as test_cfg
 from jenkinsflow.test.cfg import ApiType
 from .config import flow_graph_root_dir
-from .lines_in import lines_in
+from .lines_in import lines_in as generic_lines_in
 
 _console_url_script_api_log_file_msg_prefix = ' - ' + tempfile.gettempdir() + '/'
 _result_msg_script_api_log_file_msg_prefix = tempfile.gettempdir() + '/'
@@ -53,7 +53,7 @@ def replace_host_port(api_type, contains_url):
         return _http_re.sub(r'/tmp/jenkinsflow-test/job/\1.py', contains_url)
 
 
-def assert_lines_in(api_type, text, *expected_lines):
+def lines_in(api_type, text, *expected_lines):
     """Assert that `*expected_lines` occur in order in the lines of `text`.
 
     Args:
@@ -67,7 +67,7 @@ def assert_lines_in(api_type, text, *expected_lines):
     assert text
     assert expected_lines
 
-    assert lines_in(text, partial(replace_host_port, api_type), *expected_lines)
+    return generic_lines_in(text, partial(replace_host_port, api_type), *expected_lines)
 
 
 def flow_graph_dir(flow_name):

@@ -11,7 +11,7 @@ from pytest import raises, xfail
 from jenkinsflow.flow import serial, FailedChildJobException
 from .cfg import ApiType
 from .framework import api_select
-from .framework.utils import assert_lines_in, kill_current_msg
+from .framework.utils import lines_in, kill_current_msg
 from .framework.killer import kill
 
 here = os.path.abspath(os.path.dirname(__file__))
@@ -47,8 +47,8 @@ def test_kill_all_unchecked(api_type, capsys):
 
         if capsys:
             sout, _ = capsys.readouterr()
-            assert_lines_in(api_type, sout, "unchecked job: 'jenkinsflow_test__kill_all_unchecked__j1' UNKNOWN - RUNNING")
-            assert_lines_in(api_type, sout, "unchecked job: 'jenkinsflow_test__kill_all_unchecked__j3' UNKNOWN - RUNNING")
+            assert lines_in(api_type, sout, "unchecked job: 'jenkinsflow_test__kill_all_unchecked__j1' UNKNOWN - RUNNING")
+            assert lines_in(api_type, sout, "unchecked job: 'jenkinsflow_test__kill_all_unchecked__j3' UNKNOWN - RUNNING")
 
         # Kill the flow
         flow(api, True)
@@ -58,7 +58,7 @@ def test_kill_all_unchecked(api_type, capsys):
             return
 
         sout, _ = capsys.readouterr()
-        assert_lines_in(
+        assert lines_in(
             api_type, sout,
             "^Killing all running builds for: 'jenkinsflow_test__kill_all_unchecked__j1'",
             "job: 'jenkinsflow_test__kill_all_unchecked__j1' stopped running",
@@ -108,7 +108,7 @@ def test_kill_mini(api_type, capsys):
             return
 
         sout, _ = capsys.readouterr()
-        assert_lines_in(
+        assert lines_in(
             api_type, sout,
             "^Got SIGTERM: Killing all builds belonging to current flow",
             "^--- Final status ---",
@@ -162,7 +162,7 @@ def test_kill_current(api_type, capsys):
             return
 
         sout, _ = capsys.readouterr()
-        assert_lines_in(
+        assert lines_in(
             api_type, sout,
             "^Got SIGTERM: Killing all builds belonging to current flow",
             kill_current_msg(api, 'jenkinsflow_test__kill_current__j1', 1),
@@ -219,8 +219,8 @@ def test_kill_all_unchecked_no_job(api_type, capsys):
 
         if capsys:
             sout, _ = capsys.readouterr()
-            assert_lines_in(api_type, sout, "unchecked job: 'jenkinsflow_test__kill_all_unchecked_no_job__j1' UNKNOWN - RUNNING")
-            assert_lines_in(api_type, sout, "job: 'jenkinsflow_test__kill_all_unchecked_no_job__j3' - MISSING JOB")
+            assert lines_in(api_type, sout, "unchecked job: 'jenkinsflow_test__kill_all_unchecked_no_job__j1' UNKNOWN - RUNNING")
+            assert lines_in(api_type, sout, "job: 'jenkinsflow_test__kill_all_unchecked_no_job__j3' - MISSING JOB")
 
         # Kill the flow
         flow(api, True, False)
@@ -229,7 +229,7 @@ def test_kill_all_unchecked_no_job(api_type, capsys):
             return
 
         sout, _ = capsys.readouterr()
-        assert_lines_in(
+        assert lines_in(
             api_type, sout,
             "^Killing all running builds for: 'jenkinsflow_test__kill_all_unchecked_no_job__j1'",
             "job: 'jenkinsflow_test__kill_all_unchecked_no_job__j1' stopped running",

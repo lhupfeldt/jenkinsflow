@@ -7,7 +7,7 @@ from pytest import raises
 from jenkinsflow.flow import serial, parallel, FailedChildJobException
 from .cfg import ApiType
 from .framework import api_select
-from .framework.utils import assert_lines_in, replace_host_port, result_msg, build_started_msg
+from .framework.utils import lines_in, replace_host_port, result_msg, build_started_msg
 
 
 def test_reporting_job_status(api_type, capsys):
@@ -25,10 +25,10 @@ def test_reporting_job_status(api_type, capsys):
         if api.api_type == ApiType.MOCK:
             repr_not_invoked = "job: 'jenkinsflow_test__reporting_job_status__j11' Status IDLE - latest build: "
             assert repr_not_invoked in sout, repr_not_invoked + "\n - NOT FOUND IN:\n" + sout
-            assert_lines_in(api_type, sout, "job: 'jenkinsflow_test__reporting_job_status__j12' Status IDLE - latest build: #7")
-            assert_lines_in(api_type, sout, "'jenkinsflow_test__reporting_job_status__j12' Status QUEUED - Why am I queued?")
-            assert_lines_in(api_type, sout, "'jenkinsflow_test__reporting_job_status__j12' Status RUNNING - build: #8")
-            assert_lines_in(api_type, sout, "'jenkinsflow_test__reporting_job_status__j12' Status IDLE - build: #8")
+            assert lines_in(api_type, sout, "job: 'jenkinsflow_test__reporting_job_status__j12' Status IDLE - latest build: #7")
+            assert lines_in(api_type, sout, "'jenkinsflow_test__reporting_job_status__j12' Status QUEUED - Why am I queued?")
+            assert lines_in(api_type, sout, "'jenkinsflow_test__reporting_job_status__j12' Status RUNNING - build: #8")
+            assert lines_in(api_type, sout, "'jenkinsflow_test__reporting_job_status__j12' Status IDLE - build: #8")
         else:
             # TODO: know if we cleaned jobs and check the 'repr_not_invoked' above
             assert "'jenkinsflow_test__reporting_job_status__j12' Status RUNNING - build: " in sout
@@ -47,7 +47,7 @@ def test_reporting_invocation_serial(api_type, capsys):
 
         sout, _ = capsys.readouterr()
         empty_re = re.compile("^$")
-        assert_lines_in(
+        assert lines_in(
             api_type, sout,
             "^Defined Job http://x.x/job/jenkinsflow_test__reporting_invocation_serial__j11",
             "^Defined Job http://x.x/job/jenkinsflow_test__reporting_invocation_serial__j12",
@@ -73,20 +73,20 @@ def test_reporting_invocation_parallel(api_type, capsys):
             ctrl1.invoke('j12')
 
         sout, _ = capsys.readouterr()
-        assert_lines_in(
+        assert lines_in(
             api_type, sout,
             "^Invoking Flow (1/1,1/1): ('jenkinsflow_test__reporting_invocation_parallel__j11', 'jenkinsflow_test__reporting_invocation_parallel__j12')",
             "^Invoking Job (1/1,1/1): http://x.x/job/jenkinsflow_test__reporting_invocation_parallel__j11",
             "^Invoking Job (1/1,1/1): http://x.x/job/jenkinsflow_test__reporting_invocation_parallel__j12",
         )
 
-        assert_lines_in(
+        assert lines_in(
             api_type, sout,
             "^Invoking Job (1/1,1/1): http://x.x/job/jenkinsflow_test__reporting_invocation_parallel__j11",
             build_started_msg(api, "jenkinsflow_test__reporting_invocation_parallel__j11", 1),
         )
 
-        assert_lines_in(
+        assert lines_in(
             api_type, sout,
             "^Invoking Job (1/1,1/1): http://x.x/job/jenkinsflow_test__reporting_invocation_parallel__j12",
             build_started_msg(api, "jenkinsflow_test__reporting_invocation_parallel__j12", 8)
@@ -124,7 +124,7 @@ def test_reporting_retry(api_type, capsys):
                           "('jenkinsflow_test__reporting_retry__j21', 'jenkinsflow_test__reporting_retry__j22_fail', " \
                           "['jenkinsflow_test__reporting_retry__j31_fail', 'jenkinsflow_test__reporting_retry__j32'], " \
                           "'jenkinsflow_test__reporting_retry__j23'), 'jenkinsflow_test__reporting_retry__j13']"
-        assert_lines_in(
+        assert lines_in(
             api_type, sout,
             "^Invoking Flow (1/2,1/2): " + outer_flow_repr,
             "^Invoking Job (1/2,1/2): http://x.x/job/jenkinsflow_test__reporting_retry__j11_fail",
@@ -142,7 +142,7 @@ def test_reporting_retry(api_type, capsys):
             "^Flow SUCCESS " + outer_flow_repr
         )
 
-        assert_lines_in(
+        assert lines_in(
             api_type, sout,
             "^Invoking Job (1/2,1/12): http://x.x/job/jenkinsflow_test__reporting_retry__j31_fail",
             build_started_msg(api, "jenkinsflow_test__reporting_retry__j31_fail", 1),
@@ -191,7 +191,7 @@ def test_reporting_result_unchecked(api_type, capsys):
 
         sout, _ = capsys.readouterr()
 
-        assert_lines_in(
+        assert lines_in(
             api_type, sout,
             "^UNCHECKED FAILURE: " + result_msg(api, "jenkinsflow_test__reporting_result_unchecked__j32_unchecked_fail"),
             "^UNCHECKED SUCCESS: " + result_msg(api, "jenkinsflow_test__reporting_result_unchecked__j42_unchecked", 8),
@@ -207,7 +207,7 @@ def test_reporting_defined_job_parameters(api_type, capsys):
             ctrl1.invoke('j1', s1="hi", c1='why?', i1=2, b1=True)
 
         sout, _ = capsys.readouterr()
-        assert_lines_in(
+        assert lines_in(
             api_type, sout,
             "^Defined Job http://x.x/job/jenkinsflow_test__reporting_defined_job_parameters__j1 - parameters:",
             "    i1 = '2'",
@@ -256,7 +256,7 @@ def test_reporting_defined_non_existing(api_type, capsys):
                 ctrl1.invoke('j1', a="b", c='d')
 
         sout, _ = capsys.readouterr()
-        assert_lines_in(
+        assert lines_in(
             api_type, sout,
             "Defined Job 'jenkinsflow_test__reporting_defined_non_existing__j1' - MISSING JOB",
             "    a = 'b'",
