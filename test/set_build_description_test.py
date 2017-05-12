@@ -36,23 +36,22 @@ def _clear_description(api, job):
             os.remove(description_file)
 
 
-def _verify_description(api, job, build_number, expected):
-    if api.api_type == ApiType.MOCK:
-        return
-
+def _get_description(api, job, build_number):
     # Read back description and verify
     if api.api_type == ApiType.JENKINS:
         build_url = "/job/" + job.name + '/' + str(build_number)
         dct = api.get_json(build_url, tree="description")
-        description = dct['description']
+        return dct['description']
 
     if api.api_type == ApiType.SCRIPT:
         with open(jp(job.workspace, 'description.txt')) as ff:
-            description = ff.read()
+            return ff.read()
 
-    assert description == expected
+    if api.api_type == ApiType.MOCK:
+        raise Exception(repr(ApiType.MOCK) + " 'description' not supported by test framework")
 
 
+@pytest.mark.not_apis(ApiType.MOCK)
 def test_set_build_description_flow_set(api_type):
     with api_select.api(__file__, api_type, login=True) as api:
         api.flow_job()
@@ -88,9 +87,10 @@ def test_set_build_description_flow_set(api_type):
         for job_num in range(1, 7):
             job = api.get_job(api.job_name_prefix + 'job-' + str(job_num))
             _, _, build_num = job.job_status()
-            _verify_description(api, job, build_num, 'AAA')
+            assert _get_description(api, job, build_num) == 'AAA'
 
 
+@pytest.mark.not_apis(ApiType.MOCK)
 def test_set_build_description_api(api_type):
     with api_select.api(__file__, api_type, login=True) as api:
         api.flow_job()
@@ -112,12 +112,12 @@ def test_set_build_description_api(api_type):
 
         api.set_build_description(job.name, build_num, 'BBB1')
         api.set_build_description(job.name, build_num, 'BBB2', replace=False)
-        _verify_description(api, job, build_num, 'AAA\nBBB1\nBBB2')
+        assert _get_description(api, job, build_num) == 'AAA\nBBB1\nBBB2'
 
         api.set_build_description(job.name, build_num, 'BBB3', replace=True)
         api.set_build_description(job.name, build_num, 'BBB4', replace=False, separator='#')
         api.set_build_description(job.name, build_num, 'BBB5', separator='!!')
-        _verify_description(api, job, build_num, 'BBB3#BBB4!!BBB5')
+        assert _get_description(api, job, build_num) == 'BBB3#BBB4!!BBB5'
 
 
 @pytest.mark.not_apis(ApiType.MOCK)
@@ -143,12 +143,60 @@ def test_set_build_description_utils(api_type):
 
         set_build_description('BBB1', job_name=job.name, build_number=build_num, direct_url=direct_url)
         set_build_description('BBB2', replace=False, job_name=job.name, build_number=build_num, direct_url=direct_url)
-        _verify_description(api, job, build_num, 'AAA\nBBB1\nBBB2')
+        assert _get_description(api, job, build_num) == 'AAA\nBBB1\nBBB2'
 
         set_build_description('BBB3', replace=True, job_name=job.name, build_number=build_num, direct_url=direct_url)
         set_build_description('BBB4', replace=False, separator='#', job_name=job.name, build_number=build_num, direct_url=direct_url)
         set_build_description('BBB5', separator='!!', job_name=job.name, build_number=build_num, direct_url=direct_url)
-        _verify_description(api, job, build_num, 'BBB3#BBB4!!BBB5')
+        assert _get_description(api, job, build_num) == 'BBB3#BBB4!!BBB5'
+
+
+@pytest.mark.not_apis(ApiType.MOCK)
+def test_set_build_description_utils_from_inside_job_1(api_type):
+    with api_select.api(__file__, api_type, login=True) as api:
+        api.flow_job()
+        job_name = 'job-1'
+        api.job(job_name, exec_time=0.01, max_fails=0, expect_invocations=1, expect_order=1,
+                set_build_descriptions=(('BBB1', False, '\\n'), ('BBB2', False, '\\n')))
+
+        # Need to read the build number
+        if api.api_type == ApiType.SCRIPT:
+            # TODO: This can't be called here for Jenkins API. Why?
+            job = api.get_job(api.job_name_prefix + job_name)
+            _clear_description(api, job)
+
+        with serial(api, timeout=70, job_name_prefix=api.job_name_prefix, report_interval=1, description="AAA") as ctrl1:
+            ctrl1.invoke(job_name, password='a', s1='b')
+
+        if api.api_type != ApiType.SCRIPT:
+            job = api.get_job(api.job_name_prefix + job_name)
+        _, _, build_num = job.job_status()
+
+        assert _get_description(api, job, build_num) == 'AAA\nBBB1\nBBB2'
+
+
+@pytest.mark.not_apis(ApiType.MOCK)
+def test_set_build_description_utils_from_inside_job_2(api_type):
+    with api_select.api(__file__, api_type, login=True) as api:
+        api.flow_job()
+        job_name = 'job-1'
+        api.job(job_name, exec_time=0.01, max_fails=0, expect_invocations=1, expect_order=1,
+                set_build_descriptions=(('BBB3', True, '\\n'), ('BBB4', False, '#'), ('BBB5', False, '!!')))
+
+        # Need to read the build number
+        if api.api_type == ApiType.SCRIPT:
+            # TODO: This can't be called here for Jenkins API. Why?
+            job = api.get_job(api.job_name_prefix + job_name)
+            _clear_description(api, job)
+
+        with serial(api, timeout=70, job_name_prefix=api.job_name_prefix, report_interval=1, description="AAA") as ctrl1:
+            ctrl1.invoke(job_name, password='a', s1='b')
+
+        if api.api_type != ApiType.SCRIPT:
+            job = api.get_job(api.job_name_prefix + job_name)
+        _, _, build_num = job.job_status()
+
+        assert _get_description(api, job, build_num) == 'BBB3#BBB4!!BBB5'
 
 
 @pytest.mark.not_apis(ApiType.MOCK, ApiType.SCRIPT)
@@ -193,7 +241,7 @@ def test_set_build_description_cli(api_type, cli_runner):
         result = cli_runner.invoke(cli, cli_args)
         print(result.output)
         assert not result.exception
-        _verify_description(api, job, build_num, 'BBB1')
+        assert _get_description(api, job, build_num) == 'BBB1'
 
         cli_args = [
             'set_build_description',
@@ -209,7 +257,7 @@ def test_set_build_description_cli(api_type, cli_runner):
         result = cli_runner.invoke(cli, cli_args)
         print(result.output)
         assert not result.exception
-        _verify_description(api, job, build_num, 'BBB2')
+        assert _get_description(api, job, build_num) == 'BBB2'
 
 
 @pytest.mark.not_apis(ApiType.MOCK)
@@ -241,7 +289,7 @@ def test_set_build_description_cli_env_url(api_type, env_base_url, cli_runner):
         result = cli_runner.invoke(cli, cli_args)
         print(result.output)
         assert not result.exception
-        _verify_description(api, job, build_num, 'BBB1')
+        assert _get_description(api, job, build_num) == 'BBB1'
 
 
 @pytest.mark.not_apis(ApiType.MOCK)

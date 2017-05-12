@@ -27,14 +27,15 @@ class MockApi(TestJenkins, HyperSpeed):
 
     def job(self, name, exec_time, max_fails, expect_invocations, expect_order, initial_buildno=None, invocation_delay=0.1, params=None,
             script=None, unknown_result=False, final_result=None, serial=False, print_env=False, flow_created=False, create_job=None,
-            disappearing=False, non_existing=False, kill=False, num_builds_to_keep=4, allow_running=False, final_result_use_cli=False):
+            disappearing=False, non_existing=False, kill=False, num_builds_to_keep=4, allow_running=False, final_result_use_cli=False,
+            set_build_descriptions=()):
         job_name = self.job_name_prefix + name
         assert not self.test_jobs.get(job_name)
         job = MockJob(name=job_name, exec_time=exec_time, max_fails=max_fails, expect_invocations=expect_invocations, expect_order=expect_order,
                       initial_buildno=initial_buildno, invocation_delay=invocation_delay, unknown_result=unknown_result,
                       final_result=final_result, serial=serial, params=params, flow_created=flow_created, create_job=create_job,
                       disappearing=disappearing, non_existing=non_existing, kill=kill, allow_running=allow_running, api=self,
-                      final_result_use_cli=final_result_use_cli)
+                      final_result_use_cli=final_result_use_cli, set_build_descriptions=set_build_descriptions)
         self.test_jobs[job_name] = job
 
     def flow_job(self, name=None, params=None):
@@ -70,7 +71,8 @@ class MockApi(TestJenkins, HyperSpeed):
 
 class MockJob(TestJob):
     def __init__(self, name, exec_time, max_fails, expect_invocations, expect_order, initial_buildno, invocation_delay, unknown_result,
-                 final_result, serial, params, flow_created, create_job, disappearing, non_existing, kill, allow_running, api, final_result_use_cli):
+                 final_result, serial, params, flow_created, create_job, disappearing, non_existing, kill, allow_running, api, final_result_use_cli,
+                 set_build_descriptions):
         super(MockJob, self).__init__(exec_time=exec_time, max_fails=max_fails, expect_invocations=expect_invocations, expect_order=expect_order,
                                       initial_buildno=initial_buildno, invocation_delay=invocation_delay, unknown_result=unknown_result, final_result=final_result,
                                       serial=serial, print_env=False, flow_created=flow_created, create_job=create_job, disappearing=disappearing,
@@ -84,6 +86,7 @@ class MockJob(TestJob):
         self._allow_running = allow_running
         self.api = api
         self.final_result_use_cli = final_result_use_cli
+        self.set_build_descriptions = set_build_descriptions
 
         self.just_invoked = False
         self._invocation_url = 0

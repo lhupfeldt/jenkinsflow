@@ -98,7 +98,7 @@ mock_job = MockJob(
     initial_buildno=None, invocation_delay={==cj.invocation_delay==}, unknown_result={==cj.unknown_result==},
     final_result="{==fr==}", serial={==cj.serial==}, params=(), flow_created={==cj.flow_created==}, create_job=None, disappearing=False,
     non_existing=False, kill=False, allow_running=False, api=None,
-    final_result_use_cli=False)
+    final_result_use_cli=False, set_build_descriptions=())
 <?py else: ?>
 mock_job = None
 <?py #endif ?>
@@ -119,13 +119,34 @@ context = dict(
     direct_url="{==direct_url==}",
     username="{==username==}",
     password="{==password==}",
-    num_builds_to_keep=4)
+    num_builds_to_keep=4,
+    set_build_descriptions=())
 
 job_loader_jenkins = jenkins.Jenkins(direct_uri="{==direct_url==}", job_prefix_filter=None, username="{==username==}", password="{==password==}")
 update_job_from_template(job_loader_jenkins, "{==create_job.name==}", config_xml_template, context=context)
       </command>
     </hudson.tasks.Shell>
 <?py #endif ?>
+<?py if set_build_descriptions: ?>
+    <?py import sys ?>
+    <hudson.tasks.Shell>
+      <command>#!{==sys.executable==} -B
+import sys
+import time
+
+sys.path.append("{==test_tmp_dir==}")
+
+from jenkinsflow.utils.set_build_description import set_build_description
+
+<?py for description, replace, separator in set_build_descriptions: ?>
+# TODO: set build description rest api is timing sensitive
+time.sleep(1)
+set_build_description("{==description==}", {==replace==}, "{==separator==}")
+<?py #endfor ?>
+
+      </command>
+    </hudson.tasks.Shell>
+<?py else: ?>
     <hudson.tasks.Shell>
       <command>#!/bin/bash
 set -u
@@ -145,6 +166,7 @@ sleep {==exec_time==}
 <?py #endif ?>
       </command>
     </hudson.tasks.Shell>
+<?py #endif ?>
   </builders>
   <publishers/>
   <buildWrappers/>

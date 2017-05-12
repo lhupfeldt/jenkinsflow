@@ -8,6 +8,8 @@ else:
     import subprocess
 import time
 
+from jenkinsflow.utils.set_build_description import set_build_description
+
 
 def run_job(job_name, job_prefix_filter, username, password, securitytoken, cause, build_params):
 <?py if print_env: ?>
@@ -20,6 +22,10 @@ def run_job(job_name, job_prefix_filter, username, password, securitytoken, caus
 <?py else: ?>
     print('sleeping=', {==exec_time==})
     time.sleep({==exec_time==})
+
+<?py for description, replace, separator in set_build_descriptions: ?>
+    set_build_description("{==description==}", {==replace==}, "{==separator==}")
+<?py #endfor ?>
 <?py #endif ?>
 
     force_result = build_params.get('force_result')
