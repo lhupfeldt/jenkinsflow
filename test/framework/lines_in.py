@@ -44,23 +44,24 @@ def lines_in(text, mfunc, *expected_lines):
     def _report_failure(expected):
         num_matched = len(matched_lines)
         if num_matched:
-            matched = '\n\nMatched {num} lines:\n\n{lines}'.format(num=num_matched, lines='\n'.join(matched_lines))
+            matched = 'Matched {num} lines:\n\n{lines}'.format(num=num_matched, lines='\n'.join(matched_lines))
         else:
-            matched = '\n\nNo lines matched.' + " (Empty text)" if not text else ''
+            matched = 'No lines matched.' + " (Empty text)" if not text else ''
 
         if hasattr(expected, 'match'):
-            print(matched, "\n\nThe regex:\n\n", expected.pattern, "\n\n    --- NOT MATCHED or OUT OF ORDER in ---\n\n", text, file=sys.stderr)
+            print('', matched, "The regex:", expected.pattern, "    --- NOT MATCHED or OUT OF ORDER in ---", text, file=sys.stderr, sep='\n\n')
             return False
 
         if expected.startswith('^'):
-            print(matched, "\n\nThe text:\n\n", expected[1:], "\n\n    --- NOT FOUND, OUT OF ORDER or NOT AT START OF LINE in ---\n\n", text, file=sys.stderr)
+            print('', matched, "The text:", expected[1:], "    --- NOT FOUND, OUT OF ORDER or NOT AT START OF LINE in ---", text, file=sys.stderr, sep='\n\n')
             return False
 
-        print(matched, "\n\nThe text:\n\n", expected, "\n\n    --- NOT FOUND OR OUT OF ORDER IN ---\n\n", text, file=sys.stderr)
+        print('', matched, "The text:", expected, "    --- NOT FOUND OR OUT OF ORDER IN ---", text, file=sys.stderr, sep='\n\n')
         return False
 
     max_index = len(expected_lines)
     index = 0
+    expected_lines = list(expected_lines)
 
     for line in text.split('\n'):
         line = mfunc(line) if mfunc else line
