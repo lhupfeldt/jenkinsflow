@@ -36,7 +36,7 @@ if __name__ == "__main__":
                           'atomicfile~=1.0',
                           'psutil~=3.2.1',
                           'setproctitle~=1.1.9',
-                          'click~=5.1',
+                          'click~=6.0',
                           'tenjin~=1.1.1',
                           'bottle~=0.12.8'] + py_version_requires,
         setup_requires='setuptools-version-command~=2.2',
