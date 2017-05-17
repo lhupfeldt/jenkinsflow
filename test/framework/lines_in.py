@@ -3,6 +3,10 @@ from __future__ import print_function
 import sys
 
 
+class _NotFoundException(Exception):
+    pass
+
+
 def lines_in(text, mfunc, *expected_lines):
     """Test that `*expected_lines` occur in order in the lines of `text`.
 
@@ -22,70 +26,112 @@ def lines_in(text, mfunc, *expected_lines):
     Return (bool): True if lines found in order, else False
     """
 
-    def _check_match(expected, line):
+    text_lines = text.split('\n')
+    max_line_index = len(text_lines)
+    matched_lines = []
+
+    def _check_match(expected, mline, line):
         expected = mfunc(expected) if mfunc and not hasattr(expected, 'match') else expected
 
         if hasattr(expected, 'match'):
-            if expected.match(line):
+            if expected.match(mline):
+                matched_lines.append((line, mline))
                 return True
             return False
 
         if expected.startswith('^'):
-            if line.startswith(expected[1:]):
+            if mline.startswith(expected[1:]):
+                matched_lines.append((line, mline))
                 return True
             return False
 
-        if expected in line:
+        if expected in mline:
+            matched_lines.append((line, mline))
             return True
 
         return False
 
-    matched_lines = []
     def _report_failure(expected):
         num_matched = len(matched_lines)
         if num_matched:
-            matched = 'Matched {num} lines:\n\n{lines}'.format(num=num_matched, lines='\n'.join(matched_lines))
+            lines = []
+            for line, mline in matched_lines:
+                lines.append((line + ' (' + mline + ')') if line != mline else line)
+            matched = "Matched {num} lines{mfunc_info}:\n\n{lines}".format(
+                num=num_matched, mfunc_info=" ('mfunc' modified line in '()')" if mfunc else "", lines='\n'.join(lines))
         else:
             matched = 'No lines matched.' + " (Empty text)" if not text else ''
 
+        raw_txt_msg = " (unmodified text, 'mfunc' not applied)" if mfunc else ''
+            
         if hasattr(expected, 'match'):
-            print('', matched, "The regex:", expected.pattern, "    --- NOT MATCHED or OUT OF ORDER in ---", text, file=sys.stderr, sep='\n\n')
-            return False
+            print('', matched, "The regex:", expected.pattern,
+                  "--- NOT MATCHED or OUT OF ORDER in" + raw_txt_msg + " ---", text, file=sys.stderr, sep='\n\n')
+            raise _NotFoundException()
 
         if expected.startswith('^'):
-            print('', matched, "The text:", expected[1:], "    --- NOT FOUND, OUT OF ORDER or NOT AT START OF LINE in ---", text, file=sys.stderr, sep='\n\n')
-            return False
+            expected = expected[1:]
+            expinfo = expected + (" (" + mfunc(expected) + ")" if mfunc else "")
+            print('', matched, "The text:", expinfo,
+                  "--- NOT FOUND, OUT OF ORDER or NOT AT START OF LINE in" + raw_txt_msg + " ---", text, file=sys.stderr, sep='\n\n')
+            raise _NotFoundException()
 
-        print('', matched, "The text:", expected, "    --- NOT FOUND OR OUT OF ORDER IN ---", text, file=sys.stderr, sep='\n\n')
+        expinfo = expected + (" (" + mfunc(expected) + ")" if mfunc else "")
+        print('', matched, "The text:", expinfo,
+              "--- NOT FOUND OR OUT OF ORDER IN" + raw_txt_msg + " ---", text, file=sys.stderr, sep='\n\n')
+        raise _NotFoundException()
+
+    def _ordered_lines_in(text_line_index, mfunc, expected_lines):
+        max_expected_index = len(expected_lines)
+        expected_index = 0
+
+        while True:
+            if expected_index == max_expected_index:
+                return text_line_index
+            expected = expected_lines[expected_index]
+
+            if text_line_index == max_line_index:
+                _report_failure(expected)
+
+            if isinstance(expected, (tuple, list)):
+                text_line_index = _unordered_lines_in(text_line_index, mfunc, expected)
+                expected_index += 1
+                continue
+
+            line = text_lines[text_line_index]
+            mline = mfunc(line) if mfunc else line
+            if _check_match(expected, mline, line):
+                expected_index += 1
+
+            text_line_index += 1
+
+    def _unordered_lines_in(text_line_index, mfunc, expected_lines):
+        expected_lines = list(expected_lines)
+        expected_index = 0
+
+        while True:
+            line = text_lines[text_line_index]
+            mline = mfunc(line) if mfunc else line
+
+            for expected_index, expected in enumerate(expected_lines):
+                if isinstance(expected, (tuple, list)):
+                    text_line_index = _ordered_lines_in(text_line_index, mfunc, expected)
+                    del expected_lines[expected_index]
+                    break
+
+                if _check_match(expected, mline, line):
+                    del expected_lines[expected_index]
+                    break
+
+            text_line_index += 1
+            if not expected_lines:
+                return text_line_index
+
+            if text_line_index == max_line_index:
+                _report_failure(expected)
+
+    try:
+        _ordered_lines_in(0, mfunc, expected_lines)
+        return True
+    except _NotFoundException:
         return False
-
-    max_index = len(expected_lines)
-    index = 0
-    expected_lines = list(expected_lines)
-
-    for line in text.split('\n'):
-        line = mfunc(line) if mfunc else line
-        expected = expected_lines[index]
-
-        if isinstance(expected, (tuple, list)):
-            new_expected = []
-            for unordered_expected in expected:
-                if _check_match(unordered_expected, line):
-                    matched_lines.append(line)
-                    continue
-                new_expected.append(unordered_expected)
-            expected_lines[index] = new_expected if len(new_expected) > 1 else new_expected[0]
-            continue
-
-        if _check_match(expected, line):
-            index += 1
-            if index == max_index:
-                return True
-            matched_lines.append(line)
-
-    if isinstance(expected, (tuple, list)):
-        for expected in new_expected:
-            # TODO: only reports first element
-            return _report_failure(expected)
-
-    return _report_failure(expected)
