@@ -110,13 +110,13 @@ def test_set_build_description_api(api_type):
             job = api.get_job(api.job_name_prefix + job_name)
         _, _, build_num = job.job_status()
 
-        api.set_build_description(job.name, build_num, 'BBB1')
-        api.set_build_description(job.name, build_num, 'BBB2', replace=False)
+        api.set_build_description('BBB1', job_name=job.name, build_number=build_num)
+        api.set_build_description('BBB2', False, job_name=job.name, build_number=build_num)
         assert _get_description(api, job, build_num) == 'AAA\nBBB1\nBBB2'
 
-        api.set_build_description(job.name, build_num, 'BBB3', replace=True)
-        api.set_build_description(job.name, build_num, 'BBB4', replace=False, separator='#')
-        api.set_build_description(job.name, build_num, 'BBB5', separator='!!')
+        api.set_build_description('BBB3', replace=True, job_name=job.name, build_number=build_num)
+        api.set_build_description('BBB4', replace=False, separator='#', job_name=job.name, build_number=build_num)
+        api.set_build_description('BBB5', separator='!!', job_name=job.name, build_number=build_num)
         assert _get_description(api, job, build_num) == 'BBB3#BBB4!!BBB5'
 
 
@@ -205,7 +205,7 @@ def test_set_build_description_unknown_job(api_type):
         job_name = 'job-1'
 
         with raises(Exception) as exinfo:
-            api.set_build_description(job_name, 17, 'Oops')
+            api.set_build_description('Oops', job_name=job_name, build_number=17)
 
         assert "Build not found " in str(exinfo.value)
 

@@ -62,7 +62,7 @@ class MockApi(TestJenkins, HyperSpeed):
         except KeyError:
             raise UnknownJobException(name)
 
-    def set_build_description(self, job_name, build_number, description, replace=False, separator='\n'):
+    def set_build_description(self, description, replace=False, separator='\n', job_name=None, build_number=None):
         pass
 
     def set_build_result(self, result, java='java'):

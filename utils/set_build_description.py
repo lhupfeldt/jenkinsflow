@@ -3,7 +3,6 @@
 
 from __future__ import print_function
 
-import os
 from .utils import base_url_and_api
 
 
@@ -24,12 +23,5 @@ def set_build_description(description, replace=False, separator='\n', username=N
     """
 
     base_url, api = base_url_and_api(direct_url)
-
-    if job_name is None:
-        job_name = os.environ['JOB_NAME']
-
-    if build_number is None:
-        build_number = int(os.environ['BUILD_NUMBER'])
-
     jenkins = api.Jenkins(direct_uri=base_url, username=username, password=password)
-    jenkins.set_build_description(job_name, build_number, description, replace, separator)
+    jenkins.set_build_description(description, replace, separator, job_name, build_number)

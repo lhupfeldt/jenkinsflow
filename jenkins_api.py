@@ -166,17 +166,23 @@ class Jenkins(Speed):
             # TODO: Check error
             raise UnknownJobException(self._public_job_url(job_name), ex)
 
-    def set_build_description(self, job_name, build_number, description, replace=False, separator='\n'):
+    def set_build_description(self, description, replace=False, separator='\n', job_name=None, build_number=None):
         """Utility to set/append build description
 
         Args:
-            job_name (str):     Name of the Jenkins job
-            build_number (int): The build number for which to set the description
             description (str):  The description to set on the build
             replace (bool):     If True, replace existing description, if any, instead of appending to it
             separator (str):    A separator to insert between any existing description and the new :py:obj:`description` if :py:obj:`replace` is False.
+            job_name (str):     Name of the Jenkins job
+            build_number (int): The build number for which to set the description
         """
         self.poll()
+
+        if job_name is None:
+            job_name = os.environ['JOB_NAME']
+
+        if build_number is None:
+            build_number = int(os.environ['BUILD_NUMBER'])
 
         job_path = "/job/" + job_name
         build_url = job_path + '/' + str(build_number)

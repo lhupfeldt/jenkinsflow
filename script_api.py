@@ -172,16 +172,23 @@ class Jenkins(Speed):
             if os.path.exists(script_file):
                 raise
 
-    def set_build_description(self, job_name, build_number, description, replace=False, separator='\n'):
+    def set_build_description(self, description, replace=False, separator='\n', job_name=None, build_number=None):
         """Utility to set/append build description. :py:obj:`description` will be written to a file in the workspace.
 
         Args:
-            job_name (str)
-            build_number (int)
-            description (str): The description to set on the build
-            append (bool):     If True append to existing description, if any
-            separator (str):   A separator to insert between any existing description and the new :py:obj:`description` if :py:obj:`append` is True.
+            description (str): The description to set on the build.
+            append (bool): If True append to existing description, if any.
+            separator (str): A separator to insert between any existing description and the new :py:obj:`description` if :py:obj:`append` is True.
+            job_name (str):
+            build_number (int):
         """
+
+        if job_name is None:
+            job_name = os.environ['JOB_NAME']
+
+        if build_number is None:
+            build_number = int(os.environ['BUILD_NUMBER'])
+
         workspace = self._workspace(job_name)
         mode = 'w' if replace else 'a'
         fname = jp(workspace, 'description.txt')
@@ -248,7 +255,7 @@ class ApiJob(object):
         proc = LoggingProcess(target=self.func, output_file_name=self.log_file, workspace=self.workspace, name=self.name, args=fixed_args, env=extra_env)
         self.build = self.jenkins.invocation_class(self, proc, build_number)
         if description:
-            self.jenkins.set_build_description(self.name, build_number, description, replace=True, separator='')
+            self.jenkins.set_build_description(description, replace=True, separator='', job_name=self.name, build_number=build_number)
         self._invocations.append(self.build)
         return self.build
 
