@@ -38,7 +38,7 @@ if __name__ == "__main__":
                           'setproctitle~=1.1.9',
                           'click~=6.0',
                           'tenjin~=1.1.1',
-                          'bottle~=0.12.8'] + py_version_requires,
+                          'bottle~=0.12'] + py_version_requires,
         setup_requires='setuptools-version-command~=2.2',
         test_suite='test',
         test_loader='test.test:TestLoader',
