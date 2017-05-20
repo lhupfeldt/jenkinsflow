@@ -26,9 +26,10 @@ from os.path import join as jp
 # documentation root, use os.path.abspath to make it absolute, like shown here.
 _here = os.path.dirname(os.path.abspath(__file__))
 _top_dir = os.path.dirname(os.path.dirname(_here))
+sys.path.insert(0, _top_dir)
 sys.path.insert(0, os.path.dirname(_top_dir))
 
-import jenkinsflow.setup
+import setup as jf_setup
 
 # -- General configuration ------------------------------------------------
 
@@ -58,8 +59,8 @@ source_suffix = '.rst'
 master_doc = 'index'
 
 # General information about the project.
-project = jenkinsflow.setup.PROJECT_NAME
-copyright = jenkinsflow.setup.COPYRIGHT
+project = jf_setup.PROJECT_NAME
+copyright = jf_setup.COPYRIGHT
 author = u'Lars Hupfeldt Nielsen'
 
 # The version info for the project you're documenting, acts as replacement for
@@ -280,7 +281,7 @@ texinfo_documents = [
 epub_title = u'jenkinsflow'
 epub_author = author
 epub_publisher = author
-epub_copyright = jenkinsflow.setup.COPYRIGHT
+epub_copyright = jf_setup.COPYRIGHT
 
 # The basename for the epub file. It defaults to the project name.
 #epub_basename = u'jenkinsflow'

@@ -36,7 +36,7 @@ cli_requires = ['click~=6.0']
 job_load_requires = ['tenjin~=1.1.1']
 jenkins_api_requires = ['requests~=2.7.0']
 # You need to install python(3)-devel to be be able to install psutil, see INSTALL.md
-script_api_requires = ['psutil~=3.2.1', 'setproctitle~=1.1.9']
+script_api_requires = ['psutil~=5.2.2', 'setproctitle~=1.1.10']
 visual_requires = ['bottle~=0.12']
 
 if sys.version_info.major < 3:
@@ -45,7 +45,7 @@ if sys.version_info.major < 3:
 if not on_rtd:
     install_requires = flow_requires + cli_requires + job_load_requires + jenkins_api_requires + script_api_requires + visual_requires
 else:
-    install_requires = flow_requires + cli_requires + jenkins_api_requires
+    install_requires = flow_requires + cli_requires + jenkins_api_requires + script_api_requires
 
 tests_require = [
     'pytest>=3.0.5', 'pytest-cov>=2.4.0', 'pytest-instafail~=0.3.0', 'pytest-xdist~=1.16',
