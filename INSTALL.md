@@ -68,7 +68,7 @@ Test
    pip3 install -U objproxies
 
    # The test will also test the generation of documentation, for this you need:
-   pip install -U 'sphinx>=1.3.1' sphinxcontrib-programoutput
+   pip install -U 'sphinx>=1.6' sphinxcontrib-programoutput
 
 
 2. Important Jenkins/Hudson setup and test preparation:
@@ -155,7 +155,7 @@ Documentation
 ----
 
 1. Install sphinx and extensions:
-   pip install sphinx>=1.3.1 sphinxcontrib-programoutput
+   pip install 'sphinx>=1.6' sphinxcontrib-programoutput
 
 2. Build documentation:
    cd doc/source
