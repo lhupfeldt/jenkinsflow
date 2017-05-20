@@ -222,7 +222,7 @@ class TestJenkins(AbstractApiJenkins):
                     if progress == Progress.RUNNING:
                         break
                     if progress != prev_progress:
-                        print("FW: last build status:", result, progress, last_build_number)
+                        print("FW: last build status:", job.name, result, progress, last_build_number)
                         prev_progress = progress
                     self.sleep(start_check_interval)
                     if hasattr(job, 'jenkins'):

@@ -29,7 +29,8 @@ class Test(TestCommand):
     def run_tests(self):
         import test.run
         # sys.exit(test.run.cli(self.test_args))
-        sys.exit(test.run.cli(api='mock'))
+        speedup = 1000 if not os.environ.get('CI', 'false') .lower == '=true' else 10
+        sys.exit(test.run.cli(api='mock', mock_speedup=speedup))
 
 flow_requires = ['atomicfile~=1.0']
 cli_requires = ['click~=6.0']
