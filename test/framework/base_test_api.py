@@ -212,18 +212,23 @@ class TestJenkins(AbstractApiJenkins):
 
             if job.unknown_result:
                 # The job must still be running, but maybe it has not been started yet, so wait up to 3 seconds for it to start
-                for ii in range(1, 300):
+                max_wait_to_start = 3
+                start_check_interval = 0.01
+                max_wait_index = int(max_wait_to_start / start_check_interval)
+                prev_progress = None
+                for ii in range(1, max_wait_index):
                     # TODO: job obj should be invocation obj!
-                    _result, progress, _last_build_number = job.job_status()
-                    # print("FW: last build status:", _result, progress, _last_build_number)
+                    result, progress, last_build_number = job.job_status()
                     if progress == Progress.RUNNING:
                         break
-                    self.sleep(0.01)
+                    if progress != prev_progress:
+                        print("FW: last build status:", result, progress, last_build_number)
+                        prev_progress = progress
+                    self.sleep(start_check_interval)
                     if hasattr(job, 'jenkins'):
                         job.jenkins.quick_poll()
                     job.poll()
-                if ii > 2:
-                    raise Exception("Opps: " + repr(ii))
+
                 # pylint: disable=maybe-no-member
                 assert progress == Progress.RUNNING, "Job: " + job.name + " is expected to be running, but state is " + progress.name
                 # Now stop the job, so that it won't be running after the testsuite is finished
