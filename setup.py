@@ -1,6 +1,7 @@
 import sys, os
 
 from setuptools import setup
+from setuptools.command.test import test as TestCommand
 
 
 PROJECT_ROOT, _ = os.path.split(__file__)
@@ -11,6 +12,22 @@ PROJECT_EMAILS = 'lhn@hupfeldtit.dk'
 PROJECT_URL = "https://github.com/lhupfeldt/jenkinsflow"
 SHORT_DESCRIPTION = 'Python API with high level build flow constructs (parallel/serial) for Jenkins (and Hudson).'
 LONG_DESCRIPTION = open(os.path.join(PROJECT_ROOT, "README.txt")).read()
+
+
+class Test(TestCommand):
+    def initialize_options(self):
+        TestCommand.initialize_options(self)
+        self.pytest_args = []
+
+    def finalize_options(self):
+        TestCommand.finalize_options(self)
+        self.test_args = []
+        self.test_suite = True
+
+    def run_tests(self):
+        import test.run
+        # sys.exit(test.run.cli(self.test_args))
+        sys.exit(test.run.cli(api='mock'))
 
 
 if sys.version_info.major < 3:
@@ -27,8 +44,8 @@ if __name__ == "__main__":
         version_command=('git describe', 'pep440-git'),
         author=PROJECT_AUTHORS,
         author_email=PROJECT_EMAILS,
-        packages=['jenkinsflow', 'jenkinsflow.cli'],
-        package_dir={'jenkinsflow':'.', 'jenkinsflow.cli': 'cli'},
+        packages=['jenkinsflow', 'jenkinsflow.utils', 'jenkinsflow.cli'],
+        package_dir={'jenkinsflow':'.', 'jenkinsflow.utils': 'utils', 'jenkinsflow.cli': 'cli'},
         zip_safe=True,
         include_package_data=False,
         # You need to install python(3)-devel to be be able to install psutil, see INSTALL.md
@@ -41,11 +58,11 @@ if __name__ == "__main__":
                           'bottle~=0.12'] + py_version_requires,
         setup_requires='setuptools-version-command~=2.2',
         test_suite='test',
-        test_loader='test.test:TestLoader',
-        tests_require=['pytest~=2.8.2', 'pytest-cov~=2.1.0', 'pytest-instafail~=0.3.0', 'pytest-xdist~=1.13.1',
-                       'click~=5.1', 'tenjin~=1.1.1', 'bottle~=0.12.8',
+        tests_require=['pytest>=3.0.5', 'pytest-cov>=2.4.0', 'pytest-instafail~=0.3.0', 'pytest-xdist~=1.16',
+                       'click~=6.0', 'tenjin~=1.1.1', 'bottle~=0.12',
                        # The test also tests creation of the documentation
-                       'sphinx~=1.3.1', 'sphinxcontrib-programoutput'] + py_version_test_require,
+                       'sphinx~=1.6.1', 'sphinxcontrib-programoutput'] + py_version_test_require,
+        cmdclass={'test': Test},
         url=PROJECT_URL,
         description=SHORT_DESCRIPTION,
         long_description=LONG_DESCRIPTION,

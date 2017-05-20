@@ -1,3 +1,4 @@
 .PHONY: all
 all:
-	./test/test.py
+	tox
+	./test/run.py

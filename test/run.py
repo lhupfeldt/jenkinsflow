@@ -36,15 +36,6 @@ from jenkinsflow.test import cfg as test_cfg
 from jenkinsflow.test.cfg import ApiType
 
 
-def dummy(*_args):
-    print("*** Please use test/tests.py to run tests", file=sys.stderr)
-
-
-class TestLoader(object):
-    def loadTestsFromNames(self, names, module=None):
-        return dummy
-
-
 def run_tests(parallel, api, args, coverage=True, mock_speedup=1):
     args = copy.copy(args)
 
@@ -86,16 +77,13 @@ def start_msg(*msg):
     print("\n++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++\n", *msg)
 
 
-@click.command()
-@click.option('--mock-speedup', '-s', help="Time speedup when running mocked tests.", default=1000)
-@click.option('--direct-url', help="Direct Jenkins URL. Must be different from the URL set in Jenkins (and preferably non proxied)",
-              default=test_cfg.direct_url(test_cfg.ApiType.JENKINS))
-@click.option('--api', help="Select which api to use/test. Possible values: 'jenkins, 'script', 'mock'. Default is all.", default=None)
-@click.option('--pytest-args', help="py.test arguments.")
-@click.option('--job-delete/--no-job-delete', help="Delete and re-load jobs into Jenkins. Default is --no-job-delete.", default=False)
-@click.option('--job-load/--no-job-load', help="Load jobs into Jenkins (skipping job load assumes all jobs already loaded and up to date). Deafult is --job-load.", default=True)
-@click.argument('testfile', nargs=-1, type=click.Path(exists=True, readable=True))
-def cli(mock_speedup, direct_url, api, pytest_args, job_delete, job_load, testfile):
+def cli(mock_speedup=1000,
+        direct_url=test_cfg.direct_url(test_cfg.ApiType.JENKINS),
+        api=None,
+        pytest_args=None,
+        job_delete=False,
+        job_load=True,
+        testfile=None):
     """
     Test jenkinsflow.
     First runs all tests mocked in hyperspeed, then runs against Jenkins, using jenkins_api, then run script_api jobs.
@@ -141,18 +129,18 @@ def cli(mock_speedup, direct_url, api, pytest_args, job_delete, job_load, testfi
         parallel = test_cfg.skip_job_load() or test_cfg.skip_job_delete() and not hudson
         run_tests(parallel, api, args, coverage, mock_speedup)
 
-        start_msg("Testing setup.py")
-        user = getpass.getuser()
-        install_prefix = '/tmp/' + user
-        tmp_packages_dir = install_prefix + '/lib/python{major}.{minor}/site-packages'.format(major=major_version, minor=sys.version_info.minor)
-        os.environ['PYTHONPATH'] = tmp_packages_dir
-        if os.path.exists(tmp_packages_dir):
-            shutil.rmtree(tmp_packages_dir)
-        os.makedirs(tmp_packages_dir)
-
-        os.chdir(top_dir)
-        subprocess.check_call([sys.executable, jp(top_dir, 'setup.py'), 'install', '--prefix', install_prefix])
-        shutil.rmtree(jp(top_dir, 'build'))
+        # start_msg("Testing setup.py")
+        # user = getpass.getuser()
+        # install_prefix = '/tmp/' + user
+        # tmp_packages_dir = install_prefix + '/lib/python{major}.{minor}/site-packages'.format(major=major_version, minor=sys.version_info.minor)
+        # os.environ['PYTHONPATH'] = tmp_packages_dir
+        # if os.path.exists(tmp_packages_dir):
+        #     shutil.rmtree(tmp_packages_dir)
+        # os.makedirs(tmp_packages_dir)
+        # 
+        # os.chdir(top_dir)
+        # subprocess.check_call([sys.executable, jp(top_dir, 'setup.py'), 'install', '--prefix', install_prefix])
+        # shutil.rmtree(jp(top_dir, 'build'))
 
         start_msg("Testing documentation generation")
 
@@ -166,5 +154,18 @@ def cli(mock_speedup, direct_url, api, pytest_args, job_delete, job_load, testfi
     sys.exit(rc)
 
 
+@click.command()
+@click.option('--mock-speedup', '-s', help="Time speedup when running mocked tests.", default=1000)
+@click.option('--direct-url', help="Direct Jenkins URL. Must be different from the URL set in Jenkins (and preferably non proxied)",
+              default=test_cfg.direct_url(test_cfg.ApiType.JENKINS))
+@click.option('--api', help="Select which api to use/test. Possible values: 'jenkins, 'script', 'mock'. Default is all.", default=None)
+@click.option('--pytest-args', help="py.test arguments.")
+@click.option('--job-delete/--no-job-delete', help="Delete and re-load jobs into Jenkins. Default is --no-job-delete.", default=False)
+@click.option('--job-load/--no-job-load', help="Load jobs into Jenkins (skipping job load assumes all jobs already loaded and up to date). Deafult is --job-load.", default=True)
+@click.argument('testfile', nargs=-1, type=click.Path(exists=True, readable=True))
+def _cli(mock_speedup, direct_url, api, pytest_args, job_delete, job_load, testfile):
+    cli(mock_speedup, direct_url, api, pytest_args, job_delete, job_load, testfile)
+
+
 if __name__ == '__main__':
-    cli()  # pylint: disable=no-value-for-parameter
+    _cli()  # pylint: disable=no-value-for-parameter

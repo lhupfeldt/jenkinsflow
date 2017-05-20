@@ -45,7 +45,7 @@ Jenkinsflow uses it's own specialized 'jenkins_api' python module to access jenk
 
 
 Note: I think jenkinsflow should work on Windows, but it has not been tested.
-   I'm SURE the test/test.py script will fail on Windows. There are a few Linux/Unix bits in the test setup. Check test/framework/config.py and
+   I'm SURE the test/run.py script will fail on Windows. There are a few Linux/Unix bits in the test setup. Check test/framework/config.py and
    test/tmp_install.sh. Patches are welcome:)
 
 
@@ -95,11 +95,11 @@ Test
    test/tmp_install.sh
 
 3. Run the tests:
-   Use ./test/test.py to run the tests.
+   Use ./test/run.py to run the tests.
 
-   JENKINS_URL=<your Jenkins> python ./test/test.py --mock-speedup=100 --direct-url <non proxied url different from JENKINS_URL>
+   JENKINS_URL=<your Jenkins> python ./test/run.py --mock-speedup=100 --direct-url <non proxied url different from JENKINS_URL>
    # Or if you are using Hudson:
-   HUDSON_URL=<your Hudson> python ./test/test.py --mock-speedup=100  --direct-url <non proxied url different from HUDSON_URL>
+   HUDSON_URL=<your Hudson> python ./test/run.py --mock-speedup=100  --direct-url <non proxied url different from HUDSON_URL>
 
    Note: you may omit JENKINS_URL if your jenkins is on http://localhost:8080, but you have to specify HUDSON_URL if you are running hudson!
    Note: you may omit --direct-url if your jenkins or hudson is on http://localhost:8080
@@ -123,7 +123,7 @@ Test
    The test suite creates jobs called ..._0flow. These jobs are not executed by the test suite, by you can run them to see what the flows look like in a Jenkins job.
    If your Jenkins is not secured, you must set username and password to '' in demo_security,  in order to be able to run all the ..._0flow jobs.
 
-   To see more test options, run ./test/test.py ---help
+   To see more test options, run ./test/run.py ---help
 
 
 Demos
@@ -135,7 +135,7 @@ Demos
    python ./demo/<demo>.py
 
 3. Demo scripts can be executed from the loaded 'jenkinsflow_demo__<demo-name>__0flow' Jenkins jobs.
-   Jenkins needs to be able to find the scripts, the test.py script creates a test installation.
+   Jenkins needs to be able to find the scripts, the run.py script creates a test installation.
 
 
 Flow Graph Visualisation
