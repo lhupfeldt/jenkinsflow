@@ -13,6 +13,8 @@ PROJECT_URL = "https://github.com/lhupfeldt/jenkinsflow"
 SHORT_DESCRIPTION = 'Python API with high level build flow constructs (parallel/serial) for Jenkins (and Hudson).'
 LONG_DESCRIPTION = open(os.path.join(PROJECT_ROOT, "README.txt")).read()
 
+on_rtd = os.environ.get('READTHEDOCS') == 'True'
+
 
 class Test(TestCommand):
     def initialize_options(self):
@@ -29,13 +31,32 @@ class Test(TestCommand):
         # sys.exit(test.run.cli(self.test_args))
         sys.exit(test.run.cli(api='mock'))
 
+flow_requires = ['atomicfile~=1.0']
+scripts_requires = ['click~=6.0']
+job_load_requires = ['tenjin~=1.1.1']
+jenkins_api_requires = ['requests~=2.7.0']
+# You need to install python(3)-devel to be be able to install psutil, see INSTALL.md
+script_api_requires = ['psutil~=3.2.1', 'setproctitle~=1.1.9']
+visual_requires = ['bottle~=0.12']
 
 if sys.version_info.major < 3:
-    py_version_requires = ['enum34', 'subprocess32']
-    py_version_test_require = ['proxytypes']
+    flow_requires.extend(['enum34', 'subprocess32'])
+
+if not on_rtd:
+    install_requires = flow_requires + scripts_requires + job_load_requires + jenkins_api_requires + script_api_requires + visual_requires
 else:
-    py_version_requires = []
-    py_version_test_require = ['objproxies~=0.9.4']
+    install_requires = flow_requires + scripts_requires + jenkins_api_requires
+
+tests_require = [
+    'pytest>=3.0.5', 'pytest-cov>=2.4.0', 'pytest-instafail~=0.3.0', 'pytest-xdist~=1.16',
+    'click~=6.0', 'tenjin~=1.1.1', 'bottle~=0.12',
+    # The test also tests creation of the documentation
+    'sphinx~=1.6.1', 'sphinxcontrib-programoutput']
+
+if sys.version_info.major < 3:
+    tests_require.append('proxytypes')
+else:
+    tests_require.append('objproxies~=0.9.4')
 
 
 if __name__ == "__main__":
@@ -48,20 +69,10 @@ if __name__ == "__main__":
         package_dir={'jenkinsflow':'.', 'jenkinsflow.utils': 'utils', 'jenkinsflow.cli': 'cli'},
         zip_safe=True,
         include_package_data=False,
-        # You need to install python(3)-devel to be be able to install psutil, see INSTALL.md
-        install_requires=['requests~=2.7.0',
-                          'atomicfile~=1.0',
-                          'psutil~=3.2.1',
-                          'setproctitle~=1.1.9',
-                          'click~=6.0',
-                          'tenjin~=1.1.1',
-                          'bottle~=0.12'] + py_version_requires,
+        install_requires=install_requires,
         setup_requires='setuptools-version-command~=2.2',
         test_suite='test',
-        tests_require=['pytest>=3.0.5', 'pytest-cov>=2.4.0', 'pytest-instafail~=0.3.0', 'pytest-xdist~=1.16',
-                       'click~=6.0', 'tenjin~=1.1.1', 'bottle~=0.12',
-                       # The test also tests creation of the documentation
-                       'sphinx~=1.6.1', 'sphinxcontrib-programoutput'] + py_version_test_require,
+        tests_require=tests_require,
         cmdclass={'test': Test},
         url=PROJECT_URL,
         description=SHORT_DESCRIPTION,
