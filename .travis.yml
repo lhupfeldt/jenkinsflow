@@ -8,4 +8,4 @@ script: tox
 os:
   - linux
 install:
-  - pip install tox-travis
+  - pip install tox-travis 'sphinx~=1.6.1' sphinxcontrib-programoutput
