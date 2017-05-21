@@ -142,11 +142,13 @@ def cli(mock_speedup=1000,
         # subprocess.check_call([sys.executable, jp(top_dir, 'setup.py'), 'install', '--prefix', install_prefix])
         # shutil.rmtree(jp(top_dir, 'build'))
 
-        start_msg("Testing documentation generation")
+        if os.environ.get('CI', 'false') .lower != '=true':
+            # This is automatically tested by readdthedocs, so no need to test on Travis
+            start_msg("Testing documentation generation")
 
-        os.chdir('doc/source')
-        del os.environ['PYTHONPATH']
-        subprocess.check_call(['make', 'html'])
+            os.chdir('doc/source')
+            del os.environ['PYTHONPATH']
+            subprocess.check_call(['make', 'html'])
     except Exception as ex:
         print('*** ERROR: There were errors! Check output! ***', repr(ex), file=sys.stderr)
         raise
