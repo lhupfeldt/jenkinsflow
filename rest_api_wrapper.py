@@ -3,12 +3,18 @@ import sys
 major_version = sys.version_info.major
 
 
-if major_version >= 3:
-    def unicode(text, encoding):
+def encode(text, encoding):
+    if major_version >= 3:
         # TODO: Why is this necessary???
         # On python 2 we need to convert from bytes to unicode, but on python 3 we need the reverse!
         return text.encode("utf-8")
-
+    try:
+        # TODO: 'unicode' call was needed when implemented, but now seems to be (randomly) raisig TypeError
+        # and not actually needed???
+        return unicode(text, encoding, errors='ignore')
+    except TypeError:
+        pass
+    return text
 
 class ResourceNotFound(Exception):
     pass
@@ -20,7 +26,7 @@ class RequestsRestApi(object):
         import requests
         self.session = requests.Session()
         if username or password:
-            self.session.auth = requests.auth.HTTPBasicAuth(username, unicode(password, 'latin-1'))
+            self.session.auth = requests.auth.HTTPBasicAuth(username, encode(password, 'latin-1'))
         self.direct_uri = direct_uri
 
     @staticmethod
