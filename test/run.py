@@ -36,17 +36,10 @@ from jenkinsflow.test import cfg as test_cfg
 from jenkinsflow.test.cfg import ApiType
 
 
-def run_tests(parallel, api, args, coverage=True, mock_speedup=1):
+def run_tests(parallel, api_type, args, coverage=True, mock_speedup=1):
     args = copy.copy(args)
 
     test_cfg.select_speedup(mock_speedup)
-    if api is not None:
-        api_name = api.upper()
-        api_type = ApiType[api_name]
-        args.extend(['-k', 'ApiType.' + api_name])
-    else:
-        # We run for all apis
-        api_type = None
 
     if coverage:
         engine = tenjin.Engine()
@@ -100,12 +93,24 @@ def cli(mock_speedup=1000,
     os.environ[test_cfg.SKIP_JOB_LOAD_NAME] = 'false' if job_load else 'true'
     os.environ[test_cfg.SCRIPT_DIR_NAME] = test_cfg.script_dir()
 
-    print("Creating temporary test installation in", repr(config.pseudo_install_dir), "to make files available to Jenkins.")
-    install_script = jp(here, 'tmp_install.sh')
-    rc = subprocess.call([install_script])
-    if rc:
-        print("Failed test installation to", repr(config.pseudo_install_dir), "Install script is:", repr(install_script), file=sys.stderr)
-        print("Warning: Some tests will fail!", file=sys.stderr)
+    args = ['--capture=sys', '--instafail']
+
+    if api is not None:
+        api_name = api.upper()
+        api_type = ApiType[api_name]
+        args.extend(['-k', 'ApiType.' + api_name])
+    else:
+        # We run for all apis
+        api_type = None
+
+    rc = 0
+    if api_type != ApiType.MOCK:
+        print("Creating temporary test installation in", repr(config.pseudo_install_dir), "to make files available to Jenkins.")
+        install_script = jp(here, 'tmp_install.sh')
+        rc = subprocess.call([install_script])
+        if rc:
+            print("Failed test installation to", repr(config.pseudo_install_dir), "Install script is:", repr(install_script), file=sys.stderr)
+            print("Warning: Some tests will fail!", file=sys.stderr)
 
     cov_file = ".coverage"
     for cov_file in jp(here, cov_file), jp(top_dir, cov_file):
@@ -114,8 +119,6 @@ def cli(mock_speedup=1000,
 
     print("\nRunning tests")
     try:
-        args = ['--capture=sys', '--instafail']
-
         if pytest_args or testfile:
             coverage = False
             args.extend(pytest_args.split(' ') + list(testfile) if pytest_args else list(testfile))
@@ -127,7 +130,7 @@ def cli(mock_speedup=1000,
         if hudson:
             print("Disabling parallel run, Hudson can't handle it :(")
         parallel = test_cfg.skip_job_load() or test_cfg.skip_job_delete() and not hudson
-        run_tests(parallel, api, args, coverage, mock_speedup)
+        run_tests(parallel, api_type, args, coverage, mock_speedup)
 
         # start_msg("Testing setup.py")
         # user = getpass.getuser()
@@ -137,7 +140,7 @@ def cli(mock_speedup=1000,
         # if os.path.exists(tmp_packages_dir):
         #     shutil.rmtree(tmp_packages_dir)
         # os.makedirs(tmp_packages_dir)
-        # 
+        #
         # os.chdir(top_dir)
         # subprocess.check_call([sys.executable, jp(top_dir, 'setup.py'), 'install', '--prefix', install_prefix])
         # shutil.rmtree(jp(top_dir, 'build'))
