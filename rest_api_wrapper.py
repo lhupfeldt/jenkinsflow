@@ -16,7 +16,12 @@ def encode(text, encoding):
         pass
     return text
 
+
 class ResourceNotFound(Exception):
+    pass
+
+
+class ConnectionError(Exception):
     pass
 
 
@@ -38,7 +43,11 @@ class RequestsRestApi(object):
         response.raise_for_status()
 
     def _get(self, url, params):
-        return self._check_response(self.session.get(self.direct_uri + url, params=params))
+        import requests
+        try:
+            return self._check_response(self.session.get(self.direct_uri + url, params=params))
+        except requests.ConnectionError as ex:
+            raise ConnectionError(str(ex))
 
     def get_content(self, url, **params):
         return self._get(url, params=params).content

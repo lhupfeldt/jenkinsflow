@@ -8,7 +8,7 @@ from collections import OrderedDict
 
 from .api_base import BuildResult, Progress, UnknownJobException, ApiInvocationMixin
 from .speed import Speed
-from .rest_api_wrapper import ResourceNotFound, RequestsRestApi
+from .rest_api_wrapper import ResourceNotFound, RequestsRestApi, ConnectionError
 
 
 major_version = sys.version_info.major
@@ -63,7 +63,15 @@ class Jenkins(Speed):
         return self.rest_api.get_content(url, **params)
 
     def get_json(self, url="", **params):
-        return self.rest_api.get_json(url, **params)
+        # Sometimes (but rarely) Jenkins will Abort the connection when jobs are being aborted!
+        for ii in (1, 2, 3):
+            try:
+                return self.rest_api.get_json(url, **params)
+            except ConnectionError as ex:
+                if ii == 3:
+                    raise
+                print("WARNING: Retrying failed 'poll':", ex)
+                time.sleep(0.1)
 
     def post(self, url, payload=None, headers=None, **params):
         return self.rest_api.post(url, payload, headers, **params)
