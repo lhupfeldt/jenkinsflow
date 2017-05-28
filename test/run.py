@@ -6,7 +6,7 @@ Test jenkinsflow.
 
 from __future__ import print_function
 
-import sys, os, getpass, shutil, copy
+import sys, os, getpass, shutil, copy, errno
 major_version = sys.version_info.major
 if major_version < 3:
     import subprocess32 as subprocess
@@ -104,10 +104,17 @@ def cli(mock_speedup=1000,
         api_type = None
 
     rc = 0
+    target_dir = "/tmp/jenkinsflow-test/jenkinsflow"
+    try:
+        os.makedirs(target_dir)
+    except OSError as ex:
+        if ex.errno != errno.EEXIST:
+            raise
+
     if api_type != ApiType.MOCK:
         print("Creating temporary test installation in", repr(config.pseudo_install_dir), "to make files available to Jenkins.")
         install_script = jp(here, 'tmp_install.sh')
-        rc = subprocess.call([install_script])
+        rc = subprocess.call([install_script, target_dir])
         if rc:
             print("Failed test installation to", repr(config.pseudo_install_dir), "Install script is:", repr(install_script), file=sys.stderr)
             print("Warning: Some tests will fail!", file=sys.stderr)
