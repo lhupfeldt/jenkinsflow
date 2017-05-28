@@ -56,13 +56,13 @@ def test_set_build_description_flow_set(api_type):
     with api_select.api(__file__, api_type, login=True) as api:
         api.flow_job()
         _params = (('password', '', 'Some password'), ('s1', '', 'Some string argument'))
-        api.job('job-1', exec_time=0.01, max_fails=0, expect_invocations=1, expect_order=1, params=_params)
-        api.job('job-2', exec_time=0.01, max_fails=0, expect_invocations=1, expect_order=2, params=_params, serial=True)
-        api.job('job-3', exec_time=0.01, max_fails=0, expect_invocations=1, expect_order=3, params=_params)
-        api.job('job-4', exec_time=0.01, max_fails=0, expect_invocations=1, expect_order=3, params=_params)
-        api.job('job-5', exec_time=0.01, max_fails=0, expect_invocations=1, expect_order=3, params=_params)
-        api.job('job-6', exec_time=0.01, max_fails=0, expect_invocations=1, expect_order=4, params=_params)
-        api.job('job-7', exec_time=0.01, max_fails=0, expect_invocations=1, expect_order=5, params=_params, serial=True)
+        api.job('job-1', max_fails=0, expect_invocations=1, expect_order=1, params=_params)
+        api.job('job-2', max_fails=0, expect_invocations=1, expect_order=2, params=_params, serial=True)
+        api.job('job-3', max_fails=0, expect_invocations=1, expect_order=3, params=_params)
+        api.job('job-4', max_fails=0, expect_invocations=1, expect_order=3, params=_params)
+        api.job('job-5', max_fails=0, expect_invocations=1, expect_order=3, params=_params)
+        api.job('job-6', max_fails=0, expect_invocations=1, expect_order=4, params=_params)
+        api.job('job-7', max_fails=0, expect_invocations=1, expect_order=5, params=_params, serial=True)
 
         if api.api_type == ApiType.SCRIPT:
             for job_num in range(1, 7):
@@ -95,7 +95,7 @@ def test_set_build_description_api(api_type):
     with api_select.api(__file__, api_type, login=True) as api:
         api.flow_job()
         job_name = 'job-1'
-        api.job(job_name, exec_time=0.01, max_fails=0, expect_invocations=1, expect_order=1)
+        api.job(job_name, max_fails=0, expect_invocations=1, expect_order=1)
 
         # Need to read the build number
         if api.api_type == ApiType.SCRIPT:
@@ -125,7 +125,7 @@ def test_set_build_description_utils(api_type):
     with api_select.api(__file__, api_type, login=True) as api:
         api.flow_job()
         job_name = 'job-1'
-        api.job(job_name, exec_time=0.01, max_fails=0, expect_invocations=1, expect_order=1)
+        api.job(job_name, max_fails=0, expect_invocations=1, expect_order=1)
 
         # Need to read the build number
         if api.api_type == ApiType.SCRIPT:
@@ -156,7 +156,7 @@ def test_set_build_description_utils_from_inside_job_1(api_type):
     with api_select.api(__file__, api_type, login=True) as api:
         api.flow_job()
         job_name = 'job-1'
-        api.job(job_name, exec_time=0.01, max_fails=0, expect_invocations=1, expect_order=1,
+        api.job(job_name, max_fails=0, expect_invocations=1, expect_order=1, exec_time=0.01,
                 set_build_descriptions=(('BBB1', False, '\\n'), ('BBB2', False, '\\n')))
 
         # Need to read the build number
@@ -180,7 +180,7 @@ def test_set_build_description_utils_from_inside_job_2(api_type):
     with api_select.api(__file__, api_type, login=True) as api:
         api.flow_job()
         job_name = 'job-1'
-        api.job(job_name, exec_time=0.01, max_fails=0, expect_invocations=1, expect_order=1,
+        api.job(job_name, max_fails=0, expect_invocations=1, expect_order=1, exec_time=0.01,
                 set_build_descriptions=(('BBB3', True, '\\n'), ('BBB4', False, '#'), ('BBB5', False, '!!')))
 
         # Need to read the build number
@@ -215,7 +215,7 @@ def test_set_build_description_cli(api_type, cli_runner):
     with api_select.api(__file__, api_type, login=True) as api:
         api.flow_job()
         job_name = 'job-1'
-        api.job(job_name, exec_time=0.01, max_fails=0, expect_invocations=1, expect_order=1)
+        api.job(job_name, max_fails=0, expect_invocations=1, expect_order=1)
 
         with serial(api, timeout=70, job_name_prefix=api.job_name_prefix, report_interval=1) as ctrl1:
             ctrl1.invoke(job_name, password='a', s1='b')
@@ -265,7 +265,7 @@ def test_set_build_description_cli_env_url(api_type, env_base_url, cli_runner):
     with api_select.api(__file__, api_type, login=True) as api:
         api.flow_job()
         job_name = 'j1'
-        api.job(job_name, exec_time=0.01, max_fails=0, expect_invocations=1, expect_order=1)
+        api.job(job_name, max_fails=0, expect_invocations=1, expect_order=1)
 
         with serial(api, timeout=70, job_name_prefix=api.job_name_prefix, report_interval=1) as ctrl1:
             ctrl1.invoke(job_name, password='a', s1='b')
@@ -297,7 +297,7 @@ def test_set_build_description_cli_no_env_url(api_type, env_no_base_url, cli_run
     with api_select.api(__file__, api_type, login=True) as api:
         api.flow_job()
         job_name = 'j1'
-        api.job(job_name, exec_time=0.01, max_fails=0, expect_invocations=1, expect_order=1)
+        api.job(job_name, max_fails=0, expect_invocations=1, expect_order=1)
 
         with serial(api, timeout=70, job_name_prefix=api.job_name_prefix, report_interval=1) as ctrl1:
             ctrl1.invoke(job_name, password='a', s1='b')

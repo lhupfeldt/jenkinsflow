@@ -30,8 +30,8 @@ def test_replace_invocation_class_log_override(api_type, capsys):
 
     with api_select.api(__file__, api_type, invocation_class=LogInvocation) as api:
         api.flow_job()
-        api.job('j1', exec_time=0.01, max_fails=0, expect_invocations=1, expect_order=1, params=(('s1', '', 'desc'), ('c1', 'false', 'desc')))
-        api.job('j2', exec_time=0.01, max_fails=0, expect_invocations=1, expect_order=1, params=(('s1', '', 'desc'), ('c1', 'false', 'desc')))
+        api.job('j1', max_fails=0, expect_invocations=1, expect_order=1, params=(('s1', '', 'desc'), ('c1', 'false', 'desc')))
+        api.job('j2', max_fails=0, expect_invocations=1, expect_order=1, params=(('s1', '', 'desc'), ('c1', 'false', 'desc')))
 
         with parallel(api, timeout=40, job_name_prefix=api.job_name_prefix, report_interval=3) as ctrl:
             ctrl.invoke('j1', s1='', c1=False)

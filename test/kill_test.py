@@ -21,11 +21,11 @@ here = os.path.abspath(os.path.dirname(__file__))
 def test_kill_all_unchecked(api_type, capsys):
     with api_select.api(__file__, api_type, login=True) as api:
         api.flow_job()
-        api.job('j1', exec_time=50, max_fails=0, expect_invocations=1, expect_order=None, invocation_delay=0, unknown_result=False, kill=True)
-        api.job('j2', exec_time=0.1, max_fails=0, expect_invocations=1, expect_order=1, invocation_delay=0, unknown_result=False, kill=True)
-        api.job('j3', exec_time=50, max_fails=0, expect_invocations=3, expect_order=None, invocation_delay=0, unknown_result=False, kill=True, allow_running=True)
-        api.job('j4', exec_time=0.1, max_fails=0, expect_invocations=1, expect_order=None, invocation_delay=0, unknown_result=False, kill=True)
-        api.job('j5', exec_time=0.1, max_fails=1, expect_invocations=1, expect_order=2, invocation_delay=0, unknown_result=False, kill=True)
+        api.job('j1', max_fails=0, expect_invocations=1, expect_order=None, exec_time=50, invocation_delay=0, unknown_result=False, kill=True)
+        api.job('j2', max_fails=0, expect_invocations=1, expect_order=1, exec_time=0.1, invocation_delay=0, unknown_result=False, kill=True)
+        api.job('j3', max_fails=0, expect_invocations=3, expect_order=None, exec_time=50, invocation_delay=0, unknown_result=False, kill=True, allow_running=True)
+        api.job('j4', max_fails=0, expect_invocations=1, expect_order=None, exec_time=0.1, invocation_delay=0, unknown_result=False, kill=True)
+        api.job('j5', max_fails=1, expect_invocations=1, expect_order=2, exec_time=0.1, invocation_delay=0, unknown_result=False, kill=True)
 
         def flow(api, kill_all):
             with serial(api, timeout=70, job_name_prefix=api.job_name_prefix, kill_all=kill_all) as ctrl1:
@@ -93,7 +93,7 @@ def test_kill_mini(api_type, capsys):
 
         api.flow_job()
         num_j6_invocations = 2
-        api.job('j6', exec_time=50, max_fails=0, expect_invocations=num_j6_invocations, expect_order=None, kill=True,
+        api.job('j6', max_fails=0, expect_invocations=num_j6_invocations, expect_order=None, exec_time=50, kill=True,
                 num_builds_to_keep=num_j6_invocations*2 + 1, params=(('a', 0, 'integer'),))
 
         kill(api, 20, 1)
@@ -131,16 +131,16 @@ def test_kill_current(api_type, capsys):
             return
 
         api.flow_job()
-        api.job('j1', exec_time=50, max_fails=0, expect_invocations=1, expect_order=None, kill=True)
-        api.job('j2', exec_time=0.1, max_fails=0, expect_invocations=1, expect_order=1)
-        api.job('j3', exec_time=50, max_fails=0, expect_invocations=1, expect_order=None, kill=True)
-        api.job('j4', exec_time=0.1, max_fails=1, expect_invocations=1, expect_order=2)
-        api.job('j5', exec_time=50, max_fails=0, expect_invocations=1, expect_order=None, kill=True)
+        api.job('j1', max_fails=0, expect_invocations=1, expect_order=None, exec_time=50, kill=True)
+        api.job('j2', max_fails=0, expect_invocations=1, expect_order=1, exec_time=0.1)
+        api.job('j3', max_fails=0, expect_invocations=1, expect_order=None, exec_time=50, kill=True)
+        api.job('j4', max_fails=1, expect_invocations=1, expect_order=2, exec_time=0.1)
+        api.job('j5', max_fails=0, expect_invocations=1, expect_order=None, exec_time=50, kill=True)
 
         num_j6_invocations = 20
-        api.job('j6', exec_time=50, max_fails=0, expect_invocations=num_j6_invocations, expect_order=None, kill=True,
+        api.job('j6', max_fails=0, expect_invocations=num_j6_invocations, expect_order=None, exec_time=50, kill=True,
                 num_builds_to_keep=num_j6_invocations*2 + 1, params=(('a', 0, 'integer'),))
-        api.job('j7', exec_time=50, max_fails=0, expect_invocations=0, expect_order=None)
+        api.job('j7', max_fails=0, expect_invocations=0, expect_order=None, exec_time=50)
 
         kill(api, 20, 1)
 
@@ -194,11 +194,11 @@ def test_kill_current(api_type, capsys):
 def test_kill_all_unchecked_no_job(api_type, capsys):
     with api_select.api(__file__, api_type, login=True) as api:
         api.flow_job()
-        api.job('j1', exec_time=50, max_fails=0, expect_invocations=1, expect_order=None, unknown_result=False, kill=True)
-        api.job('j2', exec_time=0.1, max_fails=0, expect_invocations=1, expect_order=1, unknown_result=False, kill=True)
-        #api.job('j3', 0, 0, 0, None, non_existing=True)
-        api.job('j4', exec_time=0.1, max_fails=0, expect_invocations=1, expect_order=1, unknown_result=False, kill=True)
-        #api.job('j5', 0, 0, 0, None, non_existing=True)
+        api.job('j1', max_fails=0, expect_invocations=1, expect_order=None, exec_time=50, unknown_result=False, kill=True)
+        api.job('j2', max_fails=0, expect_invocations=1, expect_order=1, exec_time=0.1, unknown_result=False, kill=True)
+        #api.job('j3', 0, 0, None, exec_time=0, non_existing=True)
+        api.job('j4', max_fails=0, expect_invocations=1, expect_order=1, exec_time=0.1, unknown_result=False, kill=True)
+        #api.job('j5', 0, 0, None, exec_time=0, non_existing=True)
 
         def flow(api, kill_all, allow_missing_jobs):
             with serial(api, timeout=70, job_name_prefix=api.job_name_prefix, allow_missing_jobs=allow_missing_jobs, kill_all=kill_all) as ctrl1:

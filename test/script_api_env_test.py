@@ -22,7 +22,7 @@ def test_script_api_env_unchanged(api_type):
     with api_select.api(__file__, api_type, login=True) as api:
         api.flow_job()
         job_name = 'job-1'
-        api.job(job_name, exec_time=0.01, max_fails=0, expect_invocations=1, expect_order=1)
+        api.job(job_name, max_fails=0, expect_invocations=1, expect_order=1)
 
         with serial(api, timeout=70, job_name_prefix=api.job_name_prefix, report_interval=1) as ctrl1:
             ctrl1.invoke(job_name)

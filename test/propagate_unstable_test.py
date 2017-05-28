@@ -15,7 +15,7 @@ def test_propagate_unstable_serial_single_unstable(api_type, fake_java):
     with api_select.api(__file__, api_type, login=True) as api:
         pre_existing_fake_cli(api_type)
         api.flow_job()
-        api.job('j11_unstable', 0.01, max_fails=0, expect_invocations=1, expect_order=1, final_result='unstable')
+        api.job('j11_unstable', max_fails=0, expect_invocations=1, expect_order=1, final_result='unstable')
 
         with serial(api, timeout=70, job_name_prefix=api.job_name_prefix) as ctrl1:
             ctrl1.invoke('j11_unstable')
@@ -27,7 +27,7 @@ def test_propagate_unstable_serial_single_unstable_user_pass(api_type, fake_java
     with api_select.api(__file__, api_type) as api:
         pre_existing_fake_cli(api_type)
         api.flow_job()
-        api.job('j11_unstable', 0.01, max_fails=0, expect_invocations=1, expect_order=1, final_result='unstable')
+        api.job('j11_unstable', max_fails=0, expect_invocations=1, expect_order=1, final_result='unstable')
 
         with serial(api, timeout=70, username=username, password=password, job_name_prefix=api.job_name_prefix) as ctrl1:
             ctrl1.invoke('j11_unstable')
@@ -39,7 +39,7 @@ def test_propagate_unstable_parallel_single_unstable(api_type, fake_java):
     with api_select.api(__file__, api_type, login=True) as api:
         pre_existing_fake_cli(api_type)
         api.flow_job()
-        api.job('j11_unstable', 0.01, max_fails=0, expect_invocations=1, expect_order=1, final_result='unstable')
+        api.job('j11_unstable', max_fails=0, expect_invocations=1, expect_order=1, final_result='unstable')
 
         with parallel(api, timeout=70, job_name_prefix=api.job_name_prefix) as ctrl1:
             ctrl1.invoke('j11_unstable')
@@ -51,9 +51,9 @@ def test_propagate_unstable_serial_toplevel(api_type, fake_java):
     with api_select.api(__file__, api_type, login=True) as api:
         pre_existing_fake_cli(api_type)
         api.flow_job()
-        api.job('j11', 0.01, max_fails=0, expect_invocations=1, expect_order=1)
-        api.job('j12_unstable', 0.01, max_fails=0, expect_invocations=1, expect_order=2, final_result='unstable', serial=True)
-        api.job('j13', 0.01, max_fails=0, expect_invocations=1, expect_order=3, serial=True)
+        api.job('j11', max_fails=0, expect_invocations=1, expect_order=1)
+        api.job('j12_unstable', max_fails=0, expect_invocations=1, expect_order=2, final_result='unstable', serial=True)
+        api.job('j13', max_fails=0, expect_invocations=1, expect_order=3, serial=True)
 
         with serial(api, timeout=70, job_name_prefix=api.job_name_prefix) as ctrl1:
             ctrl1.invoke('j11')
@@ -67,9 +67,9 @@ def test_propagate_unstable_parallel_toplevel(api_type, fake_java):
     with api_select.api(__file__, api_type, login=True) as api:
         pre_existing_fake_cli(api_type)
         api.flow_job()
-        api.job('j11', 0.01, max_fails=0, expect_invocations=1, expect_order=1)
-        api.job('j12_unstable', 0.01, max_fails=0, expect_invocations=1, expect_order=1, final_result='unstable')
-        api.job('j13', 0.01, max_fails=0, expect_invocations=1, expect_order=1)
+        api.job('j11', max_fails=0, expect_invocations=1, expect_order=1)
+        api.job('j12_unstable', max_fails=0, expect_invocations=1, expect_order=1, final_result='unstable')
+        api.job('j13', max_fails=0, expect_invocations=1, expect_order=1)
 
         with parallel(api, timeout=70, job_name_prefix=api.job_name_prefix) as ctrl1:
             ctrl1.invoke('j11')
@@ -83,10 +83,10 @@ def test_propagate_unstable_serial_inner(api_type, fake_java):
     with api_select.api(__file__, api_type, login=True) as api:
         pre_existing_fake_cli(api_type)
         api.flow_job()
-        api.job('j11', 0.01, max_fails=0, expect_invocations=1, expect_order=1)
-        api.job('j21', 0.01, max_fails=0, expect_invocations=1, expect_order=2, serial=True)
-        api.job('j22_unstable', 0.01, max_fails=0, expect_invocations=1, expect_order=3, final_result='unstable', serial=True)
-        api.job('j23', 0.01, max_fails=0, expect_invocations=1, expect_order=4, serial=True)
+        api.job('j11', max_fails=0, expect_invocations=1, expect_order=1)
+        api.job('j21', max_fails=0, expect_invocations=1, expect_order=2, serial=True)
+        api.job('j22_unstable', max_fails=0, expect_invocations=1, expect_order=3, final_result='unstable', serial=True)
+        api.job('j23', max_fails=0, expect_invocations=1, expect_order=4, serial=True)
 
         with serial(api, timeout=70, job_name_prefix=api.job_name_prefix) as ctrl1:
             ctrl1.invoke('j11')
@@ -103,10 +103,10 @@ def test_propagate_unstable_parallel_inner(api_type, fake_java):
     with api_select.api(__file__, api_type, login=True) as api:
         pre_existing_fake_cli(api_type)
         api.flow_job()
-        api.job('j11', 0.01, max_fails=0, expect_invocations=1, expect_order=1)
-        api.job('j21', 0.01, max_fails=0, expect_invocations=1, expect_order=2, serial=True)
-        api.job('j22_unstable', 0.01, max_fails=0, expect_invocations=1, expect_order=2, final_result='unstable')
-        api.job('j23', 0.01, max_fails=0, expect_invocations=1, expect_order=2)
+        api.job('j11', max_fails=0, expect_invocations=1, expect_order=1)
+        api.job('j21', max_fails=0, expect_invocations=1, expect_order=2, serial=True)
+        api.job('j22_unstable', max_fails=0, expect_invocations=1, expect_order=2, final_result='unstable')
+        api.job('j23', max_fails=0, expect_invocations=1, expect_order=2)
 
         with serial(api, timeout=70, job_name_prefix=api.job_name_prefix) as ctrl1:
             ctrl1.invoke('j11')
@@ -123,10 +123,10 @@ def test_propagate_unstable_serial_inner_fail_after(api_type, fake_java):
     with api_select.api(__file__, api_type, login=True) as api:
         pre_existing_fake_cli(api_type)
         api.flow_job()
-        api.job('j11', 0.01, max_fails=0, expect_invocations=1, expect_order=1)
-        api.job('j21', 0.01, max_fails=0, expect_invocations=1, expect_order=2)
-        api.job('j22_unstable', 0.01, max_fails=0, expect_invocations=1, expect_order=3, final_result='unstable')
-        api.job('j23_fail', 0.01, max_fails=1, expect_invocations=1, expect_order=4)
+        api.job('j11', max_fails=0, expect_invocations=1, expect_order=1)
+        api.job('j21', max_fails=0, expect_invocations=1, expect_order=2)
+        api.job('j22_unstable', max_fails=0, expect_invocations=1, expect_order=3, final_result='unstable')
+        api.job('j23_fail', max_fails=1, expect_invocations=1, expect_order=4)
 
         with raises(FailedChildJobException):
             with serial(api, timeout=70, job_name_prefix=api.job_name_prefix) as ctrl1:
@@ -141,10 +141,10 @@ def test_propagate_unstable_parallel_inner_fail_before(api_type, fake_java):
     with api_select.api(__file__, api_type, login=True) as api:
         pre_existing_fake_cli(api_type)
         api.flow_job()
-        api.job('j11', 0.01, max_fails=0, expect_invocations=1, expect_order=1)
-        api.job('j21_fail', 0.01, max_fails=1, expect_invocations=1, expect_order=2, serial=True)
-        api.job('j22_unstable', 0.01, max_fails=0, expect_invocations=1, expect_order=2, final_result='unstable')
-        api.job('j23', 0.01, max_fails=0, expect_invocations=1, expect_order=2)
+        api.job('j11', max_fails=0, expect_invocations=1, expect_order=1)
+        api.job('j21_fail', max_fails=1, expect_invocations=1, expect_order=2, serial=True)
+        api.job('j22_unstable', max_fails=0, expect_invocations=1, expect_order=2, final_result='unstable')
+        api.job('j23', max_fails=0, expect_invocations=1, expect_order=2)
 
         with raises(FailedChildJobException):
             with serial(api, timeout=70, job_name_prefix=api.job_name_prefix) as ctrl1:

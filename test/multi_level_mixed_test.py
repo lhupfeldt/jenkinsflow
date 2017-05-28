@@ -9,13 +9,13 @@ def test_multi_level_mixed(api_type):
     with api_select.api(__file__, api_type) as api:
         api.flow_job()
         _params = (('password', '', 'Some password'), ('s1', '', 'Some string argument'))
-        api.job('job-1', exec_time=0.01, max_fails=0, expect_invocations=1, expect_order=1, params=_params)
-        api.job('job-2', exec_time=0.01, max_fails=0, expect_invocations=1, expect_order=2, params=_params, serial=True)
-        api.job('job-3', exec_time=0.01, max_fails=0, expect_invocations=1, expect_order=3, params=_params)
-        api.job('job-4', exec_time=0.01, max_fails=0, expect_invocations=1, expect_order=3, params=_params)
-        api.job('job-5', exec_time=0.01, max_fails=0, expect_invocations=1, expect_order=3, params=_params)
-        api.job('job-6', exec_time=0.01, max_fails=0, expect_invocations=1, expect_order=4, params=_params)
-        api.job('job-7', exec_time=0.01, max_fails=0, expect_invocations=1, expect_order=5, params=_params, serial=True)
+        api.job('job-1', max_fails=0, expect_invocations=1, expect_order=1, params=_params)
+        api.job('job-2', max_fails=0, expect_invocations=1, expect_order=2, params=_params, serial=True)
+        api.job('job-3', max_fails=0, expect_invocations=1, expect_order=3, params=_params)
+        api.job('job-4', max_fails=0, expect_invocations=1, expect_order=3, params=_params)
+        api.job('job-5', max_fails=0, expect_invocations=1, expect_order=3, params=_params)
+        api.job('job-6', max_fails=0, expect_invocations=1, expect_order=4, params=_params)
+        api.job('job-7', max_fails=0, expect_invocations=1, expect_order=5, params=_params, serial=True)
 
         with serial(api, timeout=70, job_name_prefix=api.job_name_prefix, report_interval=1) as ctrl1:
             ctrl1.invoke('job-1', password='a', s1='b')

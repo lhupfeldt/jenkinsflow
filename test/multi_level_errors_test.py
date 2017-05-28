@@ -10,10 +10,10 @@ from .framework import api_select
 def test_multi_level_errors(api_type):
     with api_select.api(__file__, api_type) as api:
         api.flow_job()
-        api.job('wait2', 2, max_fails=0, expect_invocations=1, expect_order=1)
-        api.job('wait5', 5, max_fails=0, expect_invocations=1, expect_order=2)
-        api.job('quick_fail', 0.01, max_fails=1, expect_invocations=1, expect_order=2, params=(('s1', 'WORLD', 'desc'), ('c1', ('why', 'not'), 'desc')))
-        api.job('not_invoked', 0.01, max_fails=0, expect_invocations=0, expect_order=None)
+        api.job('wait2', max_fails=0, expect_invocations=1, expect_order=1, exec_time=2)
+        api.job('wait5', max_fails=0, expect_invocations=1, expect_order=2, exec_time=5)
+        api.job('quick_fail', max_fails=1, expect_invocations=1, expect_order=2, params=(('s1', 'WORLD', 'desc'), ('c1', ('why', 'not'), 'desc')))
+        api.job('not_invoked', max_fails=0, expect_invocations=0, expect_order=None)
 
         with raises(FailedChildJobException):
             with serial(api, timeout=70, job_name_prefix=api.job_name_prefix, report_interval=3) as ctrl1:

@@ -21,9 +21,9 @@ here = os.path.abspath(os.path.dirname(__file__))
 def test_abort(api_type, capsys):
     with api_select.api(__file__, api_type, login=True) as api:
         api.flow_job()
-        api.job('quick', exec_time=0.01, max_fails=0, expect_invocations=1, expect_order=1)
-        api.job('wait10_abort', exec_time=10, max_fails=0, expect_invocations=1, expect_order=1, final_result='ABORTED')
-        api.job('wait1_fail', exec_time=1, max_fails=1, expect_invocations=1, expect_order=1)
+        api.job('quick', max_fails=0, expect_invocations=1, expect_order=1)
+        api.job('wait10_abort', max_fails=0, expect_invocations=1, expect_order=1, exec_time=10, final_result='ABORTED')
+        api.job('wait1_fail', max_fails=1, expect_invocations=1, expect_order=1, exec_time=1)
 
         abort(api, 'wait10_abort', 2)
 

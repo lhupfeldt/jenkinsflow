@@ -44,7 +44,7 @@ def _assert_job(api, job_name, cleanup=False):
 def test_job_load_new_no_pre_delete(api_type):
     api = api_select.api(__file__, api_type, login=True)
     full_name, short_name = _random_job_name(api)
-    api.job(short_name, 1, 1, 1, 1, non_existing=True)
+    api.job(short_name, 1, 1, 1, exec_time=1, non_existing=True)
     jobload.update_job_from_template(api, full_name, api.job_xml_template, pre_delete=False, context=_context)
     _assert_job(api, full_name, cleanup=True)
 
@@ -52,7 +52,7 @@ def test_job_load_new_no_pre_delete(api_type):
 def test_job_load_new_pre_delete(api_type):
     api = api_select.api(__file__, api_type, login=True)
     full_name, short_name = _random_job_name(api)
-    api.job(short_name, 1, 1, 1, 1, non_existing=True)
+    api.job(short_name, 1, 1, 1, exec_time=1, non_existing=True)
     jobload.update_job_from_template(api, full_name, api.job_xml_template, pre_delete=True, context=_context)
     _assert_job(api, full_name, cleanup=True)
 
@@ -60,7 +60,7 @@ def test_job_load_new_pre_delete(api_type):
 def test_job_load_existing_pre_delete(api_type):
     api = api_select.api(__file__, api_type, login=True)
     full_name, short_name = _random_job_name(api)
-    api.job(short_name, 1, 1, 1, 1)
+    api.job(short_name, 1, 1, 1, exec_time=1)
     jobload.update_job_from_template(api, full_name, api.job_xml_template, pre_delete=True, context=_context)
     _assert_job(api, full_name, cleanup=False)
     jobload.update_job_from_template(api, full_name, api.job_xml_template, pre_delete=True, context=_context)
@@ -70,7 +70,7 @@ def test_job_load_existing_pre_delete(api_type):
 def test_job_load__existing_update(api_type):
     api = api_select.api(__file__, api_type, login=True)
     full_name, short_name = _random_job_name(api)
-    api.job(short_name, 1, 1, 1, 1)
+    api.job(short_name, 1, 1, 1, exec_time=1)
     jobload.update_job_from_template(api, full_name, api.job_xml_template, pre_delete=True, context=_context)
     _assert_job(api, full_name, cleanup=False)
     jobload.update_job_from_template(api, full_name, api.job_xml_template, pre_delete=False, context=_context)
@@ -80,5 +80,5 @@ def test_job_load__existing_update(api_type):
 def test_job_load_non_existing_pre_delete(api_type):
     api = api_select.api(__file__, api_type, login=True)
     full_name, short_name = _random_job_name(api)
-    api.job(short_name, 1, 1, 1, 1, non_existing=True)
+    api.job(short_name, 1, 1, 1, exec_time=1, non_existing=True)
     jobload.update_job_from_template(api, full_name, api.job_xml_template, pre_delete=True, context=_context)

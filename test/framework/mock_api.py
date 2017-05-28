@@ -25,12 +25,17 @@ class MockApi(TestJenkins, HyperSpeed):
         self.username = 'dummy'
         self.password = 'dummy'
 
-    def job(self, name, exec_time, max_fails, expect_invocations, expect_order, initial_buildno=None, invocation_delay=0.1, params=None,
+    def job(self, name, max_fails, expect_invocations, expect_order, exec_time=None, initial_buildno=None, invocation_delay=0.1, params=None,
             script=None, unknown_result=False, final_result=None, serial=False, print_env=False, flow_created=False, create_job=None,
             disappearing=False, non_existing=False, kill=False, num_builds_to_keep=4, allow_running=False, final_result_use_cli=False,
             set_build_descriptions=()):
         job_name = self.job_name_prefix + name
         assert not self.test_jobs.get(job_name)
+        assert isinstance(max_fails, int)
+        
+        if exec_time is None:
+            exec_time = 0.01
+
         job = MockJob(name=job_name, exec_time=exec_time, max_fails=max_fails, expect_invocations=expect_invocations, expect_order=expect_order,
                       initial_buildno=initial_buildno, invocation_delay=invocation_delay, unknown_result=unknown_result,
                       final_result=final_result, serial=serial, params=params, flow_created=flow_created, create_job=create_job,

@@ -13,8 +13,8 @@ from .framework.utils import lines_in, replace_host_port, result_msg, build_star
 def test_reporting_job_status(api_type, capsys):
     with api_select.api(__file__, api_type) as api:
         api.flow_job()
-        api.job('j11', 0.1, max_fails=0, expect_invocations=1, expect_order=1)
-        api.job('j12', 1.5, max_fails=0, expect_invocations=1, invocation_delay=1.0, initial_buildno=7, expect_order=2, serial=True)
+        api.job('j11', max_fails=0, expect_invocations=1, expect_order=1, exec_time=0.1)
+        api.job('j12', max_fails=0, expect_invocations=1, invocation_delay=1.0, exec_time=1.5, initial_buildno=7, expect_order=2, serial=True)
 
         with serial(api, timeout=70, job_name_prefix=api.job_name_prefix, report_interval=0.5/api.speedup) as ctrl1:
             ctrl1.invoke('j11')
@@ -38,8 +38,8 @@ def test_reporting_job_status(api_type, capsys):
 def test_reporting_invocation_serial(api_type, capsys):
     with api_select.api(__file__, api_type) as api:
         api.flow_job()
-        api.job('j11', 0.1, max_fails=0, expect_invocations=1, expect_order=1)
-        api.job('j12', 1.5, max_fails=0, expect_invocations=1, invocation_delay=1.0, initial_buildno=7, expect_order=2, serial=True)
+        api.job('j11', max_fails=0, expect_invocations=1, expect_order=1, exec_time=0.1)
+        api.job('j12', max_fails=0, expect_invocations=1, invocation_delay=1.0, exec_time=1.5, initial_buildno=7, expect_order=2, serial=True)
 
         with serial(api, timeout=70, job_name_prefix=api.job_name_prefix, report_interval=0.5/api.speedup) as ctrl1:
             ctrl1.invoke('j11')
@@ -65,8 +65,8 @@ def test_reporting_invocation_serial(api_type, capsys):
 def test_reporting_invocation_parallel(api_type, capsys):
     with api_select.api(__file__, api_type) as api:
         api.flow_job()
-        api.job('j11', 0.1, max_fails=0, expect_invocations=1, expect_order=1)
-        api.job('j12', 1.5, max_fails=0, expect_invocations=1, invocation_delay=1.0, initial_buildno=7, expect_order=2)
+        api.job('j11', max_fails=0, expect_invocations=1, expect_order=1, exec_time=0.1)
+        api.job('j12', max_fails=0, expect_invocations=1, invocation_delay=1.0, exec_time=1.5, initial_buildno=7, expect_order=2)
 
         with parallel(api, timeout=70, job_name_prefix=api.job_name_prefix, report_interval=0.5/api.speedup) as ctrl1:
             ctrl1.invoke('j11')
@@ -96,14 +96,14 @@ def test_reporting_invocation_parallel(api_type, capsys):
 def test_reporting_retry(api_type, capsys):
     with api_select.api(__file__, api_type) as api:
         api.flow_job()
-        api.job('j11_fail', 0.01, max_fails=1, expect_invocations=2, expect_order=1)
-        api.job('j12', 0.01, max_fails=0, expect_invocations=1, expect_order=2, serial=True)
-        api.job('j21', 0.01, max_fails=0, expect_invocations=1, expect_order=3, serial=True)
-        api.job('j22_fail', 0.01, max_fails=2, expect_invocations=3, expect_order=3)
-        api.job('j31_fail', 0.01, max_fails=3, expect_invocations=4, expect_order=3)
-        api.job('j32', 0.01, max_fails=0, expect_invocations=1, expect_order=3, serial=True)
-        api.job('j23', 0.01, max_fails=0, expect_invocations=1, expect_order=3)
-        api.job('j13', 0.01, max_fails=0, expect_invocations=1, expect_order=4, serial=True)
+        api.job('j11_fail', max_fails=1, expect_invocations=2, expect_order=1)
+        api.job('j12', max_fails=0, expect_invocations=1, expect_order=2, serial=True)
+        api.job('j21', max_fails=0, expect_invocations=1, expect_order=3, serial=True)
+        api.job('j22_fail', max_fails=2, expect_invocations=3, expect_order=3)
+        api.job('j31_fail', max_fails=3, expect_invocations=4, expect_order=3)
+        api.job('j32', max_fails=0, expect_invocations=1, expect_order=3, serial=True)
+        api.job('j23', max_fails=0, expect_invocations=1, expect_order=3)
+        api.job('j13', max_fails=0, expect_invocations=1, expect_order=4, serial=True)
 
         with serial(api, timeout=70, job_name_prefix=api.job_name_prefix, max_tries=2) as ctrl1:
             ctrl1.invoke('j11_fail')
@@ -165,15 +165,15 @@ def test_reporting_retry(api_type, capsys):
 def test_reporting_result_unchecked(api_type, capsys):
     with api_select.api(__file__, api_type, login=True) as api:
         api.flow_job()
-        api.job('j11', 0.1, max_fails=0, expect_invocations=1, expect_order=1)
-        api.job('j21_unchecked', 50, max_fails=0, expect_invocations=1, invocation_delay=0, initial_buildno=7, expect_order=None, unknown_result=True, serial=True)
-        api.job('j22', 1.5, max_fails=0, expect_invocations=1, invocation_delay=0, initial_buildno=7, expect_order=2)
-        api.job('j31', 1.5, max_fails=0, expect_invocations=1, invocation_delay=0, initial_buildno=7, expect_order=3)
-        api.job('j32_unchecked_fail', 1.5, max_fails=1, expect_invocations=1, invocation_delay=0, initial_buildno=7, expect_order=3)
-        api.job('j41', 1.5, max_fails=0, expect_invocations=1, invocation_delay=0, initial_buildno=7, expect_order=3)
-        api.job('j42_unchecked', 1.5, max_fails=0, expect_invocations=1, invocation_delay=0, initial_buildno=7, expect_order=3, serial=True)
-        api.job('j23', 1.5, max_fails=0, expect_invocations=1, invocation_delay=0, initial_buildno=7, expect_order=4)
-        api.job('j12', 5, max_fails=0, expect_invocations=1, invocation_delay=0, initial_buildno=7, expect_order=5)
+        api.job('j11', max_fails=0, expect_invocations=1, expect_order=1, exec_time=0.1)
+        api.job('j21_unchecked', max_fails=0, expect_invocations=1, invocation_delay=0, exec_time=50, initial_buildno=7, expect_order=None, unknown_result=True, serial=True)
+        api.job('j22', max_fails=0, expect_invocations=1, invocation_delay=0, exec_time=1.5, initial_buildno=7, expect_order=2)
+        api.job('j31', max_fails=0, expect_invocations=1, invocation_delay=0, exec_time=1.5, initial_buildno=7, expect_order=3)
+        api.job('j32_unchecked_fail', max_fails=1, expect_invocations=1, invocation_delay=0, exec_time=1.5, initial_buildno=7, expect_order=3)
+        api.job('j41', max_fails=0, expect_invocations=1, invocation_delay=0, exec_time=1.5, initial_buildno=7, expect_order=3)
+        api.job('j42_unchecked', max_fails=0, expect_invocations=1, invocation_delay=0, exec_time=1.5, initial_buildno=7, expect_order=3, serial=True)
+        api.job('j23', max_fails=0, expect_invocations=1, invocation_delay=0, exec_time=1.5, initial_buildno=7, expect_order=4)
+        api.job('j12', max_fails=0, expect_invocations=1, invocation_delay=0, exec_time=5, initial_buildno=7, expect_order=5)
 
         with serial(api, timeout=70, job_name_prefix=api.job_name_prefix, report_interval=0.5/api.speedup) as ctrl1:
             ctrl1.invoke('j11')
@@ -200,7 +200,7 @@ def test_reporting_result_unchecked(api_type, capsys):
 def test_reporting_defined_job_parameters(api_type, capsys):
     with api_select.api(__file__, api_type) as api:
         api.flow_job()
-        api.job('j1', 1.5, max_fails=0, expect_invocations=1, invocation_delay=1.0, initial_buildno=7, expect_order=1, serial=True,
+        api.job('j1', max_fails=0, expect_invocations=1, invocation_delay=1.0, exec_time=1.5, initial_buildno=7, expect_order=1, serial=True,
                 params=(('s1', '', 'desc'), ('c1', 'what', 'desc'), ('i1', 1, 'integer'), ('b1', False, 'boolean')))
 
         with serial(api, timeout=70, job_name_prefix=api.job_name_prefix, report_interval=0.5/api.speedup) as ctrl1:
@@ -235,7 +235,7 @@ Defined Job http://x.x/job/jenkinsflow_test__reporting_ordered_job_parameters__j
 def test_reporting_ordered_job_parameters(api_type, capsys):
     with api_select.api(__file__, api_type) as api:
         api.flow_job()
-        api.job('j1', 1.5, max_fails=0, expect_invocations=1, invocation_delay=1.0, initial_buildno=7, expect_order=1, serial=True,
+        api.job('j1', max_fails=0, expect_invocations=1, invocation_delay=1.0, exec_time=1.5, initial_buildno=7, expect_order=1, serial=True,
                 params=(('s1', '', 'desc'), ('c1', 'what', 'desc'), ('i1', 1, 'integer'), ('b1', False, 'boolean'), ('s2', 't', 'd'), ('s3', 't2', 'd2'),
                         ('unknown1', 'Hello', 'd'), ('aaa', 17, 'd'), ('unknown2', False, 'd')))
 

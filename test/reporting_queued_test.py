@@ -17,7 +17,7 @@ def test_reporting_queued(api_type, capsys):
         api.flow_job()
         exp_invocations = 2 if api.api_type not in skip_apis else 1
         unknown_result = False if api.api_type not in skip_apis else True
-        api.job('j1', exec_time=10, max_fails=0, expect_invocations=exp_invocations, expect_order=None, unknown_result=unknown_result)
+        api.job('j1', max_fails=0, expect_invocations=exp_invocations, expect_order=None, exec_time=10, unknown_result=unknown_result)
 
         with serial(api, timeout=70, job_name_prefix=api.job_name_prefix) as ctrl1:
             ctrl1.invoke_unchecked('j1')

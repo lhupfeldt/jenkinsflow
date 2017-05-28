@@ -12,12 +12,12 @@ from .framework.utils import lines_in
 def test_single_level_errors_parallel(api_type, capsys):
     with api_select.api(__file__, api_type) as api:
         api.flow_job()
-        api.job('quick', exec_time=0.01, max_fails=0, expect_invocations=1, expect_order=1, params=(('s1', '', 'desc'), ('c1', 'false', 'desc')))
-        api.job('quick_fail', exec_time=0.01, max_fails=1, expect_invocations=1, expect_order=1)
-        api.job('wait10', exec_time=10, max_fails=0, expect_invocations=1, expect_order=1)
-        api.job('wait10_fail', exec_time=10, max_fails=1, expect_invocations=1, expect_order=1)
-        api.job('wait5', exec_time=5, max_fails=0, expect_invocations=1, expect_order=1)
-        api.job('wait5_fail', exec_time=5, max_fails=1, expect_invocations=1, expect_order=1)
+        api.job('quick', max_fails=0, expect_invocations=1, expect_order=1, params=(('s1', '', 'desc'), ('c1', 'false', 'desc')))
+        api.job('quick_fail', max_fails=1, expect_invocations=1, expect_order=1)
+        api.job('wait10', max_fails=0, expect_invocations=1, expect_order=1, exec_time=10)
+        api.job('wait10_fail', max_fails=1, expect_invocations=1, expect_order=1, exec_time=10)
+        api.job('wait5', max_fails=0, expect_invocations=1, expect_order=1, exec_time=5)
+        api.job('wait5_fail', max_fails=1, expect_invocations=1, expect_order=1, exec_time=5)
 
         with raises(FailedChildJobsException) as exinfo:
             with parallel(api, timeout=40, job_name_prefix=api.job_name_prefix, report_interval=3) as ctrl:
@@ -41,9 +41,9 @@ def test_single_level_errors_parallel(api_type, capsys):
 
 def test_single_level_errors_serial(api_type):
     with api_select.api(__file__, api_type) as api:
-        api.job('quick', exec_time=0.01, max_fails=0, expect_invocations=1, expect_order=1, params=(('s1', '', 'desc'), ('c1', 'false', 'desc')))
-        api.job('quick_fail', exec_time=0.01, max_fails=1, expect_invocations=1, expect_order=2, serial=True)
-        api.job('wait5', exec_time=5, max_fails=0, expect_invocations=0, expect_order=None)
+        api.job('quick', max_fails=0, expect_invocations=1, expect_order=1, params=(('s1', '', 'desc'), ('c1', 'false', 'desc')))
+        api.job('quick_fail', max_fails=1, expect_invocations=1, expect_order=2, serial=True)
+        api.job('wait5', max_fails=0, expect_invocations=0, expect_order=None, exec_time=5)
 
         with raises(FailedChildJobException):
             with serial(api, timeout=20, job_name_prefix=api.job_name_prefix, report_interval=3) as ctrl:

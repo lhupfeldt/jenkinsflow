@@ -7,9 +7,9 @@ from .framework import api_select
 
 def test_single_level_serial(api_type):
     with api_select.api(__file__, api_type) as api:
-        api.job('quick', 0.01, max_fails=0, expect_invocations=1, expect_order=1, params=(('s1', 'Hi', 'desc'), ('c1', ('true', 'maybe', 'false'), 'desc')))
-        api.job('wait10', 10, max_fails=0, expect_invocations=1, expect_order=2, serial=True)
-        api.job('wait5', 5, max_fails=0, expect_invocations=1, expect_order=3, serial=True)
+        api.job('quick', max_fails=0, expect_invocations=1, expect_order=1, params=(('s1', 'Hi', 'desc'), ('c1', ('true', 'maybe', 'false'), 'desc')))
+        api.job('wait10', max_fails=0, expect_invocations=1, expect_order=2, exec_time=10, serial=True)
+        api.job('wait5', max_fails=0, expect_invocations=1, expect_order=3, exec_time=5, serial=True)
 
         with serial(api, timeout=40, job_name_prefix=api.job_name_prefix, report_interval=1) as ctrl:
             ctrl.invoke('quick', password='X', s1='HELLO', c1=True)
@@ -19,9 +19,9 @@ def test_single_level_serial(api_type):
 
 def test_single_level_parallel(api_type):
     with api_select.api(__file__, api_type) as api:
-        api.job('quick', 0.01, max_fails=0, expect_invocations=1, expect_order=1, params=(('s1', 'Hi', 'desc'), ('c1', ('true', 'maybe', 'false'), 'desc')))
-        api.job('wait10', 10, max_fails=0, expect_invocations=1, expect_order=1)
-        api.job('wait5', 5, max_fails=0, expect_invocations=1, expect_order=1)
+        api.job('quick', max_fails=0, expect_invocations=1, expect_order=1, params=(('s1', 'Hi', 'desc'), ('c1', ('true', 'maybe', 'false'), 'desc')))
+        api.job('wait10', max_fails=0, expect_invocations=1, expect_order=1, exec_time=10)
+        api.job('wait5', max_fails=0, expect_invocations=1, expect_order=1, exec_time=5)
 
         with parallel(api, timeout=20, job_name_prefix=api.job_name_prefix, report_interval=3) as ctrl:
             ctrl.invoke('quick', password='Y', s1='WORLD', c1='maybe')

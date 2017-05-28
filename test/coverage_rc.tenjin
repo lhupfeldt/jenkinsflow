@@ -1,6 +1,12 @@
 <?py from jenkinsflow.test.cfg import ApiType ?>
 <?py import os ?>
 [report]
+<?py if os.environ.get('CI', 'false').lower == 'true': ?>
+fail_under = 88
+<?py else: ?>
+fail_under = 88
+<?py #endif ?>
+
 exclude_lines =
     # Have to re-enable the standard pragma
     pragma: no cover

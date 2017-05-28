@@ -17,7 +17,7 @@ from .cfg import ApiType
 def test_unicode_auth_latin1(api_type):
     with api_select.api(__file__, api_type, username="jenkinsflow_authtest1", password=r'abcæøåÆØÅ') as api:
         api.flow_job()
-        api.job('j11', 0.01, max_fails=0, expect_invocations=1, invocation_delay=1.0, expect_order=1)
+        api.job('j11', max_fails=0, expect_invocations=1, invocation_delay=1.0, expect_order=1)
 
         with flow.serial(api, timeout=70, job_name_prefix=api.job_name_prefix) as ctrl1:
             ctrl1.invoke('j11')
@@ -28,7 +28,7 @@ def test_unicode_auth_utf8(api_type):
     pytest.xfail("BasicAuth does not support unicode")  # TODO, if that gets supported, then enable this
     with api_select.api(__file__, api_type, username="jenkinsflow_authtest2", password=u'æøå¶¹²³³¼¢⅝÷«') as api:
         api.flow_job()
-        api.job('j11', 0.01, max_fails=0, expect_invocations=1, invocation_delay=1.0, expect_order=1)
+        api.job('j11', max_fails=0, expect_invocations=1, invocation_delay=1.0, expect_order=1)
 
         with flow.serial(api, timeout=70, job_name_prefix=api.job_name_prefix) as ctrl1:
             ctrl1.invoke('j11')
@@ -40,7 +40,7 @@ def test_unicode_auth_ascii(api_type):
 
     with api_select.api(__file__, api_type, username=security.username, password=security.password) as api:
         api.flow_job()
-        api.job('j11', 0.01, max_fails=0, expect_invocations=1, invocation_delay=1.0, expect_order=1)
+        api.job('j11', max_fails=0, expect_invocations=1, invocation_delay=1.0, expect_order=1)
 
         with flow.serial(api, timeout=70, job_name_prefix=api.job_name_prefix) as ctrl1:
             ctrl1.invoke('j11')

@@ -119,15 +119,19 @@ class _TestWrapperApi(object):
                            set_build_descriptions=set_build_descriptions)
             update_job_from_template(self.job_loader_jenkins, name, self.job_xml_template, pre_delete=self.pre_delete_jobs, context=context)
 
-    def job(self, name, exec_time, max_fails, expect_invocations, expect_order, initial_buildno=None, invocation_delay=0.1, params=None,
+    def job(self, name, max_fails, expect_invocations, expect_order, exec_time=None, initial_buildno=None, invocation_delay=0.1, params=None,
             script=None, unknown_result=False, final_result=None, serial=False, print_env=False, flow_created=False, create_job=None, disappearing=False,
             non_existing=False, kill=False, num_builds_to_keep=4, allow_running=False, final_result_use_cli=False,
             set_build_descriptions=()):
         job_name = self.job_name_prefix + name
         assert not self.test_jobs.get(job_name)
+        assert isinstance(max_fails, int)
 
         if create_job or flow_created:
             assert self.using_job_creator
+
+        if exec_time is None:
+            exec_time = 0.01
 
         if max_fails > 0 or final_result:
             params = list(params) if params else []

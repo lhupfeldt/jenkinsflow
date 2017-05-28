@@ -13,11 +13,11 @@ from .framework.utils import lines_in, result_msg
 def test_messages(api_type, capsys):
     with api_select.api(__file__, api_type) as api:
         api.flow_job()
-        api.job('j11', 0.01, max_fails=0, expect_invocations=1, invocation_delay=1.0, expect_order=1, serial=True)
-        api.job('j21', 0.01, max_fails=0, expect_invocations=1, invocation_delay=1.0, expect_order=2, serial=True)
-        api.job('j12', 0.01, max_fails=0, expect_invocations=1, invocation_delay=1.0, expect_order=3, serial=True)
-        api.job('j22', 0.01, max_fails=0, expect_invocations=1, invocation_delay=1.0, expect_order=4)
-        api.job('j23', 2.00, max_fails=0, expect_invocations=1, invocation_delay=1.0, expect_order=4)
+        api.job('j11', max_fails=0, expect_invocations=1, invocation_delay=1.0, expect_order=1, serial=True)
+        api.job('j21', max_fails=0, expect_invocations=1, invocation_delay=1.0, expect_order=2, serial=True)
+        api.job('j12', max_fails=0, expect_invocations=1, invocation_delay=1.0, expect_order=3, serial=True)
+        api.job('j22', max_fails=0, expect_invocations=1, invocation_delay=1.0, expect_order=4)
+        api.job('j23', max_fails=0, expect_invocations=1, invocation_delay=1.0, exec_time=2.00, expect_order=4)
 
         with serial(api, timeout=70, job_name_prefix=api.job_name_prefix) as ctrl1:
             ctrl1.invoke('j11')
@@ -59,8 +59,8 @@ def test_messages(api_type, capsys):
 def test_messages_on_job(api_type, capsys):
     with api_select.api(__file__, api_type) as api:
         api.flow_job()
-        api.job('j21', 0.01, max_fails=0, expect_invocations=1, invocation_delay=1.0, expect_order=1, serial=True)
-        api.job('j12', 0.01, max_fails=0, expect_invocations=1, invocation_delay=1.0, expect_order=2, serial=True)
+        api.job('j21', max_fails=0, expect_invocations=1, invocation_delay=1.0, expect_order=1, serial=True)
+        api.job('j12', max_fails=0, expect_invocations=1, invocation_delay=1.0, expect_order=2, serial=True)
 
         with serial(api, timeout=70, job_name_prefix=api.job_name_prefix) as ctrl1:
             with ctrl1.serial() as sctrl2:
@@ -87,8 +87,8 @@ def test_messages_on_job(api_type, capsys):
 def test_messages_redefined(api_type):
     with api_select.api(__file__, api_type) as api:
         api.flow_job()
-        api.job('j11', 0.01, max_fails=0, expect_invocations=0, invocation_delay=1.0, expect_order=None)
-        api.job('j21', 0.01, max_fails=0, expect_invocations=0, invocation_delay=1.0, expect_order=None)
+        api.job('j11', max_fails=0, expect_invocations=0, invocation_delay=1.0, expect_order=None)
+        api.job('j21', max_fails=0, expect_invocations=0, invocation_delay=1.0, expect_order=None)
 
         with raises(MessageRedefinedException) as exinfo:
             with serial(api, timeout=70, job_name_prefix=api.job_name_prefix) as ctrl1:

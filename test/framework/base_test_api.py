@@ -123,7 +123,7 @@ class TestJenkins(AbstractApiJenkins):
         self.test_jobs = OrderedDict()
 
     @abc.abstractmethod
-    def job(self, name, exec_time, max_fails, expect_invocations, expect_order, initial_buildno=None, invocation_delay=0.1, params=None,
+    def job(self, name, max_fails, expect_invocations, expect_order, exec_time=None, initial_buildno=None, invocation_delay=0.1, params=None,
             script=None, unknown_result=False, final_result=None, serial=False, print_env=False, flow_created=False, create_job=None, disappearing=False,
             non_existing=False, kill=False, num_builds_to_keep=4, allow_running=False):
         """Create a job with corresponding test metadata.

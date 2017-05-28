@@ -94,7 +94,7 @@ def test_set_build_result_no_cli_jar(api_type, fake_java, env_base_url, capfd):
     with api_select.api(__file__, api_type, fake_public_uri=test_cfg.direct_url(api_type)) as api:
         no_pre_existing_cli_jar(api_type)
         api.flow_job()
-        api.job('j1_fail', exec_time=0.01, max_fails=1, expect_invocations=1, expect_order=1)
+        api.job('j1_fail', max_fails=1, expect_invocations=1, expect_order=1)
 
         with serial(api, timeout=70, username=username, password=password, job_name_prefix=api.job_name_prefix, report_interval=3,
                     propagation=Propagation.FAILURE_TO_UNSTABLE) as ctrl1:
@@ -118,7 +118,7 @@ def test_set_build_result_no_cli_jar_env_base_url_trailing_slash(api_type, fake_
     with api_select.api(__file__, api_type, fake_public_uri=test_cfg.direct_url(api_type) + '/') as api:
         no_pre_existing_cli_jar(api_type)
         api.flow_job()
-        api.job('j1_fail', exec_time=0.01, max_fails=1, expect_invocations=1, expect_order=1)
+        api.job('j1_fail', max_fails=1, expect_invocations=1, expect_order=1)
 
         with serial(api, timeout=70, username=username, password=password, job_name_prefix=api.job_name_prefix, report_interval=3,
                     propagation=Propagation.FAILURE_TO_UNSTABLE) as ctrl1:
@@ -142,7 +142,7 @@ def test_set_build_result_no_cli_jar_env_base_url_trailing_slashes(api_type, fak
     with api_select.api(__file__, api_type, fake_public_uri=test_cfg.direct_url(api_type) + '//') as api:
         no_pre_existing_cli_jar(api_type)
         api.flow_job()
-        api.job('j1_fail', exec_time=0.01, max_fails=1, expect_invocations=1, expect_order=1)
+        api.job('j1_fail', max_fails=1, expect_invocations=1, expect_order=1)
 
         with serial(api, timeout=70, username=username, password=password, job_name_prefix=api.job_name_prefix, report_interval=3,
                     propagation=Propagation.FAILURE_TO_UNSTABLE) as ctrl1:
@@ -166,7 +166,7 @@ def test_set_build_result(api_type, fake_java):
     with api_select.api(__file__, api_type) as api:
         pre_existing_cli_jar(api_type)
         api.flow_job()
-        api.job('j1_fail', exec_time=0.01, max_fails=1, expect_invocations=1, expect_order=1)
+        api.job('j1_fail', max_fails=1, expect_invocations=1, expect_order=1)
 
         with serial(api, timeout=70, username=username, password=password, job_name_prefix=api.job_name_prefix, report_interval=3,
                     propagation=Propagation.FAILURE_TO_UNSTABLE) as ctrl1:
@@ -178,7 +178,7 @@ def test_set_build_result_direct_url(api_type, fake_java):
     with api_select.api(__file__, api_type) as api:
         pre_existing_cli_jar(api_type)
         api.flow_job()
-        api.job('j1_fail', exec_time=0.01, max_fails=1, expect_invocations=1, expect_order=1)
+        api.job('j1_fail', max_fails=1, expect_invocations=1, expect_order=1)
 
         with serial(api, timeout=70, username=username, password=password, job_name_prefix=api.job_name_prefix, report_interval=3,
                     propagation=Propagation.FAILURE_TO_UNSTABLE, direct_url=test_cfg.direct_url(api_type)) as ctrl1:
@@ -190,7 +190,7 @@ def test_set_build_result_no_cli_jar_env_base_url_eq_direct_url(api_type, fake_j
     with api_select.api(__file__, api_type, fake_public_uri=test_cfg.direct_url(api_type)) as api:
         no_pre_existing_cli_jar(api_type)
         api.flow_job()
-        api.job('j1_fail', exec_time=0.01, max_fails=1, expect_invocations=1, expect_order=1)
+        api.job('j1_fail', max_fails=1, expect_invocations=1, expect_order=1)
 
         with serial(api, timeout=70, username=username, password=password, job_name_prefix=api.job_name_prefix, report_interval=3,
                     propagation=Propagation.FAILURE_TO_UNSTABLE, direct_url=test_cfg.public_url(api_type)) as ctrl1:
@@ -215,7 +215,7 @@ def test_set_build_result_direct_url_trailing_slash(api_type, fake_java, env_bas
     with api_select.api(__file__, api_type) as api:
         pre_existing_cli_jar(api_type)
         api.flow_job()
-        api.job('j1_fail', exec_time=0.01, max_fails=1, expect_invocations=1, expect_order=1)
+        api.job('j1_fail', max_fails=1, expect_invocations=1, expect_order=1)
 
         with serial(api, timeout=70, username=username, password=password, job_name_prefix=api.job_name_prefix, report_interval=3,
                     propagation=Propagation.FAILURE_TO_UNSTABLE, direct_url=test_cfg.direct_url(api_type) + '/') as ctrl1:
@@ -233,7 +233,7 @@ def test_set_build_result_direct_url_different_from_proxied_url(api_type, fake_j
     with api_select.api(__file__, api_type, fake_public_uri=test_cfg.proxied_public_url) as api:
         no_pre_existing_cli_jar(api_type)
         api.flow_job()
-        api.job('j1_fail', exec_time=0.01, max_fails=1, expect_invocations=1, expect_order=1)
+        api.job('j1_fail', max_fails=1, expect_invocations=1, expect_order=1)
 
         with serial(api, timeout=70, username=username, password=password, job_name_prefix=api.job_name_prefix, report_interval=3,
                     propagation=Propagation.FAILURE_TO_UNSTABLE, direct_url=test_cfg.direct_url(api_type) + '/') as ctrl1:
@@ -256,7 +256,7 @@ def test_set_build_result_no_auth(api_type, fake_java, env_base_url):
     with api_select.api(__file__, api_type) as api:
         pre_existing_cli_jar(api_type)
         api.flow_job()
-        api.job('j1_fail', exec_time=0.01, max_fails=1, expect_invocations=1, expect_order=1)
+        api.job('j1_fail', max_fails=1, expect_invocations=1, expect_order=1)
 
         with serial(api, timeout=70, job_name_prefix=api.job_name_prefix, report_interval=3, propagation=Propagation.FAILURE_TO_UNSTABLE) as ctrl1:
             ctrl1.invoke('j1_fail')
@@ -266,7 +266,7 @@ def test_set_build_result_no_auth(api_type, fake_java, env_base_url):
 def test_set_build_result_unstable_script_api(api_type):
     with api_select.api(__file__, api_type) as api:
         api.flow_job()
-        api.job('j11_unstable', 0.01, max_fails=0, expect_invocations=1, expect_order=1, final_result='UNSTABLE', final_result_use_cli=True)
+        api.job('j11_unstable', max_fails=0, expect_invocations=1, expect_order=1, final_result='UNSTABLE', final_result_use_cli=True)
 
         with serial(api, timeout=70, job_name_prefix=api.job_name_prefix) as ctrl1:
             ctrl1.invoke('j11_unstable')

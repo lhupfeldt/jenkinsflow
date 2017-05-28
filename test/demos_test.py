@@ -32,7 +32,7 @@ def _test_demo(demo, api_type):
     load_demo_jobs(demo, api_type)
 
     with api_select.api(__file__, api_type, fixed_prefix="jenkinsflow_demo__") as api:
-        api.job(demo.__name__ + "__0flow", 0.01, max_fails=0, expect_invocations=1, expect_order=1)
+        api.job(demo.__name__ + "__0flow", max_fails=0, expect_invocations=1, expect_order=1)
 
         with parallel(api, timeout=70, job_name_prefix=api.job_name_prefix) as ctrl1:
             ctrl1.invoke(demo.__name__ + "__0flow")
@@ -64,7 +64,7 @@ def test_demos_with_errors(api_type):
     load_demo_jobs(demo, api_type)
 
     with api_select.api(__file__, api_type, fixed_prefix="jenkinsflow_demo__") as api:
-        api.job(demo.__name__ + "__0flow", 0.01, max_fails=1, expect_invocations=1, expect_order=1)
+        api.job(demo.__name__ + "__0flow", max_fails=1, expect_invocations=1, expect_order=1)
 
         with raises(JobControlFailException):
             with parallel(api, timeout=70, job_name_prefix=api.job_name_prefix) as ctrl1:

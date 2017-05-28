@@ -9,8 +9,8 @@ from .framework import api_select
 
 def test_timeout_top_level_serial(api_type):
     with api_select.api(__file__, api_type, login=True) as api:
-        api.job('quick', exec_time=0.01, max_fails=0, expect_invocations=1, expect_order=None, params=(('s1', '', 'desc'), ('c1', 'false', 'desc')))
-        api.job('wait20', exec_time=20, max_fails=0, expect_invocations=1, expect_order=None, unknown_result=True, serial=True)
+        api.job('quick', max_fails=0, expect_invocations=1, expect_order=None, params=(('s1', '', 'desc'), ('c1', 'false', 'desc')))
+        api.job('wait20', max_fails=0, expect_invocations=1, expect_order=None, exec_time=20, unknown_result=True, serial=True)
 
         with raises(FlowTimeoutException):
             with serial(api, timeout=8, job_name_prefix=api.job_name_prefix, report_interval=3) as ctrl:
@@ -20,8 +20,8 @@ def test_timeout_top_level_serial(api_type):
 
 def test_timeout_top_level_parallel(api_type):
     with api_select.api(__file__, api_type, login=True) as api:
-        api.job('quick', exec_time=0.01, max_fails=0, expect_invocations=1, expect_order=None, params=(('s1', '', 'desc'), ('c1', 'false', 'desc')))
-        api.job('wait20', exec_time=20, max_fails=0, expect_invocations=1, expect_order=None, unknown_result=True)
+        api.job('quick', max_fails=0, expect_invocations=1, expect_order=None, params=(('s1', '', 'desc'), ('c1', 'false', 'desc')))
+        api.job('wait20', max_fails=0, expect_invocations=1, expect_order=None, exec_time=20, unknown_result=True)
 
         with raises(FlowTimeoutException):
             with parallel(api, timeout=8, job_name_prefix=api.job_name_prefix, report_interval=3) as ctrl:
@@ -31,9 +31,9 @@ def test_timeout_top_level_parallel(api_type):
 
 def test_timeout_inner_level_serial(api_type):
     with api_select.api(__file__, api_type, login=True) as api:
-        api.job('quick11', exec_time=0.01, max_fails=0, expect_invocations=1, expect_order=None)
-        api.job('quick21', exec_time=0.01, max_fails=0, expect_invocations=1, expect_order=None)
-        api.job('wait20', exec_time=20, max_fails=0, expect_invocations=1, expect_order=None, unknown_result=True, serial=True)
+        api.job('quick11', max_fails=0, expect_invocations=1, expect_order=None)
+        api.job('quick21', max_fails=0, expect_invocations=1, expect_order=None)
+        api.job('wait20', max_fails=0, expect_invocations=1, expect_order=None, exec_time=20, unknown_result=True, serial=True)
 
         with raises(FlowTimeoutException) as exinfo:
             with parallel(api, timeout=3000, job_name_prefix=api.job_name_prefix, report_interval=3) as ctrl1:
@@ -49,9 +49,9 @@ def test_timeout_inner_level_serial(api_type):
 
 def test_timeout_inner_level_parallel(api_type):
     with api_select.api(__file__, api_type, login=True) as api:
-        api.job('quick11', exec_time=0.01, max_fails=0, expect_invocations=1, expect_order=None)
-        api.job('quick21', exec_time=0.01, max_fails=0, expect_invocations=1, expect_order=None)
-        api.job('wait20', exec_time=30, max_fails=0, expect_invocations=1, expect_order=None, unknown_result=True)
+        api.job('quick11', max_fails=0, expect_invocations=1, expect_order=None)
+        api.job('quick21', max_fails=0, expect_invocations=1, expect_order=None)
+        api.job('wait20', max_fails=0, expect_invocations=1, expect_order=None, exec_time=30, unknown_result=True)
 
         with raises(FlowTimeoutException) as exinfo:
             with serial(api, timeout=3000, job_name_prefix=api.job_name_prefix, report_interval=3) as ctrl1:
@@ -66,10 +66,10 @@ def test_timeout_inner_level_parallel(api_type):
 
 def test_timeout_multi_level_mix(api_type):
     with api_select.api(__file__, api_type, login=True) as api:
-        api.job('quick11', exec_time=0.01, max_fails=0, expect_invocations=1, expect_order=None)
-        api.job('quick21', exec_time=0.01, max_fails=0, expect_invocations=1, expect_order=None)
-        api.job('wait20_22', exec_time=30, max_fails=0, expect_invocations=1, expect_order=None, unknown_result=True)
-        api.job('wait20_31', exec_time=30, max_fails=0, expect_invocations=1, expect_order=None, unknown_result=True)
+        api.job('quick11', max_fails=0, expect_invocations=1, expect_order=None)
+        api.job('quick21', max_fails=0, expect_invocations=1, expect_order=None)
+        api.job('wait20_22', max_fails=0, expect_invocations=1, expect_order=None, exec_time=30, unknown_result=True)
+        api.job('wait20_31', max_fails=0, expect_invocations=1, expect_order=None, exec_time=30, unknown_result=True)
 
         with raises(FlowTimeoutException) as exinfo:
             with serial(api, timeout=3000, job_name_prefix=api.job_name_prefix, report_interval=3) as ctrl1:

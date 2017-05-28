@@ -39,11 +39,11 @@ def _flow(api, json_dir):
 def test_just_dump_no_json(api_type):
     with api_select.api(__file__, api_type, login=True) as api:
         api.flow_job()
-        api.job('j1', exec_time=0.01, max_fails=0, expect_invocations=0, expect_order=None)
-        api.job('j2', exec_time=0.01, max_fails=0, expect_invocations=0, expect_order=None)
-        api.job('j3_unchecked', exec_time=40, max_fails=0, expect_invocations=0, expect_order=None)
-        api.job('j4', exec_time=5, max_fails=0, expect_invocations=0, expect_order=None)
-        api.job('j5', exec_time=5, max_fails=0, expect_invocations=0, expect_order=None)
+        api.job('j1', max_fails=0, expect_invocations=0, expect_order=None)
+        api.job('j2', max_fails=0, expect_invocations=0, expect_order=None)
+        api.job('j3_unchecked', max_fails=0, expect_invocations=0, expect_order=None, exec_time=40)
+        api.job('j4', max_fails=0, expect_invocations=0, expect_order=None, exec_time=5)
+        api.job('j5', max_fails=0, expect_invocations=0, expect_order=None, exec_time=5)
 
         _flow(api, None)
 
@@ -51,11 +51,11 @@ def test_just_dump_no_json(api_type):
 def test_just_dump_with_json(api_type):
     with api_select.api(__file__, api_type, login=True) as api:
         flow_name = api.flow_job()
-        api.job('j1', exec_time=0.01, max_fails=0, expect_invocations=0, expect_order=None)
-        api.job('j2', exec_time=0.01, max_fails=0, expect_invocations=0, expect_order=None)
-        api.job('j3_unchecked', exec_time=40, max_fails=0, expect_invocations=0, expect_order=None)
-        api.job('j4', exec_time=5, max_fails=0, expect_invocations=0, expect_order=None)
-        api.job('j5', exec_time=5, max_fails=0, expect_invocations=0, expect_order=None)
+        api.job('j1', max_fails=0, expect_invocations=0, expect_order=None)
+        api.job('j2', max_fails=0, expect_invocations=0, expect_order=None)
+        api.job('j3_unchecked', max_fails=0, expect_invocations=0, expect_order=None, exec_time=40)
+        api.job('j4', max_fails=0, expect_invocations=0, expect_order=None, exec_time=5)
+        api.job('j5', max_fails=0, expect_invocations=0, expect_order=None, exec_time=5)
 
         fgd = flow_graph_dir(flow_name)
         ctrl1 = _flow(api, fgd)

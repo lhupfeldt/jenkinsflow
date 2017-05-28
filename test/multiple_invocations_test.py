@@ -16,7 +16,7 @@ def test_multiple_invocations_serial_same_flow(api_type):
     with api_select.api(__file__, api_type) as api:
         api.flow_job()
         _params = (('password', '', 'Some password'), ('s1', '', 'Some string argument'))
-        api.job('j1', exec_time=0.01, max_fails=0, expect_invocations=2, expect_order=1, params=_params)
+        api.job('j1', max_fails=0, expect_invocations=2, expect_order=1, params=_params)
 
         with serial(api, timeout=70, job_name_prefix=api.job_name_prefix, report_interval=1) as ctrl1:
             ctrl1.invoke('j1', password='a', s1='b')
@@ -27,7 +27,7 @@ def test_multiple_invocations_serial_same_flow_same_args(api_type):
     with api_select.api(__file__, api_type) as api:
         api.flow_job()
         _params = (('password', '', 'Some password'), ('s1', '', 'Some string argument'))
-        api.job('j1', exec_time=0.01, max_fails=0, expect_invocations=2, expect_order=1, params=_params)
+        api.job('j1', max_fails=0, expect_invocations=2, expect_order=1, params=_params)
 
         with serial(api, timeout=70, job_name_prefix=api.job_name_prefix, report_interval=1) as ctrl1:
             ctrl1.invoke('j1', password='a', s1='b')
@@ -38,7 +38,7 @@ def test_multiple_invocations_new_flow(api_type):
     with api_select.api(__file__, api_type) as api:
         api.flow_job()
         _params = (('password', '', 'Some password'), ('s1', '', 'Some string argument'))
-        api.job('j1', exec_time=0.01, max_fails=0, expect_invocations=2, expect_order=1, params=_params)
+        api.job('j1', max_fails=0, expect_invocations=2, expect_order=1, params=_params)
 
         with serial(api, timeout=70, job_name_prefix=api.job_name_prefix, report_interval=1) as ctrl1:
             ctrl1.invoke('j1', password='a', s1='b')
@@ -51,7 +51,7 @@ def test_multiple_invocations_new_flow_same_args(api_type):
     with api_select.api(__file__, api_type) as api:
         api.flow_job()
         _params = (('password', '', 'Some password'), ('s1', '', 'Some string argument'))
-        api.job('j1', exec_time=0.01, max_fails=0, expect_invocations=2, expect_order=1, params=_params)
+        api.job('j1', max_fails=0, expect_invocations=2, expect_order=1, params=_params)
 
         with serial(api, timeout=70, job_name_prefix=api.job_name_prefix, report_interval=1) as ctrl1:
             ctrl1.invoke('j1', password='a', s1='b')
@@ -70,7 +70,7 @@ def test_multiple_invocations_parallel_same_flow_queued(api_type, capsys):
 
         api.flow_job()
         _params = (('password', '', 'Some password'), ('s1', '', 'Some string argument'))
-        api.job('j1', exec_time=3, max_fails=0, expect_invocations=3, expect_order=1, params=_params)
+        api.job('j1', max_fails=0, expect_invocations=3, expect_order=1, exec_time=3, params=_params)
 
         with parallel(api, timeout=70, job_name_prefix=api.job_name_prefix, report_interval=1) as ctrl1:
             ctrl1.invoke('j1', password='a', s1='invocation1')
@@ -122,7 +122,7 @@ def test_multiple_invocations_parallel_same_flow_no_args_singlequeued(api_type, 
 
         api.flow_job()
         num_j1_invocations = 20
-        api.job('j1', exec_time=3, max_fails=0, expect_invocations=num_j1_invocations, expect_order=1)
+        api.job('j1', max_fails=0, expect_invocations=num_j1_invocations, expect_order=1, exec_time=3)
 
         with parallel(api, timeout=70, job_name_prefix=api.job_name_prefix, report_interval=1) as ctrl1:
             for _ in range(0, num_j1_invocations):

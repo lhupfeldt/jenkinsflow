@@ -24,8 +24,8 @@ def test_empty_flow_top_level_parallel(api_type):
 def test_empty_flow_serial_parallel(api_type):
     with api_select.api(__file__, api_type) as api:
         api.flow_job()
-        api.job('j1', exec_time=0.01, max_fails=0, expect_invocations=1, expect_order=1)
-        api.job('j2', exec_time=0.01, max_fails=0, expect_invocations=1, expect_order=2, serial=True)
+        api.job('j1', max_fails=0, expect_invocations=1, expect_order=1)
+        api.job('j2', max_fails=0, expect_invocations=1, expect_order=2, serial=True)
 
         with serial(api, timeout=70, job_name_prefix=api.job_name_prefix, report_interval=1) as ctrl1:
             ctrl1.invoke('j1')
@@ -37,8 +37,8 @@ def test_empty_flow_serial_parallel(api_type):
 def test_empty_flow_parallel_serial(api_type):
     with api_select.api(__file__, api_type) as api:
         api.flow_job()
-        api.job('j1', exec_time=0.01, max_fails=0, expect_invocations=1, expect_order=1)
-        api.job('j2', exec_time=0.01, max_fails=0, expect_invocations=1, expect_order=1)
+        api.job('j1', max_fails=0, expect_invocations=1, expect_order=1)
+        api.job('j2', max_fails=0, expect_invocations=1, expect_order=1)
 
         with parallel(api, timeout=70, job_name_prefix=api.job_name_prefix, report_interval=1) as ctrl1:
             ctrl1.invoke('j1')
@@ -50,10 +50,10 @@ def test_empty_flow_parallel_serial(api_type):
 def test_empty_flow_mix(api_type):
     with api_select.api(__file__, api_type) as api:
         api.flow_job()
-        api.job('j11', exec_time=0.01, max_fails=0, expect_invocations=1, expect_order=1)
-        api.job('j31', exec_time=0.01, max_fails=0, expect_invocations=1, expect_order=2)
-        api.job('j32', exec_time=0.01, max_fails=0, expect_invocations=1, expect_order=3, serial=True)
-        api.job('j12', exec_time=0.01, max_fails=0, expect_invocations=1, expect_order=4, serial=True)
+        api.job('j11', max_fails=0, expect_invocations=1, expect_order=1)
+        api.job('j31', max_fails=0, expect_invocations=1, expect_order=2)
+        api.job('j32', max_fails=0, expect_invocations=1, expect_order=3, serial=True)
+        api.job('j12', max_fails=0, expect_invocations=1, expect_order=4, serial=True)
 
         with serial(api, timeout=70, job_name_prefix=api.job_name_prefix, report_interval=1) as ctrl1:
             ctrl1.invoke('j11')
