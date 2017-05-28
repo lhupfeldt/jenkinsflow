@@ -9,3 +9,6 @@ os:
   - linux
 install:
   - pip install tox-travis
+env:
+  global:
+    - CI=true
