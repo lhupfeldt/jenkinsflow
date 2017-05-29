@@ -13,7 +13,7 @@ from .framework.utils import lines_in, replace_host_port, result_msg, build_star
 def test_reporting_job_status(api_type, capsys):
     with api_select.api(__file__, api_type) as api:
         api.flow_job()
-        api.job('j11', max_fails=0, expect_invocations=1, expect_order=1, exec_time=0.1)
+        api.job('j11', max_fails=0, expect_invocations=1, expect_order=1)
         api.job('j12', max_fails=0, expect_invocations=1, invocation_delay=1.0, exec_time=1.5, initial_buildno=7, expect_order=2, serial=True)
 
         with serial(api, timeout=70, job_name_prefix=api.job_name_prefix, report_interval=0.5/api.speedup) as ctrl1:
@@ -38,7 +38,7 @@ def test_reporting_job_status(api_type, capsys):
 def test_reporting_invocation_serial(api_type, capsys):
     with api_select.api(__file__, api_type) as api:
         api.flow_job()
-        api.job('j11', max_fails=0, expect_invocations=1, expect_order=1, exec_time=0.1)
+        api.job('j11', max_fails=0, expect_invocations=1, expect_order=1)
         api.job('j12', max_fails=0, expect_invocations=1, invocation_delay=1.0, exec_time=1.5, initial_buildno=7, expect_order=2, serial=True)
 
         with serial(api, timeout=70, job_name_prefix=api.job_name_prefix, report_interval=0.5/api.speedup) as ctrl1:
@@ -65,7 +65,7 @@ def test_reporting_invocation_serial(api_type, capsys):
 def test_reporting_invocation_parallel(api_type, capsys):
     with api_select.api(__file__, api_type) as api:
         api.flow_job()
-        api.job('j11', max_fails=0, expect_invocations=1, expect_order=1, exec_time=0.1)
+        api.job('j11', max_fails=0, expect_invocations=1, expect_order=1)
         api.job('j12', max_fails=0, expect_invocations=1, invocation_delay=1.0, exec_time=1.5, initial_buildno=7, expect_order=2)
 
         with parallel(api, timeout=70, job_name_prefix=api.job_name_prefix, report_interval=0.5/api.speedup) as ctrl1:
@@ -165,7 +165,7 @@ def test_reporting_retry(api_type, capsys):
 def test_reporting_result_unchecked(api_type, capsys):
     with api_select.api(__file__, api_type, login=True) as api:
         api.flow_job()
-        api.job('j11', max_fails=0, expect_invocations=1, expect_order=1, exec_time=0.1)
+        api.job('j11', max_fails=0, expect_invocations=1, expect_order=1)
         api.job('j21_unchecked', max_fails=0, expect_invocations=1, invocation_delay=0, exec_time=50, initial_buildno=7, expect_order=None, unknown_result=True, serial=True)
         api.job('j22', max_fails=0, expect_invocations=1, invocation_delay=0, exec_time=1.5, initial_buildno=7, expect_order=2)
         api.job('j31', max_fails=0, expect_invocations=1, invocation_delay=0, exec_time=1.5, initial_buildno=7, expect_order=3)

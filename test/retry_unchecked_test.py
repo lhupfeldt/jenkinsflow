@@ -56,7 +56,7 @@ def test_retry_unchecked_quick_serial_toplevel(api_type):
 def test_retry_unchecked_quick_parallel_toplevel(api_type):
     with api_select.api(__file__, api_type, login=True) as api:
         api.flow_job()
-        api.job('j11_unchecked', max_fails=1, expect_invocations=2, expect_order=1, exec_time=0.1)
+        api.job('j11_unchecked', max_fails=1, expect_invocations=2, expect_order=1)
         api.job('j12_fail', max_fails=1, expect_invocations=2, expect_order=1, exec_time=1)
         api.job('j13', max_fails=0, expect_invocations=1, expect_order=1)
 
@@ -83,7 +83,7 @@ def test_retry_unchecked_quick_serial_outer_level(api_type):
 def test_retry_unchecked_quick_parallel_outer_level(api_type):
     with api_select.api(__file__, api_type, login=True) as api:
         api.flow_job()
-        api.job('j11_unchecked', max_fails=2, expect_invocations=3, expect_order=1, exec_time=0.1)
+        api.job('j11_unchecked', max_fails=2, expect_invocations=3, expect_order=1)
         api.job('j12_fail', max_fails=2, expect_invocations=3, expect_order=1, exec_time=1)
         api.job('j13', max_fails=0, expect_invocations=1, expect_order=1)
 

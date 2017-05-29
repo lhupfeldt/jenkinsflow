@@ -20,7 +20,7 @@ def _abort(test_file_name, api_type, fixed_prefix, job_name, sleep_time):
     print("args:", test_file_name, fixed_prefix, job_name, sleep_time)
     time.sleep(sleep_time)
     with api_select.api(test_file_name, api_type, fixed_prefix='jenkinsflow_test__' + fixed_prefix + '__', login=True) as api:
-        api.job(job_name, exec_time=0.1, max_fails=0, expect_invocations=0, expect_order=None)
+        api.job(job_name, max_fails=0, expect_invocations=0, expect_order=None)
     api.poll()
     api.quick_poll()
 

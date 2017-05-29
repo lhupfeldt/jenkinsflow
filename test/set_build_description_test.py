@@ -156,7 +156,7 @@ def test_set_build_description_utils_from_inside_job_1(api_type):
     with api_select.api(__file__, api_type, login=True) as api:
         api.flow_job()
         job_name = 'job-1'
-        api.job(job_name, max_fails=0, expect_invocations=1, expect_order=1, exec_time=0.01,
+        api.job(job_name, max_fails=0, expect_invocations=1, expect_order=1,
                 set_build_descriptions=(('BBB1', False, '\\n'), ('BBB2', False, '\\n')))
 
         # Need to read the build number
@@ -180,7 +180,7 @@ def test_set_build_description_utils_from_inside_job_2(api_type):
     with api_select.api(__file__, api_type, login=True) as api:
         api.flow_job()
         job_name = 'job-1'
-        api.job(job_name, max_fails=0, expect_invocations=1, expect_order=1, exec_time=0.01,
+        api.job(job_name, max_fails=0, expect_invocations=1, expect_order=1,
                 set_build_descriptions=(('BBB3', True, '\\n'), ('BBB4', False, '#'), ('BBB5', False, '!!')))
 
         # Need to read the build number

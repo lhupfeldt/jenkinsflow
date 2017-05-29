@@ -40,7 +40,7 @@ serial flow: [
 def test_prefix(api_type, capsys):
     with api_select.api(__file__, api_type) as api:
         def job(name):
-            api.job(name, max_fails=0, expect_invocations=0, expect_order=None, exec_time=0.5, params=None)
+            api.job(name, max_fails=0, expect_invocations=0, expect_order=None, params=None)
     
         api.flow_job()
         job('quick1')
