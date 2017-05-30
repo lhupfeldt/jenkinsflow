@@ -135,7 +135,10 @@ class _TestWrapperApi(object):
 
         if max_fails > 0 or final_result:
             params = list(params) if params else []
-            params.append(('force_result', ('SUCCESS', 'FAILURE', 'UNSTABLE', 'ABORTED'), 'Caller can force job to success, fail, unstable or aborted'))
+            force_result_desc = 'Caller can force job to success, fail or unstable.\n' \
+                                'If "ABORTED" is specified the job should never run to the end, but be aborted before that.\n' \
+                                'If this does not happen, the job will fail.'
+            params.append(('force_result', ('SUCCESS', 'FAILURE', 'UNSTABLE', 'ABORTED'), force_result_desc))
 
         if flow_created or non_existing:
             try:

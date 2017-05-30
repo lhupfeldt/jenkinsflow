@@ -154,15 +154,25 @@ date --rfc-3339=ns
 <?py if script is not None: ?>
 {==script==}
 <?py else: ?>
+date
 echo sleeping={==exec_time==}
 sleep {==exec_time==}
+date
 <?py #endif ?>
 <?py if 'force_result' in param_names: ?>
-[[ $force_result == SUCCESS ]] &amp;&amp; exit 0
-[[ $force_result == FAILURE ]] &amp;&amp; exit 1
-[[ $force_result == UNSTABLE ]] &amp;&amp; {
-    {==pseudo_install_dir==}/cli/cli.py set_build_result --username {==username==} --password {==password==} --direct-url {==direct_url==}
-} || exit 1
+case $force_result in
+   SUCCESS) exit 0;;
+   FAILURE) exit 1;;
+   UNSTABLE)
+       {==pseudo_install_dir==}/cli/cli.py set_build_result --username {==username==} --password {==password==} --direct-url {==direct_url==};
+       ;;
+   ABORTED)
+       echo "Got force_result arg '$force_result' but the job ran to the end without being aborted!";
+       exit 1;;
+   *)
+       echo "Got unknown force_result arg '$force_result'!";
+       exit 1;;
+esac
 <?py #endif ?>
       </command>
     </hudson.tasks.Shell>
