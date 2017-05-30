@@ -1,3 +1,6 @@
+[![Build Status](https://api.travis-ci.org/lhupfeldt/jenkinsflow.svg?branch=master)](https://travis-ci.org/lhupfeldt/jenkinsflow)
+[![Documentation Status](https://readthedocs.org/projects/jenkinsflow/badge/?version=stable)](https://jenkinsflow.readthedocs.org/en/stable/)
+
 jenkinsflow
 ===========
 
