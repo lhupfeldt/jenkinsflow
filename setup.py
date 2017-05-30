@@ -1,3 +1,5 @@
+from __future__ import print_function
+
 import sys, os
 
 from setuptools import setup
@@ -14,6 +16,7 @@ SHORT_DESCRIPTION = 'Python API with high level build flow constructs (parallel/
 LONG_DESCRIPTION = open(os.path.join(PROJECT_ROOT, "README.txt")).read()
 
 on_rtd = os.environ.get('READTHEDOCS') == 'True'
+is_ci = os.environ.get('CI', 'false').lower() == 'true'
 
 
 class Test(TestCommand):
@@ -28,9 +31,11 @@ class Test(TestCommand):
 
     def run_tests(self):
         import test.run
-        # sys.exit(test.run.cli(self.test_args))
-        speedup = 1000 if os.environ.get('CI', 'false').lower != 'true' else 1
-        sys.exit(test.run.cli(api='mock', mock_speedup=speedup))
+        if is_ci:
+            print("Running under CI")
+            sys.exit(test.run.cli(api='mock', mock_speedup=1))
+        sys.exit(test.run.cli(api='mock'))
+
 
 flow_requires = ['atomicfile~=1.0']
 cli_requires = ['click~=6.0']

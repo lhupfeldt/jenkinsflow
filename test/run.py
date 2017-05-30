@@ -152,7 +152,7 @@ def cli(mock_speedup=1000,
         # subprocess.check_call([sys.executable, jp(top_dir, 'setup.py'), 'install', '--prefix', install_prefix])
         # shutil.rmtree(jp(top_dir, 'build'))
 
-        if not testfile and os.environ.get('CI', 'false').lower != 'true':
+        if not testfile and os.environ.get('CI', 'false').lower() != 'true':
             # This is automatically tested by readdthedocs, so no need to test on Travis
             start_msg("Testing documentation generation")
 
