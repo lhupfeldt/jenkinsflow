@@ -33,7 +33,7 @@ class Test(TestCommand):
         import test.run
         if is_ci:
             print("Running under CI")
-            sys.exit(test.run.cli(api='mock', mock_speedup=1))
+            sys.exit(test.run.cli(api='mock', mock_speedup=10))
         sys.exit(test.run.cli(api='mock'))
 
 
