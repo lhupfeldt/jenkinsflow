@@ -1,2 +1,2 @@
-include *.md *.txt
+include *.rst *.md *.txt
 recursive-include test *.tenjin *.py

@@ -13,7 +13,7 @@ PROJECT_AUTHORS = u"Lars Hupfeldt Nielsen"
 PROJECT_EMAILS = 'lhn@hupfeldtit.dk'
 PROJECT_URL = "https://github.com/lhupfeldt/jenkinsflow"
 SHORT_DESCRIPTION = 'Python API with high level build flow constructs (parallel/serial) for Jenkins (and Hudson).'
-LONG_DESCRIPTION = open(os.path.join(PROJECT_ROOT, "README.md")).read()
+LONG_DESCRIPTION = open(os.path.join(PROJECT_ROOT, "README.rst")).read()
 
 on_rtd = os.environ.get('READTHEDOCS') == 'True'
 is_ci = os.environ.get('CI', 'false').lower() == 'true'
