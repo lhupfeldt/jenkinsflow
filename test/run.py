@@ -43,27 +43,23 @@ def run_tests(parallel, api_type, args, coverage=True, mock_speedup=1):
 
     if coverage:
         engine = tenjin.Engine()
-        cov_rc_file_name = jp(here, '.coverage_rc_' +  api_type.name.lower() if api_type else 'all')
+        cov_rc_file_name = jp(here, '.coverage_rc_' +  (api_type.name.lower() if api_type else 'all'))
         with open(cov_rc_file_name, 'w') as cov_rc_file:
             context = dict(api_type=api_type, top_dir=top_dir, major_version=major_version)
             cov_rc_file.write(engine.render(jp(here, "coverage_rc.tenjin"), context))
             args.extend(['--cov=' + top_dir, '--cov-report=term-missing', '--cov-config=' + cov_rc_file_name])
 
-    try:
-        if api_type != ApiType.MOCK:
-            # Note: 'boxed' is required for the kill/abort_current test not to abort other tests
-            args.append('--boxed')
+    if api_type != ApiType.MOCK:
+        # Note: 'boxed' is required for the kill/abort_current test not to abort other tests
+        args.append('--boxed')
 
-        if parallel and api_type != ApiType.MOCK:
-            args.extend(['-n', '16'])
+    if parallel and api_type != ApiType.MOCK:
+        args.extend(['-n', '16'])
 
-        print('pytest.main', args)
-        rc = pytest.main(args)
-        if rc:
-            raise Exception("pytest {args} failed with code {rc}".format(args=args, rc=rc))
-    finally:
-        if coverage:
-            os.unlink(cov_rc_file_name)
+    print('pytest.main', args)
+    rc = pytest.main(args)
+    if rc:
+        raise Exception("pytest {args} failed with code {rc}".format(args=args, rc=rc))
 
 
 def start_msg(*msg):
