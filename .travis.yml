@@ -9,6 +9,9 @@ os:
   - linux
 install:
   - pip install tox-travis
+  - pip install coveralls
 env:
   global:
     - CI=true
+after_success:
+  - coveralls --rcfile="./test/.coverage_rc_mock"
