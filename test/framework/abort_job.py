@@ -5,27 +5,15 @@ from __future__ import print_function
 
 import sys
 import time
-import datetime
 major_version = sys.version_info.major
 if major_version < 3:
     import subprocess32 as subprocess
 else:
     import subprocess
 
-from jenkinsflow.test.framework import api_select
 from jenkinsflow.test.cfg import ApiType
-
-
-def log(file, *msg):
-    print(*msg)
-    sys.stdout.flush()
-    print(*msg, file=file)
-    file.flush()
-
-
-def logt(file, *msg):
-    now = datetime.datetime.isoformat(datetime.datetime.utcnow())
-    log(file, now, *msg)
+from jenkinsflow.test.framework import api_select
+from jenkinsflow.test.framework.logger import log, logt
 
 
 def _abort(log_file, test_file_name, api_type, fixed_prefix, job_name, sleep_time):
@@ -52,9 +40,11 @@ if __name__ == '__main__':
 
 def abort(api, job_name, sleep_time):
     """Call this script as a subprocess"""
-    if api.api_type != ApiType.MOCK:
-        ff = __file__.replace('.pyc', '.py')
-        args = [sys.executable, ff, api.file_name, api.api_type.name, api.func_name.replace('test_', ''), job_name, str(sleep_time)]
-        with open(job_name, 'w') as log_file:
-            logt(log_file, "Invoking abort subprocess.", args)
-        subprocess.Popen(args)
+    if api.api_type == ApiType.MOCK:
+        return
+
+    ff = __file__.replace('.pyc', '.py')
+    args = [sys.executable, ff, api.file_name, api.api_type.name, api.func_name.replace('test_', ''), job_name, str(sleep_time)]
+    with open(job_name, 'w') as log_file:
+        logt(log_file, "Invoking abort subprocess.", args)
+    subprocess.Popen(args)

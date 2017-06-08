@@ -96,7 +96,7 @@ def test_kill_mini(api_type, capsys):
         api.job('j6', max_fails=0, expect_invocations=num_j6_invocations, expect_order=None, exec_time=50, kill=True,
                 num_builds_to_keep=num_j6_invocations*2 + 1, params=(('a', 0, 'integer'),))
 
-        kill(api, 20, 1)
+        kill(api, 35, 1)
 
         with serial(api, timeout=70, job_name_prefix=api.job_name_prefix, report_interval=0.05) as ctrl1:
             with ctrl1.parallel() as ctrl2:
@@ -142,7 +142,8 @@ def test_kill_current(api_type, capsys):
                 num_builds_to_keep=num_j6_invocations*2 + 1, params=(('a', 0, 'integer'),))
         api.job('j7', max_fails=0, expect_invocations=0, expect_order=None, exec_time=50)
 
-        kill(api, 20, 1)
+        # Set a long sleep here, when heaviliy loaded it can take time for the flow to get started
+        kill(api, 35, 1)
 
         with serial(api, timeout=70, job_name_prefix=api.job_name_prefix, report_interval=0.05) as ctrl1:
             with ctrl1.parallel() as ctrl2:
