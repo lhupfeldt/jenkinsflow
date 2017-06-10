@@ -48,6 +48,8 @@ def run_tests(parallel, api_types, args, coverage=True, mock_speedup=1):
             fail_under = 95
         elif ApiType.JENKINS in api_types:
             fail_under = 94
+        elif ApiType.MOCK in api_types and ApiType.SCRIPT in api_types:
+            fail_under = 90
         elif ApiType.MOCK in api_types:
             fail_under = 88
         else:
@@ -106,7 +108,7 @@ def cli(mock_speedup=1000,
         api_types = [ApiType.MOCK, ApiType.SCRIPT, ApiType.JENKINS]
     else:
         api_types = [ApiType[api_name.strip().upper()] for api_name in apis.split(',')]
-    args.extend(['-k', ' or '.join(['"' + apit.__class__.__name__ + '.' + apit.name + '"' for apit in api_types])])
+    args.extend(['-k', ' or '.join([apit.name for apit in api_types])])
 
     rc = 0
     target_dir = "/tmp/jenkinsflow-test/jenkinsflow"
