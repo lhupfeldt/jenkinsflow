@@ -14,4 +14,5 @@ env:
   global:
     - CI=true
 after_success:
+  # rcfile name duplicated in test/run.py
   - coveralls --rcfile="./test/.coverage_rc_mock"

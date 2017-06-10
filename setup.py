@@ -34,8 +34,8 @@ class Test(TestCommand):
         if is_ci:
             print("Running under CI")
             # Note 'mock' is also hardcoded in .travis.yml
-            sys.exit(test.run.cli(api='mock', mock_speedup=10))
-        sys.exit(test.run.cli(api='mock'))
+            sys.exit(test.run.cli(apis='mock', mock_speedup=10))
+        sys.exit(test.run.cli(apis='mock'))
 
 
 flow_requires = ['atomicfile~=1.0']

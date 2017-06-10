@@ -1,11 +1,7 @@
 <?py from jenkinsflow.test.cfg import ApiType ?>
 <?py import os ?>
 [report]
-<?py if os.environ.get('CI', 'false').lower == 'true': ?>
-fail_under = 88
-<?py else: ?>
-fail_under = 88
-<?py #endif ?>
+fail_under = {==fail_under==}
 
 exclude_lines =
     # Have to re-enable the standard pragma
@@ -15,7 +11,7 @@ exclude_lines =
     # This is hopefully covered by a subprocess call, but it won't be collected
     if __name__ == "__main__":
 
-    <?py if api_type != ApiType.MOCK: ?>
+    <?py if ApiType.JENKINS in api_types: ?>
     <?py if os.environ.get('HUDSON_URL'): ?>
     # Parts of jenkins_api not used when hudson
     if self.jenkins.is_jenkins
@@ -26,10 +22,9 @@ exclude_lines =
     <?py #endif ?>
     <?py #endif ?>
 
-    <?py if api_type == ApiType.SCRIPT: ?>
+    <?py if api_types == [ApiType.SCRIPT]: ?>
     # Parts of api_base not used in script_api (overridden methods)
-    return self.public_uri + '/' + str(buildno) + '/console'
-    return self.job.console_url(self.buildno)
+    return (self.job.public_uri + '/' + repr(self.build_number) + '/console')
     <?py #endif ?>
 
     <?py if major_version >= 3: ?>
@@ -47,9 +42,9 @@ omit =
      {==top_dir==}/setup.py
      {==top_dir==}/ordered_enum.py
      *_flymake.py
-     <?py if api_type and api_type != ApiType.JENKINS: ?>
+     <?py if ApiType.JENKINS not in api_types: ?>
      {==top_dir==}/jenkins_api.py
      <?py #endif ?>
-     <?py if api_type and api_type != ApiType.SCRIPT: ?>
+     <?py if ApiType.SCRIPT not in api_types: ?>
      {==top_dir==}/script_api.py
      <?py #endif ?>

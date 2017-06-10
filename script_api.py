@@ -310,7 +310,6 @@ class Invocation(ApiInvocationMixin):
         self.proc.terminate()
 
     def console_url(self):
-        # return self.job.public_uri + ' - ' + self.job.log_file
         return self.job.log_file
 
     def __repr__(self):

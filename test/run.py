@@ -36,25 +36,36 @@ from jenkinsflow.test import cfg as test_cfg
 from jenkinsflow.test.cfg import ApiType
 
 
-def run_tests(parallel, api_type, args, coverage=True, mock_speedup=1):
+def run_tests(parallel, api_types, args, coverage=True, mock_speedup=1):
     args = copy.copy(args)
 
     test_cfg.select_speedup(mock_speedup)
 
     if coverage:
         engine = tenjin.Engine()
-        cov_rc_file_name = jp(here, '.coverage_rc_' +  (api_type.name.lower() if api_type else 'all'))
+
+        if len(api_types) == 3:
+            fail_under = 95
+        elif ApiType.JENKINS in api_types:
+            fail_under = 94
+        elif ApiType.MOCK in api_types:
+            fail_under = 88
+        else:
+            fail_under = 86
+
+        # Note: cov_rc_file_name hardcoded in .travis.yml
+        cov_rc_file_name = jp(here, '.coverage_rc_' +  '_'.join(api_type.name.lower() for api_type in api_types))
         with open(cov_rc_file_name, 'w') as cov_rc_file:
-            context = dict(api_type=api_type, top_dir=top_dir, major_version=major_version)
+            context = dict(api_types=api_types, top_dir=top_dir, major_version=major_version, fail_under=fail_under)
             cov_rc_file.write(engine.render(jp(here, "coverage_rc.tenjin"), context))
             args.extend(['--cov=' + top_dir, '--cov-report=term-missing', '--cov-config=' + cov_rc_file_name])
 
-    if api_type != ApiType.MOCK:
+    if api_types != [ApiType.MOCK]:
         # Note: 'boxed' is required for the kill/abort_current test not to abort other tests
         args.append('--boxed')
 
-    if parallel and api_type != ApiType.MOCK:
-        args.extend(['-n', '16'])
+        if parallel:
+            args.extend(['-n', '16'])
 
     print('pytest.main', args)
     rc = pytest.main(args)
@@ -68,7 +79,7 @@ def start_msg(*msg):
 
 def cli(mock_speedup=1000,
         direct_url=test_cfg.direct_url(test_cfg.ApiType.JENKINS),
-        api=None,
+        apis=None,
         pytest_args=None,
         job_delete=False,
         job_load=True,
@@ -91,13 +102,11 @@ def cli(mock_speedup=1000,
 
     args = ['--capture=sys', '--instafail']
 
-    if api is not None:
-        api_name = api.upper()
-        api_type = ApiType[api_name]
-        args.extend(['-k', 'ApiType.' + api_name])
+    if apis is None:
+        api_types = [ApiType.MOCK, ApiType.SCRIPT, ApiType.JENKINS]
     else:
-        # We run for all apis
-        api_type = None
+        api_types = [ApiType[api_name.strip().upper()] for api_name in apis.split(',')]
+    args.extend(['-k', ' or '.join(['"' + apit.__class__.__name__ + '.' + apit.name + '"' for apit in api_types])])
 
     rc = 0
     target_dir = "/tmp/jenkinsflow-test/jenkinsflow"
@@ -107,7 +116,7 @@ def cli(mock_speedup=1000,
         if ex.errno != errno.EEXIST:
             raise
 
-    if api_type != ApiType.MOCK:
+    if api_types != [ApiType.MOCK]:
         print("Creating temporary test installation in", repr(config.pseudo_install_dir), "to make files available to Jenkins.")
         install_script = jp(here, 'tmp_install.sh')
         rc = subprocess.call([install_script, target_dir])
@@ -133,7 +142,7 @@ def cli(mock_speedup=1000,
         if hudson:
             print("Disabling parallel run, Hudson can't handle it :(")
         parallel = test_cfg.skip_job_load() or test_cfg.skip_job_delete() and not hudson
-        run_tests(parallel, api_type, args, coverage, mock_speedup)
+        run_tests(parallel, api_types, args, coverage, mock_speedup)
 
         # start_msg("Testing setup.py")
         # user = getpass.getuser()
@@ -166,13 +175,13 @@ def cli(mock_speedup=1000,
 @click.option('--mock-speedup', '-s', help="Time speedup when running mocked tests.", default=1000)
 @click.option('--direct-url', help="Direct Jenkins URL. Must be different from the URL set in Jenkins (and preferably non proxied)",
               default=test_cfg.direct_url(test_cfg.ApiType.JENKINS))
-@click.option('--api', help="Select which api to use/test. Possible values: 'jenkins, 'script', 'mock'. Default is all.", default=None)
+@click.option('--apis', help="Select which api(s) to use/test. Comma separated list. Possible values: 'jenkins, 'script', 'mock'. Default is all.", default=None)
 @click.option('--pytest-args', help="py.test arguments.")
 @click.option('--job-delete/--no-job-delete', help="Delete and re-load jobs into Jenkins. Default is --no-job-delete.", default=False)
 @click.option('--job-load/--no-job-load', help="Load jobs into Jenkins (skipping job load assumes all jobs already loaded and up to date). Deafult is --job-load.", default=True)
 @click.argument('testfile', nargs=-1, type=click.Path(exists=True, readable=True))
-def _cli(mock_speedup, direct_url, api, pytest_args, job_delete, job_load, testfile):
-    cli(mock_speedup, direct_url, api, pytest_args, job_delete, job_load, testfile)
+def _cli(mock_speedup, direct_url, apis, pytest_args, job_delete, job_load, testfile):
+    cli(mock_speedup, direct_url, apis, pytest_args, job_delete, job_load, testfile)
 
 
 if __name__ == '__main__':
