@@ -65,6 +65,9 @@ if sys.version_info.major < 3:
 else:
     tests_require.append('objproxies~=0.9.4')
 
+extras = {
+    'test': tests_require,
+}
 
 if __name__ == "__main__":
     setup(
@@ -80,6 +83,7 @@ if __name__ == "__main__":
         setup_requires='setuptools-version-command~=2.2',
         test_suite='test',
         tests_require=tests_require,
+        extras_require=extras,
         cmdclass={'test': Test},
         url=PROJECT_URL,
         description=SHORT_DESCRIPTION,
