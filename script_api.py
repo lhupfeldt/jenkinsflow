@@ -17,8 +17,8 @@ here = os.path.abspath(os.path.dirname(__file__))
 def _mkdir(path):
     try:
         os.mkdir(path)
-    except OSError:
-        if not os.path.exists(path):
+    except OSError as ex:
+        if ex.errno != os.errno.EEXIST:
             raise
 
 
@@ -75,7 +75,6 @@ class LoggingProcess(multiprocessing.Process):
 class Jenkins(Speed):
     """Optimized minimal set of methods needed for jenkinsflow to directly execute python code instead of invoking Jenkins jobs.
 
-    THIS IS CONSIDERED EXPERIMENTAL
     THIS DOES NOT SUPPORT CONCURRENT INVOCATIONS OF FLOW
 
     There is no concept of job queues or executors, so if your flow depends on these for correctness, you wil experience different behaviour
@@ -99,15 +98,16 @@ class Jenkins(Speed):
         username (str): Passed to 'run_job'. ``jenkinsflow`` puts no meaning into this parameter.
         password (str): Passed to 'run_job'. ``jenkinsflow`` puts no meaning into this parameter.
         invocation_class (class): Defaults to `Invocation`.
+        log_dir (str): Directory in which to store logs. Defaults to subdirectory 'jenkinsflow' under the system defined tmp dir.
         **kwargs: Ignored for compatibility with the other jenkins apis
     """
 
-    def __init__(self, direct_uri, job_prefix_filter=None, username=None, password=None, invocation_class=None, log_dir=tempfile.gettempdir(), **kwargs):
+    def __init__(self, direct_uri, job_prefix_filter=None, username=None, password=None, invocation_class=None, log_dir=None, **kwargs):
         self.job_prefix_filter = job_prefix_filter
         self.username = username
         self.password = password
         self.public_uri = direct_uri
-        self.log_dir = log_dir
+        self.log_dir = log_dir or os.path.join(tempfile.gettempdir(), 'jenkinsflow')
         self.invocation_class = invocation_class or Invocation
         self.jobs = {}
 

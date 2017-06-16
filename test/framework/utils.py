@@ -12,20 +12,23 @@ from jenkinsflow.test.cfg import ApiType
 from .config import flow_graph_root_dir
 from .lines_in import lines_in as generic_lines_in
 
-_console_url_script_api_log_file_msg_prefix = ' - ' + tempfile.gettempdir() + '/'
-_result_msg_script_api_log_file_msg_prefix = tempfile.gettempdir() + '/'
+
+_log_file_prefix = tempfile.gettempdir() + '/jenkinsflow/'
+
+
+def _script_api_log_file(job_name):
+    return _log_file_prefix + job_name + '.log'
 
 
 def console_url(api, job_name, num):
     if api.api_type == ApiType.SCRIPT:
-        # test_cfg.script_dir() + '/' + job_name + '.py' + _console_url_script_api_log_file_msg_prefix + job_name + '.log'
-        return tempfile.gettempdir() + '/' + job_name + '.log'
+        return _script_api_log_file(job_name)
     return 'http://x.x/job/' + job_name + '/' + (str(num) + "/console" if api.api_type == ApiType.MOCK else "")
 
 
 def result_msg(api, job_name, num=None):
     if api.api_type == ApiType.SCRIPT:
-        return repr(job_name) + " - build: " + _result_msg_script_api_log_file_msg_prefix + job_name + '.log'
+        return repr(job_name) + " - build: " + _script_api_log_file(job_name)
     return repr(job_name) + " - build: http://x.x/job/" + job_name + "/" + (str(num) + "/console" if api.api_type == ApiType.MOCK and num else "")
 
 
