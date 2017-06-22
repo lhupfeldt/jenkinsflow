@@ -12,7 +12,7 @@ or later and pip means python 2 pip or python 3 pip, unless differences are ment
 
    Read the file demo/demo_security.py if you have security enabled your Jenkins.
 
-Jenkinsflow uses it's own specialized 'jenkins_api' python module to access jenkins, using the jenkins rest api.
+Jenkinsflow uses it's own specialized 'jenkins_api' python module to access Jenkins, using the Jenkins rest api.
 
 2. Manually:
 2.1. Install dependencies:
@@ -54,7 +54,12 @@ Test
 
 # NOTE: Some versions of Jenkins, e.g. 1.651.2, come with a broken cli, missing the main manifest attribute, making some tests fail!
 
-1. Install python-devel
+0. The mocked and script_api test can be run using 'tox'
+   pip install tox
+
+1. The tests which actually run Jenkins jobs currently do not run under tox.
+
+   Install python-devel
    E.g on fedora:
    sudo dnf install python-devel
    or
@@ -95,25 +100,29 @@ Test
    test/tmp_install.sh
 
 3. Run the tests:
-   Use ./test/run.py to run the tests.
+   Use tox
+   or
+   Use ./test/run.py to run the all tests.
 
    JENKINS_URL=<your Jenkins> python ./test/run.py --mock-speedup=100 --direct-url <non proxied url different from JENKINS_URL>
    # Or if you are using Hudson:
    HUDSON_URL=<your Hudson> python ./test/run.py --mock-speedup=100  --direct-url <non proxied url different from HUDSON_URL>
 
-   Note: you may omit JENKINS_URL if your jenkins is on http://localhost:8080, but you have to specify HUDSON_URL if you are running hudson!
-   Note: you may omit --direct-url if your jenkins or hudson is on http://localhost:8080
+   Note: you may omit JENKINS_URL/HUDSON_URL if your Jenkins/Hudson is on http://localhost:8080.
+   Note: you may omit --direct-url if your Jenkins or Hudson is on http://localhost:8080
    Note: Because of timing dependencies when creating new jobs in Hudson, the first test run or any test run with --job-delete against Hudson will likely fail.
 
-   The test script will first run the test suite with mocked jenkins api, not actually invoking any jenkins jobs, this is a very fast test of the flow logic.
-   Mocked tests do not require Jenkins (but there will be a couple of xfails if jenkins is not running)
-   If the mock test passes, the same testsuite is run with the real jenkins api invokin jenkins jobs. The test jobs are automatically created.
+   The test script will run the test suite with mocked jenkins api, script_api and jenkins_api in parallel. The mocked api is a very fast test of the flow logic.
+   Mocked tests and script_api tests do not require Jenkins.
+   The test jobs are automatically created in Jenkins.
+
+   It is possible to select a subset of the apis using the --apis option.
 
    The value given to --mock-speedup is the time time speedup for the mocked tests. If you have a reasonably fast computer, try 2000.
    If you get FlowTimeoutException try a lower value.
    If you get "<job> is expected to be running, but state is IDLE" try a lower value.
 
-   By default tests (not mocked) are run in parallel using xdist and jobs are not deleted (but will be updated) before each run.
+   By default tests are run in parallel using xdist and jobs are not deleted (but will be updated) before each run.
    You should have 32 executors or more for this, the cpu/disk load will be small, as the test jobs don't really do anything except sleep.
    Note: Parallel run is disabled when testing against Hudson, Hudson (3.2 at the time of writing) can't cope with the load, it throws NullPointerExceptions.
    To disable the use of xdist to run tests in parallel use --job-delete
