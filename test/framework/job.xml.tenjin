@@ -141,7 +141,7 @@ from jenkinsflow.utils.set_build_description import set_build_description
 <?py for description, replace, separator in set_build_descriptions: ?>
 # TODO: set build description rest api is timing sensitive
 time.sleep(1)
-set_build_description("{==description==}", {==replace==}, "{==separator==}")
+set_build_description("{==description==}", {==replace==}, "{==separator==}", username="{==username==}", password="{==password==}")
 <?py #endfor ?>
 
       </command>

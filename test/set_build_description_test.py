@@ -22,7 +22,7 @@ from .framework import api_select
 from . import cfg as test_cfg
 from .cfg import ApiType
 
-from demo_security import username, password
+from demo_security import username, password, set_build_description_must_authenticate
 
 
 _here = os.path.dirname(os.path.abspath(__file__))
@@ -141,13 +141,19 @@ def test_set_build_description_utils(api_type):
         _, _, build_num = job.job_status()
         direct_url = test_cfg.direct_url(api_type)
 
-        set_build_description('BBB1', job_name=job.name, build_number=build_num, direct_url=direct_url)
-        set_build_description('BBB2', replace=False, job_name=job.name, build_number=build_num, direct_url=direct_url)
+        if set_build_description_must_authenticate:
+            set_build_description('BBB1', job_name=job.name, build_number=build_num, direct_url=direct_url, username=username, password=password)
+            set_build_description('BBB2', replace=False, job_name=job.name, build_number=build_num, direct_url=direct_url, username=username, password=password)
+        else:
+            set_build_description('BBB1', job_name=job.name, build_number=build_num, direct_url=direct_url)
+            set_build_description('BBB2', replace=False, job_name=job.name, build_number=build_num, direct_url=direct_url)
+
         assert _get_description(api, job, build_num) == 'AAA\nBBB1\nBBB2'
 
-        set_build_description('BBB3', replace=True, job_name=job.name, build_number=build_num, direct_url=direct_url)
-        set_build_description('BBB4', replace=False, separator='#', job_name=job.name, build_number=build_num, direct_url=direct_url)
-        set_build_description('BBB5', separator='!!', job_name=job.name, build_number=build_num, direct_url=direct_url)
+        set_build_description('BBB3', replace=True, job_name=job.name, build_number=build_num, direct_url=direct_url, username=username, password=password)
+        set_build_description(
+            'BBB4', replace=False, separator='#', job_name=job.name, build_number=build_num, direct_url=direct_url, username=username, password=password)
+        set_build_description('BBB5', separator='!!', job_name=job.name, build_number=build_num, direct_url=direct_url, username=username, password=password)
         assert _get_description(api, job, build_num) == 'BBB3#BBB4!!BBB5'
 
 
