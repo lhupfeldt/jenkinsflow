@@ -124,7 +124,7 @@ def test_multiple_invocations_parallel_same_flow_no_args_singlequeued(api_type, 
         num_j1_invocations = 20
         api.job('j1', max_fails=0, expect_invocations=num_j1_invocations, expect_order=1, exec_time=3)
 
-        with parallel(api, timeout=70, job_name_prefix=api.job_name_prefix, report_interval=1) as ctrl1:
+        with parallel(api, timeout=70, job_name_prefix=api.job_name_prefix, report_interval=0.1, poll_interval=0.1) as ctrl1:
             for _ in range(0, num_j1_invocations):
                 ctrl1.invoke('j1')
 
