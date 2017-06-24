@@ -17,7 +17,7 @@ sys.stdout = UnBuffered(sys.stdout)
 _file_name_subst = re.compile(r'(_jobs|_test)?\.py')
 
 
-def api(file_name, api_type, login=False, fixed_prefix=None, url_or_dir=None, fake_public_uri=None, invocation_class=None,
+def api(file_name, api_type, login=None, fixed_prefix=None, url_or_dir=None, fake_public_uri=None, invocation_class=None,
         username=None, password=None):
     """Factory to create either Mock or Wrap api"""
     base_name = os.path.basename(file_name).replace('.pyc', '.py')
@@ -49,6 +49,9 @@ def api(file_name, api_type, login=False, fixed_prefix=None, url_or_dir=None, fa
     pre_delete_jobs = not test_cfg.skip_job_delete()
 
     import demo_security as security
+    if login is None:
+        login = security.default_use_login
+
     if password is not None or username is not None:
         assert password is not None and username is not None
         login = True

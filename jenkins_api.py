@@ -9,6 +9,7 @@ from collections import OrderedDict
 from .api_base import BuildResult, Progress, UnknownJobException, ApiInvocationMixin
 from .speed import Speed
 from .rest_api_wrapper import ResourceNotFound, RequestsRestApi, ConnectionError
+from .jenkins_cli_protocol import CliProtocol
 
 
 major_version = sys.version_info.major
@@ -223,8 +224,10 @@ class Jenkins(Speed):
             ff.write(self.get_content('/' + path))
         print("INFO: Download finished:", repr(cli_jar))
 
-    def set_build_result(self, result, java='java', cli_call=False):
+    def set_build_result(self, result, java='java', cli_call=False, protocol=CliProtocol.remoting):
         """Change the result of a Jenkins job.
+
+        DEPRECATED - You should use the shell step exit code to determine the job result.
 
         Note: set_build_result can only be done from within the job, not after the job has finished.
         Note: Only available if URL is set in `Jenkins <http://jenkins-ci.org/>`_ system configuration.
@@ -236,10 +239,12 @@ class Jenkins(Speed):
         Args:
             result (str): The result to set. Should probably be 'unstable'
             java (str): Alternative `java` executable. Use this if you don't wish to use the java in the PATH.
+            protocol (CliProtocol): Defaults to 'remoting' for backwards compatibility. See: https://jenkins.io/doc/book/managing/cli/.
         """
 
         print("INFO: Setting job result to", repr(result))
         cli_jar = jenkins_cli_jar if self.is_jenkins else hudson_cli_jar
+        protocol_option = ['-' + protocol.name] if protocol else []
 
         if major_version < 3:
             import subprocess32 as subprocess
@@ -247,7 +252,7 @@ class Jenkins(Speed):
             import subprocess
 
         def set_res():
-            command = [java, '-jar', cli_jar, '-s', self.direct_uri, 'set-build-result', result]
+            command = [java, '-jar', cli_jar, '-s', self.direct_uri] + protocol_option + ['set-build-result', result]
             if self.username:
                 fname = None
                 try:

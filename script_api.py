@@ -200,7 +200,9 @@ class Jenkins(Speed):
             except UnicodeEncodeError:
                 ff.write(description.encode('utf-8'))
 
-    def set_build_result(self, res, java='java', cli_call=False):
+    def set_build_result(self, res, java='java', cli_call=False, protocol=None):
+        """DEPRECATED - Please return 2 from script to se 'UNSTABLE' result"""
+
         print("INFO: Setting job result to", repr(res))
 
         if cli_call:

@@ -291,13 +291,18 @@ def test_set_build_result_no_jenkinsurl(api_type, fake_java, env_no_base_url, cl
 
 @pytest.mark.not_apis(ApiType.MOCK, ApiType.SCRIPT)
 def test_set_build_result_call_cli_direct_url_trailing_slash(api_type, fake_java, env_base_url, cli_runner):
-    with api_select.api(__file__, api_type):
+    with api_select.api(__file__, api_type) as api:
         pre_existing_cli_jar(api_type)
         base_url = test_cfg.direct_url(api_type) + '/'
-        result = cli_runner.invoke(cli, ['set_build_result', '--direct-url', base_url])
 
-    assert result.exit_code == 0
-    assert not result.exception
+        api.flow_job()
+        api.job('j1_unstable', max_fails=0, expect_invocations=1, expect_order=1,
+                final_result='UNSTABLE', final_result_use_cli=True, set_build_result_use_url=base_url)
+
+        with serial(api, timeout=70, job_name_prefix=api.job_name_prefix) as ctrl1:
+            ctrl1.invoke('j1_unstable')
+
+        assert ctrl1.result == BuildResult.UNSTABLE
 
 
 @pytest.mark.apis(ApiType.SCRIPT)
@@ -318,13 +323,18 @@ def test_set_build_result_call_cli_direct_url_trailing_slash_script_api(api_type
 
 @pytest.mark.not_apis(ApiType.MOCK, ApiType.SCRIPT)
 def test_set_build_result_call_main_direct_url_no_trailing_slash(api_type, fake_java, env_base_url, cli_runner):
-    with api_select.api(__file__, api_type):
+    with api_select.api(__file__, api_type) as api:
         pre_existing_cli_jar(api_type)
         base_url = test_cfg.direct_url(api_type).rstrip('/')
-        result = cli_runner.invoke(cli, ['set_build_result', '--direct-url', base_url])
 
-    assert result.exit_code == 0
-    assert not result.exception
+        api.flow_job()
+        api.job('j1_unstable', max_fails=0, expect_invocations=1, expect_order=1,
+                final_result='UNSTABLE', final_result_use_cli=True, set_build_result_use_url=base_url)
+
+        with serial(api, timeout=70, job_name_prefix=api.job_name_prefix) as ctrl1:
+            ctrl1.invoke('j1_unstable')
+
+        assert ctrl1.result == BuildResult.UNSTABLE
 
 
 def test_set_build_result_call_script_help(capfd):

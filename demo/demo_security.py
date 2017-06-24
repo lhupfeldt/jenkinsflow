@@ -14,13 +14,28 @@
 # Username and password are needed for creating jobs and for changing build status with the 'Propagation.FAILURE_TO_UNSTABLE' feature
 # The ./test/test.py script will need to create Jenkins jobs which REQUIRES username/password
 
-# In order for all tests to pass you must enable security, select a security realm and a select "Anyone can do anything" in "Authorization", or
-# "Logged-in users can do anything" + "Allow anonymous read access"
-# If you have enabled "Logged-in users can do anything" you must set 'set_build_description_must_authenticate = True'
+# In order for all tests to pass you must enable security, select a security realm and a select "Anyone can do anything" in "Authorization",
+# "Logged-in users can do anything" + "Allow anonymous read access" or Matrix/Projext/Role based security.
+# If you have enabled any security beyond "Anyone can do anything" you must set 'set_build_description_must_authenticate = True' below.
+
+# If you are using Matrix/Projext/Role based security, then the test user defined below and the user 'jenkinsflow_authtest1' should have
+# the following permissions:
+
+#  Job:   Build Cancel Configure Create Delete Discover Read
+#  Build: Update
+
+# The 'Anonymous' user must have - Job: Discover
+# The 'authenticated' group must have - Overall: Read, Job: Discover
+
+# If using "Role-Based Strategy":
+#  create an item-role 'jenkinsflow_test' with pattern 'jenkinsflow_.*' and assign the permissions, then add the test user to that group.
+#  create a global role 'jenkinsflow_test' with Create permission, then add the test user to that group.
+# Job creation does not work with a project role only, see: https://issues.jenkins-ci.org/browse/JENKINS-19934?attachmentViewMode=list
+
+# Must be True unless "Anyone can do anything" or "Logged-in users can do anything" is selected in security settings.
+default_use_login = True
 
 set_build_description_must_authenticate = True
-
-# Either create the user defined below in Jenkins or change the username to one existing in your security realm.
 
 securitytoken = 'jenkinsflow_securitytoken'
 
