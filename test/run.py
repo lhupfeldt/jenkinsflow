@@ -100,7 +100,6 @@ def cli(mock_speedup=1000,
     os.environ[test_cfg.DIRECT_URL_NAME] = direct_url
     os.environ[test_cfg.SKIP_JOB_DELETE_NAME] = 'false' if job_delete else 'true'
     os.environ[test_cfg.SKIP_JOB_LOAD_NAME] = 'false' if job_load else 'true'
-    os.environ[test_cfg.SCRIPT_DIR_NAME] = test_cfg.script_dir()
 
     args = ['--capture=sys', '--instafail']
 
