@@ -1,4 +1,4 @@
-|Build Status| |Coverage| |Documentation Status| |PyPi Package|
+|Build Status| |Coverage| |Documentation Status| |PyPi Package| |License|
 
 jenkinsflow
 ===========
@@ -23,3 +23,5 @@ graph visualization.
    :target: https://badge.fury.io/py/jenkinsflow
 .. |Coverage| image:: https://coveralls.io/repos/github/lhupfeldt/jenkinsflow/badge.svg?branch=master
    :target: https://coveralls.io/github/lhupfeldt/jenkinsflow?branch=master
+.. |License| image:: https://img.shields.io/github/license/lhupfeldt/jenkinsflow.svg
+   :target: https://github.com/lhupfeldt/jenkinsflow/blob/master/LICENSE.TXT
