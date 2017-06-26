@@ -38,13 +38,13 @@ class Test(TestCommand):
         sys.exit(test.run.cli(apis='mock,script'))
 
 
-flow_requires = ['atomicfile~=1.0']
-cli_requires = ['click~=6.0']
-job_load_requires = ['tenjin~=1.1.1']
-jenkins_api_requires = ['requests~=2.7.0']
+flow_requires = ['atomicfile>=1.0,<=2.0']
+cli_requires = ['click>=6.0']
+job_load_requires = ['tenjin>=1.1.1']
+jenkins_api_requires = ['requests>=2.7,<=3.0']
 # You need to install python(3)-devel to be be able to install psutil, see INSTALL.md
-script_api_requires = ['psutil~=5.2.2', 'setproctitle~=1.1.10']
-visual_requires = ['bottle~=0.12']
+script_api_requires = ['psutil>=5.2.2', 'setproctitle>=1.1.10']
+visual_requires = ['bottle>=0.12']
 
 if sys.version_info.major < 3:
     flow_requires.extend(['enum34', 'subprocess32'])
@@ -55,15 +55,15 @@ else:
     install_requires = flow_requires + cli_requires + jenkins_api_requires + script_api_requires
 
 tests_require = [
-    'pytest>=3.0.5', 'pytest-cov>=2.4.0', 'pytest-instafail~=0.3.0', 'pytest-xdist~=1.16',
-    'click~=6.0', 'tenjin~=1.1.1', 'bottle~=0.12',
+    'pytest>=3.0.5', 'pytest-cov>=2.4.0', 'pytest-instafail>=0.3.0', 'pytest-xdist>=1.16',
+    'click>=6.0', 'tenjin>=1.1.1', 'bottle>=0.12',
     # The test also tests creation of the documentation
-    'sphinx~=1.6.1', 'sphinxcontrib-programoutput']
+    'sphinx>=1.6.1', 'sphinxcontrib-programoutput']
 
 if sys.version_info.major < 3:
     tests_require.append('proxytypes')
 else:
-    tests_require.append('objproxies~=0.9.4')
+    tests_require.append('objproxies>=0.9.4')
 
 extras = {
     'test': tests_require,
@@ -80,7 +80,7 @@ if __name__ == "__main__":
         zip_safe=True,
         include_package_data=False,
         install_requires=install_requires,
-        setup_requires='setuptools-version-command~=2.2',
+        setup_requires='setuptools-version-command>=2.2',
         test_suite='test',
         tests_require=tests_require,
         extras_require=extras,
