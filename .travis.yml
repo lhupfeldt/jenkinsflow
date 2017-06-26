@@ -7,21 +7,12 @@ python:
 script: tox
 os:
   - linux
-before_install:
-  - travis_retry pip install --upgrade pip
-  - travis_retry pip install requirements-builder
-  - requirements-builder --level=min setup.py > .travis-lowest-requirements.txt
-  - requirements-builder --level=pypi setup.py > .travis-release-requirements.txt
-  - requirements-builder --level=dev --req requirements-devel.txt setup.py > .travis-devel-requirements.txt
 install:
   - pip install tox-travis
   - pip install coveralls
-  - travis_retry pip install -r .travis-$REQUIREMENTS-requirements.txt
-  - pip install -e .
 env:
-  - REQUIREMENTS=lowest
-  - REQUIREMENTS=release
-  - REQUIREMENTS=devel
+  global:
+    - CI=true
 after_success:
   # rcfile name duplicated in test/run.py
   - coveralls --rcfile="./test/.coverage_rc_mock_script"
