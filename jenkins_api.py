@@ -6,7 +6,7 @@ from __future__ import print_function
 import sys, os, tempfile, time
 from collections import OrderedDict
 
-from .api_base import BuildResult, Progress, UnknownJobException, ApiInvocationMixin
+from .api_base import BuildResult, Progress, AuthError, UnknownJobException, ApiInvocationMixin
 from .speed import Speed
 from .rest_api_wrapper import ResourceNotFound, RequestsRestApi, ConnectionError
 from .jenkins_cli_protocol import CliProtocol
@@ -104,8 +104,10 @@ class Jenkins(Speed):
                     if head_response.get("X-Hudson"):
                         self.is_jenkins = False
                         break
+                except AuthError:
+                    raise
                 except Exception as ex:
-                    head_response = "HEAD request to " + repr(self.direct_uri) + " failed:" + str(ex)
+                    head_response = "HEAD request failed: " + str(ex)
                 time.sleep(0.1)
             else:
                 raise Exception("Not connected to Jenkins or Hudson (expected X-Jenkins or X-Hudson header, got: " + repr(head_response))

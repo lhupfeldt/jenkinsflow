@@ -1,5 +1,8 @@
 import sys
 
+from .api_base import AuthError
+
+
 major_version = sys.version_info.major
 
 
@@ -11,7 +14,7 @@ def encode(text, encoding):
     try:
         # TODO: 'unicode' call was needed when implemented, but now seems to be (randomly) raisig TypeError
         # and not actually needed???
-        return unicode(text, encoding, errors='ignore')
+        return unicode(text, encoding, errors='ignore')  # pylint: disable=undefined-variable
     except TypeError:
         pass
     return text
@@ -38,16 +41,22 @@ class RequestsRestApi(object):
     def _check_response(response, good_responses=(200,)):
         if response.status_code in good_responses:
             return response
-        if response.status_code == 404:
-            raise ResourceNotFound(response.request.url)
-        response.raise_for_status()
+
+        try:
+            response.raise_for_status()
+        except Exception as ex:
+            if response.status_code == 404:
+                raise ResourceNotFound(ex)
+            if response.status_code in (401, 403):
+                raise AuthError(ex)
+            raise
 
     def _get(self, url, params):
         import requests
         try:
             return self._check_response(self.session.get(self.direct_uri + url, params=params))
         except requests.ConnectionError as ex:
-            raise ConnectionError(str(ex))
+            raise ConnectionError(ex)
 
     def get_content(self, url, **params):
         return self._get(url, params=params).content
@@ -61,6 +70,18 @@ class RequestsRestApi(object):
 
     def headers(self):
         return self._check_response(self.session.head(self.direct_uri)).headers
+
+
+def _check_restkit_response(func):
+    def deco(self, *args, **kwargs):
+        try:
+            return func(self, *args, **kwargs)
+        except self.restkit.Unauthorized as ex:
+            raise AuthError(ex.response.status + " user: '" + self.username + "' for url: " + ex.response.final_url)
+        except self.restkit.errors.ResourceNotFound as ex:
+            raise ResourceNotFound(str(ex))
+
+    return deco
 
 
 class RestkitRestApi(object):
@@ -77,29 +98,22 @@ class RestkitRestApi(object):
             filters.append(restkit.BasicAuth(username, password))
             kwargs['filters'] = filters
 
+        self.username = username
         self.session = restkit.Resource(uri=direct_uri, **kwargs)
 
+    @_check_restkit_response
     def get_content(self, url, **params):
-        try:
-            return self.session.get(url, **params).body_string()
-        except self.restkit.errors.ResourceNotFound as ex:
-            raise ResourceNotFound(str(ex))
+        return self.session.get(url, **params).body_string()
 
+    @_check_restkit_response
     def get_json(self, path="", headers=None, params_dict=None, **params):
-        try:
-            response = self.session.get(path=path + "/api/json", headers=headers, params_dict=params_dict, **params)
-            return self.json.loads(response.body_string())
-        except self.restkit.errors.ResourceNotFound as ex:
-            raise ResourceNotFound(str(ex))
+        response = self.session.get(path=path + "/api/json", headers=headers, params_dict=params_dict, **params)
+        return self.json.loads(response.body_string())
 
+    @_check_restkit_response
     def post(self, url, payload=None, headers=None, **params):
-        try:
-            return self.session.post(url, headers=headers, payload=payload, **params)
-        except self.restkit.errors.ResourceNotFound as ex:
-            raise ResourceNotFound(str(ex))
+        return self.session.post(url, headers=headers, payload=payload, **params)
 
+    @_check_restkit_response
     def headers(self):
-        try:
-            return self.session.head().headers
-        except self.restkit.errors.ResourceNotFound as ex:
-            raise ResourceNotFound(str(ex))
+        return self.session.head().headers
