@@ -229,7 +229,7 @@ class _JobControl(object):
         """For json graph calculation"""
 
 
-class _SingleJob(_JobControl):
+class _SingleInvocation(_JobControl):
     """Represents a single flow-invocation of a Jenkins job
     Multiple invocations of the same job in a single flow are allowed
     Retries are handled by the same instance of this class, but distinct invocations are handled by different instances
@@ -241,7 +241,7 @@ class _SingleJob(_JobControl):
             if isinstance(value, (bool, int)):
                 params[key] = str(value).lower()
         self.params = params
-        super(_SingleJob, self).__init__(parent_flow, securitytoken, max_tries, propagation, secret_params_re, allow_missing_jobs)
+        super(_SingleInvocation, self).__init__(parent_flow, securitytoken, max_tries, propagation, secret_params_re, allow_missing_jobs)
         # There is no separate retry for individual jobs, so set self.total_max_tries to the same as parent flow!
         self.total_max_tries = self.parent_flow.total_max_tries
         self.job = None
@@ -267,7 +267,7 @@ class _SingleJob(_JobControl):
                 self.result = BuildResult.FAILURE
                 raise MissingJobsException(ex)
             print(self.indentation + repr(self), "- MISSING JOB")
-            super(_SingleJob, self)._prepare_to_invoke(reset_tried_times=False)
+            super(_SingleInvocation, self)._prepare_to_invoke(reset_tried_times=False)
             return
 
         self._prepare_to_invoke()
@@ -317,7 +317,7 @@ class _SingleJob(_JobControl):
         return repr(self) + " Status " + progress.name + " - " + msg
 
     def _prepare_to_invoke(self, reset_tried_times=False):
-        super(_SingleJob, self)._prepare_to_invoke(reset_tried_times)
+        super(_SingleInvocation, self)._prepare_to_invoke(reset_tried_times)
         _, _, self.old_build_num = self.job.job_status()
         self._reported_invoked = False
 
@@ -479,7 +479,7 @@ class _SingleJob(_JobControl):
         return [OrderedDict((("source", node_to_id(job)), ("target", node_to_id(self)))) for job in prev_jobs]
 
 
-# Retries are handled in the _Flow classes instead of _SingleJob since the individual jobs don't know
+# Retries are handled in the _Flow classes instead of _SingleInvocation since the individual jobs don't know
 # how to retry. The _Serial flow is retried from start of flow and in _Parallel flow individual jobs
 # are retried immediately
 
@@ -577,7 +577,7 @@ class _Flow(_JobControl):
                 booleans are automatically converted to strings and lowercased, integers are automatically converted to strings.
         """
 
-        job = _SingleJob(self, self.securitytoken, self.job_name_prefix, self.max_tries, job_name, params, self.propagation, self.secret_params_re, self.allow_missing_jobs)
+        job = _SingleInvocation(self, self.securitytoken, self.job_name_prefix, self.max_tries, job_name, params, self.propagation, self.secret_params_re, self.allow_missing_jobs)
         self.jobs.append(job)
         return job
 
@@ -593,7 +593,7 @@ class _Flow(_JobControl):
         See :py:meth:`invoke` for parameter description.
         """
 
-        job = _SingleJob(self, self.securitytoken, self.job_name_prefix, self.max_tries, job_name, params, Propagation.UNCHECKED, self.secret_params_re, self.allow_missing_jobs)
+        job = _SingleInvocation(self, self.securitytoken, self.job_name_prefix, self.max_tries, job_name, params, Propagation.UNCHECKED, self.secret_params_re, self.allow_missing_jobs)
         self.jobs.append(job)
         return job
 
