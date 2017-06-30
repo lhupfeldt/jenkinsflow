@@ -407,6 +407,18 @@ class ApiJob(object):
                           headers={'Content-Type': 'application/xml header;charset=utf-8'},
                           payload=config_xml if major_version < 3 else config_xml.encode('utf-8'))
 
+    def disable(self):
+        try:
+            self.jenkins.post(self._path + '/disable')
+        except ResourceNotFound as ex:
+            raise UnknownJobException(self.jenkins._public_job_url(self.name), ex)  # pylint: disable=protected-access
+
+    def enable(self):
+        try:
+            self.jenkins.post(self._path + '/disable')
+        except ResourceNotFound as ex:
+            raise UnknownJobException(self.jenkins._public_job_url(self.name), ex)  # pylint: disable=protected-access
+
     def __repr__(self):
         return str(dict(name=self.name, dct=self.dct))
 
