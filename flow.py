@@ -750,10 +750,10 @@ class _Parallel(_Flow):
         return tuple([inv.sequence() for inv in self.invocations])
 
     def last_jobs_in_flow(self):
-        jobs = []
+        invocations = []
         for inv in self.invocations:
-            jobs.extend(inv.last_jobs_in_flow())
-        return jobs
+            invocations.extend(inv.last_jobs_in_flow())
+        return invocations
 
     def nodes(self, node_to_id):
         nodes = []
