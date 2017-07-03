@@ -495,7 +495,7 @@ class _Flow(_JobControl):
         self.job_name_prefix = self.parent_flow.job_name_prefix + job_name_prefix if job_name_prefix is not None else ""
         self.report_interval = report_interval or self.parent_flow.report_interval
 
-        self.jobs = []
+        self.invocations = []
         self.last_report_time = 0
         self.last_json_time = 0
         self._failed_child_jobs = {}
@@ -577,9 +577,9 @@ class _Flow(_JobControl):
                 booleans are automatically converted to strings and lowercased, integers are automatically converted to strings.
         """
 
-        job = _SingleInvocation(self, self.securitytoken, self.job_name_prefix, self.max_tries, job_name, params, self.propagation, self.secret_params_re, self.allow_missing_jobs)
-        self.jobs.append(job)
-        return job
+        inv = _SingleInvocation(self, self.securitytoken, self.job_name_prefix, self.max_tries, job_name, params, self.propagation, self.secret_params_re, self.allow_missing_jobs)
+        self.invocations.append(inv)
+        return inv
 
     def invoke_unchecked(self, job_name, **params):
         """Define a Jenkins job invocation that will be invoked under control of the surrounding flow, but will never cause the flow to fail.
@@ -593,31 +593,31 @@ class _Flow(_JobControl):
         See :py:meth:`invoke` for parameter description.
         """
 
-        job = _SingleInvocation(self, self.securitytoken, self.job_name_prefix, self.max_tries, job_name, params, Propagation.UNCHECKED, self.secret_params_re, self.allow_missing_jobs)
-        self.jobs.append(job)
-        return job
+        inv = _SingleInvocation(self, self.securitytoken, self.job_name_prefix, self.max_tries, job_name, params, Propagation.UNCHECKED, self.secret_params_re, self.allow_missing_jobs)
+        self.invocations.append(inv)
+        return inv
 
     def _prepare_first(self):
         print(self.indentation + self._enter_str)
         self._prepare_to_invoke()
-        for job in self.jobs:
-            job._prepare_first()
+        for inv in self.invocations:
+            inv._prepare_first()
         print(self.indentation + self._exit_str)
 
     def _show_job_definition(self):
-        for job in self.jobs:
-            job._show_job_definition()
+        for inv in self.invocations:
+            inv._show_job_definition()
 
     def _final_status(self):
         print(self.indentation + self._enter_str)
-        for job in self.jobs:
-            job._final_status()
+        for inv in self.invocations:
+            inv._final_status()
         print(self.indentation + self._exit_str)
 
     def _check_timeout(self):
         now = self.api.time()
         if self.timeout and now - self.invocation_time > self.timeout:
-            unfinished_msg = ". Unfinished jobs:" + repr([job.sequence() for job in self.jobs if job.checking_status == Checking.MUST_CHECK])
+            unfinished_msg = ". Unfinished jobs:" + repr([inv.sequence() for inv in self.invocations if inv.checking_status == Checking.MUST_CHECK])
             raise FlowTimeoutException("Timeout " + self._time_msg() + ", in flow " + str(self) + unfinished_msg, self.propagation)
 
     def __enter__(self):
@@ -633,8 +633,8 @@ class _Flow(_JobControl):
         super(_Flow, self).__exit__(exc_type, exc_value, traceback)
         if self.parent_flow:
             # Insert myself in parent if I'm not empty
-            if self.jobs:
-                self.parent_flow.jobs.append(self)
+            if self.invocations:
+                self.parent_flow.invocations.append(self)
                 return
 
             print(self.indentation + "INFO: Ignoring empty flow")
@@ -656,17 +656,17 @@ class _Flow(_JobControl):
         report_now = self._check_report()
 
         checking_status = Checking.FINISHED
-        for job in self.jobs:
-            if job.checking_status != Checking.FINISHED:
-                job._kill_check(report_now, dequeue)
-                job_propagate_checking_status = job.checking_status if job.checking_status != Checking.HAS_UNCHECKED else Checking.MUST_CHECK
+        for inv in self.invocations:
+            if inv.checking_status != Checking.FINISHED:
+                inv._kill_check(report_now, dequeue)
+                job_propagate_checking_status = inv.checking_status if inv.checking_status != Checking.HAS_UNCHECKED else Checking.MUST_CHECK
                 checking_status = min(checking_status, job_propagate_checking_status)
 
         self.checking_status = checking_status
         if self.checking_status == Checking.FINISHED:
             # All jobs have stopped running
-            for job in self.jobs:
-                self.result = min(self.result, job.propagate_result)
+            for inv in self.invocations:
+                self.result = min(self.result, inv.propagate_result)
             self.report_result()
 
     def report_result(self):
@@ -705,40 +705,40 @@ class _Parallel(_Flow):
         report_now = self._check_invoke_report()
 
         checking_status = Checking.FINISHED
-        for job in self.jobs:
+        for inv in self.invocations:
             try:
-                if job.checking_status != Checking.FINISHED:
-                    job._check(report_now)
-                    checking_status = min(checking_status, job.propagate_checking_status)
-                    if id(job) in self._failed_child_jobs:
-                        del self._failed_child_jobs[id(job)]
+                if inv.checking_status != Checking.FINISHED:
+                    inv._check(report_now)
+                    checking_status = min(checking_status, inv.propagate_checking_status)
+                    if id(inv) in self._failed_child_jobs:
+                        del self._failed_child_jobs[id(inv)]
             except JobControlFailException:
-                self._failed_child_jobs[id(job)] = job
+                self._failed_child_jobs[id(inv)] = inv
 
-                if job.result == BuildResult.ABORTED:
-                    if job.remaining_tries or job.remaining_total_tries:
-                        print("ABORTED:", job, "not retrying")
-                    job.checking_status = Checking.FINISHED
+                if inv.result == BuildResult.ABORTED:
+                    if inv.remaining_tries or inv.remaining_total_tries:
+                        print("ABORTED:", inv, "not retrying")
+                    inv.checking_status = Checking.FINISHED
                     continue
 
-                if job.remaining_tries:
-                    print("RETRY:", job, "failed but will be retried. Up to", job.remaining_tries, "more times in current flow")
+                if inv.remaining_tries:
+                    print("RETRY:", inv, "failed but will be retried. Up to", inv.remaining_tries, "more times in current flow")
                     checking_status = Checking.MUST_CHECK
-                    job._prepare_to_invoke()
+                    inv._prepare_to_invoke()
                     continue
 
-                if job.remaining_total_tries:
-                    print("RETRY:", job, "failed but will be retried. Up to", job.remaining_total_tries, "more times through outer flow")
-                    job._prepare_to_invoke(reset_tried_times=True)
+                if inv.remaining_total_tries:
+                    print("RETRY:", inv, "failed but will be retried. Up to", inv.remaining_total_tries, "more times through outer flow")
+                    inv._prepare_to_invoke(reset_tried_times=True)
                     continue
 
-                job.checking_status = Checking.FINISHED
+                inv.checking_status = Checking.FINISHED
 
         self.checking_status = checking_status
         if self.checking_status != Checking.MUST_CHECK and self.result == BuildResult.UNKNOWN:
             # All jobs have stopped running or are 'unchecked'
-            for job in self.jobs:
-                self.result = min(self.result, job.propagate_result)
+            for inv in self.invocations:
+                self.result = min(self.result, inv.propagate_result)
             self.report_result()
 
             if self.result in _build_result_failures:
@@ -747,25 +747,25 @@ class _Parallel(_Flow):
             self._check_timeout()
 
     def sequence(self):
-        return tuple([job.sequence() for job in self.jobs])
+        return tuple([inv.sequence() for inv in self.invocations])
 
     def last_jobs_in_flow(self):
         jobs = []
-        for job in self.jobs:
-            jobs.extend(job.last_jobs_in_flow())
+        for inv in self.invocations:
+            jobs.extend(inv.last_jobs_in_flow())
         return jobs
 
     def nodes(self, node_to_id):
         nodes = []
-        for job in self.jobs:
-            child_nodes = job.nodes(node_to_id)
+        for inv in self.invocations:
+            child_nodes = inv.nodes(node_to_id)
             nodes.extend(child_nodes)
         return nodes
 
     def links(self, prev_jobs, node_to_id):
         links = []
-        for job in self.jobs:
-            child_links = job.links(prev_jobs, node_to_id)
+        for inv in self.invocations:
+            child_links = inv.links(prev_jobs, node_to_id)
             links.extend(child_links)
         return links
 
@@ -788,57 +788,57 @@ class _Serial(_Flow):
         report_now = self._check_invoke_report()
 
         checking_status = Checking.FINISHED
-        for job in self.jobs[0:self.job_index + 1]:
+        for inv in self.invocations[0:self.job_index + 1]:
             try:
-                if job.checking_status != Checking.FINISHED:
-                    job._check(report_now)
-                    checking_status = min(checking_status, job.propagate_checking_status)
+                if inv.checking_status != Checking.FINISHED:
+                    inv._check(report_now)
+                    checking_status = min(checking_status, inv.propagate_checking_status)
             except JobControlFailException:
-                if job.result == BuildResult.ABORTED:
-                    if job.remaining_tries or job.remaining_total_tries:
-                        print("ABORTED:", job, "not retrying")
-                    job.checking_status = Checking.FINISHED
+                if inv.result == BuildResult.ABORTED:
+                    if inv.remaining_tries or inv.remaining_total_tries:
+                        print("ABORTED:", inv, "not retrying")
+                    inv.checking_status = Checking.FINISHED
                     self.total_max_tries = 0
                     self.max_tries = 0
                     continue
 
                 # The job has stopped running
-                if job.remaining_tries:
-                    if job.propagation != Propagation.NORMAL:
-                        print("MAY RETRY:", job, job.propagation, " failed, will only retry if checked failures. Up to", job.remaining_tries, "more times in current flow")
+                if inv.remaining_tries:
+                    if inv.propagation != Propagation.NORMAL:
+                        print("MAY RETRY:", inv, inv.propagation, " failed, will only retry if checked failures. Up to", inv.remaining_tries, "more times in current flow")
                         continue
-                    print("RETRY:", job, "failed, retrying child jobs from beginning. Up to", job.remaining_tries, "more times in current flow")
+                    print("RETRY:", inv, "failed, retrying child jobs from beginning. Up to", inv.remaining_tries, "more times in current flow")
                     checking_status = Checking.MUST_CHECK
-                    for pre_job in self.jobs[0:self.job_index + 1]:
+                    for pre_job in self.invocations[0:self.job_index + 1]:
                         pre_job._prepare_to_invoke()
                     self.job_index = 0
                     continue
 
-                if job.remaining_total_tries:
-                    if job.propagation != Propagation.NORMAL:
-                        print("MAY RETRY:", job, job.propagation, " failed, will only retry if checked failures. Up to", job.remaining_total_tries, "more times through outer flow")
+                if inv.remaining_total_tries:
+                    if inv.propagation != Propagation.NORMAL:
+                        print("MAY RETRY:", inv, inv.propagation, " failed, will only retry if checked failures. Up to", inv.remaining_total_tries, "more times through outer flow")
                         continue
-                    print("RETRY:", job, "failed, retrying child jobs from beginning. Up to", job.remaining_total_tries, "more times through outer flow")
-                    for pre_job in self.jobs[0:self.job_index + 1]:
+                    print("RETRY:", inv, "failed, retrying child jobs from beginning. Up to", inv.remaining_total_tries, "more times through outer flow")
+                    for pre_job in self.invocations[0:self.job_index + 1]:
                         pre_job._prepare_to_invoke(reset_tried_times=True)
                     self.job_index = 0
                     continue
 
-                job.checking_status = Checking.FINISHED
-                if job.propagation != Propagation.UNCHECKED:
-                    self.job_index = len(self.jobs)
+                inv.checking_status = Checking.FINISHED
+                if inv.propagation != Propagation.UNCHECKED:
+                    self.job_index = len(self.invocations)
 
         self.checking_status = checking_status
         if self.checking_status != Checking.MUST_CHECK and self.result == BuildResult.UNKNOWN:
-            for job in self.jobs[0:self.job_index + 1]:
-                self.result = min(self.result, job.propagate_result)
+            for inv in self.invocations[0:self.job_index + 1]:
+                self.result = min(self.result, inv.propagate_result)
 
             if self.result in _build_result_failures:
                 self.report_result()
-                raise FailedChildJobException(self, job, self.propagation)
+                raise FailedChildJobException(self, inv, self.propagation)
 
             self.job_index += 1
-            if self.job_index < len(self.jobs):
+            if self.job_index < len(self.invocations):
                 self.checking_status = Checking.MUST_CHECK
                 self.result = BuildResult.UNKNOWN
                 return
@@ -849,28 +849,28 @@ class _Serial(_Flow):
             self._check_timeout()
 
     def sequence(self):
-        return [job.sequence() for job in self.jobs]
+        return [inv.sequence() for inv in self.invocations]
 
     def last_jobs_in_flow(self):
-        for job in self.jobs[-1:0:-1]:
-            last_jobs = job.last_jobs_in_flow()
+        for inv in self.invocations[-1:0:-1]:
+            last_jobs = inv.last_jobs_in_flow()
             if last_jobs:
                 return last_jobs
         return []
 
     def nodes(self, node_to_id):
         nodes = []
-        for job in self.jobs:
-            child_nodes = job.nodes(node_to_id)
+        for inv in self.invocations:
+            child_nodes = inv.nodes(node_to_id)
             nodes.extend(child_nodes)
         return nodes
 
     def links(self, prev_jobs, node_to_id):
         links = []
-        for job in self.jobs:
-            child_links = job.links(prev_jobs, node_to_id)
+        for inv in self.invocations:
+            child_links = inv.links(prev_jobs, node_to_id)
             links.extend(child_links)
-            prev_jobs = job.last_jobs_in_flow()
+            prev_jobs = inv.last_jobs_in_flow()
         return links
 
 
@@ -951,7 +951,7 @@ class _TopLevelControllerMixin(object):
         if self.just_dump:
             return
 
-        if not self.jobs:
+        if not self.invocations:
             print("WARNING: Empty toplevel flow", self, "nothing to do.")
             return
 
