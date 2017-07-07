@@ -32,8 +32,8 @@ def result_msg(api, job_name, num=None):
     return repr(job_name) + " - build: http://x.x/job/" + job_name + "/" + (str(num) + "/console" if api.api_type == ApiType.MOCK and num else "")
 
 
-def build_started_msg(api, job_name, num):
-    return "Build started: " + repr(job_name) + " - " + console_url(api, job_name, num)
+def build_started_msg(api, job_name, num, invocation_number=0):
+    return "Build started: " + repr(job_name) + ((' Invocation-' + repr(invocation_number)) if invocation_number else '') + " - " + console_url(api, job_name, num)
 
 
 def kill_current_msg(api, job_name, num):

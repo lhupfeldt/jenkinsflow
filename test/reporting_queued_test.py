@@ -32,7 +32,7 @@ def test_reporting_queued(api_type, capsys):
         sout, _ = capsys.readouterr()
         assert lines_in(
             api_type, sout,
-            "^Invoking Job (1/1,1/1): http://x.x/job/jenkinsflow_test__reporting_queued__j1",
+            "^Job Invocation (1/1,1/1): http://x.x/job/jenkinsflow_test__reporting_queued__j1",
             build_queued_msg(api, "jenkinsflow_test__reporting_queued__j1", 1),
             build_started_msg(api, "jenkinsflow_test__reporting_queued__j1", 2),
         )

@@ -80,29 +80,29 @@ def test_multiple_invocations_parallel_same_flow_queued(api_type, capsys):
         sout, _ = capsys.readouterr()
         assert lines_in(
             api_type, sout,
-            "^Invoking Job (1/1,1/1): http://x.x/job/jenkinsflow_test__multiple_invocations_parallel_same_flow_queued__j1",
-            "^Invoking Job (1/1,1/1): http://x.x/job/jenkinsflow_test__multiple_invocations_parallel_same_flow_queued__j1",
-            "^Invoking Job (1/1,1/1): http://x.x/job/jenkinsflow_test__multiple_invocations_parallel_same_flow_queued__j1",
+            "^Job Invocation-1 (1/1,1/1): http://x.x/job/jenkinsflow_test__multiple_invocations_parallel_same_flow_queued__j1",
+            "^Job Invocation-2 (1/1,1/1): http://x.x/job/jenkinsflow_test__multiple_invocations_parallel_same_flow_queued__j1",
+            "^Job Invocation-3 (1/1,1/1): http://x.x/job/jenkinsflow_test__multiple_invocations_parallel_same_flow_queued__j1",
             (
-                build_started_msg(api, "jenkinsflow_test__multiple_invocations_parallel_same_flow_queued__j1", 1),
-                "^job: 'jenkinsflow_test__multiple_invocations_parallel_same_flow_queued__j1' stopped running",
-                "^job: 'jenkinsflow_test__multiple_invocations_parallel_same_flow_queued__j1' Status IDLE - build: #",
-                "^SUCCESS: 'jenkinsflow_test__multiple_invocations_parallel_same_flow_queued__j1'",
+                build_started_msg(api, "jenkinsflow_test__multiple_invocations_parallel_same_flow_queued__j1", 1, invocation_number=1),
+                "^job: 'jenkinsflow_test__multiple_invocations_parallel_same_flow_queued__j1' Invocation-1 stopped running",
+                "^job: 'jenkinsflow_test__multiple_invocations_parallel_same_flow_queued__j1' Invocation-1 Status IDLE - build: #",
+                "^SUCCESS: 'jenkinsflow_test__multiple_invocations_parallel_same_flow_queued__j1' Invocation-1",
 
-                build_started_msg(api, "jenkinsflow_test__multiple_invocations_parallel_same_flow_queued__j1", 2),
-                "^job: 'jenkinsflow_test__multiple_invocations_parallel_same_flow_queued__j1' stopped running",
-                "^job: 'jenkinsflow_test__multiple_invocations_parallel_same_flow_queued__j1' Status IDLE - build: #",
-                "^SUCCESS: 'jenkinsflow_test__multiple_invocations_parallel_same_flow_queued__j1'",
+                build_started_msg(api, "jenkinsflow_test__multiple_invocations_parallel_same_flow_queued__j1", 2, invocation_number=2),
+                "^job: 'jenkinsflow_test__multiple_invocations_parallel_same_flow_queued__j1' Invocation-2 stopped running",
+                "^job: 'jenkinsflow_test__multiple_invocations_parallel_same_flow_queued__j1' Invocation-2 Status IDLE - build: #",
+                "^SUCCESS: 'jenkinsflow_test__multiple_invocations_parallel_same_flow_queued__j1' Invocation-2",
 
-                build_started_msg(api, "jenkinsflow_test__multiple_invocations_parallel_same_flow_queued__j1", 3),
-                "^job: 'jenkinsflow_test__multiple_invocations_parallel_same_flow_queued__j1' stopped running",
-                "^job: 'jenkinsflow_test__multiple_invocations_parallel_same_flow_queued__j1' Status IDLE - build: #",
-                "^SUCCESS: 'jenkinsflow_test__multiple_invocations_parallel_same_flow_queued__j1'",
+                build_started_msg(api, "jenkinsflow_test__multiple_invocations_parallel_same_flow_queued__j1", 3, invocation_number=3),
+                "^job: 'jenkinsflow_test__multiple_invocations_parallel_same_flow_queued__j1' Invocation-3 stopped running",
+                "^job: 'jenkinsflow_test__multiple_invocations_parallel_same_flow_queued__j1' Invocation-3 Status IDLE - build: #",
+                "^SUCCESS: 'jenkinsflow_test__multiple_invocations_parallel_same_flow_queued__j1' Invocation-3",
             ),
             "^parallel flow: (",
-            "job: 'jenkinsflow_test__multiple_invocations_parallel_same_flow_queued__j1' SUCCESS",
-            "job: 'jenkinsflow_test__multiple_invocations_parallel_same_flow_queued__j1' SUCCESS",
-            "job: 'jenkinsflow_test__multiple_invocations_parallel_same_flow_queued__j1' SUCCESS",
+            "job: 'jenkinsflow_test__multiple_invocations_parallel_same_flow_queued__j1' Invocation-1 SUCCESS",
+            "job: 'jenkinsflow_test__multiple_invocations_parallel_same_flow_queued__j1' Invocation-2 SUCCESS",
+            "job: 'jenkinsflow_test__multiple_invocations_parallel_same_flow_queued__j1' Invocation-3 SUCCESS",
             "^)",
         )
 
@@ -121,41 +121,44 @@ def test_multiple_invocations_parallel_same_flow_no_args_singlequeued(api_type, 
             return
 
         api.flow_job()
-        num_j1_invocations = 20
-        api.job('j1', max_fails=0, expect_invocations=num_j1_invocations, expect_order=1, exec_time=3)
+        num_inv = 20
+        api.job('j1', max_fails=0, expect_invocations=num_inv, expect_order=1, exec_time=15)
 
         with parallel(api, timeout=70, job_name_prefix=api.job_name_prefix, report_interval=0.1, poll_interval=0.1) as ctrl1:
-            for _ in range(0, num_j1_invocations):
+            for _ in range(0, num_inv):
                 ctrl1.invoke('j1')
 
         sout, _ = capsys.readouterr()
+
+        any_superseeded = re.compile(" +job: 'jenkinsflow_test__multiple_invocations_parallel_same_flow_no_args_singlequeued__j1' Invocation-[0-9]+ SUPERSEDED")
         assert lines_in(
             api_type, sout,
-            "^Invoking Job (1/1,1/1): http://x.x/job/jenkinsflow_test__multiple_invocations_parallel_same_flow_no_args_singlequeued__j1",
-            "^Invoking Job (1/1,1/1): http://x.x/job/jenkinsflow_test__multiple_invocations_parallel_same_flow_no_args_singlequeued__j1",
-            "^Invoking Job (1/1,1/1): http://x.x/job/jenkinsflow_test__multiple_invocations_parallel_same_flow_no_args_singlequeued__j1",
+            "^Job Invocation-1 (1/1,1/1): http://x.x/job/jenkinsflow_test__multiple_invocations_parallel_same_flow_no_args_singlequeued__j1",
+            "^Job Invocation-5 (1/1,1/1): http://x.x/job/jenkinsflow_test__multiple_invocations_parallel_same_flow_no_args_singlequeued__j1",
+            "^Job Invocation-{} (1/1,1/1): http://x.x/job/jenkinsflow_test__multiple_invocations_parallel_same_flow_no_args_singlequeued__j1".format(num_inv),
             (
-                build_started_msg(api, "jenkinsflow_test__multiple_invocations_parallel_same_flow_no_args_singlequeued__j1", 1),
+                build_started_msg(api, "jenkinsflow_test__multiple_invocations_parallel_same_flow_no_args_singlequeued__j1", 1, invocation_number=1),
                 "^SUPERSEDED: 'jenkinsflow_test__multiple_invocations_parallel_same_flow_no_args_singlequeued__j1'",
                 "^SUPERSEDED: 'jenkinsflow_test__multiple_invocations_parallel_same_flow_no_args_singlequeued__j1'",
-                "^job: 'jenkinsflow_test__multiple_invocations_parallel_same_flow_no_args_singlequeued__j1' Status RUNNING - build:",
-                "^job: 'jenkinsflow_test__multiple_invocations_parallel_same_flow_no_args_singlequeued__j1' Status QUEUED - ",
+                "^job: 'jenkinsflow_test__multiple_invocations_parallel_same_flow_no_args_singlequeued__j1' Invocation-1 Status RUNNING - build:",
+                "^job: 'jenkinsflow_test__multiple_invocations_parallel_same_flow_no_args_singlequeued__j1' Invocation-{} Status QUEUED - ".format(num_inv),
 
-                "^job: 'jenkinsflow_test__multiple_invocations_parallel_same_flow_no_args_singlequeued__j1' stopped running",
-                "^job: 'jenkinsflow_test__multiple_invocations_parallel_same_flow_no_args_singlequeued__j1' Status IDLE - build: #",
-                "^SUCCESS: 'jenkinsflow_test__multiple_invocations_parallel_same_flow_no_args_singlequeued__j1'",
+                "^job: 'jenkinsflow_test__multiple_invocations_parallel_same_flow_no_args_singlequeued__j1' Invocation-1 stopped running",
+                "^job: 'jenkinsflow_test__multiple_invocations_parallel_same_flow_no_args_singlequeued__j1' Invocation-1 Status IDLE - build: #",
+                "^SUCCESS: 'jenkinsflow_test__multiple_invocations_parallel_same_flow_no_args_singlequeued__j1' Invocation-1",
 
-                build_started_msg(api, "jenkinsflow_test__multiple_invocations_parallel_same_flow_no_args_singlequeued__j1", 2),
-                "^job: 'jenkinsflow_test__multiple_invocations_parallel_same_flow_no_args_singlequeued__j1' stopped running",
-                "^job: 'jenkinsflow_test__multiple_invocations_parallel_same_flow_no_args_singlequeued__j1' Status IDLE - build: #",
-                "^SUCCESS: 'jenkinsflow_test__multiple_invocations_parallel_same_flow_no_args_singlequeued__j1'",
+                build_started_msg(api, "jenkinsflow_test__multiple_invocations_parallel_same_flow_no_args_singlequeued__j1", 2, invocation_number=num_inv),
+                "^job: 'jenkinsflow_test__multiple_invocations_parallel_same_flow_no_args_singlequeued__j1' Invocation-{} stopped running".format(num_inv),
+                "^job: 'jenkinsflow_test__multiple_invocations_parallel_same_flow_no_args_singlequeued__j1' Invocation-{} Status IDLE - build: #".format(num_inv),
+                "^SUCCESS: 'jenkinsflow_test__multiple_invocations_parallel_same_flow_no_args_singlequeued__j1' Invocation-{}".format(num_inv),
             ),
             "^parallel flow: (",
-            "job: 'jenkinsflow_test__multiple_invocations_parallel_same_flow_no_args_singlequeued__j1' SUCCESS",
-            "job: 'jenkinsflow_test__multiple_invocations_parallel_same_flow_no_args_singlequeued__j1' SUPERSEDED",
-            "job: 'jenkinsflow_test__multiple_invocations_parallel_same_flow_no_args_singlequeued__j1' SUPERSEDED",
-            "job: 'jenkinsflow_test__multiple_invocations_parallel_same_flow_no_args_singlequeued__j1' SUPERSEDED",
-            "job: 'jenkinsflow_test__multiple_invocations_parallel_same_flow_no_args_singlequeued__j1' SUCCESS",
+            "job: 'jenkinsflow_test__multiple_invocations_parallel_same_flow_no_args_singlequeued__j1' Invocation-1 SUCCESS",
+            # python3 TODO: *[any_superseeded for _ in range(0, num_inv)]
+            any_superseeded,
+            any_superseeded,
+            any_superseeded,
+            "job: 'jenkinsflow_test__multiple_invocations_parallel_same_flow_no_args_singlequeued__j1' Invocation-{} SUCCESS".format(num_inv),
             "^)",
         )
 

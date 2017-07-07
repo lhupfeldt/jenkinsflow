@@ -3,7 +3,7 @@
 
 from __future__ import print_function
 
-import os, time
+import os, time, re
 
 import pytest
 from pytest import raises, xfail
@@ -48,7 +48,7 @@ def test_kill_all_unchecked(api_type, capsys):
         if capsys:
             sout, _ = capsys.readouterr()
             assert lines_in(api_type, sout, "unchecked job: 'jenkinsflow_test__kill_all_unchecked__j1' UNKNOWN - RUNNING")
-            assert lines_in(api_type, sout, "unchecked job: 'jenkinsflow_test__kill_all_unchecked__j3' UNKNOWN - RUNNING")
+            assert lines_in(api_type, sout, "unchecked job: 'jenkinsflow_test__kill_all_unchecked__j3' Invocation-1 UNKNOWN - RUNNING")
 
         # Kill the flow
         flow(api, True)
@@ -72,9 +72,9 @@ def test_kill_all_unchecked(api_type, capsys):
             "^   )",
 
             "^   parallel flow: (",
-            "^      unchecked job: 'jenkinsflow_test__kill_all_unchecked__j3' ABORTED - IDLE",
-            "^      unchecked job: 'jenkinsflow_test__kill_all_unchecked__j3' ABORTED - IDLE",
-            "^      unchecked job: 'jenkinsflow_test__kill_all_unchecked__j3' ABORTED - IDLE",
+            "^      unchecked job: 'jenkinsflow_test__kill_all_unchecked__j3' Invocation-1 ABORTED - IDLE",
+            "^      unchecked job: 'jenkinsflow_test__kill_all_unchecked__j3' Invocation-2 ABORTED - IDLE",
+            "^      unchecked job: 'jenkinsflow_test__kill_all_unchecked__j3' Invocation-3 ABORTED - IDLE",
             "^      unchecked job: 'jenkinsflow_test__kill_all_unchecked__j4' SUCCESS - IDLE",
             "^      unchecked job: 'jenkinsflow_test__kill_all_unchecked__j5' FAILURE - IDLE",
             "^   )",
@@ -114,8 +114,8 @@ def test_kill_mini(api_type, capsys):
             "^--- Final status ---",
             "^serial flow: [",
             "^   parallel flow: (",
-            "^      job: 'jenkinsflow_test__kill_mini__j6' ABORTED - IDLE",
-            "^      job: 'jenkinsflow_test__kill_mini__j6' DEQUEUED - IDLE",
+            re.compile("      job: 'jenkinsflow_test__kill_mini__j6' Invocation-[0-9]+ ABORTED - IDLE"),
+            re.compile("      job: 'jenkinsflow_test__kill_mini__j6' Invocation-[0-9]+ DEQUEUED - IDLE"),
             "^   )",
             "^",
             "^]"
@@ -179,8 +179,8 @@ def test_kill_current(api_type, capsys):
             "^      ]",
             "^      job: 'jenkinsflow_test__kill_current__j4' FAILURE - IDLE",
             "^      unchecked job: 'jenkinsflow_test__kill_current__j5' ABORTED - IDLE",
-            "^      job: 'jenkinsflow_test__kill_current__j6' ABORTED - IDLE",
-            "^      job: 'jenkinsflow_test__kill_current__j6' DEQUEUED - IDLE",
+            re.compile("      job: 'jenkinsflow_test__kill_current__j6' Invocation-[0-9]+ ABORTED - IDLE"),
+            re.compile("      job: 'jenkinsflow_test__kill_current__j6' Invocation-[0-9]+ DEQUEUED - IDLE"),
             "^   )",
             "^",
             "^   parallel flow: (",

@@ -162,7 +162,7 @@ def cli(mock_speedup=1000,
             # This is automatically tested by readdthedocs, so no need to test on Travis
             start_msg("Testing documentation generation")
 
-            os.chdir('doc/source')
+            os.chdir(jp(top_dir, 'doc/source'))
             del os.environ['PYTHONPATH']
             subprocess.check_call(['make', 'html'])
     except Exception as ex:

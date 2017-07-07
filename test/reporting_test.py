@@ -49,15 +49,15 @@ def test_reporting_invocation_serial(api_type, capsys):
         empty_re = re.compile("^$")
         assert lines_in(
             api_type, sout,
-            "^Defined Job http://x.x/job/jenkinsflow_test__reporting_invocation_serial__j11",
-            "^Defined Job http://x.x/job/jenkinsflow_test__reporting_invocation_serial__j12",
+            "^Defined Invocation http://x.x/job/jenkinsflow_test__reporting_invocation_serial__j11",
+            "^Defined Invocation http://x.x/job/jenkinsflow_test__reporting_invocation_serial__j12",
             empty_re,
             "--- Starting flow ---",
             empty_re,
-            "^Invoking Flow (1/1,1/1): ['jenkinsflow_test__reporting_invocation_serial__j11', 'jenkinsflow_test__reporting_invocation_serial__j12']",
-            "^Invoking Job (1/1,1/1): http://x.x/job/jenkinsflow_test__reporting_invocation_serial__j11",
+            "^Flow Invocation (1/1,1/1): ['jenkinsflow_test__reporting_invocation_serial__j11', 'jenkinsflow_test__reporting_invocation_serial__j12']",
+            "^Job Invocation (1/1,1/1): http://x.x/job/jenkinsflow_test__reporting_invocation_serial__j11",
             build_started_msg(api, "jenkinsflow_test__reporting_invocation_serial__j11", 1),
-            "^Invoking Job (1/1,1/1): http://x.x/job/jenkinsflow_test__reporting_invocation_serial__j12",
+            "^Job Invocation (1/1,1/1): http://x.x/job/jenkinsflow_test__reporting_invocation_serial__j12",
             build_started_msg(api, "jenkinsflow_test__reporting_invocation_serial__j12", 8),
         )
 
@@ -75,21 +75,52 @@ def test_reporting_invocation_parallel(api_type, capsys):
         sout, _ = capsys.readouterr()
         assert lines_in(
             api_type, sout,
-            "^Invoking Flow (1/1,1/1): ('jenkinsflow_test__reporting_invocation_parallel__j11', 'jenkinsflow_test__reporting_invocation_parallel__j12')",
-            "^Invoking Job (1/1,1/1): http://x.x/job/jenkinsflow_test__reporting_invocation_parallel__j11",
-            "^Invoking Job (1/1,1/1): http://x.x/job/jenkinsflow_test__reporting_invocation_parallel__j12",
+            "^Flow Invocation (1/1,1/1): ('jenkinsflow_test__reporting_invocation_parallel__j11', 'jenkinsflow_test__reporting_invocation_parallel__j12')",
+            "^Job Invocation (1/1,1/1): http://x.x/job/jenkinsflow_test__reporting_invocation_parallel__j11",
+            "^Job Invocation (1/1,1/1): http://x.x/job/jenkinsflow_test__reporting_invocation_parallel__j12",
         )
 
         assert lines_in(
             api_type, sout,
-            "^Invoking Job (1/1,1/1): http://x.x/job/jenkinsflow_test__reporting_invocation_parallel__j11",
+            "^Job Invocation (1/1,1/1): http://x.x/job/jenkinsflow_test__reporting_invocation_parallel__j11",
             build_started_msg(api, "jenkinsflow_test__reporting_invocation_parallel__j11", 1),
         )
 
         assert lines_in(
             api_type, sout,
-            "^Invoking Job (1/1,1/1): http://x.x/job/jenkinsflow_test__reporting_invocation_parallel__j12",
+            "^Job Invocation (1/1,1/1): http://x.x/job/jenkinsflow_test__reporting_invocation_parallel__j12",
             build_started_msg(api, "jenkinsflow_test__reporting_invocation_parallel__j12", 8)
+        )
+
+
+def test_reporting_multiple_invocations(api_type, capsys):
+    with api_select.api(__file__, api_type) as api:
+        api.flow_job()
+        api.job('j11', max_fails=0, expect_invocations=3, expect_order=None)
+        api.job('j12', max_fails=0, expect_invocations=1, invocation_delay=1.0, exec_time=1.5, initial_buildno=7, expect_order=4, serial=True)
+
+        with serial(api, timeout=70, job_name_prefix=api.job_name_prefix, report_interval=0.5/api.speedup) as ctrl1:
+            ctrl1.invoke('j11')
+            ctrl1.invoke('j11')
+            ctrl1.invoke('j11')
+            ctrl1.invoke('j12')
+
+        sout, _ = capsys.readouterr()
+        empty_re = re.compile("^$")
+        assert lines_in(
+            api_type, sout,
+            "^Defined Invocation-1 http://x.x/job/jenkinsflow_test__reporting_multiple_invocations__j11",
+            "^Defined Invocation-2 http://x.x/job/jenkinsflow_test__reporting_multiple_invocations__j11",
+            "^Defined Invocation-3 http://x.x/job/jenkinsflow_test__reporting_multiple_invocations__j11",
+            "^Defined Invocation http://x.x/job/jenkinsflow_test__reporting_multiple_invocations__j12",
+            empty_re,
+            "--- Starting flow ---",
+            empty_re,
+            "^Flow Invocation (1/1,1/1): ['jenkinsflow_test__reporting_multiple_invocations__j11', 'jenkinsflow_test__reporting_multiple_invocations__j11', 'jenkinsflow_test__reporting_multiple_invocations__j11', 'jenkinsflow_test__reporting_multiple_invocations__j12']",
+            "^Job Invocation-1 (1/1,1/1): http://x.x/job/jenkinsflow_test__reporting_multiple_invocations__j11",
+            build_started_msg(api, "jenkinsflow_test__reporting_multiple_invocations__j11", 1, invocation_number=1),
+            "^Job Invocation (1/1,1/1): http://x.x/job/jenkinsflow_test__reporting_multiple_invocations__j12",
+            build_started_msg(api, "jenkinsflow_test__reporting_multiple_invocations__j12", 8),
         )
 
 
@@ -126,37 +157,37 @@ def test_reporting_retry(api_type, capsys):
                           "'jenkinsflow_test__reporting_retry__j23'), 'jenkinsflow_test__reporting_retry__j13']"
         assert lines_in(
             api_type, sout,
-            "^Invoking Flow (1/2,1/2): " + outer_flow_repr,
-            "^Invoking Job (1/2,1/2): http://x.x/job/jenkinsflow_test__reporting_retry__j11_fail",
+            "^Flow Invocation (1/2,1/2): " + outer_flow_repr,
+            "^Job Invocation (1/2,1/2): http://x.x/job/jenkinsflow_test__reporting_retry__j11_fail",
             build_started_msg(api, "jenkinsflow_test__reporting_retry__j11_fail", 1),
             "^FAILURE: 'jenkinsflow_test__reporting_retry__j11_fail'",
             "^RETRY: job: 'jenkinsflow_test__reporting_retry__j11_fail' failed, retrying child jobs from beginning. Up to 1 more times in current flow",
-            "^Invoking Job (2/2,2/2): http://x.x/job/jenkinsflow_test__reporting_retry__j11_fail",
+            "^Job Invocation (2/2,2/2): http://x.x/job/jenkinsflow_test__reporting_retry__j11_fail",
             build_started_msg(api, "jenkinsflow_test__reporting_retry__j11_fail", 2),
             "^SUCCESS: 'jenkinsflow_test__reporting_retry__j11_fail'",
-            "^Invoking Job (1/3,1/6): http://x.x/job/jenkinsflow_test__reporting_retry__j23",
+            "^Job Invocation (1/3,1/6): http://x.x/job/jenkinsflow_test__reporting_retry__j23",
             build_started_msg(api, "jenkinsflow_test__reporting_retry__j23", 1),
             "^SUCCESS: 'jenkinsflow_test__reporting_retry__j23'",
-            "^Invoking Job (1/2,1/2): http://.x.x/job/jenkinsflow_test__reporting_retry__j13",
+            "^Job Invocation (1/2,1/2): http://.x.x/job/jenkinsflow_test__reporting_retry__j13",
             build_started_msg(api, "jenkinsflow_test__reporting_retry__j13", 1),
             "^Flow SUCCESS " + outer_flow_repr
         )
 
         assert lines_in(
             api_type, sout,
-            "^Invoking Job (1/2,1/12): http://x.x/job/jenkinsflow_test__reporting_retry__j31_fail",
+            "^Job Invocation (1/2,1/12): http://x.x/job/jenkinsflow_test__reporting_retry__j31_fail",
             build_started_msg(api, "jenkinsflow_test__reporting_retry__j31_fail", 1),
             "^FAILURE: 'jenkinsflow_test__reporting_retry__j31_fail'",
             "^RETRY: job: 'jenkinsflow_test__reporting_retry__j31_fail' failed, retrying child jobs from beginning. Up to 1 more times in current flow",
-            "^Invoking Job (2/2,2/12): http://.x.x/job/jenkinsflow_test__reporting_retry__j31_fail",
+            "^Job Invocation (2/2,2/12): http://.x.x/job/jenkinsflow_test__reporting_retry__j31_fail",
             build_started_msg(api, "jenkinsflow_test__reporting_retry__j31_fail", 2),
             "^FAILURE: 'jenkinsflow_test__reporting_retry__j31_fail'",
             "^RETRY: job: 'jenkinsflow_test__reporting_retry__j31_fail' failed, retrying child jobs from beginning. Up to 10 more times through outer flow",
-            "^Invoking Job (1/2,3/12): http://x.x/job/jenkinsflow_test__reporting_retry__j31_fail",
+            "^Job Invocation (1/2,3/12): http://x.x/job/jenkinsflow_test__reporting_retry__j31_fail",
             build_started_msg(api, "jenkinsflow_test__reporting_retry__j31_fail", 3),
             "^FAILURE: 'jenkinsflow_test__reporting_retry__j31_fail'",
             "^RETRY: job: 'jenkinsflow_test__reporting_retry__j31_fail' failed, retrying child jobs from beginning. Up to 1 more times in current flow",
-            "^Invoking Job (2/2,4/12): http://x.x/job/jenkinsflow_test__reporting_retry__j31_fail",
+            "^Job Invocation (2/2,4/12): http://x.x/job/jenkinsflow_test__reporting_retry__j31_fail",
             build_started_msg(api, "jenkinsflow_test__reporting_retry__j31_fail", 4),
             "^SUCCESS: 'jenkinsflow_test__reporting_retry__j31_fail'"
         )
@@ -209,7 +240,7 @@ def test_reporting_defined_job_parameters(api_type, capsys):
         sout, _ = capsys.readouterr()
         assert lines_in(
             api_type, sout,
-            "^Defined Job http://x.x/job/jenkinsflow_test__reporting_defined_job_parameters__j1 - parameters:",
+            "^Defined Invocation http://x.x/job/jenkinsflow_test__reporting_defined_job_parameters__j1 - parameters:",
             "    i1 = '2'",
         )
 
@@ -219,7 +250,7 @@ def test_reporting_defined_job_parameters(api_type, capsys):
 
 
 ordered_params_output = """
-Defined Job http://x.x/job/jenkinsflow_test__reporting_ordered_job_parameters__j1 - parameters:
+Defined Invocation http://x.x/job/jenkinsflow_test__reporting_ordered_job_parameters__j1 - parameters:
      s1 = 'hi'
      s2 = 'not-last'
      c1 = 'why?'
@@ -258,7 +289,7 @@ def test_reporting_defined_non_existing(api_type, capsys):
         sout, _ = capsys.readouterr()
         assert lines_in(
             api_type, sout,
-            "Defined Job 'jenkinsflow_test__reporting_defined_non_existing__j1' - MISSING JOB",
+            "Defined Invocation 'jenkinsflow_test__reporting_defined_non_existing__j1' - MISSING JOB",
             "    a = 'b'",
         )
         assert "    c = 'd'" in sout

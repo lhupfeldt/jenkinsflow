@@ -137,6 +137,10 @@ class _JobControl(object):
         self.top_flow.current_nesting_level -= 1
 
     @abc.abstractmethod
+    def _invocation_id(self):
+        """Must return an identification of invocation to distinguish multiple explicit invocations of the same job."""
+
+    @abc.abstractmethod
     def _prepare_first(self):
         """Must be called before the first invocation of a job"""
 
@@ -151,7 +155,8 @@ class _JobControl(object):
     def _invocation_message(self, controller_type_name, invocation_repr):
         if self.msg is not None:
             print(self.msg)
-        print("\nInvoking %s (%d/%d,%d/%d):" % (controller_type_name, self.tried_times, self.max_tries, self.total_tried_times, self.total_max_tries), invocation_repr)
+        print("\n%s %s (%d/%d,%d/%d): %s" % (
+            controller_type_name, self._invocation_id(), self.tried_times, self.max_tries, self.total_tried_times, self.total_max_tries, invocation_repr))
 
     def _must_invoke_set_invocation_time(self):
         if self.invocation_time:
@@ -248,6 +253,7 @@ class _SingleInvocation(_JobControl):
         self.job_invocation = None
         self.old_build_num = None
         self.name = job_name_prefix + job_name
+        self.invocation_number = 0
         self.repr_str = ("unchecked " if self.propagation == Propagation.UNCHECKED else "") + "job: " + repr(self.name)
         self.jenkins_baseurl = None
         self._reported_invoked = False
@@ -257,7 +263,17 @@ class _SingleInvocation(_JobControl):
 
         print(self.indentation + repr(self))
 
+    def _invocation_id(self):
+        return ('Invocation-' + str(self.invocation_number)) if self.invocation_number != 0 else 'Invocation'
+
     def _prepare_first(self, require_job=False):
+        previously_invoked = self.top_flow.jobs.get(self.name)
+        if previously_invoked:
+            if previously_invoked.invocation_number == 0:
+                previously_invoked.invocation_number = 1
+            self.invocation_number = previously_invoked.invocation_number + 1
+        self.top_flow.jobs[self.name] = self
+
         try:
             self.job = self.api.get_job(self.name)
         except UnknownJobException as ex:
@@ -276,7 +292,9 @@ class _SingleInvocation(_JobControl):
             # Pylint does not like Enum pylint: disable=no-member
             raise JobNotIdleException(repr(self) + " is in state " + progress.name + ". It must be " + Progress.IDLE.name + '.')
 
-        print(self.indentation + self._status_message(progress, self.old_build_num, None, 'latest '))
+        if not previously_invoked:
+            # TODO: Don't poll more than once per job for initial status
+            print(self.indentation + self._status_message(progress, self.old_build_num, None, 'latest '))
 
     def _set_display_params(self):
         first = current = OrderedDict()
@@ -295,19 +313,21 @@ class _SingleInvocation(_JobControl):
 
     def _show_job_definition(self):
         if self.job:
-            print('Defined Job', self.job.public_uri + (' - parameters:' if self._display_params else ''))
+            print('Defined', self._invocation_id(), self.job.public_uri + (' - parameters:' if self._display_params else ''))
         else:
-            print('Defined Job', repr(self.name) + " - MISSING JOB")
+            print('Defined', self._invocation_id(), repr(self.name) + " - MISSING JOB")
         for key, value in self._display_params:
             print("    ", key, '=', value)
         if self._display_params:
             print("")
 
     def __repr__(self):
-        return self.repr_str
+        if self.invocation_number == 0:
+            return self.repr_str
+        return self.repr_str + ' ' + self._invocation_id()
 
     def _invoked_message(self):
-        print("Build started:", repr(self.name), '-', self.job_invocation.console_url())
+        print("Build started:", repr(self.name), self._invocation_id() + ' -' if self.invocation_number else '-', self.job_invocation.console_url())
 
     def _status_message(self, progress, build_num, queued_why, latest=''):
         if progress == Progress.QUEUED:
@@ -358,18 +378,19 @@ class _SingleInvocation(_JobControl):
         # Pylint does not like Enum pylint: disable=no-member
         unchecked = (Propagation.UNCHECKED.name + ' ') if self.propagation == Propagation.UNCHECKED else ''
 
+        inv_id_msg = (' ' + self._invocation_id()) if self.invocation_number else ''
         if result != BuildResult.SUPERSEDED:
             print(self, "stopped running")
             print(self._status_message(progress, self.job_invocation.build_number, self.job_invocation.queued_why))
             # Pylint does not like Enum pylint: disable=maybe-no-member
-            print(unchecked + self.result.name + ":", repr(self.job.name), "- build:", self.job_invocation.console_url(), self._time_msg())
+            print(unchecked + self.result.name + ":", repr(self.job.name) + inv_id_msg, "- build:", self.job_invocation.console_url(), self._time_msg())
 
             if self.result in _build_result_failures:
                 raise FailedSingleJobException(self.job, self.propagation)
             return
 
         # Pylint does not like Enum pylint: disable=maybe-no-member
-        print(unchecked + self.result.name + ":", repr(self.job.name))
+        print(unchecked + self.result.name + ":", repr(self.job.name) + inv_id_msg)
 
     def _kill_check(self, report_now, dequeue):
         if self.job is None:
@@ -526,11 +547,12 @@ class _Flow(_JobControl):
         """Defines a serial flow where nested jobs or flows are executed in order.
 
         Args:
-            timeout (float): Maximum time in seconds to wait for flow jobs to finish. 0 means infinite, however, this flow can not run longer than the minimum timeout of any parent flows.
-                Note that jenkins jobs are NOT terminated when the flow times out.
+            timeout (float): Maximum time in seconds to wait for flow jobs to finish. 0 means infinite, however, this flow can not run longer than
+                the minimum timeout of any parent flows. Note that jenkins jobs are NOT terminated when the flow times out.
             securitytoken (str): Token to use on security enabled Jenkins instead of username/password. The Jenkins job must have the token configured.
                 If None, the parent flow securitytoken is used.
-            job_name_prefix (str): All jobs defined in flow will automatically be prefixed with the parent flow job_name_prefix + this job_name_prefix before invoking Jenkins job. To reset prefixing (i.e. don't use parent flow prefix either), set the value to None
+            job_name_prefix (str): All jobs defined in flow will automatically be prefixed with the parent flow job_name_prefix + this job_name_prefix
+                before invoking Jenkins job. To reset prefixing (i.e. don't use parent flow prefix either), set the value to None
             max_tries (int): Maximum number of times to invoke the flow. Default is 1, meaning no retry will be attempted in case a job fails.
                 If a job fails, jobs are retried from start of the parallel flow::
 
@@ -549,7 +571,8 @@ class _Flow(_JobControl):
                 but only the result of the Jenkins job running the flow (if it is being run from a Jenkins job).
             report_interval (float): The interval in seconds between reporting the status of polled Jenkins jobs.
                 If None the parent flow report_interval is used.
-            secret_params (re.RegexObject): Regex of Jenkins job invocation parameter names, for which the value will be masked out with '******' when parameters are printed.
+            secret_params (re.RegexObject): Regex of Jenkins job invocation parameter names, for which the value will be masked out with '******' when
+                parameters are printed.
                 If None the parent flow secret_params is used.
             allow_missing_jobs (boolean): If true it is not considered an error if Jenkins jobs are missing when the flow starts.
                 It is assumed that the missing jobs are created by jobs in the flow, prior to the missing jobs being invoked.
@@ -596,6 +619,9 @@ class _Flow(_JobControl):
         inv = _SingleInvocation(self, self.securitytoken, self.job_name_prefix, self.max_tries, job_name, params, Propagation.UNCHECKED, self.secret_params_re, self.allow_missing_jobs)
         self.invocations.append(inv)
         return inv
+
+    def _invocation_id(self):
+        return 'Invocation'
 
     def _prepare_first(self):
         print(self.indentation + self._enter_str)
@@ -680,7 +706,7 @@ class _Flow(_JobControl):
         separators=None
         if indent:
             node_to_id = lambda job: job.name
-            separators=(',', ': ')            
+            separators=(',', ': ')
 
         nodes = self.nodes(node_to_id)
         links = self.links([], node_to_id)
@@ -690,10 +716,10 @@ class _Flow(_JobControl):
         from atomicfile import AtomicFile
         if file_path is not None:
             with AtomicFile(file_path, 'w+') as out_file:
-                # python3 doesn't need  separators=(',', ': ')                
+                # python3 doesn't need  separators=(',', ': ')
                 json.dump(graph, out_file, indent=indent, separators=separators)
         else:
-            # python3 doesn't need  separators=(',', ': ')            
+            # python3 doesn't need  separators=(',', ': ')
             return json.dumps(graph, indent=indent, separators=separators)
 
 
@@ -920,6 +946,9 @@ class _TopLevelControllerMixin(object):
         self.params_display_order = params_display_order
         self.description = description
 
+        # 'jobs' hold unique jobs by name vs 'invocations' on individual flows which may hold multiple invocations on one job
+        self.jobs = {}
+
         # Set signalhandler to kill entire flow
         def set_kill(_sig, _frame):
             print("\nGot SIGTERM: Killing all builds belonging to current flow")
@@ -939,7 +968,10 @@ class _TopLevelControllerMixin(object):
         print("Legend:")
         print("Serial builds: []")
         print("Parallel builds: ()")
-        print("Invoking (w/x,y/z): w=current invocation in current flow scope, x=max in scope, y=total number of invocations, z=total max invocations")
+        print("Invocation-N (w/x,y/z): ")
+        print("    -N: 'Invocation N of same job', where N is invocation number which is increased every time a job has been explicitly")
+        print("            invoked (as opposed to retried). '-N' is only present for jobs with multiple invocations.")
+        print("    w=current retry invocation in current flow scope, x=max in scope, y=total number of invocations, z=total max invocations")
         print("Elapsed time: 'after: x/y': x=time spent during current run of job, y=time elapsed since start of outermost flow")
         print()
         print("--- Calculating flow graph ---")
