@@ -47,7 +47,7 @@ script_api_requires = ['psutil>=5.2.2', 'setproctitle>=1.1.10']
 visual_requires = ['bottle>=0.12.1']
 
 if sys.version_info.major < 3:
-    flow_requires.extend(['enum34>=1.1', 'subprocess32>=3.2'])
+    flow_requires.extend(['enum34>=1.1', 'subprocess32>=3.2.5'])
 
 if not on_rtd:
     install_requires = flow_requires + cli_requires + job_load_requires + jenkins_api_requires + script_api_requires + visual_requires
