@@ -24,8 +24,10 @@ class ResourceNotFound(Exception):
     pass
 
 
-class ConnectionError(Exception):
-    pass
+if major_version < 3:
+    # ConnectionError is builtin in Python 3
+    class ConnectionError(Exception):
+        pass
 
 
 class RequestsRestApi(object):

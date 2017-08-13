@@ -8,11 +8,16 @@ from collections import OrderedDict
 
 from .api_base import BuildResult, Progress, AuthError, UnknownJobException, ApiInvocationMixin
 from .speed import Speed
-from .rest_api_wrapper import ResourceNotFound, RequestsRestApi, ConnectionError
+from .rest_api_wrapper import ResourceNotFound, RequestsRestApi
 from .jenkins_cli_protocol import CliProtocol
 
 
 major_version = sys.version_info.major
+
+
+if major_version < 3:
+    from .rest_api_wrapper import ConnectionError
+
 
 jenkins_cli_jar = 'jenkins-cli.jar'
 hudson_cli_jar = 'hudson-cli.jar'
