@@ -51,6 +51,9 @@ class RequestsRestApi(object):
                 raise AuthError(ex)
             raise
 
+        # TODO: This is dubious, maybe we shoud raise here instead.
+        return response
+
     def _get(self, url, params):
         import requests
         try:
@@ -64,12 +67,12 @@ class RequestsRestApi(object):
     def get_json(self, url="", **params):
         return self._get(url + "/api/json", params=params).json()
 
-    def post(self, url, payload=None, headers=None, **params):
-        response = self.session.post(self.direct_uri + url, headers=headers, data=payload, allow_redirects=False, params=params)
+    def post(self, url, payload=None, headers=None, allow_redirects=False, **params):
+        response = self.session.post(self.direct_uri + url, headers=headers, data=payload, allow_redirects=allow_redirects, params=params)
         return self._check_response(response, (200, 201))
 
-    def headers(self):
-        return self._check_response(self.session.head(self.direct_uri)).headers
+    def headers(self, allow_redirects=True):
+        return self._check_response(self.session.head(self.direct_uri, allow_redirects=allow_redirects)).headers
 
 
 def _check_restkit_response(func):
@@ -111,9 +114,9 @@ class RestkitRestApi(object):
         return self.json.loads(response.body_string())
 
     @_check_restkit_response
-    def post(self, url, payload=None, headers=None, **params):
+    def post(self, url, payload=None, headers=None, allow_redirects=False, **params):  # pylint: disable=unused-argument
         return self.session.post(url, headers=headers, payload=payload, **params)
 
     @_check_restkit_response
-    def headers(self):
+    def headers(self, allow_redirects=True):  # pylint: disable=unused-argument
         return self.session.head().headers
