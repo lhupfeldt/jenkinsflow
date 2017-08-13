@@ -12,7 +12,7 @@ except ImportError:  # pragma: no cover
     engine = None
 
 
-def update_job(jenkins, job_name, config_xml, pre_delete=False, async=False):
+def update_job(jenkins, job_name, config_xml, pre_delete=False, background=False):
     """Update or create a job in Jenkins.
 
     Args:
@@ -37,11 +37,11 @@ def update_job(jenkins, job_name, config_xml, pre_delete=False, async=False):
 
     print('Creating job:', job_name)
     jenkins.create_job(job_name, config_xml)
-    if not async:
+    if not background:
         jenkins.poll()
 
 
-def update_job_from_template(jenkins, job_name, config_xml_template, pre_delete=False, async=False, context=None):
+def update_job_from_template(jenkins, job_name, config_xml_template, pre_delete=False, background=False, context=None):
     """Create or update a job based on a `Tenjin` http://www.kuwata-lab.com/tenjin/ config.xml template.
 
     Args:
@@ -53,4 +53,4 @@ def update_job_from_template(jenkins, job_name, config_xml_template, pre_delete=
 
     assert engine, "You must install tenjin (e.g.: pip install tenjin)"
     config_xml = engine.render(config_xml_template, context or {})
-    update_job(jenkins, job_name, config_xml, pre_delete, async)
+    update_job(jenkins, job_name, config_xml, pre_delete, background)
