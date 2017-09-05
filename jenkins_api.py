@@ -420,7 +420,7 @@ class ApiJob(object):
 
     def enable(self):
         try:
-            self.jenkins.post(self._path + '/disable')
+            self.jenkins.post(self._path + '/enable')
         except ResourceNotFound as ex:
             raise UnknownJobException(self.jenkins._public_job_url(self.name), ex)  # pylint: disable=protected-access
 
