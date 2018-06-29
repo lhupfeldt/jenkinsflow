@@ -3,7 +3,7 @@
 
 from __future__ import print_function
 
-import sys, os, shutil, importlib, datetime, tempfile, psutil, setproctitle, signal
+import sys, os, shutil, importlib, datetime, tempfile, psutil, setproctitle, signal, errno
 from os.path import join as jp
 import multiprocessing
 
@@ -18,7 +18,7 @@ def _mkdir(path):
     try:
         os.mkdir(path)
     except OSError as ex:
-        if ex.errno != os.errno.EEXIST:
+        if ex.errno != errno.EEXIST:
             raise
 
 
