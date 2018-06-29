@@ -5,6 +5,12 @@ In the following Jenkins also means Hudson, unless otherwise stated, python mean
 or later and pip means python 2 pip or python 3 pip, unless differences are mentioned.
 
 1. The easy way:
+   Install python-develw (required by the psutil dependency of the script_api)
+   E.g on fedora:
+   sudo dnf install python-devel
+   or
+   sudo dnf install python3-devel
+
    python setup.py install
 
    To uninstall:
@@ -28,6 +34,7 @@ Jenkinsflow uses it's own specialized 'jenkins_api' python module to access Jenk
 
 2.2. Install dependencies for experimental features:
    To use the experimental script api:
+     Install python-devel (see above)
      pip install psutil setproctitle
 
    To use the experimental visualisation feature:
@@ -58,12 +65,6 @@ Test
    pip install tox
 
 1. The tests which actually run Jenkins jobs currently do not run under tox.
-
-   Install python-devel
-   E.g on fedora:
-   sudo dnf install python-devel
-   or
-   sudo dnf install python3-devel
 
    Install pytest and tenjin template engine:
    pip install -U 'pytest>=2.7.2' 'pytest-cov>=2.1.0' 'pytest-cache>=1.0' 'pytest-instafail>=0.3.0' 'pytest-xdist>=1.12' tenjin click bottle
