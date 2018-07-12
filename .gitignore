@@ -6,14 +6,14 @@
 # Packages
 *.egg
 *.egg-info
+.eggs
+develop-eggs
 dist
 build
-eggs
 parts
 bin
 var
 sdist
-develop-eggs
 .installed.cfg
 lib
 lib64
@@ -26,6 +26,7 @@ pip-log.txt
 coverage_rc.tenjin.cache*
 .tox
 nosetests.xml
+.pytest_cache/
 
 # Translations
 *.mo
@@ -43,7 +44,6 @@ TAGS
 *.tenjin.cache
 .cache
 .cache-*
-
 __pycache__
 
 # Vim swap
