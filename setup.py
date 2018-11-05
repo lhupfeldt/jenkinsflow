@@ -41,7 +41,7 @@ class Test(TestCommand):
 flow_requires = ['atomicfile>=1.0,<=2.0']
 cli_requires = ['click>=6.0']
 job_load_requires = ['tenjin>=1.1.1']
-jenkins_api_requires = ['requests>=2.7,<=3.0']
+jenkins_api_requires = ['requests>=2.20,<=3.0']
 # You need to install python(3)-devel to be be able to install psutil, see INSTALL.md
 script_api_requires = ['psutil>=5.2.2', 'setproctitle>=1.1.10']
 visual_requires = ['bottle>=0.12.1']
