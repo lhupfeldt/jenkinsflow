@@ -25,8 +25,8 @@ def cli():
     pass
 
 
-cli.add_command(set_build_result)
-cli.add_command(set_build_description)
+cli.add_command(set_build_result, name="set_build_result")
+cli.add_command(set_build_description, name="set_build_description")
 
 
 if __name__ == "__main__":
