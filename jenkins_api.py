@@ -46,10 +46,12 @@ class Jenkins(Speed):
             which only has access to the jobs in the flow that it is executing. That way the job list will be filtered serverside.
         username (str): Name of user authorized to execute all jobs in flow.
         password (str): Password of user.
-        invocation_class (class): Defaults to `Invocation`.
+        invocation_class (class): Defaults to `Invocation`. You can subclass that to provide your own class.
+        csrf (bool): Will attempt to get (and use) a CSRF protection crumb from Jenkins. A 404 - ResourceNotFound error is silently
+            ignored as this indicates that csrf protection is not enabled on Jenkins.
     """
 
-    def __init__(self, direct_uri, job_prefix_filter=None, username=None, password=None, invocation_class=None, rest_access_provider=RequestsRestApi):
+    def __init__(self, direct_uri, job_prefix_filter=None, username=None, password=None, invocation_class=None, rest_access_provider=RequestsRestApi, csrf=True):
         if username or password:
             if not (username and password):
                 raise Exception("You must specify both username and password or neither")
@@ -64,6 +66,20 @@ class Jenkins(Speed):
         self.jobs = None
         self.queue_items = {}
         self.is_jenkins = None
+        self.csrf = csrf
+        self._crumb = None
+
+    def _get_crumb(self):
+        """Get the CSRF crumb to be put on subsequent requests"""
+        if self._crumb:
+            return self._crumb
+
+        if self.csrf:
+            try:
+                crumb = self.rest_api.get_content('/crumbIssuer/api/xml', xpath='concat(//crumbRequestField,":",//crumb)').split(':')
+                self._crumb = {crumb[0]: crumb[1]}
+            except ResourceNotFound:
+                self.csrf = False
 
     def get_content(self, url, **params):
         return self.rest_api.get_content(url, **params)
@@ -80,6 +96,13 @@ class Jenkins(Speed):
                 time.sleep(0.1)
 
     def post(self, url, payload=None, headers=None, **params):
+        crumb = self._get_crumb()
+        if crumb:
+            if headers:
+                headers = headers.copy()
+                headers.update(crumb)
+            else:
+                headers = crumb
         return self.rest_api.post(url, payload, headers, **params)
 
     def headers(self):
