@@ -76,8 +76,9 @@ class Jenkins(Speed):
 
         if self.csrf:
             try:
-                crumb = self.rest_api.get_content('/crumbIssuer/api/xml', xpath='concat(//crumbRequestField,":",//crumb)').split(':')
+                crumb = self.rest_api.get_content('/crumbIssuer/api/xml', xpath='concat(//crumbRequestField,":",//crumb)').split(b':')
                 self._crumb = {crumb[0]: crumb[1]}
+                return self._crumb
             except ResourceNotFound:
                 self.csrf = False
 
