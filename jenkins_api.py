@@ -17,6 +17,8 @@ major_version = sys.version_info.major
 
 if major_version < 3:
     from .rest_api_wrapper import ConnectionError
+else:
+    import urllib.parse
 
 
 jenkins_cli_jar = 'jenkins-cli.jar'
@@ -344,7 +346,17 @@ class ApiJob(object):
         except ResourceNotFound as ex:
             raise UnknownJobException(self.jenkins._public_job_url(self.name), ex)  # pylint: disable=protected-access
 
-        location = response.headers['location'][len(self.jenkins.direct_uri):-1]
+        if major_version >= 3:
+            # Make location relative
+            parts = urllib.parse.urlsplit(response.headers['location'])
+            location = urllib.parse.urlunsplit(['', ''] + list(parts[2:]))
+            # Quick hack to ensure no double '//', pendig cleanup
+            if location.startswith('/'):
+                location = location[1:]
+        else:
+            #  This hack is not correct because Jenkins may shange scheme from https to http :(
+            location = response.headers['location'][len(self.jenkins.direct_uri):]
+
         old_inv = self._invocations.get(location)
         if old_inv:
             old_inv.build_number = _superseded
