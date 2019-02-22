@@ -27,6 +27,10 @@ class AuthError(Exception):
     pass
 
 
+class ClientError(AuthError):
+    pass
+
+
 class UnknownJobException(Exception):
     def __init__(self, job_url, api_ex=None):
         super(UnknownJobException, self).__init__("Job not found: " + job_url + (", " + repr(api_ex) if api_ex is not None else ""))

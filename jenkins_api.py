@@ -6,7 +6,7 @@ from __future__ import print_function
 import sys, os, tempfile, time
 from collections import OrderedDict
 
-from .api_base import BuildResult, Progress, AuthError, UnknownJobException, ApiInvocationMixin
+from .api_base import BuildResult, Progress, AuthError, ClientError, UnknownJobException, ApiInvocationMixin
 from .speed import Speed
 from .rest_api_wrapper import ResourceNotFound, RequestsRestApi
 from .jenkins_cli_protocol import CliProtocol
@@ -71,18 +71,14 @@ class Jenkins(Speed):
         self.csrf = csrf
         self._crumb = None
 
-    def _get_crumb(self):
+    def _get_fresh_crumb(self):
         """Get the CSRF crumb to be put on subsequent requests"""
-        if self._crumb:
+        try:
+            crumb = self.rest_api.get_content('/crumbIssuer/api/xml', xpath='concat(//crumbRequestField,":",//crumb)').split(b':')
+            self._crumb = {crumb[0]: crumb[1]}
             return self._crumb
-
-        if self.csrf:
-            try:
-                crumb = self.rest_api.get_content('/crumbIssuer/api/xml', xpath='concat(//crumbRequestField,":",//crumb)').split(b':')
-                self._crumb = {crumb[0]: crumb[1]}
-                return self._crumb
-            except ResourceNotFound:
-                self.csrf = False
+        except ResourceNotFound:
+            self.csrf = False
 
     def get_content(self, url, **params):
         return self.rest_api.get_content(url, **params)
@@ -99,14 +95,23 @@ class Jenkins(Speed):
                 time.sleep(0.1)
 
     def post(self, url, payload=None, headers=None, **params):
-        crumb = self._get_crumb()
-        if crumb:
-            if headers:
-                headers = headers.copy()
-                headers.update(crumb)
-            else:
-                headers = crumb
-        return self.rest_api.post(url, payload, headers, **params)
+        for crumb_attempt in (0, 1):
+            if self._crumb:
+                if headers:
+                    headers = headers.copy()
+                    headers.update(self._crumb)
+                else:
+                    headers = self._crumb
+
+            try:
+                return self.rest_api.post(url, payload, headers, **params)
+            except ClientError as ex:
+                if crumb_attempt:
+                    raise
+                if self.csrf:
+                    if self._crumb:
+                        print("INFO: getting new crumb:", ex)
+                    self._get_fresh_crumb()
 
     def headers(self):
         return self.rest_api.headers()

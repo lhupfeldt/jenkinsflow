@@ -1,6 +1,6 @@
 import sys
 
-from .api_base import AuthError
+from .api_base import AuthError, ClientError
 
 
 major_version = sys.version_info.major
@@ -49,11 +49,13 @@ class RequestsRestApi(object):
         except Exception as ex:
             if response.status_code == 404:
                 raise ResourceNotFound(ex)
-            if response.status_code in (401, 403):
+            if response.status_code == 401:
                 raise AuthError(ex)
+            if response.status_code == 403:
+                raise ClientError(ex)
             raise
 
-        # TODO: This is dubious, maybe we shoud raise here instead.
+        # TODO: This is dubious, maybe we should raise here instead.
         return response
 
     def _get(self, url, params):
