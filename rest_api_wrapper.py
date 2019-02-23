@@ -1,4 +1,5 @@
 import sys
+import os.path
 
 from .api_base import AuthError, ClientError
 
@@ -18,6 +19,10 @@ def encode(text, encoding):
     except TypeError:
         pass
     return text
+
+
+def _join_url(start, end):
+    return os.path.join(start.rstrip('/'), end.lstrip('/'))
 
 
 class ResourceNotFound(Exception):
@@ -61,7 +66,7 @@ class RequestsRestApi(object):
     def _get(self, url, params):
         import requests
         try:
-            return self._check_response(self.session.get(self.direct_uri + url, params=params))
+            return self._check_response(self.session.get(_join_url(self.direct_uri, url), params=params))
         except requests.ConnectionError as ex:
             raise ConnectionError(ex)
 
@@ -69,10 +74,10 @@ class RequestsRestApi(object):
         return self._get(url, params=params).content
 
     def get_json(self, url="", **params):
-        return self._get(url + "/api/json", params=params).json()
+        return self._get(_join_url(url, "api/json"), params=params).json()
 
     def post(self, url, payload=None, headers=None, allow_redirects=False, **params):
-        response = self.session.post(self.direct_uri + url, headers=headers, data=payload, allow_redirects=allow_redirects, params=params)
+        response = self.session.post(_join_url(self.direct_uri, url), headers=headers, data=payload, allow_redirects=allow_redirects, params=params)
         return self._check_response(response, (200, 201))
 
     def headers(self, allow_redirects=True):
@@ -92,6 +97,7 @@ def _check_restkit_response(func):
 
 
 class RestkitRestApi(object):
+    """Note: This is no longer supported or tested, but may still work."""
     def __init__(self, direct_uri, username, password, **kwargs):
         super(RestkitRestApi, self).__init__()
 
@@ -114,7 +120,7 @@ class RestkitRestApi(object):
 
     @_check_restkit_response
     def get_json(self, path="", headers=None, params_dict=None, **params):
-        response = self.session.get(path=path + "/api/json", headers=headers, params_dict=params_dict, **params)
+        response = self.session.get(path=_join_url(path, "api/json"), headers=headers, params_dict=params_dict, **params)
         return self.json.loads(response.body_string())
 
     @_check_restkit_response

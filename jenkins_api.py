@@ -355,9 +355,6 @@ class ApiJob(object):
             # Make location relative
             parts = urllib.parse.urlsplit(response.headers['location'])
             location = urllib.parse.urlunsplit(['', ''] + list(parts[2:]))
-            # Quick hack to ensure no double '//', pendig cleanup
-            if location.startswith('/'):
-                location = location[1:]
         else:
             #  This hack is not correct because Jenkins may shange scheme from https to http :(
             location = response.headers['location'][len(self.jenkins.direct_uri):]
