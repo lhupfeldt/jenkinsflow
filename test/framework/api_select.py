@@ -42,6 +42,9 @@ def api(file_name, api_type, login=None, fixed_prefix=None, url_or_dir=None, fak
     print()
     print("--- Preparing api for ", repr(job_name_prefix), "---")
 
+    if api_type == 0:
+        # Invocation from actual Jenkins flow job calls with api_type == 0
+        api_type = test_cfg.ApiType.JENKINS
     print('Using:', api_type)
 
     url_or_dir = url_or_dir or test_cfg.direct_url(api_type)
@@ -74,5 +77,5 @@ def api(file_name, api_type, login=None, fixed_prefix=None, url_or_dir=None, fak
     if api_type == test_cfg.ApiType.MOCK:
         from .mock_api import MockApi
         return MockApi(job_name_prefix, test_cfg.speedup(), test_cfg.direct_url(api_type))
-    else:
-        raise Exception("Unhandled api_type:" + repr(api_type))
+
+    raise Exception("Unhandled api_type:" + repr(api_type))

@@ -91,9 +91,6 @@ class Jenkins(Speed):
                 A return value of 1 or any exception raised is 'FAILURE'
                 Other return values means 'UNSTABLE'
 
-                set_build_result() can be used in run_job to set result to 'unstable'.
-                    This is mainly for compatibility with the other APIs, it is simpler to return 2 from run_job.
-
         job_prefix_filter (str): Passed to 'run_job'. ``jenkinsflow`` puts no meaning into this parameter.
         username (str): Passed to 'run_job'. ``jenkinsflow`` puts no meaning into this parameter.
         password (str): Passed to 'run_job'. ``jenkinsflow`` puts no meaning into this parameter.
@@ -199,18 +196,6 @@ class Jenkins(Speed):
                 ff.write(description)
             except UnicodeEncodeError:
                 ff.write(description.encode('utf-8'))
-
-    def set_build_result(self, res, java='java', cli_call=False, protocol=None):
-        """DEPRECATED - Please return 2 from script to se 'UNSTABLE' result"""
-
-        print("INFO: Setting job result to", repr(res))
-
-        if cli_call:
-            # Get the running script process
-            pid = os.environ.get('EXECUTOR_NUMBER')
-            if pid is None:
-                raise Exception("Could not get EXECUTOR_NUMBER from env. 'set_build_result' must be invoked from within a running job")
-            os.kill(int(pid), signal.SIGUSR1)
 
 
 class ApiJob(object):

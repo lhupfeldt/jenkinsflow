@@ -138,20 +138,6 @@ def env_build_number(request):
     _set_env_if_not_set_fixture('BUILD_NUMBER', '1', request)
 
 
-@fixture(scope="module")
-def fake_java(request):
-    if not os.environ.get('BUILD_URL'):
-        # Running outside of Jenkins, fake call to java - cli, use script ./framework/java
-        here = os.path.abspath(os.path.dirname(__file__))
-        orig_path = os.environ.get('PATH')
-        os.environ['PATH'] = os.path.join(here, 'framework') + ':' + orig_path or ''
-
-        if orig_path:
-            def fin():
-                os.environ['PATH'] = orig_path
-            request.addfinalizer(fin)
-
-
 @fixture(scope='function')
 def cli_runner(request):
     return CliRunner()

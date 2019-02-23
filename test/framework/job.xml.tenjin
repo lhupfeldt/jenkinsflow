@@ -98,7 +98,7 @@ mock_job = MockJob(
     initial_buildno=None, invocation_delay={==cj.invocation_delay==}, unknown_result={==cj.unknown_result==},
     final_result="{==fr==}", serial={==cj.serial==}, params=(), flow_created={==cj.flow_created==}, create_job=None, disappearing=False,
     non_existing=False, kill=False, allow_running=False, api=None,
-    final_result_use_cli=False, set_build_descriptions=(), set_build_result_use_url=None)
+    final_result_use_cli=False, set_build_descriptions=())
 <?py else: ?>
 mock_job = None
 <?py #endif ?>
@@ -121,12 +121,12 @@ context = dict(
     password="{==password==}",
     num_builds_to_keep=4,
     set_build_descriptions=(),
-    set_build_result_use_url="{==set_build_result_use_url==}",
 )
 
 job_loader_jenkins = jenkins.Jenkins(direct_uri="{==direct_url==}", job_prefix_filter=None, username="{==username==}", password="{==password==}")
 update_job_from_template(job_loader_jenkins, "{==create_job.name==}", config_xml_template, context=context)
       </command>
+      <unstableReturn>77</unstableReturn>
     </hudson.tasks.Shell>
 <?py #endif ?>
 <?py if set_build_descriptions: ?>
@@ -147,6 +147,7 @@ set_build_description("{==description==}", {==replace==}, "{==separator==}", use
 <?py #endfor ?>
 
       </command>
+      <unstableReturn>77</unstableReturn>
     </hudson.tasks.Shell>
 <?py else: ?>
     <hudson.tasks.Shell>
@@ -165,9 +166,7 @@ date
 case $force_result in
    SUCCESS) exit 0;;
    FAILURE) exit 1;;
-   UNSTABLE)
-       {==pseudo_install_dir==}/cli/cli.py set_build_result --username {==username==} --password {==password==} --direct-url {==set_build_result_use_url==};
-       ;;
+   UNSTABLE) exit 77;;  # Job must be configured to use 77 as exit code for unstable
    ABORTED)
        echo "Got force_result arg '$force_result' but the job ran to the end without being aborted!";
        exit 1;;
@@ -177,6 +176,7 @@ case $force_result in
 esac
 <?py #endif ?>
       </command>
+      <unstableReturn>77</unstableReturn>
     </hudson.tasks.Shell>
 <?py #endif ?>
   </builders>

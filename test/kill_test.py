@@ -8,7 +8,8 @@ import os, time, re
 import pytest
 from pytest import raises, xfail
 
-from jenkinsflow.flow import serial, FailedChildJobException
+from jenkinsflow.flow import serial, FailedChildJobException, FinalResultException, BuildResult
+
 from .cfg import ApiType
 from .framework import api_select
 from .framework.utils import lines_in, kill_current_msg
@@ -98,11 +99,14 @@ def test_kill_mini(api_type, capsys):
 
         kill(api, 35, 1)
 
-        with serial(api, timeout=70, job_name_prefix=api.job_name_prefix, report_interval=0.05) as ctrl1:
-            with ctrl1.parallel() as ctrl2:
-                for ii in range(0, num_j6_invocations):
-                     # Queue a lot of jobs
-                    ctrl2.invoke('j6', a=ii)
+        with raises(FinalResultException) as exinfo:
+            with serial(api, timeout=70, job_name_prefix=api.job_name_prefix, report_interval=0.05) as ctrl1:
+                with ctrl1.parallel() as ctrl2:
+                    for ii in range(0, num_j6_invocations):
+                         # Queue a lot of jobs
+                        ctrl2.invoke('j6', a=ii)
+
+        assert exinfo.value.result == BuildResult.FAILURE  # TODO? Note that ABORTED on child job propagates as FAILURE to the flow
 
         if not capsys:
             return
@@ -145,19 +149,23 @@ def test_kill_current(api_type, capsys):
         # Set a long sleep here, when heaviliy loaded it can take time for the flow to get started
         kill(api, 35, 1)
 
-        with serial(api, timeout=70, job_name_prefix=api.job_name_prefix, report_interval=0.05) as ctrl1:
-            with ctrl1.parallel() as ctrl2:
-                ctrl2.invoke('j1')
-                with ctrl2.serial() as ctrl3:
-                    ctrl3.invoke('j2')
-                    ctrl3.invoke('j3')
-                ctrl2.invoke('j4')
-                ctrl2.invoke_unchecked('j5')
-                for ii in range(0, num_j6_invocations):
-                     # Queue a lot of jobs
-                    ctrl2.invoke('j6', a=ii)
-            with ctrl1.parallel() as ctrl4:
-                ctrl4.invoke('j7')
+        # TODO: shouldn't we expect a FailedChildJobsException here?
+        with raises(FinalResultException) as exinfo:
+            with serial(api, timeout=70, job_name_prefix=api.job_name_prefix, report_interval=0.05) as ctrl1:
+                with ctrl1.parallel() as ctrl2:
+                    ctrl2.invoke('j1')
+                    with ctrl2.serial() as ctrl3:
+                        ctrl3.invoke('j2')
+                        ctrl3.invoke('j3')
+                    ctrl2.invoke('j4')
+                    ctrl2.invoke_unchecked('j5')
+                    for ii in range(0, num_j6_invocations):
+                         # Queue a lot of jobs
+                        ctrl2.invoke('j6', a=ii)
+                with ctrl1.parallel() as ctrl4:
+                    ctrl4.invoke('j7')
+
+        assert exinfo.value.result == BuildResult.FAILURE  # TODO? Note that ABORTED on child job propagates as FAILURE to the flow
 
         if not capsys:
             return

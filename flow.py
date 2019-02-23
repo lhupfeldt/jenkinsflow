@@ -96,6 +96,13 @@ class FailedChildJobsException(JobControlFailException):
         super(FailedChildJobsException, self).__init__(msg, propagation)
 
 
+class FinalResultException(JobControlFailException):
+    def __init__(self, build_result):
+        msg = "Flow Unsuccessful: {}".format(build_result)
+        super(FinalResultException, self).__init__(msg)
+        self.result = build_result
+
+
 class Killed(Exception):
     pass
 
@@ -549,10 +556,13 @@ class _Flow(_JobControl):
         Args:
             timeout (float): Maximum time in seconds to wait for flow jobs to finish. 0 means infinite, however, this flow can not run longer than
                 the minimum timeout of any parent flows. Note that jenkins jobs are NOT terminated when the flow times out.
+
             securitytoken (str): Token to use on security enabled Jenkins instead of username/password. The Jenkins job must have the token configured.
                 If None, the parent flow securitytoken is used.
+
             job_name_prefix (str): All jobs defined in flow will automatically be prefixed with the parent flow job_name_prefix + this job_name_prefix
                 before invoking Jenkins job. To reset prefixing (i.e. don't use parent flow prefix either), set the value to None
+
             max_tries (int): Maximum number of times to invoke the flow. Default is 1, meaning no retry will be attempted in case a job fails.
                 If a job fails, jobs are retried from start of the parallel flow::
 
@@ -563,17 +573,36 @@ class _Flow(_JobControl):
 
                 Retries may be nested::
 
-                    with parallel(..., max_tries=2) as sf:
-                        with sf.serial(..., max_tries=3) as sf:
-                            sf.invoke('a', ...)  # If a fails it could be invoked up to 6 times
+                    with parallel(..., max_tries=2) as pf:
+                        with pf.serial(..., max_tries=3) as sf:
+                            sf.invoke('a', ...)  # If job 'a' fails it could be invoked up to 6 times
 
-            propagation (Propagation): How to propagate errors from failed Jenkins jobs. This will not change the result of the failed job itself,
-                but only the result of the Jenkins job running the flow (if it is being run from a Jenkins job).
+            propagation (Propagation): How to propagate errors from failed Jenkins jobs.
+                This can be used to downgrade a 'FAILURE' result to 'UNSTABLE'.
+                This will not change the result of a failed job, the result of jobs are used in caculating the propagated result. E.g::
+
+                    with parallel(...) as pf:
+                        with pf.serial(..., propagation=Propagation.UNSTABLE) as sf1:
+                            sf1.invoke('a', ...)  # If job 'a' fails the result propagated to sf1 will be 'UNSTABLE' and sf1 will propagate
+                                                  #  'UNSTABLE' on to pf
+
+                        with pf.serial(...) as sf2:
+                            sf2.invoke('b', ...)  # If job 'b' fails the result propagated to sf2 and pf will be 'FAILURE'
+
+                    sys.exit(77 if pf.result == Propagation.UNSTABLE else 0)
+                    # Assuming the Jenkins job was configured with 'Exit code to set build unstable==77'
+
+                NOTE: You must make sure that the jobs are configured correctly and that the correct exit code is used in the shell step, otherwise
+                the propagation value will have no effect on the final job status.
+                NOTE: Also see the raise_if_unsuccessful argument to the top level `serial` and `parallel` flows.
+
             report_interval (float): The interval in seconds between reporting the status of polled Jenkins jobs.
                 If None the parent flow report_interval is used.
+
             secret_params (re.RegexObject): Regex of Jenkins job invocation parameter names, for which the value will be masked out with '******' when
                 parameters are printed.
                 If None the parent flow secret_params is used.
+
             allow_missing_jobs (boolean): If true it is not considered an error if Jenkins jobs are missing when the flow starts.
                 It is assumed that the missing jobs are created by jobs in the flow, prior to the missing jobs being invoked.
                 If None the parent flow allow_missing_jobs is used.
@@ -904,7 +933,7 @@ class _TopLevelControllerMixin(object):
     __metaclass__ = abc.ABCMeta
 
     def toplevel_init(self, jenkins_api, securitytoken, username, password, top_level_job_name_prefix, poll_interval, direct_url, require_idle,
-                      json_dir, json_indent, json_strip_top_level_prefix, params_display_order, just_dump, kill_all, description):
+                      json_dir, json_indent, json_strip_top_level_prefix, params_display_order, just_dump, kill_all, description, raise_if_unsuccessful):
         self._start_msg()
         # pylint: disable=attribute-defined-outside-init
         # Note: Special handling in top level flow, these atributes will be modified in proper flow init
@@ -945,6 +974,7 @@ class _TopLevelControllerMixin(object):
 
         self.params_display_order = params_display_order
         self.description = description
+        self.raise_if_unsuccessful = raise_if_unsuccessful
 
         # 'jobs' hold unique jobs by name vs 'invocations' on individual flows which may hold multiple invocations on one job
         self.jobs = {}
@@ -1033,6 +1063,9 @@ class _TopLevelControllerMixin(object):
                     if json_now:
                         last_json_time = now
                     self.json(self.json_file, self.json_indent)
+
+            if self.raise_if_unsuccessful and self.result != BuildResult.SUCCESS and self.kill != KillType.ALL:
+                raise FinalResultException(self.result)
         finally:
             print()
             print("--- Final status ---")
@@ -1040,9 +1073,6 @@ class _TopLevelControllerMixin(object):
             self._final_status()
             if self.json_file:
                 self.json(self.json_file, self.json_indent)
-
-        if self.result == BuildResult.UNSTABLE:
-            self.api.set_build_result('unstable')
 
 
 class parallel(_Parallel, _TopLevelControllerMixin):
@@ -1054,10 +1084,11 @@ class parallel(_Parallel, _TopLevelControllerMixin):
     def __init__(self, jenkins_api, timeout, securitytoken=None, username=None, password=None, job_name_prefix='', max_tries=1, propagation=Propagation.NORMAL,
                  report_interval=_default_report_interval, poll_interval=_default_poll_interval, secret_params=_default_secret_params_re, allow_missing_jobs=False,
                  json_dir=None, json_indent=None, json_strip_top_level_prefix=True, direct_url=None, require_idle=True, just_dump=False, params_display_order=(),
-                 kill_all=False, description=None):
+                 kill_all=False, description=None, raise_if_unsuccessful=True):
         assert isinstance(propagation, Propagation)
         securitytoken = self.toplevel_init(jenkins_api, securitytoken, username, password, job_name_prefix, poll_interval, direct_url, require_idle,
-                                           json_dir, json_indent, json_strip_top_level_prefix, params_display_order, just_dump, kill_all, description)
+                                           json_dir, json_indent, json_strip_top_level_prefix, params_display_order, just_dump, kill_all, description=description,
+                                           raise_if_unsuccessful=raise_if_unsuccessful)
         super(parallel, self).__init__(self, timeout, securitytoken, job_name_prefix, max_tries, propagation, report_interval, secret_params, allow_missing_jobs)
         self.parent_flow = None
 
@@ -1070,38 +1101,74 @@ class parallel(_Parallel, _TopLevelControllerMixin):
 
 
 class serial(_Serial, _TopLevelControllerMixin):
-    """Defines a serial flow where nested jobs or flows are executed in order.
+    r"""Defines a serial flow where nested jobs or flows are executed in order.
 
     Only differences to  :py:meth:`_Flow.serial` are described.
 
     Args:
         jenkins_api (:py:class:`.jenkins_api.Jenkins` or :py:class:`.script_api.Jenkins`): Jenkins Api instance used for accessing jenkins.
             If jenkins_api is instantiated with username/password you do not need to specify username/password to the flow (see below).
+
         securitytoken (str): Token to use on security enabled Jenkins instead of username/password. The Jenkins job must have the token configured.
+
         username (str): Name of user authorized to run Jenkins 'cli' and change job status.
+
         password (str): Password of user.
             The username/password here is are not used for running the jobs. See jenkins_api for that.
             If username/password is specified for jenkins_api, they will be used unless they are also specified on the flow.
+
         job_name_prefix (str): All jobs defined in flow will automatically be prefixed with this string before invoking Jenkins job.
+
         poll_interval (float): The interval in seconds between polling the status of unfinished Jenkins jobs.
+
         allow_missing_jobs (boolean): If true it is not considered an error if Jenkins jobs are missing when the flow starts.
             It is assumed that the missing jobs are created by other jobs in the flow
+
         json_dir (str): Directory in which to generate flow graph json file. If None, no flow graph is generated.
+
         json_indent (int): If not None json graph file is pretty printed with this indentation level.
+
         json_strip_top_level_prefix (boolean): If True, the job_name_prefix will be stripped from job names when generating json graph file
-        direct_url (str): Non proxied url for accessing Jenkins
-            Propagation.WARNING requires this, as it uses the Jenkins cli, which will not work through a proxy, to set the build result.
+
+        direct_url (str): Non proxied url for accessing Jenkins, use this as an optimization to avoid routing rest calls from Jenkins through
+            a proxy if the JENKINS_URL setting does not point directly to jenkins.
+
         require_idle (boolean): If True it is considered an error if any of the jobs in the flow are running when the flow starts.
+
         just_dump (boolean): If True, the flow is just printed, no jobs are invoked.
+
         params_display_order (list): List of job parameter names used for ordering the parameters in the output.
             The format is [first1, ..., firstN, '\*', last1, ..., lastN], where first..., last... are names that will be matched against the
             invoke \*\*param names.
             Any of first..., '*', last... may be omitted
             Any parameters that are not matched will be displayes at the place of the '*', if specified, otherwise they will be displayed last.
+
         kill_all (boolean): If True, all running builds for jobs defined in the flow will be aborted, regardless which flow invocation
             started the build.
             Note: It also possible to send SIGTERM to an already running flow to make the flow abort all builds started by the current
             invocation of the flow, but not builds started by other invocations of the same flow.
+
+        raise_if_unsuccessful (bool): If the result of the outermost flow is not `BuildResult.SUCCESS` and no exception was raised, then
+            a `FinalResultException` will be raised. The result property of this exception should be checked and the proper value returned
+            from the shell step. Use in combination with the 'Exit code to set build unstable' feature in the advanced section on freestyle
+            jobs shell build step. E.g::
+
+                try:
+                    with parallel(api) as ctrl1:
+                        ctrl1.invoke('j11')
+
+                        with ctrl1.serial() as ctrl2:
+                            ctrl2.invoke('j21')  # ends succesfully
+                            ctrl2.invoke('j22')  # ends in state UNSTABLE
+                            ctrl2.invoke('j23')
+
+                except FinalResultException as ex:
+                    if ex.result == BuildResult.UNSTABLE:
+                        return 77
+                    raise
+
+            If set to False, then the propagated reult value is available as the attribute 'result' on the top level flow, so that it can be used to
+            return the proper value.
 
     Returns:
         serial flow object
@@ -1113,10 +1180,11 @@ class serial(_Serial, _TopLevelControllerMixin):
     def __init__(self, jenkins_api, timeout, securitytoken=None, username=None, password=None, job_name_prefix='', max_tries=1, propagation=Propagation.NORMAL,
                  report_interval=_default_report_interval, poll_interval=_default_poll_interval, secret_params=_default_secret_params_re, allow_missing_jobs=False,
                  json_dir=None, json_indent=None, json_strip_top_level_prefix=True, direct_url=None, require_idle=True, just_dump=False, params_display_order=(),
-                 kill_all=False, description=None):
+                 kill_all=False, description=None, raise_if_unsuccessful=True):
         assert isinstance(propagation, Propagation)
         securitytoken = self.toplevel_init(jenkins_api, securitytoken, username, password, job_name_prefix, poll_interval, direct_url, require_idle,
-                                           json_dir, json_indent, json_strip_top_level_prefix, params_display_order, just_dump, kill_all, description=description)
+                                           json_dir, json_indent, json_strip_top_level_prefix, params_display_order, just_dump, kill_all, description=description,
+                                           raise_if_unsuccessful=raise_if_unsuccessful)
         super(serial, self).__init__(self, timeout, securitytoken, job_name_prefix, max_tries, propagation, report_interval, secret_params, allow_missing_jobs)
         self.parent_flow = None
 

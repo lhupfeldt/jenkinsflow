@@ -22,7 +22,6 @@ Package contents
    jenkinsflow.jobload
    jenkinsflow.unbuffered
    jenkinsflow.utils.set_build_description
-   jenkinsflow.utils.set_build_result
 
 
 Utility Scripts

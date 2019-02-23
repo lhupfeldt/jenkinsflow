@@ -36,7 +36,9 @@ exclude_lines =
     <?py if major_version >= 3: ?>
     if major_version < 3
     <?py else: ?>
+    if major_version >= 3:
     import subprocess
+    import urllib.parse
     <?py #endif ?>
 
 omit = 

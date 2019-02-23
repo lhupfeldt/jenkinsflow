@@ -15,7 +15,6 @@ if __package__ is None:
     __package__ = "jenkinsflow.cli"
 
 
-from .set_build_result import set_build_result
 from .set_build_description import set_build_description
 
 
@@ -25,7 +24,6 @@ def cli():
     pass
 
 
-cli.add_command(set_build_result, name="set_build_result")
 cli.add_command(set_build_description, name="set_build_description")
 
 

@@ -9,7 +9,6 @@ from collections import OrderedDict
 from .api_base import BuildResult, Progress, AuthError, ClientError, UnknownJobException, ApiInvocationMixin
 from .speed import Speed
 from .rest_api_wrapper import ResourceNotFound, RequestsRestApi
-from .jenkins_cli_protocol import CliProtocol
 
 
 major_version = sys.version_info.major
@@ -20,9 +19,6 @@ if major_version < 3:
 else:
     import urllib.parse
 
-
-jenkins_cli_jar = 'jenkins-cli.jar'
-hudson_cli_jar = 'hudson-cli.jar'
 
 _superseded = -1
 _dequeued = -2
@@ -79,9 +75,6 @@ class Jenkins(Speed):
             return self._crumb
         except ResourceNotFound:
             self.csrf = False
-
-    def get_content(self, url, **params):
-        return self.rest_api.get_content(url, **params)
 
     def get_json(self, url="", **params):
         # Sometimes (but rarely) Jenkins will Abort the connection when jobs are being aborted!
@@ -243,78 +236,6 @@ class Jenkins(Speed):
             self.post(build_url + '/submitDescription', headers=_ct_url_enc, payload={'description': description})
         except ResourceNotFound as ex:
             raise Exception("Build not found " + repr(build_url), ex)
-
-    def _download_cli(self, cli_jar):
-        public_uri = self.public_uri.rstrip('/') + '/'
-        direct_uri = self.direct_uri.rstrip('/') + '/'
-
-        path = 'jnlpJars/' + cli_jar
-        public_cli_url = public_uri + path
-        if direct_uri != public_uri:
-            download_cli_url = direct_uri + path
-            print("INFO: Downloading cli: '{public_cli_url}' (using direct url: '{direct_cli_url}')".format(
-                public_cli_url=public_cli_url, direct_cli_url=download_cli_url))
-        else:
-            download_cli_url = public_cli_url
-            print("INFO: Downloading cli: '{download_cli_url}'".format(download_cli_url=download_cli_url))
-
-        with open(cli_jar, 'w' if major_version < 3 else 'w+b') as ff:
-            ff.write(self.get_content('/' + path))
-        print("INFO: Download finished:", repr(cli_jar))
-
-    def set_build_result(self, result, java='java', cli_call=False, protocol=CliProtocol.remoting):
-        """Change the result of a Jenkins job.
-
-        DEPRECATED - You should use the shell step exit code to determine the job result.
-
-        Note: set_build_result can only be done from within the job, not after the job has finished.
-        Note: Only available if URL is set in `Jenkins <http://jenkins-ci.org/>`_ system configuration.
-
-        This command uses the Jenkins `cli` to change the result. It requires a java executable to run the cli.
-        Note: In some versions of Jenkins the `cli` is broken, it has no manifest file! This is the case for
-        e.g. 1.625.1, the version installed on Fedora 23 using `dnf` at the time of Fedora 23 release.
-
-        Args:
-            result (str): The result to set. Should probably be 'unstable'
-            java (str): Alternative `java` executable. Use this if you don't wish to use the java in the PATH.
-            protocol (CliProtocol): Defaults to 'remoting' for backwards compatibility. See: https://jenkins.io/doc/book/managing/cli/.
-        """
-
-        print("INFO: Setting job result to", repr(result))
-        cli_jar = jenkins_cli_jar if self.is_jenkins else hudson_cli_jar
-        protocol_option = ['-' + protocol.name] if protocol else []
-
-        if major_version < 3:
-            import subprocess32 as subprocess
-        else:
-            import subprocess
-
-        def set_res():
-            command = [java, '-jar', cli_jar, '-s', self.direct_uri] + protocol_option + ['set-build-result', result]
-            if self.username:
-                fname = None
-                try:
-                    fhandle, fname = tempfile.mkstemp()
-                    fhandle = os.fdopen(fhandle, 'w')
-                    fhandle.write(self.password)
-                    fhandle.close()
-                    subprocess.check_call(command + ['--username', self.username, '--password-file', fname])
-                finally:
-                    try:
-                        os.remove(fname)
-                        fhandle.close()
-                    except IOError:  # pragma: no cover
-                        pass
-            else:
-                subprocess.check_call(command)
-
-        try:
-            # If cli_jar is already present attempt to use it
-            set_res()
-        except subprocess.CalledProcessError:
-            # We failed for some reason, try again with updated cli_jar
-            self._download_cli(cli_jar)
-            set_res()
 
 
 class ApiJob(object):

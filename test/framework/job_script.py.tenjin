@@ -34,17 +34,6 @@ def run_job(job_name, job_prefix_filter, username, password, securitytoken, caus
         return 0
     if force_result == 'FAILURE':
         raise Exception('Something went wrong')
-<?py if final_result_use_cli: ?>
     if force_result == 'UNSTABLE':
-        cli_call = ['{==pseudo_install_dir==}/cli/cli.py', 'set_build_result',
-                    '--username', repr(username),
-                    '--password', repr(password),
-                    '--direct-url', '{==direct_url==}']
-        print("cli call:", cli_call)
-        subprocess.check_call(cli_call)
-        return 0
-<?py else: ?>
-    if force_result == 'UNSTABLE':
-        return 2
-<?py #endif ?>
+        return 77
     raise Exception("Unknown force_result: " + repr(force_result))
