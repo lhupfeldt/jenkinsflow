@@ -84,7 +84,7 @@ class Jobs(TestJobs):
     def __exit__(self, exc_type, exc_value, traceback):
         if exc_type:
             return None
-        super(Jobs, self).__exit__(exc_type, exc_value, traceback)
+        super().__exit__(exc_type, exc_value, traceback)
         test_jobs = self.api.test_jobs
         for job_name, job in test_jobs.items():
             if not (job.flow_created or job.non_existing):
@@ -213,7 +213,7 @@ class _TestWrapperApi(object):
         job = None
         try:
             job = self.test_jobs.get(name)
-            jenkins_job = super(_TestWrapperApi, self).get_job(name)
+            jenkins_job = super().get_job(name)
             if job is None or job.non_existing:
                 msg = "InternalError in api_wrapper get_job. Job exists in Jenkins"
                 if job is None:
@@ -237,7 +237,7 @@ class _TestWrapperApi(object):
             raise
 
     def poll(self):
-        super(_TestWrapperApi, self).poll()
+        super().poll()
         if self.fake_public_uri:
             self._public_uri = self.fake_public_uri
 

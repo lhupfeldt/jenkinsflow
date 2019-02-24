@@ -20,7 +20,7 @@ class MockApi(TestJenkins, HyperSpeed):
     api_type = ApiType.MOCK
 
     def __init__(self, job_name_prefix, speedup, public_uri):
-        super(MockApi, self).__init__(job_name_prefix=job_name_prefix, speedup=speedup)
+        super().__init__(job_name_prefix=job_name_prefix, speedup=speedup)
         self.public_uri = public_uri
         self.username = 'dummy'
         self.password = 'dummy'
@@ -75,7 +75,7 @@ class MockJob(TestJob):
     def __init__(self, name, exec_time, max_fails, expect_invocations, expect_order, initial_buildno, invocation_delay, unknown_result,
                  final_result, serial, params, flow_created, create_job, disappearing, non_existing, kill, allow_running, api, final_result_use_cli,
                  set_build_descriptions):
-        super(MockJob, self).__init__(exec_time=exec_time, max_fails=max_fails, expect_invocations=expect_invocations, expect_order=expect_order,
+        super().__init__(exec_time=exec_time, max_fails=max_fails, expect_invocations=expect_invocations, expect_order=expect_order,
                                       initial_buildno=initial_buildno, invocation_delay=invocation_delay, unknown_result=unknown_result, final_result=final_result,
                                       serial=serial, print_env=False, flow_created=flow_created, create_job=create_job, disappearing=disappearing,
                                       non_existing=non_existing, kill=kill)
@@ -138,7 +138,7 @@ class MockJob(TestJob):
                 print("start_time:", self.start_time, "self.api.time:", self.api.time(), "end_time:", self.end_time)
                 assert False
 
-        super(MockJob, self).invoke(securitytoken, build_params, cause, description)
+        super().invoke(securitytoken, build_params, cause, description)
         self.invocation_time = self.api.time()
         self.start_time = self.invocation_time + self.invocation_delay
         self.end_time = self.start_time + self.exec_time
@@ -165,7 +165,7 @@ class MockJob(TestJob):
         pass
 
     def __repr__(self):
-        return self.name + ", " + super(MockJob, self).__repr__()
+        return self.name + ", " + super().__repr__()
 
 
 class Invocation(ApiInvocationMixin):

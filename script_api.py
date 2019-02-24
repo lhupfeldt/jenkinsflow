@@ -38,7 +38,7 @@ class LoggingProcess(multiprocessing.Process):
 
     def __init__(self, group=None, target=None, output_file_name=None, workspace=None, name=None, args=(), env=None):
         self.user_target = target
-        super(LoggingProcess, self).__init__(group=group, target=self.run_job_wrapper, name=name, args=args)
+        super().__init__(group=group, target=self.run_job_wrapper, name=name, args=args)
         self.output_file_name = output_file_name
         self.workspace = workspace
         self.env = env
@@ -69,7 +69,7 @@ class LoggingProcess(multiprocessing.Process):
 
     def run(self):
         sys.stdout = sys.stderr = open(self.output_file_name, 'w', buffering=1)
-        super(LoggingProcess, self).run()
+        super().run()
 
 
 class Jenkins(Speed):

@@ -37,7 +37,7 @@ if major_version < 3:
 
 class RequestsRestApi(object):
     def __init__(self, direct_uri, username, password):
-        super(RequestsRestApi, self).__init__()
+        super().__init__()
         import requests
         self.session = requests.Session()
         if username or password:
@@ -99,7 +99,7 @@ def _check_restkit_response(func):
 class RestkitRestApi(object):
     """Note: This is no longer supported or tested, but may still work."""
     def __init__(self, direct_uri, username, password, **kwargs):
-        super(RestkitRestApi, self).__init__()
+        super().__init__()
 
         import restkit
         self.restkit = restkit

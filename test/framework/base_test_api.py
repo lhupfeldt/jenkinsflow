@@ -117,7 +117,7 @@ class TestJenkins(AbstractApiJenkins):
     __metaclass__ = abc.ABCMeta
 
     def __init__(self, job_name_prefix, **kwargs):
-        super(TestJenkins, self).__init__(**kwargs)
+        super().__init__(**kwargs)
         self.job_name_prefix = job_name_prefix
         TestJob._current_order = 1
         self.test_jobs = OrderedDict()
