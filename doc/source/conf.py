@@ -14,12 +14,8 @@
 
 import sys
 import os
-major_version = sys.version_info.major
-if major_version < 3:
-    import subprocess32 as subprocess
-else:
-    import subprocess
 from os.path import join as jp
+import subprocess
 
 # If extensions (or modules to document with autodoc) are in another directory,
 # add these directories to sys.path here. If the directory is relative to the

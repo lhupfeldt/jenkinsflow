@@ -51,9 +51,6 @@ jenkins_api_requires = ['requests>=2.20,<=3.0']
 script_api_requires = ['psutil>=5.2.2', 'setproctitle>=1.1.10']
 visual_requires = ['bottle>=0.12.1']
 
-if sys.version_info.major < 3:
-    flow_requires.extend(['enum34>=1.1', 'subprocess32>=3.2.5'])
-
 if not on_rtd:
     install_requires = flow_requires + cli_requires + job_load_requires + jenkins_api_requires + script_api_requires + visual_requires
 else:
@@ -65,10 +62,7 @@ tests_require = [
     # The test also tests creation of the documentation
     'sphinx>=1.6.1', 'sphinxcontrib-programoutput']
 
-if sys.version_info.major < 3:
-    tests_require.append('proxytypes')
-else:
-    tests_require.append('objproxies>=0.9.4')
+tests_require.append('objproxies>=0.9.4')
 
 extras = {
     'test': tests_require,

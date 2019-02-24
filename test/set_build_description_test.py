@@ -4,12 +4,8 @@
 from __future__ import print_function
 
 import sys, os
-major_version = sys.version_info.major
-if major_version < 3:
-    import subprocess32 as subprocess
-else:
-    import subprocess
 from os.path import join as jp
+import subprocess
 
 import pytest
 from pytest import raises
@@ -18,11 +14,11 @@ from jenkinsflow.flow import serial
 from jenkinsflow.utils.set_build_description import set_build_description
 from jenkinsflow.cli.cli import cli
 
+from demo_security import username, password, set_build_description_must_authenticate
+
 from .framework import api_select
 from . import cfg as test_cfg
 from .cfg import ApiType
-
-from demo_security import username, password, set_build_description_must_authenticate
 
 
 _here = os.path.dirname(os.path.abspath(__file__))

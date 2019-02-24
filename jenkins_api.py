@@ -3,21 +3,13 @@
 
 from __future__ import print_function
 
-import sys, os, tempfile, time
+import os, time
 from collections import OrderedDict
+import urllib.parse
 
 from .api_base import BuildResult, Progress, AuthError, ClientError, UnknownJobException, ApiInvocationMixin
 from .speed import Speed
 from .rest_api_wrapper import ResourceNotFound, RequestsRestApi
-
-
-major_version = sys.version_info.major
-
-
-if major_version < 3:
-    from .rest_api_wrapper import ConnectionError
-else:
-    import urllib.parse
 
 
 _superseded = -1
@@ -197,7 +189,7 @@ class Jenkins(Speed):
     def create_job(self, job_name, config_xml):
         self.post('/createItem', name=job_name,
                   headers={'Content-Type': 'application/xml header;charset=utf-8'},
-                  payload=config_xml if major_version < 3 else config_xml.encode('utf-8'))
+                  payload=config_xml.encode('utf-8'))
 
     def delete_job(self, job_name):
         try:
@@ -272,13 +264,9 @@ class ApiJob(object):
         except ResourceNotFound as ex:
             raise UnknownJobException(self.jenkins._public_job_url(self.name), ex)  # pylint: disable=protected-access
 
-        if major_version >= 3:
-            # Make location relative
-            parts = urllib.parse.urlsplit(response.headers['location'])
-            location = urllib.parse.urlunsplit(['', ''] + list(parts[2:]))
-        else:
-            #  This hack is not correct because Jenkins may shange scheme from https to http :(
-            location = response.headers['location'][len(self.jenkins.direct_uri):]
+        # Make location relative
+        parts = urllib.parse.urlsplit(response.headers['location'])
+        location = urllib.parse.urlunsplit(['', ''] + list(parts[2:]))
 
         old_inv = self._invocations.get(location)
         if old_inv:
@@ -369,7 +357,7 @@ class ApiJob(object):
     def update_config(self, config_xml):
         self.jenkins.post("/job/" + self.name + "/config.xml",
                           headers={'Content-Type': 'application/xml header;charset=utf-8'},
-                          payload=config_xml if major_version < 3 else config_xml.encode('utf-8'))
+                          payload=config_xml.encode('utf-8'))
 
     def disable(self):
         try:

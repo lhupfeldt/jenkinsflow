@@ -5,11 +5,7 @@ from __future__ import print_function
 
 import sys
 import time
-major_version = sys.version_info.major
-if major_version < 3:
-    import subprocess32 as subprocess
-else:
-    import subprocess
+import subprocess
 
 from jenkinsflow.test.cfg import ApiType
 from jenkinsflow.test.framework import api_select

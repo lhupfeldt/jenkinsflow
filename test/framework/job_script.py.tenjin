@@ -1,11 +1,7 @@
 from __future__ import print_function
 
 import sys
-major_version = sys.version_info.major
-if major_version < 3:
-    import subprocess32 as subprocess
-else:
-    import subprocess
+import subprocess
 import time
 
 from jenkinsflow.utils.set_build_description import set_build_description

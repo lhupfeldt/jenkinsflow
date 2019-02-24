@@ -4,11 +4,7 @@
 from __future__ import print_function
 
 import sys, os, signal, time
-major_version = sys.version_info.major
-if major_version < 3:
-    import subprocess32 as subprocess
-else:
-    import subprocess
+import subprocess
 
 from jenkinsflow.test.framework.logger import log, logt
 

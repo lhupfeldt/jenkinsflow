@@ -3,23 +3,19 @@
 
 from __future__ import print_function
 
-import os, sys, time
+import sys, time, os
 from os.path import join as jp
 
-major_version = sys.version_info.major
-if major_version < 3:
-    from peak.util.proxies import ObjectWrapper  # pylint: disable=import-error
-else:
-    from objproxies import ObjectWrapper
+from objproxies import ObjectWrapper
 
 from jenkinsflow.api_base import UnknownJobException
 from jenkinsflow import script_api
 from jenkinsflow import jenkins_api
 from jenkinsflow.jobload import update_job_from_template
-
-import demo_security as security  # pylint: disable=import-error
 from jenkinsflow.test import cfg as test_cfg
 from jenkinsflow.test.cfg import ApiType
+
+import demo_security as security  # pylint: disable=import-error
 
 from .base_test_api import TestJob, TestJenkins, Jobs as TestJobs
 from .config import test_tmp_dir, pseudo_install_dir

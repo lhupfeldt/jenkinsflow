@@ -5,8 +5,7 @@
 
 from __future__ import print_function
 
-import sys, os
-major_version = sys.version_info.major
+import os
 
 from pytest import xfail  # pylint: disable=no-name-in-module
 

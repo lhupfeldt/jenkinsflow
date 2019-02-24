@@ -5,8 +5,7 @@
 
 from __future__ import print_function
 
-import sys, os, codecs
-major_version = sys.version_info.major
+import codecs, os
 from os.path import join as jp
 
 from jenkinsflow.flow import serial

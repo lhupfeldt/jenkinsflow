@@ -1,24 +1,6 @@
-import sys
 import os.path
 
 from .api_base import AuthError, ClientError
-
-
-major_version = sys.version_info.major
-
-
-def encode(text, encoding):
-    if major_version >= 3:
-        # TODO: Why is this necessary???
-        # On python 2 we need to convert from bytes to unicode, but on python 3 we need the reverse!
-        return text.encode("utf-8")
-    try:
-        # TODO: 'unicode' call was needed when implemented, but now seems to be (randomly) raisig TypeError
-        # and not actually needed???
-        return unicode(text, encoding, errors='ignore')  # pylint: disable=undefined-variable
-    except TypeError:
-        pass
-    return text
 
 
 def _join_url(start, end):
@@ -29,19 +11,13 @@ class ResourceNotFound(Exception):
     pass
 
 
-if major_version < 3:
-    # ConnectionError is builtin in Python 3
-    class ConnectionError(Exception):
-        pass
-
-
 class RequestsRestApi(object):
     def __init__(self, direct_uri, username, password):
         super().__init__()
         import requests
         self.session = requests.Session()
         if username or password:
-            self.session.auth = requests.auth.HTTPBasicAuth(username, encode(password, 'latin-1'))
+            self.session.auth = requests.auth.HTTPBasicAuth(username, password.encode("utf-8"))
         self.direct_uri = direct_uri
 
     @staticmethod

@@ -6,13 +6,9 @@ Test jenkinsflow.
 
 from __future__ import print_function
 
-import sys, os, getpass, shutil, copy, errno
-major_version = sys.version_info.major
-if major_version < 3:
-    import subprocess32 as subprocess
-else:
-    import subprocess
+import sys, copy, errno, os
 from os.path import join as jp
+import subprocess
 
 import click
 import tenjin
@@ -58,7 +54,7 @@ def run_tests(parallel, api_types, args, coverage=True, mock_speedup=1):
         # Note: cov_rc_file_name hardcoded in .travis.yml
         cov_rc_file_name = jp(here, '.coverage_rc_' +  '_'.join(api_type.name.lower() for api_type in api_types))
         with open(cov_rc_file_name, 'w') as cov_rc_file:
-            context = dict(api_types=api_types, top_dir=top_dir, major_version=major_version, fail_under=fail_under)
+            context = dict(api_types=api_types, top_dir=top_dir, fail_under=fail_under)
             cov_rc_file.write(engine.render(jp(here, "coverage_rc.tenjin"), context))
             args.extend(['--cov=' + top_dir, '--cov-report=term-missing', '--cov-config=' + cov_rc_file_name])
 
@@ -144,19 +140,6 @@ def cli(mock_speedup=1000,
             print("Disabling parallel run, Hudson can't handle it :(")
         parallel = test_cfg.skip_job_load() or test_cfg.skip_job_delete() and not hudson
         run_tests(parallel, api_types, args, coverage, mock_speedup)
-
-        # start_msg("Testing setup.py")
-        # user = getpass.getuser()
-        # install_prefix = '/tmp/' + user
-        # tmp_packages_dir = install_prefix + '/lib/python{major}.{minor}/site-packages'.format(major=major_version, minor=sys.version_info.minor)
-        # os.environ['PYTHONPATH'] = tmp_packages_dir
-        # if os.path.exists(tmp_packages_dir):
-        #     shutil.rmtree(tmp_packages_dir)
-        # os.makedirs(tmp_packages_dir)
-        #
-        # os.chdir(top_dir)
-        # subprocess.check_call([sys.executable, jp(top_dir, 'setup.py'), 'install', '--prefix', install_prefix])
-        # shutil.rmtree(jp(top_dir, 'build'))
 
         if not testfile and os.environ.get('CI', 'false').lower() != 'true':
             # This is automatically tested by readdthedocs, so no need to test on Travis
