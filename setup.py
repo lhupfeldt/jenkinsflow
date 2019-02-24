@@ -19,6 +19,11 @@ on_rtd = os.environ.get('READTHEDOCS') == 'True'
 is_ci = os.environ.get('CI', 'false').lower() == 'true'
 
 
+_here = os.path.dirname(os.path.abspath(__file__))
+with open(os.path.join(_here, 'py_version_check.py')) as ff:
+    exec(ff.read())
+
+
 class Test(TestCommand):
     def initialize_options(self):
         TestCommand.initialize_options(self)

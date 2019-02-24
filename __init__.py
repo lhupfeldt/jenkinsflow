@@ -2,3 +2,4 @@
 # All rights reserved. This work is under a BSD license, see LICENSE.TXT.
 
 # Package
+from . import py_version_check
