@@ -1,6 +1,6 @@
 atomicfile~=1.0
 click~=6.0
-requests~=2.7.0
+requests~=2.20.0
 psutil~=5.2.2
 setproctitle~=1.1.10
 sphinxcontrib.programoutput>=0.11
