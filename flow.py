@@ -239,10 +239,11 @@ class _JobControl(metaclass=abc.ABCMeta):
         """For json graph calculation"""
 
 
-class _SingleInvocation(_JobControl):
-    """Represents a single flow-invocation of a Jenkins job
+class _SingleJobInvocation(_JobControl):
+    """Represents a single flow-invocation of a Jenkins job.
+
     Multiple invocations of the same job in a single flow are allowed
-    Retries are handled by the same instance of this class, but distinct invocations are handled by different instances
+    Retries are handled by the same instance of this class, but distinct invocations are handled by different instances.
     """
 
     def __init__(self, parent_flow, securitytoken, job_name_prefix, max_tries, job_name, params, propagation, secret_params_re, allow_missing_jobs):
@@ -505,7 +506,7 @@ class _SingleInvocation(_JobControl):
         return [OrderedDict((("source", node_to_id(job)), ("target", node_to_id(self)))) for job in prev_jobs]
 
 
-# Retries are handled in the _Flow classes instead of _SingleInvocation since the individual jobs don't know
+# Retries are handled in the _Flow classes instead of _SingleJobInvocation since the individual jobs don't know
 # how to retry. The _Serial flow is retried from start of flow and in _Parallel flow individual jobs
 # are retried immediately
 
@@ -626,7 +627,7 @@ class _Flow(_JobControl, metaclass=abc.ABCMeta):
                 booleans are automatically converted to strings and lowercased, integers are automatically converted to strings.
         """
 
-        inv = _SingleInvocation(self, self.securitytoken, self.job_name_prefix, self.max_tries, job_name, params, self.propagation, self.secret_params_re, self.allow_missing_jobs)
+        inv = _SingleJobInvocation(self, self.securitytoken, self.job_name_prefix, self.max_tries, job_name, params, self.propagation, self.secret_params_re, self.allow_missing_jobs)
         self.invocations.append(inv)
         return inv
 
@@ -642,7 +643,7 @@ class _Flow(_JobControl, metaclass=abc.ABCMeta):
         See :py:meth:`invoke` for parameter description.
         """
 
-        inv = _SingleInvocation(self, self.securitytoken, self.job_name_prefix, self.max_tries, job_name, params, Propagation.UNCHECKED, self.secret_params_re, self.allow_missing_jobs)
+        inv = _SingleJobInvocation(self, self.securitytoken, self.job_name_prefix, self.max_tries, job_name, params, Propagation.UNCHECKED, self.secret_params_re, self.allow_missing_jobs)
         self.invocations.append(inv)
         return inv
 
