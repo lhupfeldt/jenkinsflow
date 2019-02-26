@@ -69,8 +69,8 @@ class MessageRedefinedException(JobControlException):
     pass
 
 
-class JobControlFailException(JobControlException):
-    __metaclass__ = abc.ABCMeta
+class JobControlFailException(JobControlException, metaclass=abc.ABCMeta):
+    pass
 
 
 class FailedSingleJobException(JobControlFailException):
@@ -107,9 +107,7 @@ class Killed(Exception):
     pass
 
 
-class _JobControl(object):
-    __metaclass__ = abc.ABCMeta
-
+class _JobControl(metaclass=abc.ABCMeta):
     def __init__(self, parent_flow, securitytoken, max_tries, propagation, secret_params_re, allow_missing_jobs):
         self.parent_flow = parent_flow
         self.top_flow = parent_flow.top_flow
@@ -511,8 +509,7 @@ class _SingleInvocation(_JobControl):
 # how to retry. The _Serial flow is retried from start of flow and in _Parallel flow individual jobs
 # are retried immediately
 
-class _Flow(_JobControl):
-    __metaclass__ = abc.ABCMeta
+class _Flow(_JobControl, metaclass=abc.ABCMeta):
     _enter_str = None
     _exit_str = None
 
@@ -929,9 +926,7 @@ class _Serial(_Flow):
         return links
 
 
-class _TopLevelControllerMixin(object):
-    __metaclass__ = abc.ABCMeta
-
+class _TopLevelControllerMixin(metaclass=abc.ABCMeta):
     def toplevel_init(self, jenkins_api, securitytoken, username, password, top_level_job_name_prefix, poll_interval, direct_url, require_idle,
                       json_dir, json_indent, json_strip_top_level_prefix, params_display_order, just_dump, kill_all, description, raise_if_unsuccessful):
         self._start_msg()

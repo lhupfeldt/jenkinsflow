@@ -11,7 +11,7 @@ class ResourceNotFound(Exception):
     pass
 
 
-class RequestsRestApi(object):
+class RequestsRestApi():
     def __init__(self, direct_uri, username, password):
         super().__init__()
         import requests
@@ -72,7 +72,7 @@ def _check_restkit_response(func):
     return deco
 
 
-class RestkitRestApi(object):
+class RestkitRestApi():
     """Note: This is no longer supported or tested, but may still work."""
     def __init__(self, direct_uri, username, password, **kwargs):
         super().__init__()

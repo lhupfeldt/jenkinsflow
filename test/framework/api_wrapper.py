@@ -89,7 +89,7 @@ class Jobs(TestJobs):
                                       set_build_descriptions=job.set_build_descriptions)
 
 
-class _TestWrapperApi(object):
+class _TestWrapperApi():
     def __init__(self, file_name, func_name, func_num_params, reload_jobs, pre_delete_jobs, securitytoken, direct_url, fake_public_uri):
         self.file_name = file_name
         self.func_name = func_name

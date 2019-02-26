@@ -4,7 +4,7 @@
 import time as real_time
 
 
-class Speed(object):
+class Speed():
     speedup = 1
 
     def time(self):

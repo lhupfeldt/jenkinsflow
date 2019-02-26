@@ -198,7 +198,7 @@ class Jenkins(Speed):
                 ff.write(description.encode('utf-8'))
 
 
-class ApiJob(object):
+class ApiJob():
     def __init__(self, jenkins, name, script_file, workspace, func):
         self.jenkins = jenkins
         self.name = name

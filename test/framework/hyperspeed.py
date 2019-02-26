@@ -1,7 +1,7 @@
 import time as real_time
 
 
-class HyperSpeed(object):
+class HyperSpeed():
     def __init__(self, speedup, **kwargs):
         super().__init__()
         assert isinstance(speedup, int)

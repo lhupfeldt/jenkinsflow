@@ -36,6 +36,6 @@ class UnknownJobException(Exception):
         super().__init__("Job not found: " + job_url + (", " + repr(api_ex) if api_ex is not None else ""))
 
 
-class ApiInvocationMixin(object):
+class ApiInvocationMixin():
     def console_url(self):
         return (self.job.public_uri + '/' + repr(self.build_number) + '/console') if self.build_number is not None else None

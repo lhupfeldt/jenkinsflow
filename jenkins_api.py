@@ -230,7 +230,7 @@ class Jenkins(Speed):
             raise Exception("Build not found " + repr(build_url), ex)
 
 
-class ApiJob(object):
+class ApiJob():
     def __init__(self, jenkins, dct, name):
         self.jenkins = jenkins
         self.dct = dct.copy()

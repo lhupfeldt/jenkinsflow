@@ -21,9 +21,7 @@ def _mkdir(path):
             raise
 
 
-class TestJob(AbstractApiJob):
-    __metaclass__ = abc.ABCMeta
-
+class TestJob(AbstractApiJob, metaclass=abc.ABCMeta):
     _current_order = 1
 
     def __init__(self, exec_time, max_fails, expect_invocations, expect_order, initial_buildno, invocation_delay,
@@ -84,7 +82,7 @@ class TestJob(AbstractApiJob):
             ", end_time: " + repr(self.end_time)
 
 
-class Jobs(object):
+class Jobs():
     def __init__(self, api):
         self.api = api
 
@@ -113,9 +111,7 @@ class Jobs(object):
                 raise Exception("Job: " + repr(job_name) + " is supposed to create job: " + repr(job.create_job) + " but definition for that job was not found")
 
 
-class TestJenkins(AbstractApiJenkins):
-    __metaclass__ = abc.ABCMeta
-
+class TestJenkins(AbstractApiJenkins, metaclass=abc.ABCMeta):
     def __init__(self, job_name_prefix, **kwargs):
         super().__init__(**kwargs)
         self.job_name_prefix = job_name_prefix

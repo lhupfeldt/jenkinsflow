@@ -8,9 +8,7 @@
 import abc
 
 
-class AbstractApiJob(object):
-    __metaclass__ = abc.ABCMeta
-
+class AbstractApiJob(metaclass=abc.ABCMeta):
     @abc.abstractmethod
     def invoke(self, securitytoken, build_params, cause, description):
         raise Exception("AbstractNotImplemented")
@@ -24,9 +22,7 @@ class AbstractApiJob(object):
     # def poll(self):
 
 
-class AbstractApiJenkins(object):
-    __metaclass__ = abc.ABCMeta
-
+class AbstractApiJenkins(metaclass=abc.ABCMeta):
     @abc.abstractmethod
     def create_job(self, job_name, config_xml):
         raise Exception("AbstractNotImplemented")
