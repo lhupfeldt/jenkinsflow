@@ -4,8 +4,6 @@
 Test jenkinsflow.
 """
 
-from __future__ import print_function
-
 import sys, copy, errno, os
 from os.path import join as jp
 import subprocess

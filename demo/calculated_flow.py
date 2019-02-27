@@ -5,8 +5,6 @@
 
 # Demonstrate that the flow can be dynamically calculated by the script
 
-from __future__ import print_function
-
 import sys, os, tempfile
 import logging
 from collections import OrderedDict
