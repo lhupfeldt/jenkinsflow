@@ -31,7 +31,7 @@ def base_url_and_api(direct_url):
         print("*** ERROR: You must specify 'direct-url' if not running from Jenkins job", file=sys.stderr)
         raise
 
-    if base_url.startswith('http:'):
+    if base_url.startswith('http:') or base_url.startswith('https:'):
         # Using jenkins_api
         from .. import jenkins_api as api
     else:
