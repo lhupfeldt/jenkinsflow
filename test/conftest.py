@@ -18,14 +18,12 @@ def api_type(request):
     """ApiType fixture"""
     selected_api_type = request.param    
 
-    apimarker = request.node.get_marker("apis")
-    if apimarker is not None:
+    for apimarker in request.node.iter_markers("apis"):
         apis = apimarker.args
         if selected_api_type not in apis:
             pytest.skip("test requires one the following apis {apis}, current {api_type}".format(apis=apis, api_type=selected_api_type))
 
-    not_apimarker = request.node.get_marker("not_apis")
-    if not_apimarker is not None:
+    for not_apimarker in request.node.iter_markers("not_apis"):
         not_apis = not_apimarker.args
         if selected_api_type in not_apis:
             pytest.skip("test is not run for the following apis {apis}, current {api_type}".format(apis=not_apis, api_type=selected_api_type))
