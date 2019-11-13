@@ -2,6 +2,7 @@
 # All rights reserved. This work is under a BSD license, see LICENSE.TXT.
 
 import os, time
+import os.path
 from collections import OrderedDict
 import urllib.parse
 
@@ -50,6 +51,7 @@ class Jenkins(Speed):
         self.password = password
         self.invocation_class = invocation_class or Invocation
         self.job_prefix_filter = job_prefix_filter
+        self.jenkins_prefix = urllib.parse.urlsplit(direct_uri).path  # When jenkins is started with a 'prefix' value
         self._public_uri = None
         self.jobs = None
         self.queue_items = {}
@@ -263,8 +265,9 @@ class ApiJob():
             raise UnknownJobException(self.jenkins._public_job_url(self.name), ex)  # pylint: disable=protected-access
 
         # Make location relative
-        parts = urllib.parse.urlsplit(response.headers['location'])
-        location = urllib.parse.urlunsplit(['', ''] + list(parts[2:]))
+        location = urllib.parse.urlsplit(response.headers['location']).path
+        if self.jenkins.jenkins_prefix:
+            location = os.path.relpath(location, self.jenkins.jenkins_prefix)
 
         old_inv = self._invocations.get(location)
         if old_inv:
