@@ -7,8 +7,12 @@ from collections import OrderedDict
 from itertools import chain
 from enum import Enum
 
-from .ordered_enum import OrderedEnum
-from .jenkins_api import BuildResult, Progress, UnknownJobException
+from .api_base import BuildResult, Progress, UnknownJobException
+from .flow_exceptions import (
+    FlowScopeException, MessageRedefinedException, MissingJobsException, JobNotIdleException, FailedSingleJobException, FlowTimeoutException,
+    JobControlFailException, FailedChildJobsException, FailedChildJobException, FinalResultException)
+from .propagation_types import Propagation
+from .checking_state import Checking
 
 
 _default_poll_interval = 0.5
@@ -19,86 +23,16 @@ _default_secret_params_re = re.compile(_default_secret_params)
 _build_result_failures = (BuildResult.FAILURE, BuildResult.ABORTED)
 
 
-class Propagation(OrderedEnum):
-    # pylint: disable=no-init
-    NORMAL = 0
-    FAILURE_TO_UNSTABLE = 1
-    UNCHECKED = 2
-
-
-class Checking(OrderedEnum):
-    # pylint: disable=no-init
-    MUST_CHECK = 0
-    HAS_UNCHECKED = 1
-    FINISHED = 2
-
-
 class KillType(Enum):
     NONE = 0
     CURRENT = 1
     ALL = 2
 
     def __bool__(self):
-        return self !=  KillType.NONE
+        return self != KillType.NONE
 
     # Python2 compatibility
     __nonzero__ = __bool__
-
-
-class JobControlException(Exception):
-    def __init__(self, message, propagation=Propagation.NORMAL):
-        super().__init__(message)
-        self.propagation = propagation
-
-
-class FlowTimeoutException(JobControlException):
-    pass
-
-
-class FlowScopeException(JobControlException):
-    pass
-
-
-class JobNotIdleException(JobControlException):
-    pass
-
-
-class MessageRedefinedException(JobControlException):
-    pass
-
-
-class JobControlFailException(JobControlException, metaclass=abc.ABCMeta):
-    pass
-
-
-class FailedSingleJobException(JobControlFailException):
-    def __init__(self, job, propagation):
-        msg = "Failed job: " + repr(job) + ", propagation:" + str(propagation)
-        super().__init__(msg, propagation)
-
-
-class MissingJobsException(JobControlFailException):
-    def __init__(self, ex):
-        super().__init__(str(ex), propagation=Propagation.NORMAL)
-
-
-class FailedChildJobException(JobControlFailException):
-    def __init__(self, flow_job, failed_child_job, propagation):
-        msg = "Failed child job in: " + repr(flow_job) + ", child job:" + repr(failed_child_job) + ", propagation:" + str(propagation)
-        super().__init__(msg, propagation)
-
-
-class FailedChildJobsException(JobControlFailException):
-    def __init__(self, flow_job, failed_child_jobs, propagation):
-        msg = "Failed child jobs in: " + repr(flow_job) + ", child jobs:" + repr(failed_child_jobs) + ", propagation:" + str(propagation)
-        super().__init__(msg, propagation)
-
-
-class FinalResultException(JobControlFailException):
-    def __init__(self, build_result):
-        msg = "Flow Unsuccessful: {}".format(build_result)
-        super().__init__(msg)
-        self.result = build_result
 
 
 class Killed(Exception):
