@@ -5,7 +5,6 @@ import os, re, abc, signal
 from os.path import join as jp
 from collections import OrderedDict
 from itertools import chain
-from enum import Enum
 
 from .api_base import BuildResult, Progress, UnknownJobException
 from .flow_exceptions import (
@@ -13,6 +12,7 @@ from .flow_exceptions import (
     JobControlFailException, FailedChildJobsException, FailedChildJobException, FinalResultException)
 from .propagation_types import Propagation
 from .checking_state import Checking
+from .kill_type import KillType
 
 
 _default_poll_interval = 0.5
@@ -21,18 +21,6 @@ _default_secret_params = '.*passw.*|.*PASSW.*'
 _default_secret_params_re = re.compile(_default_secret_params)
 
 _build_result_failures = (BuildResult.FAILURE, BuildResult.ABORTED)
-
-
-class KillType(Enum):
-    NONE = 0
-    CURRENT = 1
-    ALL = 2
-
-    def __bool__(self):
-        return self != KillType.NONE
-
-    # Python2 compatibility
-    __nonzero__ = __bool__
 
 
 class Killed(Exception):
