@@ -199,6 +199,31 @@ def test_set_build_description_utils_from_inside_job_2(api_type):
         assert _get_description(api, job, build_num) == 'BBB3#BBB4!!BBB5'
 
 
+@pytest.mark.not_apis(ApiType.MOCK)
+def test_set_build_description_utils_from_inside_job_using_build_url(api_type):
+    pytest.xfail('TODO')
+    with api_select.api(__file__, api_type, login=True) as api:
+        api.flow_job()
+        job_name = 'job-1'
+        api.job(job_name, max_fails=0, expect_invocations=1, expect_order=1,
+                set_build_descriptions=(('BBB3', True, '\\n'), ('BBB4', False, '#'), ('BBB5', False, '!!')))
+
+        # Need to read the build number
+        if api.api_type == ApiType.SCRIPT:
+            # TODO: This can't be called here for Jenkins API. Why?
+            job = api.get_job(api.job_name_prefix + job_name)
+            _clear_description(api, job)
+
+        with serial(api, timeout=70, job_name_prefix=api.job_name_prefix, report_interval=1, description="AAA") as ctrl1:
+            ctrl1.invoke(job_name, password='a', s1='b')
+
+        if api.api_type != ApiType.SCRIPT:
+            job = api.get_job(api.job_name_prefix + job_name)
+        _, _, build_num = job.job_status()
+
+        assert _get_description(api, job, build_num) == 'BBB3#BBB4!!BBB5'
+
+
 @pytest.mark.not_apis(ApiType.MOCK, ApiType.SCRIPT)
 def test_set_build_description_unknown_job(api_type):
     with api_select.api(__file__, api_type, login=True) as api:

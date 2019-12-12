@@ -1,7 +1,10 @@
 # Copyright (c) 2012 - 2015 Lars Hupfeldt Nielsen, Hupfeldt IT
 # All rights reserved. This work is under a BSD license, see LICENSE.TXT.
 
+import os
 from enum import Enum
+import urllib.parse
+
 from .ordered_enum import OrderedEnum
 
 
@@ -34,6 +37,31 @@ class ClientError(AuthError):
 class UnknownJobException(Exception):
     def __init__(self, job_url, api_ex=None):
         super().__init__("Job not found: " + job_url + (", " + repr(api_ex) if api_ex is not None else ""))
+
+
+class BaseApiMixin():
+    def get_build_url(self, build_url: str = None, job_name: str = None, build_number: int = None):
+        """Get the build_url either from arguments or environment.
+
+        Arguments are preferred if specified and 'build_url' is preferred over job_name and build_number.
+        """
+
+        if build_url is None and job_name is None and build_number is None:
+            try:
+                build_url = os.environ['BUILD_URL']
+            except KeyError:
+                pass
+
+        if build_url is not None:
+            # Make build_url relative
+            build_url = urllib.parse.urlsplit(build_url).path
+            if self.jenkins_prefix:
+                return os.path.relpath(build_url, self.jenkins_prefix)
+            return build_url
+
+        job_name = job_name if job_name is not None else os.environ['JOB_NAME']
+        build_number = build_number if build_number is not None else int(os.environ['BUILD_NUMBER'])
+        return f"/job/{job_name}/{build_number}"
 
 
 class ApiInvocationMixin():

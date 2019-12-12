@@ -6,7 +6,7 @@ import os.path
 from collections import OrderedDict
 import urllib.parse
 
-from .api_base import BuildResult, Progress, AuthError, ClientError, UnknownJobException, ApiInvocationMixin
+from .api_base import BuildResult, Progress, AuthError, ClientError, UnknownJobException, BaseApiMixin, ApiInvocationMixin
 from .speed import Speed
 from .rest_api_wrapper import ResourceNotFound, RequestsRestApi
 
@@ -24,7 +24,7 @@ def _result_and_progress(build_dct):
     return (result, progress)
 
 
-class Jenkins(Speed):
+class Jenkins(Speed, BaseApiMixin):
     """Optimized minimal set of methods needed for jenkinsflow to access Jenkins jobs.
 
     Args:
@@ -198,34 +198,33 @@ class Jenkins(Speed):
             # TODO: Check error
             raise UnknownJobException(self._public_job_url(job_name), ex)
 
-    def set_build_description(self, description, replace=False, separator='\n', job_name=None, build_number=None):
-        """Utility to set/append build description
+    def _set_description(self, description, build_url, replace=False, separator: str = '\n'):
+        if not replace:
+            dct = self.get_json(build_url, tree="description")
+            existing_description = dct['description']
+            if existing_description:
+                description = existing_description + separator + description
+
+        self.post(build_url + '/submitDescription', headers=_ct_url_enc, payload={'description': description})
+
+    def set_build_description(
+            self, description: str, replace: bool = False, separator: str = '\n',
+            build_url: str = None, job_name: str = None, build_number: int = None):
+        """Utility to set/append build description.
 
         Args:
-            description (str):  The description to set on the build
-            replace (bool):     If True, replace existing description, if any, instead of appending to it
-            separator (str):    A separator to insert between any existing description and the new :py:obj:`description` if :py:obj:`replace` is False.
-            job_name (str):     Name of the Jenkins job
-            build_number (int): The build number for which to set the description
+            description:  The description to set on the build
+            replace:      If True, replace existing description, if any, instead of appending to it
+            separator:    A separator to insert between any existing description and the new :py:obj:`description` if :py:obj:`replace` is False.
+            build_url:    The URL of the Jenkins job build.
+            job_name:     Name of the Jenkins job
+            build_number: The build number for which to set the description
         """
+
         self.poll()
-
-        if job_name is None:
-            job_name = os.environ['JOB_NAME']
-
-        if build_number is None:
-            build_number = int(os.environ['BUILD_NUMBER'])
-
-        job_path = "/job/" + job_name
-        build_url = job_path + '/' + str(build_number)
+        build_url = self.get_build_url(build_url, job_name, build_number)
         try:
-            if not replace:
-                dct = self.get_json(build_url, tree="description")
-                existing_description = dct['description']
-                if existing_description:
-                    description = existing_description + separator + description
-
-            self.post(build_url + '/submitDescription', headers=_ct_url_enc, payload={'description': description})
+            self._set_description(description, build_url, replace, separator)
         except ResourceNotFound as ex:
             raise Exception("Build not found " + repr(build_url), ex)
 
@@ -432,7 +431,7 @@ class Invocation(ApiInvocationMixin):
 
         build_url = self.job._path + '/' + repr(self.build_number)
         try:
-            self.job.jenkins.post(build_url + '/submitDescription', headers=_ct_url_enc, payload={'description': self.description})
+            self.job.jenkins._set_description(self.description, build_url)
         except ResourceNotFound as ex:
             raise Exception("Build deleted while flow running? " + repr(build_url), ex)
 

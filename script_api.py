@@ -4,8 +4,9 @@
 import sys, os, shutil, importlib, datetime, tempfile, psutil, setproctitle, signal, errno
 from os.path import join as jp
 import multiprocessing
+import urllib.parse
 
-from .api_base import BuildResult, Progress, UnknownJobException, ApiInvocationMixin
+from .api_base import BuildResult, Progress, UnknownJobException, BaseApiMixin, ApiInvocationMixin
 from .speed import Speed
 
 
@@ -70,7 +71,7 @@ class LoggingProcess(multiprocessing.Process):
         super().run()
 
 
-class Jenkins(Speed):
+class Jenkins(Speed, BaseApiMixin):
     """Optimized minimal set of methods needed for jenkinsflow to directly execute python code instead of invoking Jenkins jobs.
 
     THIS DOES NOT SUPPORT CONCURRENT INVOCATIONS OF FLOW
@@ -104,6 +105,7 @@ class Jenkins(Speed):
         self.public_uri = direct_uri
         self.log_dir = log_dir or os.path.join(tempfile.gettempdir(), 'jenkinsflow')
         self.invocation_class = invocation_class or Invocation
+        self.jenkins_prefix = urllib.parse.urlsplit(direct_uri).path  # If direct_uri is a path, then jenkins_prefix will be the same as direct_uri
         self.jobs = {}
 
     def poll(self):
@@ -119,7 +121,7 @@ class Jenkins(Speed):
         return jp(self.public_uri, job_name + '.py')
 
     def _workspace(self, job_name):
-        return jp(self.public_uri, job_name)
+        return jp(self.public_uri, job_name.replace('/', '_'))
 
     def get_job(self, name):
         job = self.jobs.get(name)
@@ -167,24 +169,23 @@ class Jenkins(Speed):
             if os.path.exists(script_file):
                 raise
 
-    def set_build_description(self, description, replace=False, separator='\n', job_name=None, build_number=None):
+    def set_build_description(
+            self, description: str, replace: bool = False, separator: str = '\n',
+            build_url: str = None, job_name: str = None, build_number: int = None):
         """Utility to set/append build description. :py:obj:`description` will be written to a file in the workspace.
 
         Args:
-            description (str): The description to set on the build.
-            append (bool): If True append to existing description, if any.
-            separator (str): A separator to insert between any existing description and the new :py:obj:`description` if :py:obj:`append` is True.
-            job_name (str):
-            build_number (int):
+            description: The description to set on the build.
+            append:      If True append to existing description, if any.
+            separator:   A separator to insert between any existing description and the new :py:obj:`description` if :py:obj:`append` is True.
+            build_url:
+            job_name:
+            build_number:
         """
 
-        if job_name is None:
-            job_name = os.environ['JOB_NAME']
-
-        if build_number is None:
-            build_number = int(os.environ['BUILD_NUMBER'])
-
-        workspace = self._workspace(job_name)
+        rel_build_url = self.get_build_url(build_url, job_name, build_number)
+        # TODO: Is this always correct?
+        workspace = self._workspace(os.path.basename(os.path.dirname(rel_build_url).replace('.py', '')))
         mode = 'w' if replace else 'a'
         fname = jp(workspace, 'description.txt')
         if not replace and os.path.exists(fname) and os.stat(fname).st_size:

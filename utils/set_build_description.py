@@ -4,22 +4,29 @@
 from .utils import base_url_and_api
 
 
-def set_build_description(description, replace=False, separator='\n', username=None, password=None, job_name=None, build_number=None, direct_url=None):
+def set_build_description(
+        description: str, replace: bool = False, separator: str = '\n',
+        username: str = None, password: str = None,
+        build_url: str = None, job_name: str = None, build_number: int = None,
+        direct_url: str = None):
     """Utility method to set/append build description on a job build.
 
-    If this is used from inside the hudson job you do not have to specify 'job_name', 'build_number' and 'direct_url'.
+    If this is used from inside the hudson job you do not have to specify 'build_url' or 'job_name', 'build_number'. You do not have to specify 'direct_url' either
+    but may still want to do so if JENKINS_URL points to a proxy, so that rest calls can go directly to Jenkins.
+    The 'build_url' is preferred over 'job_name' and 'build_number'.
 
     Args:
-        description (str): The description to set on the build.
-        replace (bool): Replace existing description, if any, instead of appending.
-        separator (str): A separator to insert between any existing description and the new 'description' if 'replace' is not specified.
-        username (str): User Name for Jenkin authentication with secured Jenkins.
-        password (str): Password of Jenkins User.
-        job_name (str): Name of the job to modify a build on. Default is os.environ['JOB_NAME'].
-        build_number (int): Build Number to modify. . Default is os.environ['BUILD_NUMBER'].
-        direct_url (str): Jenkins URL - preferably non-proxied. If not specified, the value of JENKINS_URL or HUDSON_URL environment variables will be used.
+        description: The description to set on the build.
+        replace: Replace existing description, if any, instead of appending.
+        separator: A separator to insert between any existing description and the new 'description' if 'replace' is not specified.
+        username: User Name for Jenkin authentication with secured Jenkins.
+        password: Password of Jenkins User.
+        build_url: The URL of the jenkins build - preferably non-proxied. Default is os.environ['BUILD_URL'].
+        job_name: Name of the job to modify a build on. Default is os.environ['JOB_NAME'].
+        build_number: Build Number to modify. . Default is os.environ['BUILD_NUMBER'].
+        direct_url: Jenkins URL - preferably non-proxied. If not specified, the value of JENKINS_URL or HUDSON_URL environment variables will be used.
     """
 
     base_url, api = base_url_and_api(direct_url)
     jenkins = api.Jenkins(direct_uri=base_url, username=username, password=password)
-    jenkins.set_build_description(description, replace, separator, job_name, build_number)
+    jenkins.set_build_description(description, replace, separator, build_url, job_name, build_number)
