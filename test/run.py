@@ -95,6 +95,8 @@ def cli(mock_speedup=1000,
     os.environ[test_cfg.SKIP_JOB_DELETE_NAME] = 'false' if job_delete else 'true'
     os.environ[test_cfg.SKIP_JOB_LOAD_NAME] = 'false' if job_load else 'true'
 
+    is_ci = os.environ.get('CI', 'false').lower() == 'true'
+
     args = ['--capture=sys', '--instafail']
 
     if apis is None:
@@ -133,13 +135,16 @@ def cli(mock_speedup=1000,
             coverage = True
             args.append('--ff')
 
+        if is_ci:
+            args.append('-vvv')
+
         hudson = os.environ.get('HUDSON_URL')
         if hudson:
             print("Disabling parallel run, Hudson can't handle it :(")
         parallel = test_cfg.skip_job_load() or test_cfg.skip_job_delete() and not hudson
         run_tests(parallel, api_types, args, coverage, mock_speedup)
 
-        if not testfile and os.environ.get('CI', 'false').lower() != 'true':
+        if not testfile and not is_ci:
             # This is automatically tested by readdthedocs, so no need to test on Travis
             start_msg("Testing documentation generation")
 
