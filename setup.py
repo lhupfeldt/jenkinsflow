@@ -55,7 +55,7 @@ else:
     install_requires = flow_requires + cli_requires + jenkins_api_requires + script_api_requires
 
 tests_require = [
-    'pytest>=5.0.1', 'pytest-cov>=2.4.0', 'pytest-instafail>=0.3.0', 'pytest-xdist>=1.16',
+    'pytest>=5.3.5,<5.4', 'pytest-cov>=2.4.0', 'pytest-instafail>=0.3.0', 'pytest-xdist>=1.16',
     'click>=6.0', 'tenjin>=1.1.1', 'bottle>=0.12', 'objproxies>=0.9.4',
     # The test also tests creation of the documentation
     'sphinx>=2.2.1', 'sphinxcontrib-programoutput>=0.13',
