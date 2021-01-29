@@ -1,7 +1,8 @@
 # Copyright (c) 2012 - 2015 Lars Hupfeldt Nielsen, Hupfeldt IT
 # All rights reserved. This work is under a BSD license, see LICENSE.TXT.
 
-import sys, os
+import os
+import sys
 from pathlib import Path
 
 import pytest
@@ -16,6 +17,30 @@ _DEMO_DIR = (_HERE/'../demo').resolve()
 sys.path.extend([str(_DEMO_DIR), str(_DEMO_DIR/"jobs")])
 
 # Note: You can't (indirectly) import stuff from jenkinsflow here, it messes up the coverage
+
+def pytest_addoption(parser):
+    parser.addoption(
+        "--api",
+        action="store",
+        metavar="NAME",
+        default=','.join(at.name for at in list(ApiType)),
+        help=f"Comma separated list of APIs to test. Default is all defined apis: {','.join([at.name for at in list(ApiType)])}",
+    )
+
+
+def pytest_configure(config):
+    # Register api  marker
+    config.addinivalue_line("markers", "apis(*ApiType): mark test to run only when using specified apis")
+    config.addinivalue_line("markers", "not_apis(*ApiType): mark test NOT to run when using specified apis")
+
+    try:
+        apis = [ApiType[api.strip().upper()] for api in config.getoption('--api').split(',')]
+    except KeyError as ex:
+        print(ex, file=sys.stderr)
+        print(f"'{ex}' cannot be converted to ApiType. Should be one or more of: {','.join([at.name for at in list(ApiType)])}")
+        raise
+
+    print("APIs:", apis)
 
 
 @pytest.fixture(params=[ApiType.MOCK, ApiType.JENKINS, ApiType.SCRIPT])
@@ -34,12 +59,6 @@ def api_type(request):
             pytest.skip("test is not run for the following apis {apis}, current {api_type}".format(apis=not_apis, api_type=selected_api_type))
 
     return selected_api_type
-
-
-def pytest_configure(config):
-    # Register api  marker
-    config.addinivalue_line("markers", "apis(*ApiType): mark test to run only when using specified apis")
-    config.addinivalue_line("markers", "not_apis(*ApiType): mark test NOT to run when using specified apis")
 
 
 def _set_env_fixture(var_name, value, request):
