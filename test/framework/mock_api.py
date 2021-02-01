@@ -64,8 +64,8 @@ class MockApi(TestJenkins, HyperSpeed):
             if job.non_existing:
                 raise UnknownJobException(name)
             return job
-        except KeyError:
-            raise UnknownJobException(name)
+        except KeyError as ex:
+            raise UnknownJobException(name) from ex
 
     def set_build_description(self, description, replace=False, separator='\n', job_name=None, build_number=None):
         pass

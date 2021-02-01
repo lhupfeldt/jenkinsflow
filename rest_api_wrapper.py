@@ -29,11 +29,11 @@ class RequestsRestApi():
             response.raise_for_status()
         except Exception as ex:
             if response.status_code == 404:
-                raise ResourceNotFound(ex)
+                raise ResourceNotFound(ex) from ex
             if response.status_code == 401:
-                raise AuthError(ex)
+                raise AuthError(ex) from ex
             if response.status_code == 403:
-                raise ClientError(ex)
+                raise ClientError(ex) from ex
             raise
 
         # TODO: This is dubious, maybe we should raise here instead.
@@ -44,7 +44,7 @@ class RequestsRestApi():
         try:
             return self._check_response(self.session.get(_join_url(self.direct_uri, url), params=params))
         except requests.ConnectionError as ex:
-            raise ConnectionError(ex)
+            raise ConnectionError(ex) from ex
 
     def get_content(self, url, **params):
         return self._get(url, params=params).content
@@ -65,9 +65,9 @@ def _check_restkit_response(func):
         try:
             return func(self, *args, **kwargs)
         except self.restkit.Unauthorized as ex:
-            raise AuthError(ex.response.status + " user: '" + self.username + "' for url: " + ex.response.final_url)
+            raise AuthError(ex.response.status + " user: '" + self.username + "' for url: " + ex.response.final_url) from ex
         except self.restkit.errors.ResourceNotFound as ex:
-            raise ResourceNotFound(str(ex))
+            raise ResourceNotFound(str(ex)) from ex
 
     return deco
 

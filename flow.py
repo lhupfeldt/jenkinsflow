@@ -207,7 +207,7 @@ class _SingleJobInvocation(_JobControl):
             if require_job or not self.allow_missing_jobs and not self.top_flow.kill:
                 self.checking_status = Checking.FINISHED
                 self.result = BuildResult.FAILURE
-                raise MissingJobsException(ex)
+                raise MissingJobsException(ex) from ex
             print(self.indentation + repr(self), "- MISSING JOB")
             super()._prepare_to_invoke(reset_tried_times=False)
             return

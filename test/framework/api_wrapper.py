@@ -227,7 +227,7 @@ class _TestWrapperApi():
                 print(ex, file=sys.stderr)
                 msg = "In api_wrapper get_job. Job exists in test_jobs, but not in in Jenkins: " + repr(name)
                 print(msg, file=sys.stderr)
-                raise Exception(msg)
+                raise Exception(msg) from ex
             raise
 
     def poll(self):

@@ -139,12 +139,12 @@ class Jenkins(Speed, BaseApiMixin):
             try:
                 user_module = importlib.import_module(os.path.basename(script_file).replace('.py', ''), package=None)
             except (ImportError, SyntaxError) as ex:
-                raise UnknownJobException(repr(script_file) + ' ' + repr(ex))
+                raise UnknownJobException(repr(script_file) + ' ' + repr(ex)) from ex
 
             try:
                 func = user_module.run_job
             except AttributeError as ex:
-                raise UnknownJobException(script_file + repr(ex))
+                raise UnknownJobException(script_file + repr(ex)) from ex
             job = self.jobs[name] = ApiJob(jenkins=self, name=name, script_file=script_file, workspace=self._workspace(name), func=func)
         return job
 
@@ -160,7 +160,7 @@ class Jenkins(Speed, BaseApiMixin):
             os.unlink(script_file)
         except OSError as ex:
             if not os.path.exists(script_file):
-                raise UnknownJobException(script_file + repr(ex))
+                raise UnknownJobException(script_file + repr(ex)) from ex
             raise
 
         try:

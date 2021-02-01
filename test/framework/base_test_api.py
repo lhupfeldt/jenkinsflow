@@ -140,15 +140,15 @@ class TestJenkins(AbstractApiJenkins, metaclass=abc.ABCMeta):
             if job.non_existing:
                 raise UnknownJobException(job_name)
             job.non_existing = True
-        except KeyError:
-            raise Exception("Test job setup error, missing test job definition:", job_name)
+        except KeyError as ex:
+            raise Exception("Test job setup error, missing test job definition:", job_name) from ex
 
     def create_job(self, job_name, config_xml):
         try:
             job = self.test_jobs[job_name]
             job.non_existing = False
-        except KeyError:
-            raise Exception("Test job setup error, missing test job definition:", job_name)
+        except KeyError as ex:
+            raise Exception("Test job setup error, missing test job definition:", job_name) from ex
 
     def job_creator(self):
         return Jobs(self)

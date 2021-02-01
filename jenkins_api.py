@@ -183,8 +183,8 @@ class Jenkins(Speed, BaseApiMixin):
     def get_job(self, name):
         try:
             return self.jobs[name]
-        except KeyError:
-            raise UnknownJobException(self._public_job_url(name))
+        except KeyError as ex:
+            raise UnknownJobException(self._public_job_url(name)) from ex
 
     def create_job(self, job_name, config_xml):
         self.post('/createItem', name=job_name,
@@ -196,7 +196,7 @@ class Jenkins(Speed, BaseApiMixin):
             self.post('/job/' + job_name + '/doDelete')
         except ResourceNotFound as ex:
             # TODO: Check error
-            raise UnknownJobException(self._public_job_url(job_name), ex)
+            raise UnknownJobException(self._public_job_url(job_name), ex) from ex
 
     def _set_description(self, description, build_url, replace=False, separator: str = '\n'):
         if not replace:
@@ -226,7 +226,7 @@ class Jenkins(Speed, BaseApiMixin):
         try:
             self._set_description(description, build_url, replace, separator)
         except ResourceNotFound as ex:
-            raise Exception("Build not found " + repr(build_url), ex)
+            raise Exception("Build not found " + repr(build_url), ex) from ex
 
 
 class ApiJob():
@@ -261,7 +261,7 @@ class ApiJob():
                 params['token'] = securitytoken
             response = self.jenkins.post(self._build_trigger_path, headers=headers, payload=build_params, **params)
         except ResourceNotFound as ex:
-            raise UnknownJobException(self.jenkins._public_job_url(self.name), ex)  # pylint: disable=protected-access
+            raise UnknownJobException(self.jenkins._public_job_url(self.name), ex) from ex  # pylint: disable=protected-access
 
         # Make location relative
         location = urllib.parse.urlsplit(response.headers['location']).path
@@ -363,13 +363,13 @@ class ApiJob():
         try:
             self.jenkins.post(self._path + '/disable')
         except ResourceNotFound as ex:
-            raise UnknownJobException(self.jenkins._public_job_url(self.name), ex)  # pylint: disable=protected-access
+            raise UnknownJobException(self.jenkins._public_job_url(self.name), ex) from ex  # pylint: disable=protected-access
 
     def enable(self):
         try:
             self.jenkins.post(self._path + '/enable')
         except ResourceNotFound as ex:
-            raise UnknownJobException(self.jenkins._public_job_url(self.name), ex)  # pylint: disable=protected-access
+            raise UnknownJobException(self.jenkins._public_job_url(self.name), ex) from ex  # pylint: disable=protected-access
 
     def __repr__(self):
         return str(dict(name=self.name, dct=self.dct))
@@ -433,7 +433,7 @@ class Invocation(ApiInvocationMixin):
         try:
             self.job.jenkins._set_description(self.description, build_url)
         except ResourceNotFound as ex:
-            raise Exception("Build deleted while flow running? " + repr(build_url), ex)
+            raise Exception("Build deleted while flow running? " + repr(build_url), ex) from ex
 
     def stop(self, dequeue):
         try:
