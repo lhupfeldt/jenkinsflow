@@ -22,5 +22,3 @@ def test_cause(api_type, env_job_name, env_build_number):
 
         with serial(api, timeout=70, job_name_prefix=api.job_name_prefix, report_interval=1) as ctrl1:
             ctrl1.invoke('j1')
-
-

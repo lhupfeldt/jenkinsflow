@@ -27,7 +27,7 @@ if __name__ == '__main__':
 
 def kill(api, sleep_time, num_kills):
     """Kill this process"""
-    pid = os.getpid()    
+    pid = os.getpid()
     ff = __file__.replace('.pyc', '.py')
     log_file_name = api.func_name.replace('test_', '')
     args = [sys.executable, ff, repr(pid), repr(sleep_time), repr(num_kills), log_file_name]

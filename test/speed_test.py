@@ -14,7 +14,7 @@ from .cfg import ApiType
 def test_hyperspeed_speedup():
     hs = Speed()
     assert hs.speedup == 1
-    
+
 
 @pytest.mark.not_apis(ApiType.MOCK)
 def test_hyperspeed_real_time():

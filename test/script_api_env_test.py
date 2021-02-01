@@ -25,7 +25,7 @@ def test_script_api_env_unchanged(api_type):
         with serial(api, timeout=70, job_name_prefix=api.job_name_prefix, report_interval=1) as ctrl1:
             ctrl1.invoke(job_name)
 
-        # Do a few more things to 
+        # Do a few more things to
         job = api.get_job(api.job_name_prefix + job_name)
         _, _, build_num = job.job_status()
 

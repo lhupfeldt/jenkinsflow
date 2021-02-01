@@ -18,4 +18,3 @@ def test_api_class_repr_job(api_type):
 
     invocation = jenkins_api.Invocation(job, "http://dummy", 'hello')
     assert repr(invocation) == "Invocation: 'http://dummy' None None"
-    

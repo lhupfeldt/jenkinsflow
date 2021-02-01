@@ -61,7 +61,7 @@ def lines_in(text, mfunc, *expected_lines):
             matched = 'No lines matched.' + " (Empty text)" if not text else ''
 
         raw_txt_msg = " (unmodified text, 'mfunc' not applied)" if mfunc else ''
-            
+
         if hasattr(expected, 'match'):
             print('', matched, "The regex:", expected.pattern,
                   "--- NOT MATCHED or OUT OF ORDER in" + raw_txt_msg + " ---", text, file=sys.stderr, sep='\n\n')

@@ -16,7 +16,7 @@ from .cfg import ApiType
 @pytest.fixture(params=[ApiType.MOCK, ApiType.JENKINS, ApiType.SCRIPT])
 def api_type(request):
     """ApiType fixture"""
-    selected_api_type = request.param    
+    selected_api_type = request.param
 
     for apimarker in request.node.iter_markers("apis"):
         apis = apimarker.args

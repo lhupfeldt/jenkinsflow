@@ -57,7 +57,7 @@ def test_set_build_description_unicode_set_build_description_util(api_type):
         api.set_build_description(u'ÆØÅ', job_name=job.name, build_number=build_num)
         api.set_build_description(u'æøå', replace=False, job_name=job.name, build_number=build_num)
         _verify_description(api, job, build_num, u'«©º\nÆØÅ\næøå')
-        
+
         api.set_build_description(u'¶¹²', replace=True, job_name=job.name, build_number=build_num)
         api.set_build_description(u'³¼¢', replace=False, separator='#', job_name=job.name, build_number=build_num)
         api.set_build_description(u'¬<>©‘’Nº', separator='!!', job_name=job.name, build_number=build_num)

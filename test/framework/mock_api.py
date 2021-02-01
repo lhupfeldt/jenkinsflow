@@ -32,7 +32,7 @@ class MockApi(TestJenkins, HyperSpeed):
         job_name = self.job_name_prefix + name
         assert not self.test_jobs.get(job_name)
         assert isinstance(max_fails, int)
-        
+
         if exec_time is None:
             exec_time = 0.01
 

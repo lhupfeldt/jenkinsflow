@@ -39,7 +39,7 @@ def _assert_json(got_json, expected_json, api_type):
             print("--- got json ---")
             print(got_json)
         assert got_json.strip() == expected_json
-            
+
 
 def _flow(api, strip_prefix, json_dir):
     if not os.path.exists(json_dir):

@@ -39,5 +39,3 @@ def test_replace_invocation_class_log_override(api_type, capsys):
 
         sout, _ = capsys.readouterr()
         assert "HELLO LOG" in sout
-
-
