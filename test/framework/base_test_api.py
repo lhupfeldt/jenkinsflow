@@ -210,7 +210,7 @@ class TestJenkins(AbstractApiJenkins, metaclass=abc.ABCMeta):
                 start_check_interval = 0.01
                 max_wait_index = int(max_wait_to_start / start_check_interval)
                 prev_progress = None
-                for ii in range(1, max_wait_index):
+                for _ in range(1, max_wait_index):
                     # TODO: job obj should be invocation obj!
                     result, progress, last_build_number = job.job_status()
                     if progress == Progress.RUNNING:

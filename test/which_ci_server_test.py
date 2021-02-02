@@ -40,7 +40,7 @@ def _server():
 def test_which_ci_server_not_ci(api_type):
     proc = None
     try:
-        with api_select.api(__file__, api_type) as api:
+        with api_select.api(__file__, api_type):
             proc = multiprocessing.Process(target=_server)
             proc.start()
 

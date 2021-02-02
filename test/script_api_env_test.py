@@ -27,6 +27,6 @@ def test_script_api_env_unchanged(api_type):
 
         # Do a few more things to
         job = api.get_job(api.job_name_prefix + job_name)
-        _, _, build_num = job.job_status()
+        _, _, _ = job.job_status()
 
     assert os.environ == env_before

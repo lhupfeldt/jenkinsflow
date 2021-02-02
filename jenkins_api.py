@@ -447,7 +447,7 @@ class Invocation(ApiInvocationMixin):
                 qid = self.queued_item_path.strip('/').split('/')[2]
                 self.job.jenkins.post('/queue/cancelItem', id=qid)
                 self.build_number = _dequeued
-        except ResourceNotFound as ex:  # pragma: no cover
+        except ResourceNotFound:  # pragma: no cover
             # Job is no longer queued or running, except that it may have just changed from queued to running
             # We leave it up to the flow logic to handle that
             # NOTE: bug https://issues.jenkins-ci.org/browse/JENKINS-21311 also brings us here!
