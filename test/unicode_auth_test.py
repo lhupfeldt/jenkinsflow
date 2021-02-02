@@ -8,9 +8,7 @@ import pytest
 from jenkinsflow import flow
 from jenkinsflow.api_base import AuthError
 
-
-import demo_security as security
-
+from .framework.cfg.jenkins_security import username, password
 from .framework import api_select
 from .cfg import ApiType
 
@@ -40,7 +38,7 @@ def test_unicode_auth_utf8(api_type):
 def test_unicode_auth_ascii(api_type):
     """Ensure that login without unicode works"""
 
-    with api_select.api(__file__, api_type, username=security.username, password=security.password) as api:
+    with api_select.api(__file__, api_type, username=username, password=password) as api:
         api.flow_job()
         api.job('j11', max_fails=0, expect_invocations=1, invocation_delay=1.0, expect_order=1)
 
@@ -53,7 +51,7 @@ def test_unicode_auth_failed_login(api_type):
     """Ensure that login with bad password fails in a reasonable way."""
 
     with pytest.raises(AuthError) as exinfo:
-        with api_select.api(__file__, api_type, username=security.username, password='notright') as api:
+        with api_select.api(__file__, api_type, username=username, password='notright') as api:
             api.flow_job()
 
     assert ("401 Client Error: Invalid password/token for user: jenkinsflow_jobrunner" in str(exinfo.value) or

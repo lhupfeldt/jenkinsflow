@@ -5,7 +5,7 @@ import os, sys, re
 from os.path import join as jp
 
 here = os.path.abspath(os.path.dirname(__file__))
-sys.path.extend([jp(here, '../../..'), jp(here, '../../demo')])
+sys.path.extend([jp(here, '../../..')])
 
 from jenkinsflow.test import cfg as test_cfg
 
@@ -49,9 +49,9 @@ def api(file_name, api_type, login=None, fixed_prefix=None, url_or_dir=None, fak
     reload_jobs = not test_cfg.skip_job_load() and not fixed_prefix
     pre_delete_jobs = not test_cfg.skip_job_delete()
 
-    import demo_security as security
+    from .cfg import jenkins_security
     if login is None:
-        login = security.default_use_login
+        login = jenkins_security.default_use_login
 
     if password is not None or username is not None:
         assert password is not None and username is not None
@@ -59,18 +59,18 @@ def api(file_name, api_type, login=None, fixed_prefix=None, url_or_dir=None, fak
 
     if username is None:
         assert password is None
-        username = security.username
-        password = security.password
+        username = jenkins_security.username
+        password = jenkins_security.password
 
     if api_type == test_cfg.ApiType.JENKINS:
         from .api_wrapper import JenkinsTestWrapperApi
         return JenkinsTestWrapperApi(file_name, func_name, func_num_params, job_name_prefix, reload_jobs, pre_delete_jobs,
-                                     url_or_dir, fake_public_uri, username, password, security.securitytoken, login=login,
+                                     url_or_dir, fake_public_uri, username, password, jenkins_security.securitytoken, login=login,
                                      invocation_class=invocation_class)
     if api_type == test_cfg.ApiType.SCRIPT:
         from .api_wrapper import ScriptTestWrapperApi
         return ScriptTestWrapperApi(file_name, func_name, func_num_params, job_name_prefix, reload_jobs, pre_delete_jobs,
-                                    url_or_dir, fake_public_uri, username, password, security.securitytoken, login=login,
+                                    url_or_dir, fake_public_uri, username, password, jenkins_security.securitytoken, login=login,
                                     invocation_class=invocation_class)
     if api_type == test_cfg.ApiType.MOCK:
         from .mock_api import MockApi

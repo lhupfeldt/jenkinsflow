@@ -5,8 +5,8 @@ from pytest import raises
 
 from jenkinsflow.flow import parallel, serial, BuildResult, FailedChildJobException, FinalResultException
 
-from demo_security import username, password
 from .framework import api_select
+from .framework.cfg import jenkins_security
 
 
 def test_propagate_unstable_serial_single_unstable(api_type):
@@ -26,7 +26,9 @@ def test_propagate_unstable_serial_single_unstable_user_pass(api_type):
         api.flow_job()
         api.job('j11_unstable', max_fails=0, expect_invocations=1, expect_order=1, final_result='unstable')
 
-        with serial(api, timeout=70, username=username, password=password, job_name_prefix=api.job_name_prefix, raise_if_unsuccessful=False) as ctrl1:
+        with serial(
+                api, timeout=70, username=jenkins_security.username, password=jenkins_security.password,
+                job_name_prefix=api.job_name_prefix, raise_if_unsuccessful=False) as ctrl1:
             ctrl1.invoke('j11_unstable')
 
         assert ctrl1.result == BuildResult.UNSTABLE

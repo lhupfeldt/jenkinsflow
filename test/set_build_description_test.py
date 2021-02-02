@@ -12,9 +12,8 @@ from jenkinsflow.flow import serial
 from jenkinsflow.utils.set_build_description import set_build_description
 from jenkinsflow.cli.cli import cli
 
-from demo_security import username, password, set_build_description_must_authenticate
-
 from .framework import api_select
+from .framework.cfg import jenkins_security
 from . import cfg as test_cfg
 from .cfg import ApiType
 
@@ -135,19 +134,28 @@ def test_set_build_description_utils(api_type):
         _, _, build_num = job.job_status()
         direct_url = test_cfg.direct_url(api_type)
 
-        if set_build_description_must_authenticate:
-            set_build_description('BBB1', job_name=job.name, build_number=build_num, direct_url=direct_url, username=username, password=password)
-            set_build_description('BBB2', replace=False, job_name=job.name, build_number=build_num, direct_url=direct_url, username=username, password=password)
+        if jenkins_security.set_build_description_must_authenticate:
+            set_build_description(
+                'BBB1', job_name=job.name, build_number=build_num, direct_url=direct_url,
+                username=jenkins_security.username, password=jenkins_security.password)
+            set_build_description(
+                'BBB2', replace=False, job_name=job.name, build_number=build_num, direct_url=direct_url,
+                username=jenkins_security.username, password=jenkins_security.password)
         else:
             set_build_description('BBB1', job_name=job.name, build_number=build_num, direct_url=direct_url)
             set_build_description('BBB2', replace=False, job_name=job.name, build_number=build_num, direct_url=direct_url)
 
         assert _get_description(api, job, build_num) == 'AAA\nBBB1\nBBB2'
 
-        set_build_description('BBB3', replace=True, job_name=job.name, build_number=build_num, direct_url=direct_url, username=username, password=password)
         set_build_description(
-            'BBB4', replace=False, separator='#', job_name=job.name, build_number=build_num, direct_url=direct_url, username=username, password=password)
-        set_build_description('BBB5', separator='!!', job_name=job.name, build_number=build_num, direct_url=direct_url, username=username, password=password)
+            'BBB3', replace=True, job_name=job.name, build_number=build_num, direct_url=direct_url,
+            username=jenkins_security.username, password=jenkins_security.password)
+        set_build_description(
+            'BBB4', replace=False, separator='#', job_name=job.name, build_number=build_num, direct_url=direct_url,
+            username=jenkins_security.username, password=jenkins_security.password)
+        set_build_description(
+            'BBB5', separator='!!', job_name=job.name, build_number=build_num, direct_url=direct_url,
+            username=jenkins_security.username, password=jenkins_security.password)
         assert _get_description(api, job, build_num) == 'BBB3#BBB4!!BBB5'
 
 
@@ -259,8 +267,8 @@ def test_set_build_description_cli(api_type, cli_runner):
             '--description', 'BBB1',
             '--direct-url', base_url,
             '--separator', '\n',
-            '--username', username,
-            '--password', password]
+            '--username', jenkins_security.username,
+            '--password', jenkins_security.password]
         print("cli args:", cli_args)
 
         result = cli_runner.invoke(cli, cli_args)
@@ -275,8 +283,8 @@ def test_set_build_description_cli(api_type, cli_runner):
             '--description', 'BBB2',
             '--direct-url', base_url,
             '--replace',
-            '--username', username,
-            '--password', password]
+            '--username', jenkins_security.username,
+            '--password', jenkins_security.password]
         print("cli args:", cli_args)
 
         result = cli_runner.invoke(cli, cli_args)
@@ -307,8 +315,8 @@ def test_set_build_description_cli_env_url(api_type, env_base_url, cli_runner):
             '--build-number', repr(build_num),
             '--description', 'BBB1',
             '--separator', '\n',
-            '--username', username,
-            '--password', password]
+            '--username', jenkins_security.username,
+            '--password', jenkins_security.password]
         print("cli args:", cli_args)
 
         result = cli_runner.invoke(cli, cli_args)

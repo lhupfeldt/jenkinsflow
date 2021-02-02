@@ -13,11 +13,10 @@ from jenkinsflow.jobload import update_job_from_template
 from jenkinsflow.test import cfg as test_cfg
 from jenkinsflow.test.cfg import ApiType
 
-import demo_security as security  # pylint: disable=import-error
-
 from .base_test_api import TestJob, TestJenkins, Jobs as TestJobs
 from .config import test_tmp_dir, pseudo_install_dir
 from .mock_api import MockJob
+from .cfg import jenkins_security
 
 
 here = os.path.abspath(os.path.dirname(__file__))
@@ -109,8 +108,8 @@ class _TestWrapperApi():
                 script=script,
                 pseudo_install_dir=pseudo_install_dir,
                 securitytoken=self.securitytoken,
-                username=security.username,
-                password=security.password,
+                username=jenkins_security.username,
+                password=jenkins_security.password,
                 direct_url=self.direct_url,
                 print_env=print_env,
                 create_job=create_job,
