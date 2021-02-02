@@ -3,7 +3,7 @@
 
 import pytest
 
-from jenkinsflow.flow import serial, FailedChildJobException, FailedChildJobsException
+from jenkinsflow.flow import serial
 
 from .framework import api_select
 from .cfg import ApiType

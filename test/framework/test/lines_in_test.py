@@ -2,9 +2,7 @@
 # All rights reserved. This work is under a BSD license, see LICENSE.TXT.
 
 from __future__ import print_function
-import os, re
-
-import pytest
+import re
 
 from ..lines_in import lines_in
 

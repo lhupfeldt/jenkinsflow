@@ -2,7 +2,6 @@
 # All rights reserved. This work is under a BSD license, see LICENSE.TXT.
 
 import sys
-import time
 import datetime
 
 

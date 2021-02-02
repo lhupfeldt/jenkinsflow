@@ -1,12 +1,11 @@
 # Copyright (c) 2012 - 2015 Lars Hupfeldt Nielsen, Hupfeldt IT
 # All rights reserved. This work is under a BSD license, see LICENSE.TXT.
 
-import re
 import pytest
 
-from jenkinsflow.flow import parallel, serial, FailedChildJobException, FailedChildJobsException
+from jenkinsflow.flow import parallel
+
 from .framework import api_select
-from .framework.utils import lines_in
 from .cfg import ApiType
 
 

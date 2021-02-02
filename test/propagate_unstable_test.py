@@ -1,7 +1,6 @@
 # Copyright (c) 2012 - 2015 Lars Hupfeldt Nielsen, Hupfeldt IT
 # All rights reserved. This work is under a BSD license, see LICENSE.TXT.
 
-import os
 from pytest import raises
 
 from jenkinsflow.flow import parallel, serial, BuildResult, FailedChildJobException, FinalResultException
