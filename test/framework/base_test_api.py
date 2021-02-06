@@ -131,7 +131,6 @@ class TestJenkins(AbstractApiJenkins, metaclass=abc.ABCMeta):
             flow_created (boolean): This job is expected to be non-existing at start of flow and be created during the flow
             create_job (str): Name of another job that will be created by this job, when this job is running
         """
-        pass
 
     # Delete/Create hack sufficient to get resonable coverage on job_load test
     def delete_job(self, job_name):
