@@ -3,9 +3,10 @@
 
 import sys
 
-from .framework import api_select
 from jenkinsflow.flow import serial
 from jenkinsflow.unbuffered import UnBuffered
+
+from .framework import api_select
 
 
 def test_unbuffered(api_type):

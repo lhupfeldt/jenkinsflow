@@ -2,13 +2,8 @@
 # All rights reserved. This work is under a BSD license, see LICENSE.TXT.
 
 import os, sys, re
-from os.path import join as jp
-
-here = os.path.abspath(os.path.dirname(__file__))
-sys.path.extend([jp(here, '../../..')])
 
 from jenkinsflow.test import cfg as test_cfg
-
 from jenkinsflow.unbuffered import UnBuffered
 sys.stdout = UnBuffered(sys.stdout)
 
