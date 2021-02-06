@@ -3,8 +3,9 @@
 
 from pytest import raises
 
-from .framework import api_select
 from jenkinsflow.flow import serial, FailedChildJobException
+
+from .framework import api_select
 
 
 def test_hide_password_failed_job(api_type, capsys):

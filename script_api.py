@@ -1,10 +1,12 @@
 # Copyright (c) 2012 - 2015 Lars Hupfeldt Nielsen, Hupfeldt IT
 # All rights reserved. This work is under a BSD license, see LICENSE.TXT.
 
-import sys, os, shutil, importlib, datetime, tempfile, psutil, setproctitle, signal, errno
+import sys, os, shutil, importlib, datetime, tempfile, signal, errno
 from os.path import join as jp
 import multiprocessing
 import urllib.parse
+
+import psutil, setproctitle
 
 from .api_base import BuildResult, Progress, UnknownJobException, BaseApiMixin, ApiInvocationMixin
 from .speed import Speed

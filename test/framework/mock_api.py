@@ -7,9 +7,9 @@ from os.path import join as jp
 from collections import OrderedDict
 
 from jenkinsflow.api_base import BuildResult, Progress, UnknownJobException, ApiInvocationMixin
+from jenkinsflow.test.cfg import ApiType
 
 from .base_test_api import TestJob, TestJenkins
-from jenkinsflow.test.cfg import ApiType
 from .hyperspeed import HyperSpeed
 
 here = os.path.abspath(os.path.dirname(__file__))

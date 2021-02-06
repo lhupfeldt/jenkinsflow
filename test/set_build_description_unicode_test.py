@@ -10,11 +10,6 @@ from jenkinsflow.flow import serial
 
 from .framework import api_select
 from .cfg import ApiType
-
-
-_here = os.path.dirname(os.path.abspath(__file__))
-
-
 from .set_build_description_test import _clear_description
 
 

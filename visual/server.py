@@ -3,12 +3,13 @@
 # Copyright (c) 2015 Aleksey Maksimov and Lars Hupfeldt Nielsen, Hupfeldt IT
 # All rights reserved. This work is under a BSD license, see LICENSE.TXT.
 
-from bottle import route, run, static_file, post, response
 import os
 from os.path import join as jp
 import json
-import requests
 import argparse
+
+import requests
+from bottle import route, run, static_file, post, response
 
 here = os.path.abspath(os.path.dirname(__file__))
 
