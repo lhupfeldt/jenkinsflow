@@ -1,7 +1,8 @@
 # Copyright (c) 2012 - 2015 Lars Hupfeldt Nielsen, Hupfeldt IT
 # All rights reserved. This work is under a BSD license, see LICENSE.TXT.
 
-import os
+import sys, os
+from pathlib import Path
 
 import pytest
 from pytest import fixture  # pylint: disable=no-name-in-module
@@ -9,6 +10,10 @@ from click.testing import CliRunner
 
 from . import cfg as test_cfg
 from .cfg import ApiType
+
+_HERE = Path(__file__).resolve().parent
+_DEMO_DIR = (_HERE/'../demo').resolve()
+sys.path.extend([str(_DEMO_DIR), str(_DEMO_DIR/"jobs")])
 
 # Note: You can't (indirectly) import stuff from jenkinsflow here, it messes up the coverage
 
