@@ -49,13 +49,13 @@ def test_propagation_warn_only_nested_serial_parallel(api_type):
         api.job('j23', max_fails=0, expect_invocations=1, expect_order=2)
 
         with raises(FinalResultException) as exinfo:
-           with serial(api, timeout=70, job_name_prefix=api.job_name_prefix, report_interval=3) as ctrl1:
-               ctrl1.invoke('j11')
+            with serial(api, timeout=70, job_name_prefix=api.job_name_prefix, report_interval=3) as ctrl1:
+                ctrl1.invoke('j11')
 
-               with ctrl1.parallel(propagation=Propagation.FAILURE_TO_UNSTABLE) as ctrl2:
-                   ctrl2.invoke('j21')
-                   ctrl2.invoke('j22_fail')
-                   ctrl2.invoke('j23')
+                with ctrl1.parallel(propagation=Propagation.FAILURE_TO_UNSTABLE) as ctrl2:
+                    ctrl2.invoke('j21')
+                    ctrl2.invoke('j22_fail')
+                    ctrl2.invoke('j23')
 
         assert exinfo.value.result == BuildResult.UNSTABLE
         return 77
