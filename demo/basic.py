@@ -5,8 +5,6 @@
 
 # Just a simple flow
 
-from __future__ import print_function
-
 from jenkinsflow.flow import serial
 
 import demo_security as security
