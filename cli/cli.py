@@ -21,7 +21,6 @@ from .set_build_description import set_build_description
 @click.group()
 def cli():
     """Commandline utilities for jenkinsflow"""
-    pass
 
 
 cli.add_command(set_build_description, name="set_build_description")
