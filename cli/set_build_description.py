@@ -3,7 +3,7 @@
 
 import click
 
-from ..utils import set_build_description as usbd
+from jenkinsflow.utils import set_build_description as usbd
 
 
 @click.command()

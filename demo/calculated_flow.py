@@ -9,16 +9,15 @@ import sys, os, tempfile
 import logging
 from collections import OrderedDict
 
-import demo_setup
-demo_setup.sys_path()
-
 from jenkinsflow.flow import serial
 from jenkinsflow.unbuffered import UnBuffered
+
+import demo_security as security
+
+
 # Unbuffered output does not work well in Jenkins/Hudson, so in case
 # this is run from a jenkins/hudson job, we want unbuffered output
 sys.stdout = UnBuffered(sys.stdout)
-
-import demo_security as security
 
 
 def main(api):
