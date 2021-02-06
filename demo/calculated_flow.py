@@ -12,7 +12,7 @@ from collections import OrderedDict
 from jenkinsflow.flow import serial
 from jenkinsflow.unbuffered import UnBuffered
 
-import demo_security as security
+import get_jenkins_api
 
 
 # Unbuffered output does not work well in Jenkins/Hudson, so in case
@@ -20,7 +20,7 @@ import demo_security as security
 sys.stdout = UnBuffered(sys.stdout)
 
 
-def main(api):
+def main(api, securitytoken):
     logging.basicConfig()
     logging.getLogger("").setLevel(logging.WARNING)
 
@@ -38,7 +38,7 @@ def main(api):
     component_groups = OrderedDict((('g1', g1_components), ('g2', g2_components), ('g3', g3_components)))
 
     # Flow
-    with serial(api, timeout=70, securitytoken=security.securitytoken, job_name_prefix=demo_name + '__', report_interval=3,
+    with serial(api, timeout=70, securitytoken=securitytoken, job_name_prefix=demo_name + '__', report_interval=3,
                 # Write json flow graph to display in browser, see INSTALL.md
                 json_dir=graph_output_dir, json_indent=4) as ctrl1:
 
@@ -70,6 +70,4 @@ def main(api):
 
 
 if __name__ == '__main__':
-    from jenkinsflow.jenkins_api import Jenkins
-    url = os.environ.get('JENKINS_URL') or os.environ.get('HUDSON_URL') or "http://localhost:8080"
-    main(Jenkins(url, username=security.username, password=security.password) if security.default_use_login else Jenkins(url))
+    main(*get_jenkins_api.get_jenkins_api())

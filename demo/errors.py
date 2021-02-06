@@ -4,10 +4,12 @@
 # All rights reserved. This work is under a BSD license, see LICENSE.TXT.
 
 from jenkinsflow.flow import serial
-import demo_security as security
 
-def main(api):
-    with serial(api, timeout=70, securitytoken=security.securitytoken, job_name_prefix='jenkinsflow_demo__errors__', report_interval=3) as ctrl1:
+import get_jenkins_api
+
+
+def main(api, securitytoken):
+    with serial(api, timeout=70, securitytoken=securitytoken, job_name_prefix='jenkinsflow_demo__errors__', report_interval=3) as ctrl1:
         ctrl1.invoke('wait1-1')
 
         with ctrl1.parallel(timeout=40, report_interval=3) as ctrl2:
@@ -29,7 +31,4 @@ def main(api):
 
 
 if __name__ == '__main__':
-    import os
-    from jenkinsflow.jenkins_api import Jenkins
-    url = os.environ.get('JENKINS_URL') or os.environ.get('HUDSON_URL') or "http://localhost:8080"
-    main(Jenkins(url, username=security.username, password=security.password) if security.default_use_login else Jenkins(url))
+    main(*get_jenkins_api.get_jenkins_api())
