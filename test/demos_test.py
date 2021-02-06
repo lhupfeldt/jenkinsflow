@@ -1,27 +1,28 @@
 # Copyright (c) 2012 - 2015 Lars Hupfeldt Nielsen, Hupfeldt IT
 # All rights reserved. This work is under a BSD license, see LICENSE.TXT.
 
-import sys, os, imp
-from os.path import join as jp
-here = os.path.abspath(os.path.dirname(__file__))
-
-extra_sys_path = [os.path.normpath(path) for path in [here, jp(here, '../..'), jp(here, '../demo'), jp(here, '../demo/jobs')]]
-sys.path = extra_sys_path + sys.path
+import imp
+from pathlib import Path
 
 import pytest
 from pytest import raises
 
 from jenkinsflow.flow import parallel, JobControlFailException
+
+from demo import basic, calculated_flow, prefix, hide_password, errors
+
 from .framework import api_select
 from .cfg import ApiType
 
-import basic, calculated_flow, prefix, hide_password, errors
+
+_HERE = Path(__file__).resolve().parent
+_DEMO_JOBS_DIR = (_HERE/"../demo/jobs").resolve()
 
 
 def load_demo_jobs(demo, api_type):
     print("\nLoad jobs for demo:", demo.__name__)
-    job_load_module_name = demo.__name__ + '_jobs'
-    job_load = imp.load_source(job_load_module_name, jp(here, '../demo/jobs', job_load_module_name + '.py'))
+    job_load_module_name = demo.__name__.replace("demo.", "") + '_jobs'
+    job_load = imp.load_source(job_load_module_name, str(_DEMO_JOBS_DIR/(job_load_module_name + '.py')))
     api = job_load.create_jobs(api_type)
     return api
 
