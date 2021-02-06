@@ -6,6 +6,7 @@
 from jenkinsflow.flow import serial
 import demo_security as security
 
+
 def main(api):
     with serial(api, timeout=70, report_interval=3, job_name_prefix='jenkinsflow_demo__prefix__') as ctrl1:
         ctrl1.invoke('quick1')
