@@ -4,9 +4,10 @@
 from pytest import raises
 
 from jenkinsflow.flow import serial, JobNotIdleException
-from .cfg import ApiType
+
 from .framework import api_select
 from .framework.utils import lines_in
+from .framework.cfg import ApiType
 
 
 def test_no_running_jobs(api_type, capsys):

@@ -11,8 +11,7 @@ from jenkinsflow.flow import parallel, FailedChildJobsException
 from .framework import api_select
 from .framework.utils import lines_in
 from .framework.abort_job import abort
-
-from .cfg import ApiType
+from .framework.cfg import ApiType
 
 here = os.path.abspath(os.path.dirname(__file__))
 

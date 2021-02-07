@@ -10,7 +10,7 @@ from jenkinsflow.api_base import AuthError
 
 from .framework.cfg.jenkins_security import username, password
 from .framework import api_select
-from .cfg import ApiType
+from .framework.cfg import ApiType
 
 
 @pytest.mark.not_apis(ApiType.MOCK, ApiType.SCRIPT)

@@ -3,7 +3,7 @@
 
 from collections import OrderedDict
 
-from framework import api_select
+from jenkinsflow.test.framework import api_select
 
 
 def create_jobs(api_type):

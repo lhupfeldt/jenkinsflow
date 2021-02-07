@@ -7,9 +7,10 @@ import pytest
 from pytest import xfail
 
 from jenkinsflow.flow import serial, parallel
-from .cfg import ApiType
+
 from .framework import api_select
 from .framework.utils import lines_in, build_started_msg
+from .framework.cfg import ApiType
 
 
 def test_multiple_invocations_serial_same_flow(api_type):

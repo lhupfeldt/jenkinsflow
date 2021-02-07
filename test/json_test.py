@@ -9,7 +9,7 @@ from jenkinsflow.flow import serial
 
 from .framework import api_select, utils
 from .framework.utils import flow_graph_dir
-from .cfg import ApiType
+from .framework.cfg import ApiType
 
 here = os.path.abspath(os.path.dirname(__file__))
 

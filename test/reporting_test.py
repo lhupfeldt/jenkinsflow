@@ -5,9 +5,10 @@ import re
 from pytest import raises
 
 from jenkinsflow.flow import serial, parallel, FailedChildJobException
-from .cfg import ApiType
+
 from .framework import api_select
 from .framework.utils import lines_in, replace_host_port, result_msg, build_started_msg
+from .framework.cfg import ApiType
 
 
 def test_reporting_job_status(api_type, capsys):

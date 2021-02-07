@@ -4,6 +4,7 @@
 from pytest import raises
 
 from jenkinsflow.flow import serial, parallel, FailedChildJobException, FailedChildJobsException, FinalResultException, Propagation, BuildResult
+
 from .framework import api_select
 
 

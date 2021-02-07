@@ -1,4 +1,4 @@
-<?py from jenkinsflow.test.cfg import ApiType ?>
+<?py from jenkinsflow.test.framework.cfg import ApiType ?>
 <?py import os ?>
 [report]
 fail_under = {==fail_under==}

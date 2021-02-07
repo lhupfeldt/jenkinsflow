@@ -3,11 +3,12 @@
 
 import os
 from os.path import join as jp
+
 from jenkinsflow.flow import serial
-from .framework import api_select
-from .framework.utils import flow_graph_dir
 
 from .json_test import _assert_json
+from .framework import api_select
+from .framework.utils import flow_graph_dir
 
 here = os.path.abspath(os.path.dirname(__file__))
 

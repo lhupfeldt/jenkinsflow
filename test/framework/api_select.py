@@ -3,8 +3,12 @@
 
 import os, sys, re
 
-from jenkinsflow.test import cfg as test_cfg
 from jenkinsflow.unbuffered import UnBuffered
+
+from .cfg import ApiType, Urls, JobLoad
+from .cfg.speedup import speedup
+
+
 sys.stdout = UnBuffered(sys.stdout)
 
 _file_name_subst = re.compile(r'(_jobs|_test)?\.py')
@@ -37,12 +41,12 @@ def api(file_name, api_type, login=None, fixed_prefix=None, url_or_dir=None, fak
 
     if api_type == 0:
         # Invocation from actual Jenkins flow job calls with api_type == 0
-        api_type = test_cfg.ApiType.JENKINS
+        api_type = ApiType.JENKINS
     print('Using:', api_type)
 
-    url_or_dir = url_or_dir or test_cfg.direct_url(api_type)
-    reload_jobs = not test_cfg.skip_job_load() and not fixed_prefix
-    pre_delete_jobs = not test_cfg.skip_job_delete()
+    url_or_dir = url_or_dir or Urls.direct_url(api_type)
+    reload_jobs = not JobLoad.skip_job_load() and not fixed_prefix
+    pre_delete_jobs = not JobLoad.skip_job_delete()
 
     from .cfg import jenkins_security
     if login is None:
@@ -57,18 +61,18 @@ def api(file_name, api_type, login=None, fixed_prefix=None, url_or_dir=None, fak
         username = jenkins_security.username
         password = jenkins_security.password
 
-    if api_type == test_cfg.ApiType.JENKINS:
+    if api_type == ApiType.JENKINS:
         from .api_wrapper import JenkinsTestWrapperApi
         return JenkinsTestWrapperApi(file_name, func_name, func_num_params, job_name_prefix, reload_jobs, pre_delete_jobs,
                                      url_or_dir, fake_public_uri, username, password, jenkins_security.securitytoken, login=login,
                                      invocation_class=invocation_class)
-    if api_type == test_cfg.ApiType.SCRIPT:
+    if api_type == ApiType.SCRIPT:
         from .api_wrapper import ScriptTestWrapperApi
         return ScriptTestWrapperApi(file_name, func_name, func_num_params, job_name_prefix, reload_jobs, pre_delete_jobs,
                                     url_or_dir, fake_public_uri, username, password, jenkins_security.securitytoken, login=login,
                                     invocation_class=invocation_class)
-    if api_type == test_cfg.ApiType.MOCK:
+    if api_type == ApiType.MOCK:
         from .mock_api import MockApi
-        return MockApi(job_name_prefix, test_cfg.speedup(), test_cfg.direct_url(api_type))
+        return MockApi(job_name_prefix, speedup(), Urls.direct_url(api_type))
 
-    raise Exception("Unhandled api_type:" + repr(api_type))
+    raise Exception(f"Unhandled api_type: {repr(api_type)} - {api_type.__class__.__module__} was compared to {ApiType.MOCK.__class__.__module__}")

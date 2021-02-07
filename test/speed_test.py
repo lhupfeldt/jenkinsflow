@@ -7,7 +7,7 @@ import pytest
 
 from jenkinsflow.speed import Speed
 
-from .cfg import ApiType
+from .framework.cfg import ApiType
 
 
 @pytest.mark.not_apis(ApiType.MOCK)

@@ -10,9 +10,10 @@ import pytest
 from pytest import raises
 
 from jenkinsflow import jenkins_api
-from .cfg import ApiType
+
 from .framework import api_select
 from .framework.utils import lines_in
+from .framework.cfg import ApiType
 
 
 here = os.path.abspath(os.path.dirname(__file__))

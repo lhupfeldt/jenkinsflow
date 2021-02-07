@@ -77,11 +77,11 @@
 import sys
 sys.path.append("{==test_tmp_dir==}")
 from jenkinsflow.jobload import update_job_from_template
-from jenkinsflow.test.cfg import ApiType
+from .cfg import ApiType
 
 <?py sys.path.append(test_tmp_dir) ?>
 
-<?py from jenkinsflow.test.cfg import ApiType ?>
+<?py from .cfg import ApiType ?>
 <?py if api_type == ApiType.JENKINS: ?>
 from jenkinsflow import jenkins_api as jenkins
 <?py else: ?>

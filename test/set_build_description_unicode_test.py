@@ -8,9 +8,9 @@ from os.path import join as jp
 
 from jenkinsflow.flow import serial
 
-from .framework import api_select
-from .cfg import ApiType
 from .set_build_description_test import _clear_description
+from .framework import api_select
+from .framework.cfg import ApiType
 
 
 def _verify_description(api, job, build_number, expected):

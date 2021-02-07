@@ -8,8 +8,8 @@ import pytest
 from pytest import fixture  # pylint: disable=no-name-in-module
 from click.testing import CliRunner
 
-from . import cfg as test_cfg
-from .cfg import ApiType
+from .framework.cfg import ApiType, Urls
+
 
 _HERE = Path(__file__).resolve().parent
 _DEMO_DIR = (_HERE/'../demo').resolve()
@@ -100,19 +100,19 @@ def _unset_env_fixture(var_name, request):
 @fixture
 def env_base_url(request, api_type):
     # Fake that we are running from inside jenkins job
-    public_url = test_cfg.public_url(api_type)
+    public_url = Urls.public_url(api_type)
     _set_jenkins_url_env_if_not_set_fixture(public_url, request)
     return public_url
 
 
 @fixture
 def env_base_url_trailing_slash(request, api_type):
-    _set_jenkins_url_env_if_not_set_fixture(test_cfg.public_url(api_type) + '/', request)
+    _set_jenkins_url_env_if_not_set_fixture(Urls.public_url(api_type) + '/', request)
 
 
 @fixture
 def env_base_url_trailing_slashes(request, api_type):
-    _set_jenkins_url_env_if_not_set_fixture(test_cfg.public_url(api_type) + '//', request)
+    _set_jenkins_url_env_if_not_set_fixture(Urls.public_url(api_type) + '//', request)
 
 
 @fixture
@@ -126,7 +126,7 @@ def env_no_base_url(request):
 def env_different_base_url(request):
     # Fake that we are running from inside jenkins job
     # This url is not used, but should simply be different fron direct_url used in test, to simulate proxied jenkins
-    _set_jenkins_url_env_fixture(test_cfg.proxied_public_url, request)
+    _set_jenkins_url_env_fixture(Urls.proxied_public_url, request)
 
 
 @fixture

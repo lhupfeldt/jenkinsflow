@@ -7,9 +7,10 @@ import pytest
 from pytest import raises
 
 from jenkinsflow.flow import parallel, serial, MissingJobsException, FailedChildJobsException, FailedChildJobException, UnknownJobException
+
 from .framework import api_select
 from .framework.utils import lines_in
-from .cfg import ApiType
+from .framework.cfg import ApiType
 
 
 def test_missing_jobs_not_allowed(api_type):

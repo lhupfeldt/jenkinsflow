@@ -8,9 +8,9 @@ from pytest import raises
 
 from jenkinsflow.flow import parallel, serial, FailedChildJobException, FailedChildJobsException
 
+from .framework.cfg import ApiType
 from .framework import api_select
 from .framework.abort_job import abort
-from .cfg import ApiType
 
 here = os.path.abspath(os.path.dirname(__file__))
 

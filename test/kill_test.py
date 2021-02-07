@@ -8,10 +8,10 @@ from pytest import raises, xfail
 
 from jenkinsflow.flow import serial, FailedChildJobException, FinalResultException, BuildResult
 
-from .cfg import ApiType
 from .framework import api_select
 from .framework.utils import lines_in, kill_current_msg
 from .framework.killer import kill
+from .framework.cfg import ApiType
 
 here = os.path.abspath(os.path.dirname(__file__))
 

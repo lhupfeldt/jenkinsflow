@@ -4,6 +4,7 @@
 from pytest import raises
 
 from jenkinsflow.flow import parallel, serial
+
 from .framework import api_select
 
 

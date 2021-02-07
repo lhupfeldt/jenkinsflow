@@ -14,8 +14,7 @@ from jenkinsflow.cli.cli import cli
 
 from .framework import api_select
 from .framework.cfg import jenkins_security
-from . import cfg as test_cfg
-from .cfg import ApiType
+from .framework.cfg import ApiType, Urls
 
 
 _here = os.path.dirname(os.path.abspath(__file__))
@@ -132,7 +131,7 @@ def test_set_build_description_utils(api_type):
         if api.api_type != ApiType.SCRIPT:
             job = api.get_job(api.job_name_prefix + job_name)
         _, _, build_num = job.job_status()
-        direct_url = test_cfg.direct_url(api_type)
+        direct_url = Urls.direct_url(api_type)
 
         if jenkins_security.set_build_description_must_authenticate:
             set_build_description(
@@ -256,7 +255,7 @@ def test_set_build_description_cli(api_type, cli_runner):
         # Need to read the build number
         job = api.get_job(api.job_name_prefix + job_name)
         _, _, build_num = job.job_status()
-        base_url = test_cfg.direct_url(api_type) + '/'
+        base_url = Urls.direct_url(api_type) + '/'
 
         _clear_description(api, job)
 

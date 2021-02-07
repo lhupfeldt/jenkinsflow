@@ -5,10 +5,9 @@ import os, re, tempfile
 from os.path import join as jp
 from functools import partial
 
-from jenkinsflow.test import cfg as test_cfg
-from jenkinsflow.test.cfg import ApiType
-from .config import flow_graph_root_dir
 from .lines_in import lines_in as generic_lines_in
+from .cfg import ApiType
+from .cfg.dirs import flow_graph_root_dir
 
 
 _log_file_prefix = tempfile.gettempdir() + '/jenkinsflow/'
@@ -64,7 +63,7 @@ def lines_in(api_type, text, *expected_lines):
             Otherwise `expected line` must simply occur in a line in `text`
     """
 
-    assert isinstance(api_type, test_cfg.ApiType)
+    assert isinstance(api_type, ApiType)
     assert text
     assert expected_lines
 

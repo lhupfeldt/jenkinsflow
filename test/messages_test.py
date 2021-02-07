@@ -4,6 +4,7 @@
 from pytest import raises
 
 from jenkinsflow.flow import serial, MessageRedefinedException
+
 from .framework import api_select
 from .framework.utils import lines_in, result_msg
 
