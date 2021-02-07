@@ -9,7 +9,7 @@ from jenkinsflow import flow
 from jenkinsflow.api_base import AuthError
 
 from .framework import api_select
-from .cfg import ApiType
+from .framework.cfg import ApiType
 
 
 @pytest.mark.not_apis(ApiType.MOCK, ApiType.SCRIPT)

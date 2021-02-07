@@ -4,8 +4,9 @@
 import pytest
 
 from jenkinsflow.flow import serial
-from .cfg import ApiType
+
 from .framework import api_select
+from .framework.cfg import ApiType
 
 
 @pytest.mark.not_apis(ApiType.SCRIPT)

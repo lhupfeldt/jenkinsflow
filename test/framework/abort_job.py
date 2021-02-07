@@ -5,9 +5,9 @@ import sys
 import time
 import subprocess
 
-from jenkinsflow.test.cfg import ApiType
-from jenkinsflow.test.framework import api_select
-from jenkinsflow.test.framework.logger import log, logt
+from . import api_select
+from .logger import log, logt
+from .cfg import ApiType
 
 
 def _abort(log_file, test_file_name, api_type, fixed_prefix, job_name, sleep_time):

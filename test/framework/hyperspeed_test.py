@@ -5,7 +5,7 @@ import time
 
 import pytest
 
-from ..cfg import ApiType
+from .cfg import ApiType
 from .hyperspeed import HyperSpeed
 
 

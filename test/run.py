@@ -21,19 +21,19 @@ except ImportError:
 here = os.path.abspath(os.path.dirname(__file__))
 top_dir = os.path.dirname(here)
 
-extra_sys_path = [os.path.normpath(path) for path in [here, jp(top_dir, '..'), jp(top_dir, 'demo'), jp(top_dir, 'demo/jobs')]]
+extra_sys_path = [os.path.normpath(path) for path in [jp(top_dir, '..'), jp(top_dir, 'demo'), jp(top_dir, 'demo/jobs')]]
 sys.path = extra_sys_path + sys.path
 os.environ['PYTHONPATH'] = ':'.join(extra_sys_path)
 
-from jenkinsflow.test.framework import config
-from jenkinsflow.test import cfg as test_cfg
-from jenkinsflow.test.cfg import ApiType
+from jenkinsflow.test.framework.cfg import ApiType, Urls, JobLoad
+from jenkinsflow.test.framework.cfg.speedup import select_speedup
+from jenkinsflow.test.framework.cfg import dirs
 
 
 def run_tests(parallel, api_types, args, coverage=True, mock_speedup=1):
     args = copy.copy(args)
 
-    test_cfg.select_speedup(mock_speedup)
+    select_speedup(mock_speedup)
 
     if coverage:
         engine = tenjin.Engine()
@@ -74,7 +74,7 @@ def start_msg(*msg):
 
 
 def cli(mock_speedup=1000,
-        direct_url=test_cfg.direct_url(test_cfg.ApiType.JENKINS),
+        direct_url=Urls.direct_url(ApiType.JENKINS),
         apis=None,
         pytest_args=None,
         job_delete=False,
@@ -91,9 +91,9 @@ def cli(mock_speedup=1000,
     [TESTFILE]... File names to pass to py.test
     """
 
-    os.environ[test_cfg.DIRECT_URL_NAME] = direct_url
-    os.environ[test_cfg.SKIP_JOB_DELETE_NAME] = 'false' if job_delete else 'true'
-    os.environ[test_cfg.SKIP_JOB_LOAD_NAME] = 'false' if job_load else 'true'
+    os.environ[Urls.direct_url_env_var_name] = direct_url
+    os.environ[JobLoad.skip_job_delete_env_var_name] = 'false' if job_delete else 'true'
+    os.environ[JobLoad.skip_job_load_env_var_name] = 'false' if job_load else 'true'
 
     is_ci = os.environ.get('CI', 'false').lower() == 'true'
 
@@ -114,11 +114,11 @@ def cli(mock_speedup=1000,
             raise
 
     if api_types != [ApiType.MOCK]:
-        print("Creating temporary test installation in", repr(config.pseudo_install_dir), "to make files available to Jenkins.")
+        print("Creating temporary test installation in", repr(dirs.pseudo_install_dir), "to make files available to Jenkins.")
         install_script = jp(here, 'tmp_install.sh')
         rc = subprocess.call([install_script, target_dir])
         if rc:
-            print("Failed test installation to", repr(config.pseudo_install_dir), "Install script is:", repr(install_script), file=sys.stderr)
+            print("Failed test installation to", repr(dirs.pseudo_install_dir), "Install script is:", repr(install_script), file=sys.stderr)
             print("Warning: Some tests will fail!", file=sys.stderr)
 
     cov_file = ".coverage"
@@ -141,7 +141,7 @@ def cli(mock_speedup=1000,
         hudson = os.environ.get('HUDSON_URL')
         if hudson:
             print("Disabling parallel run, Hudson can't handle it :(")
-        parallel = test_cfg.skip_job_load() or test_cfg.skip_job_delete() and not hudson
+        parallel = JobLoad.skip_job_load() or JobLoad.skip_job_delete() and not hudson
         run_tests(parallel, api_types, args, coverage, mock_speedup)
 
         if not testfile and not is_ci:
@@ -161,7 +161,7 @@ def cli(mock_speedup=1000,
 @click.command()
 @click.option('--mock-speedup', '-s', help="Time speedup when running mocked tests.", default=1000)
 @click.option('--direct-url', help="Direct Jenkins URL. Must be different from the URL set in Jenkins (and preferably non proxied)",
-              default=test_cfg.direct_url(test_cfg.ApiType.JENKINS))
+              default=Urls.direct_url(ApiType.JENKINS))
 @click.option('--apis', help="Select which api(s) to use/test. Comma separated list. Possible values: 'jenkins, 'script', 'mock'. Default is all.", default=None)
 @click.option('--pytest-args', help="py.test arguments.")
 @click.option('--job-delete/--no-job-delete', help="Delete and re-load jobs into Jenkins. Default is --no-job-delete.", default=False)

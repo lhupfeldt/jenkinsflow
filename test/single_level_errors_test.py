@@ -5,6 +5,7 @@ import re
 from pytest import raises
 
 from jenkinsflow.flow import parallel, serial, FailedChildJobException, FailedChildJobsException
+
 from .framework import api_select
 from .framework.utils import lines_in
 

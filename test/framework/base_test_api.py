@@ -8,7 +8,7 @@ from os.path import join as jp
 
 from jenkinsflow.api_base import UnknownJobException, BuildResult, Progress
 from .abstract_api import AbstractApiJob, AbstractApiJenkins
-from .config import test_tmp_dir
+from .cfg.dirs import test_tmp_dir
 
 
 def _mkdir(path):

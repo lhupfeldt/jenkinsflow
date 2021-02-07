@@ -8,7 +8,7 @@ import pytest
 from jenkinsflow.flow import serial
 
 from .framework import api_select
-from .cfg import ApiType
+from .framework.cfg import ApiType
 
 
 @pytest.mark.apis(ApiType.SCRIPT)

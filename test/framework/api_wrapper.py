@@ -10,12 +10,11 @@ from jenkinsflow.api_base import UnknownJobException
 from jenkinsflow import script_api
 from jenkinsflow import jenkins_api
 from jenkinsflow.jobload import update_job_from_template
-from jenkinsflow.test import cfg as test_cfg
-from jenkinsflow.test.cfg import ApiType
 
 from .base_test_api import TestJob, TestJenkins, Jobs as TestJobs
-from .config import test_tmp_dir, pseudo_install_dir
 from .mock_api import MockJob
+from .cfg import ApiType, JobLoad
+from .cfg.dirs import test_tmp_dir, pseudo_install_dir
 from .cfg import jenkins_security
 
 
@@ -177,7 +176,7 @@ class _TestWrapperApi():
         #  Note: Use -B to avoid permission problems with .pyc files created from commandline test
         if self.func_name:
             script = "export PYTHONPATH=" + test_tmp_dir + "\n"
-            script += test_cfg.skip_job_load_sh_export_str() + "\n"
+            script += JobLoad.skip_job_load_sh_export_str() + "\n"
             # script += "export " + ApiType.JENKINS.env_name() + "=true\n"  # pylint: disable=no-member
             # Supply dummy args for the py.test fixtures
             dummy_args = ','.join(['0' for _ in range(self.func_num_params)])

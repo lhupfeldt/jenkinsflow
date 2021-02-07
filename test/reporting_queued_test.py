@@ -2,9 +2,10 @@
 # All rights reserved. This work is under a BSD license, see LICENSE.TXT.
 
 from jenkinsflow.flow import serial
-from .cfg import ApiType
+
 from .framework import api_select
 from .framework.utils import lines_in, build_started_msg, build_queued_msg
+from .framework.cfg import ApiType
 
 
 def test_reporting_queued(api_type, capsys):

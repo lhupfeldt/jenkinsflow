@@ -12,7 +12,7 @@ from jenkinsflow.flow import parallel, JobControlFailException
 from demo import basic, calculated_flow, prefix, hide_password, errors
 
 from .framework import api_select
-from .cfg import ApiType
+from .framework.cfg import ApiType
 
 
 _HERE = Path(__file__).resolve().parent
