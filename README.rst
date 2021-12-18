@@ -15,8 +15,8 @@ welcome.
 Thanks to Aleksey Maksimov for contributing various bits, including the
 graph visualization.
 
-.. |Build Status| image:: https://api.travis-ci.org/lhupfeldt/jenkinsflow.svg?branch=master
-   :target: https://travis-ci.org/lhupfeldt/jenkinsflow
+.. |Build Status| image:: https://app.travis-ci.com/lhupfeldt/jenkinsflow.svg?branch=master
+   :target: https://app.travis-ci.com/lhupfeldt/jenkinsflow
 .. |Documentation Status| image:: https://readthedocs.org/projects/jenkinsflow/badge/?version=stable
    :target: https://jenkinsflow.readthedocs.org/en/stable/
 .. |PyPi Package| image:: https://badge.fury.io/py/jenkinsflow.svg
