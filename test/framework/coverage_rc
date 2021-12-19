@@ -1,0 +1,29 @@
+[report]
+# This will be overridden with command line option depending on chosen API type tests
+fail_under = 100
+
+exclude_lines =
+    # Have to re-enable the standard pragma
+    pragma: no cover
+
+    # utility scripts
+    # This is hopefully covered by a subprocess call, but it won't be collected
+    if __name__ == "__main__":
+
+    # The alternative (original) rest api is no longer tested
+    def _check_restkit_response
+    class RestkitRestApi
+    ${COV_API_EXCLUDE_LINES}
+
+
+omit = 
+     noxfile.py
+     .nox/*
+     .eggs/*
+     test/*
+     demo/*
+     visual/server.py
+     setup.py
+     ordered_enum.py
+     *_flymake.py
+     ${COV_API_EXCLUDE_FILES}

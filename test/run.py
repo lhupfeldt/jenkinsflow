@@ -6,11 +6,10 @@ Test jenkinsflow.
 
 import sys, copy, errno, os
 from os.path import join as jp
+import shutil
 import subprocess
 
 import click
-import tenjin
-from tenjin.helpers import *
 
 try:
     import pytest
@@ -36,8 +35,7 @@ def run_tests(parallel, api_types, args, coverage=True, mock_speedup=1):
     select_speedup(mock_speedup)
 
     if coverage:
-        engine = tenjin.Engine()
-
+        # Set coverage fail-under based on selected API type
         if len(api_types) == 3:
             fail_under = 95
         elif ApiType.JENKINS in api_types:
@@ -49,12 +47,39 @@ def run_tests(parallel, api_types, args, coverage=True, mock_speedup=1):
         else:
             fail_under = 86
 
+        # Set coverage exclude lines based on selected API types
+        cov_api_exclude_lines = []
+        if ApiType.JENKINS in api_types:
+            if os.environ.get('HUDSON_URL'):
+                # Parts of jenkins_api not used when hudson
+                cov_api_exclude_lines.append("if self.jenkins.is_jenkins")
+                cov_api_exclude_lines.append(r'if head_response.get\("X-Jenkins"\)')
+            else:
+                # Parts of jenkins_api not used when jenkins
+                cov_api_exclude_lines.append("else:  # Hudson")
+                cov_api_exclude_lines.append("self.is_jenkins = False")
+                cov_api_exclude_lines.append(r'if head_response.get\("X-Hudson"\)')
+
+        if api_types == [ApiType.SCRIPT]:
+            # Parts of api_base not used in script_api (overridden methods)
+            cov_api_exclude_lines.append(r"return (self.job.public_uri + '/' + repr(self.build_number) + '/console')")
+
+        # Set coverage exclude files based on selected API type
+        cov_api_exclude_files = []
+        if ApiType.JENKINS not in api_types:
+            cov_api_exclude_files.append("jenkins_api.py")
+        if ApiType.SCRIPT not in api_types:
+            cov_api_exclude_files.append("script_api.py")
+
+        os.environ["COV_API_EXCLUDE_LINES"] = "    ".join(cov_api_exclude_lines)
+        os.environ["COV_API_EXCLUDE_FILES"] = "    ".join(cov_api_exclude_files)
+
         # Note: cov_rc_file_name hardcoded in .travis.yml
         cov_rc_file_name = jp(here, '.coverage_rc_' +  '_'.join(api_type.name.lower() for api_type in api_types))
-        with open(cov_rc_file_name, 'w') as cov_rc_file:
-            context = dict(api_types=api_types, top_dir=top_dir, fail_under=fail_under)
-            cov_rc_file.write(engine.render(jp(here, "coverage_rc.tenjin"), context))
-            args.extend(['--cov=' + top_dir, '--cov-report=term-missing', '--cov-config=' + cov_rc_file_name])
+
+        args.extend([f'--cov={top_dir}', '--cov-report=term-missing', f'--cov-config={cov_rc_file_name}', f'--cov-fail-under={fail_under}'])
+
+        shutil.copy2(jp(here, "framework/coverage_rc"), cov_rc_file_name)
 
     if api_types != [ApiType.MOCK]:
         # Note: 'boxed' is required for the kill/abort_current test not to abort other tests
