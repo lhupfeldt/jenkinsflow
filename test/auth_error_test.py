@@ -20,5 +20,7 @@ def test_auth_error(api_type):
             with flow.serial(api, timeout=70, job_name_prefix=api.job_name_prefix) as ctrl1:
                 ctrl1.invoke('j11')
 
-        assert ("401 Client Error: Invalid password/token for user: noaccess for url: http://" in str(exinfo.value) or
+        assert ("401 Client Error: Unauthorized for url: http://" in str(exinfo.value) or
+                "401 Client Error: Invalid password/token for user: noaccess for url: http://" in str(exinfo.value) or
                 "401 Unauthorized user: 'noaccess' for url: http://" in str(exinfo.value))
+
