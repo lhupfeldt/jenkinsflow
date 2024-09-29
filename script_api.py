@@ -1,10 +1,12 @@
 # Copyright (c) 2012 - 2015 Lars Hupfeldt Nielsen, Hupfeldt IT
 # All rights reserved. This work is under a BSD license, see LICENSE.TXT.
 
-import sys, os, shutil, importlib, datetime, tempfile, psutil, setproctitle, signal, errno
+import sys, os, shutil, importlib, datetime, tempfile, signal, errno
 from os.path import join as jp
 import multiprocessing
 import urllib.parse
+
+import psutil, setproctitle
 
 from .api_base import BuildResult, Progress, UnknownJobException, BaseApiMixin, ApiInvocationMixin
 from .speed import Speed
@@ -23,12 +25,14 @@ def _mkdir(path):
 
 def _pgrep(proc_name):
     """Returns True if a process with name 'proc_name' is running, else False"""
-    try:
-        for proc in psutil.process_iter():
-            if proc_name == proc.name():
+    for proc in psutil.process_iter():
+        try:
+            if proc.name() == proc_name:
                 return True
-    except psutil.NoSuchProcess:
-        return False
+        except psutil.NoSuchProcess:
+            # May happen if proc disappears during iteration
+            continue
+
     return False
 
 
