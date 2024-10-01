@@ -14,7 +14,7 @@ from jenkinsflow.cli.cli import cli
 
 from .framework import api_select
 from .framework.cfg import jenkins_security
-from .framework.cfg import ApiType, Urls
+from .framework.cfg import ApiType
 
 
 _here = os.path.dirname(os.path.abspath(__file__))
@@ -113,7 +113,7 @@ def test_set_build_description_api(api_type):
 
 
 @pytest.mark.not_apis(ApiType.MOCK)
-def test_set_build_description_utils(api_type):
+def test_set_build_description_utils(api_type, options):
     with api_select.api(__file__, api_type, login=True) as api:
         api.flow_job()
         job_name = 'job-1'
@@ -131,7 +131,7 @@ def test_set_build_description_utils(api_type):
         if api.api_type != ApiType.SCRIPT:
             job = api.get_job(api.job_name_prefix + job_name)
         _, _, build_num = job.job_status()
-        direct_url = Urls.direct_url(api_type)
+        direct_url = options.urls.direct_url(api_type)
 
         if jenkins_security.set_build_description_must_authenticate:
             set_build_description(
@@ -243,7 +243,7 @@ def test_set_build_description_unknown_job(api_type):
 
 
 @pytest.mark.not_apis(ApiType.MOCK)
-def test_set_build_description_cli(api_type, cli_runner):
+def test_set_build_description_cli(api_type, cli_runner, options):
     with api_select.api(__file__, api_type, login=True) as api:
         api.flow_job()
         job_name = 'job-1'
@@ -255,7 +255,7 @@ def test_set_build_description_cli(api_type, cli_runner):
         # Need to read the build number
         job = api.get_job(api.job_name_prefix + job_name)
         _, _, build_num = job.job_status()
-        base_url = Urls.direct_url(api_type) + '/'
+        base_url = options.urls.direct_url(api_type) + '/'
 
         _clear_description(api, job)
 

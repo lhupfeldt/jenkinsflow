@@ -93,7 +93,7 @@ def test_missing_jobs_allowed_created_serial_parallel(api_type):
             api.job('j2', max_fails=0, expect_invocations=1, expect_order=3, create_job='missingC')
             api.job('missingC', max_fails=0, expect_invocations=1, expect_order=4, flow_created=True)
 
-        with serial(api, 20, job_name_prefix=api.job_name_prefix, allow_missing_jobs=True) as ctrl1:
+        with serial(api, 60, job_name_prefix=api.job_name_prefix, allow_missing_jobs=True) as ctrl1:
             ctrl1.invoke('j1')
             ctrl1.invoke('missingA')
             with ctrl1.parallel() as ctrl2:

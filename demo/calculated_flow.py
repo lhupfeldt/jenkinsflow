@@ -12,7 +12,7 @@ from collections import OrderedDict
 from jenkinsflow.flow import serial
 from jenkinsflow.unbuffered import UnBuffered
 
-import get_jenkins_api
+from jenkinsflow.demo import get_jenkins_api
 
 
 # Unbuffered output does not work well in Jenkins/Hudson, so in case

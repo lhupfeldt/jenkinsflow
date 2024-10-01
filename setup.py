@@ -1,7 +1,6 @@
-import sys, os
+import os
 
 from setuptools import setup
-from setuptools.command.test import test as TestCommand
 
 
 PROJECT_ROOT, _ = os.path.split(__file__)
@@ -16,54 +15,12 @@ LONG_DESCRIPTION = open(os.path.join(PROJECT_ROOT, "README.rst")).read()
 on_rtd = os.environ.get('READTHEDOCS') == 'True'
 is_ci = os.environ.get('CI', 'false').lower() == 'true'
 
-
 _here = os.path.dirname(os.path.abspath(__file__))
 with open(os.path.join(_here, 'py_version_check.py')) as ff:
     exec(ff.read())
 
-
-class Test(TestCommand):
-    def initialize_options(self):
-        TestCommand.initialize_options(self)
-        self.pytest_args = []
-
-    def finalize_options(self):
-        TestCommand.finalize_options(self)
-        self.test_args = []
-        self.test_suite = True
-
-    def run_tests(self):
-        import test.run
-        if is_ci:
-            print("Running under CI")
-            # Note 'mock' is also hardcoded in .travis.yml
-            sys.exit(test.run.cli(apis='mock,script', mock_speedup=10))
-        sys.exit(test.run.cli(apis='mock,script'))
-
-
-flow_requires = ['atomicfile>=1.0,<=2.0']
-cli_requires = ['click>=6.0']
-job_load_requires = ['tenjin>=1.1.1']
-jenkins_api_requires = ['requests>=2.20,<=3.0']
-# You need to install python(3)-devel to be be able to install psutil, see INSTALL.md
-script_api_requires = ['psutil>=5.6.6', 'setproctitle>=1.1.10']
-visual_requires = ['bottle>=0.12.1']
-
-if not on_rtd:
-    install_requires = flow_requires + cli_requires + job_load_requires + jenkins_api_requires + script_api_requires + visual_requires
-else:
-    install_requires = flow_requires + cli_requires + jenkins_api_requires + script_api_requires
-
-tests_require = [
-    'pytest>=5.3.5,<5.4', 'pytest-cov>=2.4.0,<3', 'pytest-instafail>=0.3.0', 'pytest-xdist>=1.16,<2',
-    'click>=6.0', 'tenjin>=1.1.1', 'bottle>=0.12', 'objproxies>=0.9.4',
-    # The test also tests creation of the documentation
-    'sphinx>=2.2.1', 'sphinxcontrib-programoutput>=0.13',
-]
-
-extras = {
-    'test': tests_require,
-}
+with open(os.path.join(_here, 'requirements.txt')) as ff:
+    install_requires=[req.strip() for req in  ff.readlines() if req.strip() and req.strip()[0] != "#"]
 
 if __name__ == "__main__":
     setup(
@@ -71,17 +28,32 @@ if __name__ == "__main__":
         version_command=('git describe', 'pep440-git'),
         author=PROJECT_AUTHORS,
         author_email=PROJECT_EMAILS,
-        packages=['jenkinsflow', 'jenkinsflow.utils', 'jenkinsflow.cli'],
-        package_dir={'jenkinsflow':'.', 'jenkinsflow.utils': 'utils', 'jenkinsflow.cli': 'cli'},
+        packages=[
+            'jenkinsflow',
+            'jenkinsflow.utils',
+            'jenkinsflow.cli',
+            'jenkinsflow.demo',
+            'jenkinsflow.demo.jobs',
+            'jenkinsflow.test',
+            'jenkinsflow.test.framework',
+            'jenkinsflow.test.framework.cfg',
+        ],
+        package_dir={
+            'jenkinsflow': '.',
+            'jenkinsflow.utils': 'utils',
+            'jenkinsflow.cli': 'cli',
+            'jenkinsflow.demo': 'demo',
+            'jenkinsflow.demo.jobs': 'demo/jobs',
+            'jenkinsflow.test': 'test',
+            'jenkinsflow.test.framework': 'test/framework',
+            'jenkinsflow.test.framework.cfg': 'test/framework/cfg',
+        },
         zip_safe=True,
         include_package_data=False,
-        python_requires='>=3.6.0',
+        python_requires='>=3.9.0',
         install_requires=install_requires,
         setup_requires='setuptools-version-command>=2.2',
         test_suite='test',
-        tests_require=tests_require,
-        extras_require=extras,
-        cmdclass={'test': Test},
         url=PROJECT_URL,
         description=SHORT_DESCRIPTION,
         long_description=LONG_DESCRIPTION,
@@ -94,9 +66,10 @@ if __name__ == "__main__":
             'License :: OSI Approved :: BSD License',
             'Natural Language :: English',
             'Operating System :: OS Independent',
-            'Programming Language :: Python :: 3.6',
-            'Programming Language :: Python :: 3.7',
-            # 'Programming Language :: Python :: 3.8',
+            'Programming Language :: Python :: 3.12',
+            'Programming Language :: Python :: 3.11',
+            'Programming Language :: Python :: 3.10',
+            'Programming Language :: Python :: 3.9',
             'Topic :: Software Development :: Testing',
         ],
         entry_points='''

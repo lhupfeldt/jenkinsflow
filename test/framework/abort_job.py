@@ -4,21 +4,28 @@
 import sys
 import time
 import subprocess
+from pathlib import Path
 
+from jenkinsflow.test.conftest import TEST_CFG
 from . import api_select
 from .logger import log, logt
-from .cfg import ApiType
+from .cfg import ApiType, AllCfg, opt_strs_to_test_cfg, test_cfg_to_opt_strs
 
 
-def _abort(log_file, test_file_name, api_type, fixed_prefix, job_name, sleep_time):
+def _abort(log_file, test_file_name, api_type, fixed_prefix, job_name, sleep_time, test_cfg: AllCfg):
     log(log_file, '\n')
-    logt(log_file, "Waiting to abort job:", job_name)
-    logt(log_file, "args:", test_file_name, fixed_prefix, job_name, sleep_time)
+    logt(log_file, "Subprocess", __file__)
+    logt(log_file, f"Waiting {sleep_time} seconds to abort job:", job_name)
+    logt(log_file, "args:", test_file_name, api_type, fixed_prefix, job_name, sleep_time, test_cfg)
     time.sleep(sleep_time)
-    with api_select.api(test_file_name, api_type, fixed_prefix='jenkinsflow_test__' + fixed_prefix + '__', login=True) as api:
+    logt(log_file, "sleep", sleep_time, "finished")
+    with api_select.api(test_file_name, api_type, fixed_prefix='jenkinsflow_test__' + fixed_prefix + '__', login=True, options=test_cfg) as api:
         api.job(job_name, max_fails=0, expect_invocations=0, expect_order=None)
+    logt(log_file, "job defined", api)
     api.poll()
+    logt(log_file, "polled")
     api.quick_poll()
+    logt(log_file, "quick polled")
 
     abort_me = api.get_job(api.job_name_prefix + job_name)
     logt(log_file, "Abort job:", abort_me)
@@ -28,8 +35,15 @@ def _abort(log_file, test_file_name, api_type, fixed_prefix, job_name, sleep_tim
 
 if __name__ == '__main__':
     job_name = sys.argv[4]
-    with open(job_name, 'a+') as log_file:
-        _abort(log_file, sys.argv[1], ApiType[sys.argv[2]], sys.argv[3], job_name, int(sys.argv[5]))
+    with open(job_name + '.log', 'a+') as log_file:
+        try:
+            _abort(
+                log_file, sys.argv[1], ApiType[sys.argv[2]], sys.argv[3], job_name, int(sys.argv[5]),
+                test_cfg = opt_strs_to_test_cfg(
+                    direct_url=sys.argv[6], load_jobs=sys.argv[7], delete_jobs=sys.argv[8], mock_speedup=sys.argv[9], apis_str=sys.argv[10]))
+        except Exception as ex:
+            print(ex, file=log_file)
+            raise
 
 
 def abort(api, job_name, sleep_time):
@@ -37,8 +51,10 @@ def abort(api, job_name, sleep_time):
     if api.api_type == ApiType.MOCK:
         return
 
-    ff = __file__.replace('.pyc', '.py')
-    args = [sys.executable, ff, api.file_name, api.api_type.name, api.func_name.replace('test_', ''), job_name, str(sleep_time)]
-    with open(job_name, 'w') as log_file:
+    args = [sys.executable, "-m", "jenkinsflow.test.framework.abort_job",
+            api.file_name, api.api_type.name, api.func_name.replace('test_', ''), job_name, str(sleep_time),
+            *test_cfg_to_opt_strs(TEST_CFG, api.api_type)
+            ]
+    with open(job_name + '.log', 'w') as log_file:
         logt(log_file, "Invoking abort subprocess.", args)
     subprocess.Popen(args)

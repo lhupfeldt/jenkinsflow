@@ -11,19 +11,19 @@ from .framework.cfg import ApiType
 
 
 @pytest.mark.not_apis(ApiType.MOCK)
-def test_hyperspeed_speedup():
+def test_hyperspeed_speedup(api_type):
     hs = Speed()
     assert hs.speedup == 1
 
 
 @pytest.mark.not_apis(ApiType.MOCK)
-def test_hyperspeed_real_time():
+def test_hyperspeed_real_time(api_type):
     hs = Speed()
     assert hs.time() <= time.time()
 
 
 @pytest.mark.not_apis(ApiType.MOCK)
-def test_hyperspeed_real_sleep():
+def test_hyperspeed_real_sleep(api_type):
     hs = Speed()
     before = time.time()
     hs.sleep(1)

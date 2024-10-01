@@ -232,7 +232,7 @@ class ApiJob():
             BUILD_DISPLAY_NAME='#' + repr(build_number),
             JOB_NAME=self.name,
             BUILD_TAG='jenkinsflow-' + self.name + '-' + repr(build_number),
-            NODE_NAME='master',
+            NODE_NAME='built-in',
             NODE_LABELS='',
             WORKSPACE=self.workspace,
             JENKINS_HOME=self.jenkins.public_uri,

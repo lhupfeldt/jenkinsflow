@@ -2,7 +2,7 @@ import os
 
 from jenkinsflow.jenkins_api import Jenkins
 
-import demo_security as security
+from jenkinsflow.demo import demo_security as security
 
 
 def get_jenkins_api():

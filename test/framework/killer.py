@@ -9,9 +9,10 @@ from jenkinsflow.test.framework.logger import log, logt
 
 def _killer(log_file, pid, sleep_time, num_kills):
     log(log_file, '\n')
+    logt(log_file, "Subprocess", __file__)
     logt(log_file, "Killer going to sleep for", sleep_time, "seconds")
     time.sleep(sleep_time)
-    logt(log_file, "Killer woke up")
+    logt(log_file, "sleep", sleep_time, "finished")
     for ii in range(0, num_kills):
         logt(log_file, "Killer sending", ii + 1, "of", num_kills, "SIGTERM signals to ", pid)
         os.kill(pid, signal.SIGTERM)
@@ -22,15 +23,18 @@ def _killer(log_file, pid, sleep_time, num_kills):
 if __name__ == '__main__':
     log_file_name = sys.argv[4]
     with open(log_file_name, 'a+') as log_file:
-        _killer(log_file, int(sys.argv[1]), float(sys.argv[2]), int(sys.argv[3]))
+        try:
+            _killer(log_file, int(sys.argv[1]), float(sys.argv[2]), int(sys.argv[3]))
+        except Exception as ex:
+            print(ex, file=log_file)
+            raise            
 
 
 def kill(api, sleep_time, num_kills):
     """Kill this process"""
     pid = os.getpid()
-    ff = __file__.replace('.pyc', '.py')
-    log_file_name = api.func_name.replace('test_', '')
-    args = [sys.executable, ff, repr(pid), repr(sleep_time), repr(num_kills), log_file_name]
+    log_file_name = api.func_name.replace('test_', '') + ".log"
+    args = [sys.executable, "-m", "jenkinsflow.test.framework.killer", repr(pid), repr(sleep_time), repr(num_kills), log_file_name]
     with open(log_file_name, 'w') as log_file:
         logt(log_file, "Invoking kill subprocess.", args)
 

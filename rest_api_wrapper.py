@@ -34,6 +34,11 @@ class RequestsRestApi():
                 raise AuthError(ex) from ex
             if response.status_code == 403:
                 raise ClientError(ex) from ex
+            if response.status_code == 500:
+                # TODO: Workaround for https://issues.jenkins.io/browse/JENKINS-63845
+                # 500 Server Error: Server Error for url: http://localhost:8080/queue/cancelItem?id=14406
+                if "Server Error for url:" in str(ex) and "queue/cancelItem" in str(ex):
+                    raise ResourceNotFound(ex) from ex
             raise
 
         # TODO: This is dubious, maybe we should raise here instead.

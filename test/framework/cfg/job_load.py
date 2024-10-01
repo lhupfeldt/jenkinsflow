@@ -1,20 +1,15 @@
 import os
 
-from .os_env import ENV_VAR_PREFIX
-
-
 class JobLoad():
-    skip_job_load_env_var_name = ENV_VAR_PREFIX + 'SKIP_JOB_LOAD'
-    skip_job_delete_env_var_name = ENV_VAR_PREFIX + 'SKIP_JOB_DELETE'
+    def __init__(self, load_jobs: bool, delete_jobs: bool):
+        self.load_jobs = load_jobs
+        self.delete_jobs = delete_jobs
 
-    @staticmethod
-    def skip_job_delete():
-        return os.environ.get(JobLoad.skip_job_delete_env_var_name) == 'true'
+    def skip_job_delete(self):
+        return not self.delete_jobs
 
-    @staticmethod
-    def skip_job_load():
-        return os.environ.get(JobLoad.skip_job_load_env_var_name) == 'true'
+    def skip_job_load(self):
+        return not self.load_jobs
 
-    @staticmethod
-    def skip_job_load_sh_export_str():
+    def skip_job_load_sh_export_str(self):
         return 'export ' + JobLoad.skip_job_load_env_var_name + '=true'

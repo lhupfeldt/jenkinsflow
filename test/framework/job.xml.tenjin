@@ -1,4 +1,5 @@
 <?xml version='1.0' encoding='UTF-8'?>
+<?py from pathlib import Path ?>
 <?py param_names = [param[0] for param in params] ?>
 <project>
   <actions/>
@@ -73,15 +74,15 @@
   <?py assert create_job.flow_created ?>
     <hudson.tasks.Shell>
       <?py import sys ?>
-      <command>#!{==sys.executable==} -B
+      <command>#!{==python_executable==} -B
 import sys
 sys.path.append("{==test_tmp_dir==}")
 from jenkinsflow.jobload import update_job_from_template
-from .cfg import ApiType
+from jenkinsflow.test.framework.cfg import ApiType
 
 <?py sys.path.append(test_tmp_dir) ?>
 
-<?py from .cfg import ApiType ?>
+<?py from jenkinsflow.test.framework.cfg import ApiType ?>
 <?py if api_type == ApiType.JENKINS: ?>
 from jenkinsflow import jenkins_api as jenkins
 <?py else: ?>
@@ -98,13 +99,14 @@ mock_job = MockJob(
     initial_buildno=None, invocation_delay={==cj.invocation_delay==}, unknown_result={==cj.unknown_result==},
     final_result="{==fr==}", serial={==cj.serial==}, params=(), flow_created={==cj.flow_created==}, create_job=None, disappearing=False,
     non_existing=False, kill=False, allow_running=False, api=None,
-    final_result_use_cli=False, set_build_descriptions=())
+    final_result_use_cli=False, set_build_descriptions=(), python_executable="{==python_executable==}")
 <?py else: ?>
 mock_job = None
 <?py #endif ?>
 
-config_xml_template = "{==test_tmp_dir==}/jenkinsflow/test/framework/job.xml.tenjin"
+config_xml_template = "{==test_tmp_dir==}/test/framework/job.xml.tenjin"
 context = dict(
+    python_executable="{==create_job.python_executable==}",
     exec_time={==create_job.exec_time==},
     max_fails={==create_job.max_fails==},
     expect_invocations={==create_job.expect_invocations==},
@@ -132,11 +134,8 @@ update_job_from_template(job_loader_jenkins, "{==create_job.name==}", config_xml
 <?py if set_build_descriptions: ?>
     <?py import sys ?>
     <hudson.tasks.Shell>
-      <command>#!{==sys.executable==} -B
-import sys
+      <command>#!{==python_executable==} -B
 import time
-
-sys.path.append("{==test_tmp_dir==}")
 
 from jenkinsflow.utils.set_build_description import set_build_description
 
@@ -155,6 +154,7 @@ set_build_description("{==description==}", {==replace==}, "{==separator==}", use
 set -u
 date --rfc-3339=ns
 <?py if script is not None: ?>
+source {==pseudo_install_dir==}/bin/activate
 {==script==}
 <?py else: ?>
 date
@@ -163,6 +163,7 @@ sleep {==exec_time==}
 date
 <?py #endif ?>
 <?py if 'force_result' in param_names: ?>
+echo "Force result '$force_result'"
 case $force_result in
    SUCCESS) exit 0;;
    FAILURE) exit 1;;

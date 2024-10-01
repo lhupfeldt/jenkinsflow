@@ -18,11 +18,12 @@ class MockApi(TestJenkins, HyperSpeed):
     job_xml_template = jp(here, 'job.xml.tenjin')
     api_type = ApiType.MOCK
 
-    def __init__(self, job_name_prefix, speedup, public_uri):
+    def __init__(self, job_name_prefix, speedup, public_uri, python_executable=None):
         super().__init__(job_name_prefix=job_name_prefix, speedup=speedup)
         self.public_uri = public_uri
         self.username = 'dummy'
         self.password = 'dummy'
+        self.python_executable = python_executable or sys.executable
 
     def job(self, name, max_fails, expect_invocations, expect_order, exec_time=None, initial_buildno=None, invocation_delay=0.1, params=None,
             script=None, unknown_result=False, final_result=None, serial=False, print_env=False, flow_created=False, create_job=None,
@@ -39,7 +40,8 @@ class MockApi(TestJenkins, HyperSpeed):
                       initial_buildno=initial_buildno, invocation_delay=invocation_delay, unknown_result=unknown_result,
                       final_result=final_result, serial=serial, params=params, flow_created=flow_created, create_job=create_job,
                       disappearing=disappearing, non_existing=non_existing, kill=kill, allow_running=allow_running, api=self,
-                      final_result_use_cli=final_result_use_cli, set_build_descriptions=set_build_descriptions)
+                      final_result_use_cli=final_result_use_cli, set_build_descriptions=set_build_descriptions,
+                      python_executable=self.python_executable)
         self.test_jobs[job_name] = job
 
     def flow_job(self, name=None, params=None):
@@ -73,7 +75,7 @@ class MockApi(TestJenkins, HyperSpeed):
 class MockJob(TestJob):
     def __init__(self, name, exec_time, max_fails, expect_invocations, expect_order, initial_buildno, invocation_delay, unknown_result,
                  final_result, serial, params, flow_created, create_job, disappearing, non_existing, kill, allow_running, api, final_result_use_cli,
-                 set_build_descriptions):
+                 set_build_descriptions, python_executable):
         super().__init__(exec_time=exec_time, max_fails=max_fails, expect_invocations=expect_invocations, expect_order=expect_order,
                                       initial_buildno=initial_buildno, invocation_delay=invocation_delay, unknown_result=unknown_result, final_result=final_result,
                                       serial=serial, print_env=False, flow_created=flow_created, create_job=create_job, disappearing=disappearing,
@@ -95,6 +97,7 @@ class MockJob(TestJob):
         self.queued_why = "Why am I queued?"
         self._killed = False
         self._just_killed = False
+        self.python_executable = python_executable
 
     def job_status(self):
         latest_build_number = self._get_last_build_number_or_none()

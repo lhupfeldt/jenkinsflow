@@ -15,14 +15,14 @@ def test_hyperspeed_speedup():
 
 
 @pytest.mark.apis(ApiType.MOCK)
-def test_hyperspeed_mocked_time():
+def test_hyperspeed_mocked_time(api_type):
     hs = HyperSpeed(1000)
     time.sleep(0.001)
     assert hs.time() > time.time()
 
 
 @pytest.mark.apis(ApiType.MOCK)
-def test_hyperspeed_mocked_sleep():
+def test_hyperspeed_mocked_sleep(api_type):
     hs = HyperSpeed(1000)
     before = time.time()
     hs.sleep(1)

@@ -3,60 +3,111 @@
 
 import os
 import sys
-from pathlib import Path
+import re
+from itertools import chain
+from typing import List
 
 import pytest
 from pytest import fixture  # pylint: disable=no-name-in-module
 from click.testing import CliRunner
 
-from .framework.cfg import ApiType, Urls
-
-
-_HERE = Path(__file__).resolve().parent
-_DEMO_DIR = (_HERE/'../demo').resolve()
-sys.path.extend([str(_DEMO_DIR), str(_DEMO_DIR/"jobs")])
+from .framework import pytest_options
+from .framework.cfg import ApiType, opts_to_test_cfg
 
 # Note: You can't (indirectly) import stuff from jenkinsflow here, it messes up the coverage
 
+
+# Singleton config
+TEST_CFG = None
+
+
 def pytest_addoption(parser):
-    parser.addoption(
-        "--api",
-        action="store",
-        metavar="NAME",
-        default=','.join(at.name for at in list(ApiType)),
-        help=f"Comma separated list of APIs to test. Default is all defined apis: {','.join([at.name for at in list(ApiType)])}",
-    )
+    """pytest hook"""
+    pytest_options.add_options(parser)
 
 
 def pytest_configure(config):
+    global TEST_CFG
+
+    """pytest hook"""
     # Register api  marker
     config.addinivalue_line("markers", "apis(*ApiType): mark test to run only when using specified apis")
     config.addinivalue_line("markers", "not_apis(*ApiType): mark test NOT to run when using specified apis")
 
-    try:
-        apis = [ApiType[api.strip().upper()] for api in config.getoption('--api').split(',')]
-    except KeyError as ex:
-        print(ex, file=sys.stderr)
-        print(f"'{ex}' cannot be converted to ApiType. Should be one or more of: {','.join([at.name for at in list(ApiType)])}")
-        raise
+    TEST_CFG = opts_to_test_cfg(
+        config.getoption(pytest_options.OPT_DIRECT_URL),
+        config.getoption(pytest_options.OPT_JOB_LOAD),
+        config.getoption(pytest_options.OPT_JOB_DELETE),
+        config.getoption(pytest_options.OPT_MOCK_SPEEDUP),
+        config.getoption(pytest_options.OPT_API),
+    )
+    config.cuctom_cfg = TEST_CFG
 
-    print("APIs:", apis)
+
+def pytest_collection_modifyitems(items: List[pytest.Item], config) -> None:
+    """pytest hook"""
+    selected_api_types = config.cuctom_cfg.apis
+    item_api_type_regex = re.compile(r'.*\[ApiType\.(.*)\]')
+    remaining = []
+    deselected = []
+
+    def filter_items_by_api_type(item):
+        if "api_type" not in item.fixturenames:
+            for om in item.own_markers:
+                if om.name in ("apis", "not_apis"):
+                    location = ':'.join(str(place) for place in item.location)
+                    raise Exception(f"{location}: Error: A test using the 'apis' or 'not_apis' marker must also use the 'api_type' fixture.")
+            remaining.append(item)
+            return
+
+        # We must have an ApiType in name now, since api_type fixture was used
+        current_item_api = ApiType[item_api_type_regex.match(item.name).groups()[0]]
+        if current_item_api not in selected_api_types:
+            print(f"{':'.join(str(place) for place in item.location)} DESELECTED ({current_item_api} not in {selected_api_types})")
+            deselected.append(item)
+            return
+
+        remaining.append(item)
 
 
-@pytest.fixture(params=[ApiType.MOCK, ApiType.JENKINS, ApiType.SCRIPT])
-def api_type(request):
+    print()
+    for item in items:
+        filter_items_by_api_type(item)
+
+    if deselected:
+        config.hook.pytest_deselected(items=deselected)
+        items[:] = remaining
+
+
+@pytest.fixture()
+def options():
+    """Access to test configuration objects."""
+    return TEST_CFG
+
+
+@pytest.fixture(params=list(ApiType))
+def api_type(request, options):
     """ApiType fixture"""
     selected_api_type = request.param
+    assert isinstance(selected_api_type, ApiType)
 
     for apimarker in request.node.iter_markers("apis"):
         apis = apimarker.args
+        for allowed_api_type in apis:
+            assert isinstance(allowed_api_type, ApiType)
+
         if selected_api_type not in apis:
-            pytest.skip("test requires one the following apis {apis}, current {api_type}".format(apis=apis, api_type=selected_api_type))
+            pytest.skip(f"only for {apis} APIs, current {selected_api_type}")
+            return selected_api_type
 
     for not_apimarker in request.node.iter_markers("not_apis"):
         not_apis = not_apimarker.args
+        for not_api_type in not_apis:
+            assert isinstance(not_api_type, ApiType)
+
         if selected_api_type in not_apis:
-            pytest.skip("test is not run for the following apis {apis}, current {api_type}".format(apis=not_apis, api_type=selected_api_type))
+            pytest.skip(f"not for {not_apis} APIs, current {selected_api_type}")
+            return selected_api_type
 
     return selected_api_type
 
@@ -117,21 +168,21 @@ def _unset_env_fixture(var_name, request):
 
 
 @fixture
-def env_base_url(request, api_type):
+def env_base_url(request, api_type, options):
     # Fake that we are running from inside jenkins job
-    public_url = Urls.public_url(api_type)
+    public_url = options.urls.public_url(api_type)
     _set_jenkins_url_env_if_not_set_fixture(public_url, request)
     return public_url
 
 
 @fixture
-def env_base_url_trailing_slash(request, api_type):
-    _set_jenkins_url_env_if_not_set_fixture(Urls.public_url(api_type) + '/', request)
+def env_base_url_trailing_slash(request, api_type, options):
+    _set_jenkins_url_env_if_not_set_fixture(options.urls.public_url(api_type) + '/', request)
 
 
 @fixture
-def env_base_url_trailing_slashes(request, api_type):
-    _set_jenkins_url_env_if_not_set_fixture(Urls.public_url(api_type) + '//', request)
+def env_base_url_trailing_slashes(request, api_type, options):
+    _set_jenkins_url_env_if_not_set_fixture(options.urls.public_url(api_type) + '//', request)
 
 
 @fixture
@@ -142,10 +193,10 @@ def env_no_base_url(request):
 
 
 @fixture
-def env_different_base_url(request):
+def env_different_base_url(request, options):
     # Fake that we are running from inside jenkins job
     # This url is not used, but should simply be different fron direct_url used in test, to simulate proxied jenkins
-    _set_jenkins_url_env_fixture(Urls.proxied_public_url, request)
+    _set_jenkins_url_env_fixture(options.urls.proxied_public_url, request)
 
 
 @fixture

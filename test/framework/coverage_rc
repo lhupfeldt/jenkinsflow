@@ -13,7 +13,7 @@ exclude_lines =
     # The alternative (original) rest api is no longer tested
     def _check_restkit_response
     class RestkitRestApi
-    ${COV_API_EXCLUDE_LINES}
+    ${COV_API_EXCLUDE_LINES?}
 
 
 omit = 
@@ -26,4 +26,4 @@ omit =
      setup.py
      ordered_enum.py
      *_flymake.py
-     ${COV_API_EXCLUDE_FILES}
+     ${COV_API_EXCLUDE_FILES?}

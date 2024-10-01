@@ -25,6 +25,7 @@ pip-log.txt
 .coverage*
 coverage_rc.tenjin.cache*
 .tox
+.nox
 nosetests.xml
 .pytest_cache/
 

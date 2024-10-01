@@ -1,6 +1,7 @@
 import sys
 import subprocess
 import time
+import datetime
 
 from jenkinsflow.utils.set_build_description import set_build_description
 
@@ -14,8 +15,10 @@ def run_job(job_name, job_prefix_filter, username, password, securitytoken, caus
 <?py if script is not None: ?>
 <?py     raise Exception("Script is not supported: " + script) ?>
 <?py else: ?>
+    print(datetime.datetime.now())
     print('sleeping=', {==exec_time==})
     time.sleep({==exec_time==})
+    print(datetime.datetime.now())
 
 <?py for description, replace, separator in set_build_descriptions: ?>
     set_build_description("{==description==}", {==replace==}, "{==separator==}")

@@ -7,7 +7,7 @@
 
 from jenkinsflow.flow import serial
 
-import get_jenkins_api
+from jenkinsflow.demo import get_jenkins_api
 
 
 def main(api, securitytoken):

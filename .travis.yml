@@ -3,24 +3,7 @@ python:
   - 3.6
   - 3.7
   - 3.8
-  - pypy3.6-7.0.0
-matrix:
-    include:
-        - python: 3.7
-          dist: xenial
-          env: REQUIREMENTS=lowest
-        - python: 3.7
-          dist: xenial
-          env: REQUIREMENTS=release
-        - python: 3.8
-          dist: xenial
-          env: REQUIREMENTS=lowest
-        - python: 3.8
-          dist: xenial
-          env: REQUIREMENTS=release
-    allow_failures:
-        - python: pypy3.6-7.0.0
-script: tox
+  - 3.9
 os:
   - linux
 before_install:
@@ -28,14 +11,16 @@ before_install:
   - travis_retry pip install requirements-builder
   - requirements-builder --level=min setup.py > .travis-lowest-requirements.txt
   - requirements-builder --level=pypi setup.py > .travis-release-requirements.txt
-install:
-  - pip install tox-travis
-  - pip install coveralls
-  - travis_retry pip install -r .travis-$REQUIREMENTS-requirements.txt
-  - pip install -e .
 env:
   - REQUIREMENTS=lowest
   - REQUIREMENTS=release
+install:
+  - pip install --upgrade nox
+  - pip install --upgrade coveralls
+  - travis_retry pip install -r .travis-$REQUIREMENTS-requirements.txt
+  - pip install -e .
+script:
+  - nox
 after_success:
   # rcfile name duplicated in test/run.py
   - coveralls --rcfile="./test/.coverage_rc_mock_script"

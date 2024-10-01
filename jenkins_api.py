@@ -28,7 +28,7 @@ class Jenkins(Speed, BaseApiMixin):
     """Optimized minimal set of methods needed for jenkinsflow to access Jenkins jobs.
 
     Args:
-        direct_uri (str): Should be a non-proxied uri if possible (e.g. http://localhost:<port> if flow job is running on master)
+        direct_uri (str): Should be a non-proxied uri if possible (e.g. http://localhost:<port> if flow job is running on 'built-in' node)
             The public URI will be retrieved from Jenkins and used in output.
         job_prefix_filter (str): Jobs with names that don't start with this string, will be skpped when polling Jenkins.
             If you are using Hudson and have many jobs, it might be a good idea to enable Team support and create a job-runner user,

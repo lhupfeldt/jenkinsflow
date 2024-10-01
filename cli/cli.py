@@ -15,7 +15,7 @@ if __package__ is None:
     __package__ = "jenkinsflow.cli"
 
 
-from .set_build_description import set_build_description
+from .set_build_description import set_build_description, set_build_description_hidden
 
 
 @click.group()
@@ -23,7 +23,8 @@ def cli():
     """Commandline utilities for jenkinsflow"""
 
 
-cli.add_command(set_build_description, name="set_build_description")
+cli.add_command(set_build_description)
+cli.add_command(set_build_description_hidden)  # Backwards compatibility
 
 
 if __name__ == "__main__":

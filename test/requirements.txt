@@ -1,0 +1,9 @@
+pytest>=6.0.2
+pytest-cov>=2.4.0
+pytest-instafail>=0.3.0
+pytest-xdist>=1.16
+pytest-forked>=1.6.0
+click>=7.0
+tenjin>=1.1.1
+bottle>=0.12
+objproxies>=0.9.4
