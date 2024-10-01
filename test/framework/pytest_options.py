@@ -54,6 +54,6 @@ def add_options(parser):
         OPT_MOCK_SPEEDUP,
         action="store",
         type=int,
-        default=1000,
+        default=500,
         help="Time speedup for mock API tests. If set too high test may fail. If set low it just takes longer to run tests.",
     )
