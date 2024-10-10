@@ -15,7 +15,7 @@ if __package__ is None:
     __package__ = "jenkinsflow.cli"
 
 
-from .set_build_description import set_build_description, set_build_description_hidden
+from .set_build_description import set_build_description
 
 
 @click.group()
@@ -24,8 +24,11 @@ def cli():
 
 
 cli.add_command(set_build_description)
-cli.add_command(set_build_description_hidden)  # Backwards compatibility
+
+
+def main():
+    cli(auto_envvar_prefix='JENKINSFLOW')
 
 
 if __name__ == "__main__":
-    cli(auto_envvar_prefix='JENKINSFLOW')
+    main()

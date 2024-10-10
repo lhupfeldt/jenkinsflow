@@ -5,7 +5,7 @@
 
 from jenkinsflow.flow import serial
 
-from jenkinsflow.demo import demo_security as security
+import lib.demo_security as security
 
 
 def main(api):

@@ -15,7 +15,7 @@
 import sys
 import os
 from os.path import join as jp
-import subprocess
+from importlib import metadata
 
 # If extensions (or modules to document with autodoc) are in another directory,
 # add these directories to sys.path here. If the directory is relative to the
@@ -25,7 +25,6 @@ _top_dir = os.path.dirname(os.path.dirname(_here))
 sys.path.insert(0, _top_dir)
 sys.path.insert(0, os.path.dirname(_top_dir))
 
-import setup as jf_setup
 
 # -- General configuration ------------------------------------------------
 
@@ -55,16 +54,17 @@ source_suffix = '.rst'
 master_doc = 'index'
 
 # General information about the project.
-project = jf_setup.PROJECT_NAME
-copyright = jf_setup.COPYRIGHT
-author = u'Lars Hupfeldt Nielsen'
+package_info = metadata.metadata("jenkinsflow")
+project = package_info["Name"]
+author = package_info["Author"]
+copyright = f"Copyright © 2012 - 2024 {author}, Hupfeldt IT"
 
 # The version info for the project you're documenting, acts as replacement for
 # |version| and |release|, also used in various other places throughout the
 # built documents.
 #
 # The short X.Y version.
-version = str(subprocess.check_output([sys.executable, jp(_top_dir, 'setup.py'), '--version']))
+version = package_info["Version"]
 # The full version, including alpha/beta/rc tags.
 release = version
 
@@ -277,7 +277,7 @@ texinfo_documents = [
 epub_title = u'jenkinsflow'
 epub_author = author
 epub_publisher = author
-epub_copyright = jf_setup.COPYRIGHT
+epub_copyright = copyright
 
 # The basename for the epub file. It defaults to the project name.
 #epub_basename = u'jenkinsflow'

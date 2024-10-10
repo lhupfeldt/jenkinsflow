@@ -5,7 +5,7 @@
 
 from jenkinsflow.flow import serial
 
-from jenkinsflow.demo import get_jenkins_api
+import lib.get_jenkins_api
 
 
 def main(api, securitytoken):
@@ -18,4 +18,4 @@ def main(api, securitytoken):
 
 
 if __name__ == '__main__':
-    main(*get_jenkins_api.get_jenkins_api())
+    main(*lib.get_jenkins_api.get_jenkins_api())

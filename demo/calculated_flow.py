@@ -12,7 +12,7 @@ from collections import OrderedDict
 from jenkinsflow.flow import serial
 from jenkinsflow.unbuffered import UnBuffered
 
-from jenkinsflow.demo import get_jenkins_api
+import lib.get_jenkins_api
 
 
 # Unbuffered output does not work well in Jenkins/Hudson, so in case
@@ -70,4 +70,4 @@ def main(api, securitytoken):
 
 
 if __name__ == '__main__':
-    main(*get_jenkins_api.get_jenkins_api())
+    main(*lib.get_jenkins_api.get_jenkins_api())

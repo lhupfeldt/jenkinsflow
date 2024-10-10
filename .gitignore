@@ -1,57 +1,21 @@
-*.py[cod]
-
-# C extensions
-*.so
-
-# Packages
+*~
+*.pyc
+__pycache__
+.cache
+.coverage
+.pytest_cache
 *.egg
 *.egg-info
+TAGS
+*.class
 .eggs
-develop-eggs
 dist
-build
-parts
-bin
-var
-sdist
-.installed.cfg
-lib
-lib64
-
-# Installer logs
-pip-log.txt
-
-# Unit test / coverage reports
-.coverage*
-coverage_rc.tenjin.cache*
 .tox
 .nox
-nosetests.xml
-.pytest_cache/
-
-# Translations
-*.mo
-
-# Mr Developer
-.mr.developer.cfg
-.project
-.pydevproject
-
-# Emacs backup
-*~
-TAGS
-*_flymake.py
-
+.mypy_cache
 *.tenjin.cache
-.cache
-.cache-*
-__pycache__
-
-# Vim swap
-*.sw?
-
-# PyChrm files
-.idea
+build
+test/out
 
 # Sphinx
 doc/_build/*

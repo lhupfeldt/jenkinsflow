@@ -16,14 +16,14 @@ here = os.path.abspath(os.path.dirname(__file__))
 
 
 @pytest.mark.not_apis(ApiType.SCRIPT)
-def test_abort_retry_serial_toplevel(api_type):
+def test_abort_retry_serial_toplevel(api_type, options):
     with api_select.api(__file__, api_type) as api:
         api.flow_job()
         api.job('j11', max_fails=0, expect_invocations=1, expect_order=1)
         api.job('j12_abort', max_fails=0, expect_invocations=1, expect_order=2, exec_time=20, serial=True, final_result='ABORTED')
         api.job('j13', max_fails=0, expect_invocations=0, expect_order=None, serial=True)
 
-        abort(api, 'j12_abort', 10)
+        abort(api, 'j12_abort', 10, options)
 
         with raises(FailedChildJobException):
             with serial(api, timeout=70, job_name_prefix=api.job_name_prefix, max_tries=2) as ctrl1:
@@ -33,14 +33,14 @@ def test_abort_retry_serial_toplevel(api_type):
 
 
 @pytest.mark.not_apis(ApiType.SCRIPT)
-def test_abort_retry_parallel_toplevel(api_type):
+def test_abort_retry_parallel_toplevel(api_type, options):
     with api_select.api(__file__, api_type) as api:
         api.flow_job()
         api.job('j11', max_fails=0, expect_invocations=1, expect_order=None)
         api.job('j12_abort', max_fails=0, expect_invocations=1, expect_order=None, exec_time=20, final_result='ABORTED')
         api.job('j13', max_fails=0, expect_invocations=1, expect_order=None)
 
-        abort(api, 'j12_abort', 10)
+        abort(api, 'j12_abort', 10, options)
 
         with raises(FailedChildJobsException):
             with parallel(api, timeout=70, job_name_prefix=api.job_name_prefix, max_tries=2) as ctrl1:
@@ -50,7 +50,7 @@ def test_abort_retry_parallel_toplevel(api_type):
 
 
 @pytest.mark.not_apis(ApiType.SCRIPT)
-def test_abort_retry_serial_parallel_nested(api_type):
+def test_abort_retry_serial_parallel_nested(api_type, options):
     with api_select.api(__file__, api_type) as api:
         api.flow_job()
         api.job('j11', max_fails=0, expect_invocations=1, expect_order=1)
@@ -60,7 +60,7 @@ def test_abort_retry_serial_parallel_nested(api_type):
         api.job('j24', max_fails=0, expect_invocations=1, expect_order=2)
         api.job('j12', max_fails=0, expect_invocations=0, expect_order=None, serial=True)
 
-        abort(api, 'j22_abort', 10)
+        abort(api, 'j22_abort', 10, options)
 
         with raises(FailedChildJobException):
             with serial(api, timeout=70, job_name_prefix=api.job_name_prefix, max_tries=2) as sctrl1:
@@ -74,7 +74,7 @@ def test_abort_retry_serial_parallel_nested(api_type):
 
 
 @pytest.mark.not_apis(ApiType.SCRIPT)
-def test_abort_retry_parallel_serial_nested(api_type):
+def test_abort_retry_parallel_serial_nested(api_type, options):
     with api_select.api(__file__, api_type) as api:
         api.flow_job()
         api.job('j11', max_fails=0, expect_invocations=1, expect_order=None)
@@ -84,7 +84,7 @@ def test_abort_retry_parallel_serial_nested(api_type):
         api.job('j24', max_fails=0, expect_invocations=0, expect_order=None)
         api.job('j12', max_fails=0, expect_invocations=1, expect_order=1, serial=True)
 
-        abort(api, 'j22_abort', 10)
+        abort(api, 'j22_abort', 10, options)
 
         with raises(FailedChildJobsException):
             with parallel(api, timeout=70, job_name_prefix=api.job_name_prefix, max_tries=2) as sctrl1:

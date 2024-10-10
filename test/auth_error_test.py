@@ -23,4 +23,3 @@ def test_auth_error(api_type):
         assert ("401 Client Error: Unauthorized for url: http://" in str(exinfo.value) or
                 "401 Client Error: Invalid password/token for user: noaccess for url: http://" in str(exinfo.value) or
                 "401 Unauthorized user: 'noaccess' for url: http://" in str(exinfo.value))
-

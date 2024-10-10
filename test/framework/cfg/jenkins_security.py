@@ -1,1 +1,1 @@
-../../../demo/demo_security.py
+../../../demo/lib/demo_security.py

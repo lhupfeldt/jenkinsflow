@@ -17,14 +17,14 @@ here = os.path.abspath(os.path.dirname(__file__))
 
 
 @pytest.mark.not_apis(ApiType.SCRIPT)
-def test_abort(api_type, capsys):
+def test_abort(api_type, capsys, options):
     with api_select.api(__file__, api_type, login=True) as api:
         api.flow_job()
         api.job('quick', max_fails=0, expect_invocations=1, expect_order=1)
         api.job('wait10_abort', max_fails=0, expect_invocations=1, expect_order=1, exec_time=20, final_result='ABORTED')
         api.job('wait1_fail', max_fails=1, expect_invocations=1, expect_order=1, exec_time=1)
 
-        abort(api, 'wait10_abort', 10)
+        abort(api, 'wait10_abort', 8, options)
 
         with raises(FailedChildJobsException) as exinfo:
             with parallel(api, timeout=40, job_name_prefix=api.job_name_prefix, report_interval=3) as ctrl:

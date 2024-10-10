@@ -1,24 +1,57 @@
-# Copyright (c) 2012 - 2015 Lars Hupfeldt Nielsen, Hupfeldt IT
-# All rights reserved. This work is under a BSD license, see LICENSE.TXT.
+"""Configuration file for 'pytest'"""
 
-import os
 import sys
+import os
 import re
 from itertools import chain
-from typing import List
+from pathlib import Path
+import shutil
 
 import pytest
-from pytest import fixture  # pylint: disable=no-name-in-module
+from pytest import fixture
 from click.testing import CliRunner
 
 from .framework import pytest_options
-from .framework.cfg import ApiType, opts_to_test_cfg
+from .framework.cfg import ApiType, AllCfg, opts_to_test_cfg
 
 # Note: You can't (indirectly) import stuff from jenkinsflow here, it messes up the coverage
 
+_HERE = Path(__file__).absolute().parent
+_DEMO_DIR = (_HERE/"../demo").resolve()
+sys.path.append(str(_DEMO_DIR))
 
-# Singleton config
-TEST_CFG = None
+_OUT_DIRS = {}
+
+def _test_key_shortener(key_prefix, key_suffix):
+    prefix = key_prefix.replace('test.', '').replace('_test', '')
+    suffix = key_suffix.replace(prefix, '').replace('test_', '').strip('_')
+    outd = prefix + '.' + suffix
+    args = (key_prefix, key_suffix)
+    assert _OUT_DIRS.setdefault(outd, args) == args, \
+        f"Out dir name '{outd}' reused! Previous from {_OUT_DIRS[outd]}, now  {args}. Test is not following namimg convention."
+    return outd
+
+
+def _test_node_shortener(request):
+    """Shorten test node name while still keeping it unique"""
+    return _test_key_shortener(request.node.module.__name__, request.node.name.split('[')[0])
+
+
+@fixture(name="out_dir")
+def _fixture_out_dir(request):
+    """Create unique top level test directory for a test."""
+
+    out_dir = _HERE/'out'/_test_node_shortener(request)
+
+    try:
+        shutil.rmtree(out_dir)
+    except OSError as ex:
+        if ex.errno != errno.ENOENT:
+            raise
+
+    return out_dir
+
+# Add you configuration, e.g. fixtures here.
 
 
 def pytest_addoption(parser):
@@ -27,24 +60,26 @@ def pytest_addoption(parser):
 
 
 def pytest_configure(config):
-    global TEST_CFG
-
     """pytest hook"""
     # Register api  marker
     config.addinivalue_line("markers", "apis(*ApiType): mark test to run only when using specified apis")
     config.addinivalue_line("markers", "not_apis(*ApiType): mark test NOT to run when using specified apis")
 
-    TEST_CFG = opts_to_test_cfg(
+    config.cuctom_cfg = opts_to_test_cfg(
         config.getoption(pytest_options.OPT_DIRECT_URL),
         config.getoption(pytest_options.OPT_JOB_LOAD),
         config.getoption(pytest_options.OPT_JOB_DELETE),
         config.getoption(pytest_options.OPT_MOCK_SPEEDUP),
         config.getoption(pytest_options.OPT_API),
     )
-    config.cuctom_cfg = TEST_CFG
+    pytest._CUSTOM_TEST_CFG = config.cuctom_cfg
 
 
-def pytest_collection_modifyitems(items: List[pytest.Item], config) -> None:
+def get_cfg():
+    return pytest._CUSTOM_TEST_CFG
+
+
+def pytest_collection_modifyitems(items: list[pytest.Item], config) -> None:
     """pytest hook"""
     selected_api_types = config.cuctom_cfg.apis
     item_api_type_regex = re.compile(r'.*\[ApiType\.(.*)\]')
@@ -79,10 +114,10 @@ def pytest_collection_modifyitems(items: List[pytest.Item], config) -> None:
         items[:] = remaining
 
 
-@pytest.fixture()
-def options():
+@pytest.fixture(scope="session")
+def options(pytestconfig):
     """Access to test configuration objects."""
-    return TEST_CFG
+    return pytestconfig.cuctom_cfg
 
 
 @pytest.fixture(params=list(ApiType))

@@ -1,7 +1,7 @@
 |Build Status| |Coverage| |Documentation Status| |PyPi Package| |License|
 
 jenkinsflow
-===========
+-----------
 
 Python API with high level build flow constructs (parallel/serial) for
 Jenkins. Allows full scriptable control over the execution

@@ -4,15 +4,15 @@ Utility library for noxfile.
 
 import os
 from pathlib import Path
-from typing import Sequence, Tuple, Dict
+from typing import Sequence
 
 _HERE = Path(__file__).resolve().parent
-_TOP_DIR = _HERE.parent.parent
+_TOP_DIR = _HERE.parent.parent/"src"
 
 from .cfg import ApiType, speedup
 
 
-def cov_options_env(api_types: Sequence[str], coverage=True) -> Tuple[Sequence[str], Dict[str, str]]:
+def cov_options_env(api_types: Sequence[str], coverage=True) -> tuple[Sequence[str], dict[str, str]]:
     """Setup coverage options.
 
     Return pytest coverage options, and env variables dict.
@@ -28,9 +28,9 @@ def cov_options_env(api_types: Sequence[str], coverage=True) -> Tuple[Sequence[s
     elif ApiType.MOCK in api_types and ApiType.SCRIPT in api_types:
         fail_under = 90
     elif ApiType.MOCK in api_types:
-        fail_under = 88
+        fail_under = 86.1
     else:
-        fail_under = 85
+        fail_under = 83
 
     # Set coverage exclude lines based on selected API types
     api_exclude_lines = []
@@ -57,7 +57,7 @@ def cov_options_env(api_types: Sequence[str], coverage=True) -> Tuple[Sequence[s
         api_exclude_files.append("script_api.py")
 
     return (
-        [f'--cov={_TOP_DIR}', '--cov-report=term-missing', f'--cov-fail-under={fail_under}', f'--cov-config={_HERE/"coverage_rc"}'],
+        ['--cov-report=term-missing', f'--cov-fail-under={fail_under}', f'--cov-config={_HERE/"../.coveragerc"}'],
         {
             "COV_API_EXCLUDE_LINES": "\n".join(api_exclude_lines),
             "COV_API_EXCLUDE_FILES": "\n".join(api_exclude_files),

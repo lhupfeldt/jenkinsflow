@@ -5,7 +5,7 @@ import os, sys, re
 
 from jenkinsflow.unbuffered import UnBuffered
 
-from jenkinsflow.test.conftest import TEST_CFG
+from ..conftest import get_cfg
 
 from .cfg import ApiType, AllCfg
 from .cfg.speedup import speedup
@@ -19,7 +19,7 @@ _file_name_subst = re.compile(r'(_jobs|_test)?\.py')
 def api(file_name, api_type, login=None, fixed_prefix=None, url_or_dir=None, fake_public_uri=None, invocation_class=None,
         username=None, password=None, *, options: AllCfg = None):
     """Factory to create either Mock or Wrap api"""
-    options = options or TEST_CFG
+    options = options or get_cfg()
     base_name = os.path.basename(file_name).replace('.pyc', '.py')
     job_name_prefix = _file_name_subst.sub('', base_name)
     func_name = None

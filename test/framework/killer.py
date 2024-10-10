@@ -2,9 +2,10 @@
 # All rights reserved. This work is under a BSD license, see LICENSE.TXT.
 
 import sys, os, signal, time
+from pathlib import Path
 import subprocess
 
-from jenkinsflow.test.framework.logger import log, logt
+from .logger import log, logt
 
 
 def _killer(log_file, pid, sleep_time, num_kills):
@@ -34,8 +35,9 @@ def kill(api, sleep_time, num_kills):
     """Kill this process"""
     pid = os.getpid()
     log_file_name = api.func_name.replace('test_', '') + ".log"
-    args = [sys.executable, "-m", "jenkinsflow.test.framework.killer", repr(pid), repr(sleep_time), repr(num_kills), log_file_name]
+    args = [sys.executable, "-m", f"jenkinsflow.test.framework.{Path(__file__).stem}",
+            repr(pid), repr(sleep_time), repr(num_kills), log_file_name]
     with open(log_file_name, 'w') as log_file:
         logt(log_file, "Invoking kill subprocess.", args)
 
-    subprocess.Popen(args)
+    subprocess.Popen(args, start_new_session=True)

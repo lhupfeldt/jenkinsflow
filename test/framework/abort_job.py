@@ -6,7 +6,6 @@ import time
 import subprocess
 from pathlib import Path
 
-from jenkinsflow.test.conftest import TEST_CFG
 from . import api_select
 from .logger import log, logt
 from .cfg import ApiType, AllCfg, opt_strs_to_test_cfg, test_cfg_to_opt_strs
@@ -46,15 +45,15 @@ if __name__ == '__main__':
             raise
 
 
-def abort(api, job_name, sleep_time):
+def abort(api, job_name, sleep_time, test_cfg: AllCfg):
     """Call this script as a subprocess"""
     if api.api_type == ApiType.MOCK:
         return
 
-    args = [sys.executable, "-m", "jenkinsflow.test.framework.abort_job",
+    args = [sys.executable, "-m", f"jenkinsflow.test.framework.{Path(__file__).stem}",
             api.file_name, api.api_type.name, api.func_name.replace('test_', ''), job_name, str(sleep_time),
-            *test_cfg_to_opt_strs(TEST_CFG, api.api_type)
-            ]
+            *test_cfg_to_opt_strs(test_cfg, api.api_type)]
     with open(job_name + '.log', 'w') as log_file:
+        logt(log_file, "Current dir:", Path.cwd())
         logt(log_file, "Invoking abort subprocess.", args)
-    subprocess.Popen(args)
+    subprocess.Popen(args, start_new_session=True)

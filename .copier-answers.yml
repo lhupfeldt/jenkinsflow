@@ -1,0 +1,16 @@
+# Changes here will be overwritten by Copier
+_commit: ec5afd9
+_src_path: git@github.com:lhupfeldt/copier_python_package_template.git
+author_email: lhn@hupfeldtit.dk
+author_name: Lars Hupfeldt Nielsen
+company_name: Hupfeldt IT
+copyright_holder: Lars Hupfeldt Nielsen, Hupfeldt IT ApS
+creation_year: 2012
+description: Python API with high level build flow constructs (parallel/serial) for
+    Jenkins.
+git_repo_url: https://github.com/lhupfeldt/jenkinsflow.git
+github_organization: lhupfeldt
+legal_entity: ApS
+local_devel_dependency: ''
+module_name: jenkinsflow
+package_name: jenkinsflow

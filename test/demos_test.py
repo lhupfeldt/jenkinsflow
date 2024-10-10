@@ -1,8 +1,9 @@
 # Copyright (c) 2012 - 2015 Lars Hupfeldt Nielsen, Hupfeldt IT
 # All rights reserved. This work is under a BSD license, see LICENSE.TXT.
 
-import importlib.util
-import importlib.machinery
+import sys
+import importlib
+# import importlib.machinery
 from pathlib import Path
 
 import pytest
@@ -10,39 +11,27 @@ from pytest import raises
 
 from jenkinsflow.flow import parallel, JobControlFailException
 
-from jenkinsflow.demo import basic, calculated_flow, prefix, hide_password, errors
+_HERE = Path(__file__).absolute().parent
+_DEMO_JOBS_DIR = _HERE/"demos/jobs"
+
+from demo import basic, calculated_flow, prefix, hide_password, errors
 
 from .framework import api_select
 from .framework.cfg import ApiType
 
 
-_HERE = Path(__file__).resolve().parent
-_DEMO_JOBS_DIR = (_HERE/"../demo/jobs").resolve()
-
-
-def _load_source(modname, filename):
-    # https://docs.python.org/3/whatsnew/3.12.html#imp
-    loader = importlib.machinery.SourceFileLoader(modname, filename)
-    spec = importlib.util.spec_from_file_location(modname, filename, loader=loader)
-    module = importlib.util.module_from_spec(spec)
-    # The module is always executed and not cached in sys.modules.
-    # Uncomment the following line to cache the module.
-    # sys.modules[module.__name__] = module
-    loader.exec_module(module)
-    return module
-
-
 def load_demo_jobs(demo, api_type):
     print("\nLoad jobs for demo:", demo.__name__)
-    simple_demo_name = demo.__name__.replace("jenkinsflow.", "").replace("demo.", "")
-    job_load_module_name = simple_demo_name + '_jobs'
-    job_load = _load_source(job_load_module_name, str(_DEMO_JOBS_DIR/(job_load_module_name + '.py')))
+    simple_demo_name = demo.__name__.replace("demo.", "")
+    job_load_module_name = ".demos.jobs." + simple_demo_name + '_jobs'
+    job_load = importlib.import_module(job_load_module_name, "test")
     api = job_load.create_jobs(api_type)
     flow_job_name = simple_demo_name + "__0flow"
     return flow_job_name
 
 
 def _test_demo(demo, api_type):
+    print("_test_demo", demo, api_type)
     flow_job_name = load_demo_jobs(demo, api_type)
 
     with api_select.api(__file__, api_type, fixed_prefix="jenkinsflow_demo__") as api:

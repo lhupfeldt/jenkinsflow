@@ -1,31 +1,60 @@
+"""nox https://nox.thea.codes/en/stable/ configuration"""
+
+# Use nox >= 2023.4.22
+
 import os
 import sys
 import argparse
 import errno
+import glob
 from pathlib import Path
-from os.path import join as jp
 import subprocess
 
 import nox
 
-sys.path.append('.')
+
+_HERE = Path(__file__).absolute().parent
+_TEST_DIR = _HERE/"test"
+_DEMO_DIR = _HERE/"demo"
+_DOC_DIR = _HERE/"doc"
+
+sys.path.extend((str(_HERE), str(_DEMO_DIR)))
 
 from test.framework.cfg import ApiType, str_to_apis, dirs
 from test.framework.nox_utils import cov_options_env, parallel_options
 from test.framework.pytest_options import add_options
 
-_HERE = Path(__file__).resolve().parent
-_TEST_DIR = _HERE/"test"
-_DEMO_DIR = _HERE/"demo"
-_DOC_DIR = _HERE/"doc"
 
 # Locally we have nox handle the different versions, but in each travis run there is only a single python which can always be found as just 'python'
 _PY_VERSIONS = ["3.12", "3.11", "3.10", "3.9"] if not os.environ.get("TRAVIS_PYTHON_VERSION") else ["python"]
 _IS_CI = os.environ.get("CI", "false").lower() == "true"
 
+nox.options.error_on_missing_interpreters = True
+
+# @nox.session(python=_PY_VERSIONS, reuse_venv=True)
+# def typecheck(session):
+#     session.install("-e", ".", "mypy>=1.5.1")
+#     session.run("mypy", str(_HERE/"src"))
+
+
+# TODO: pylint-pytest does not support 3.12
+@nox.session(python="3.11", reuse_venv=True)
+def pylint(session):
+    session.install(".", "pylint>=3.3.1", "pylint-pytest>=1.1.8")
+
+    print("\nPylint src")
+    session.run("pylint", "--fail-under", "8.1", str(_HERE/"src"))
+
+    print("\nPylint test sources")
+    disable_checks = "missing-module-docstring,missing-class-docstring,missing-function-docstring"
+    disable_checks += ",multiple-imports,invalid-name,duplicate-code"
+    session.run(
+        "pylint", "--fail-under", "9.1", "--variable-rgx", r"[a-z_][a-z0-9_]{1,30}$", "--disable", disable_checks,
+        "--ignore", "jenkins_security.py,demos_test.py", str(_TEST_DIR))
+
 
 @nox.session(python=_PY_VERSIONS, reuse_venv=True)
-def test(session):
+def unit(session):
     """
     Test jenkinsflow.
     Runs all tests mocked in hyperspeed, runs against Jenkins, using jenkins_api, and run script_api jobs.
@@ -56,8 +85,7 @@ def test(session):
 
     parallel = parsed_args.job_load or parsed_args.job_delete
     pytest_args.extend(parallel_options(parallel, apis))
-    pytest_args.extend(["--capture=sys", "--instafail"])
-
+    pytest_args.extend(["--capture=sys", "--instafail", "-p", "no:warnings" "--failed-first"])
     pytest_args.extend(session.posargs)
 
     try:
@@ -74,8 +102,9 @@ def test(session):
             python_executable = f"{dirs.pseudo_install_dir}/bin/python"
             session.run(python_executable, "-m", "pip", "install", "--upgrade", ".")
             env["JEKINSFLOW_TEST_JENKINS_API_PYTHON_EXECUTABLE"] = python_executable
-            subprocess.check_call([_HERE/"test/tmp_install.sh", _TEST_DIR, jp(dirs.test_tmp_dir, "test")])
-            subprocess.check_call([_HERE/"test/tmp_install.sh", _DEMO_DIR, jp(dirs.test_tmp_dir, "demo")])
+            tmp_inst_script = _HERE/"test/framework/tmp_install.sh"
+            subprocess.check_call([tmp_inst_script, _TEST_DIR, f"{dirs.test_tmp_dir}/test"])
+            subprocess.check_call([tmp_inst_script, _DEMO_DIR, f"{dirs.test_tmp_dir}/demo"])
         except:
             print(f"Failed venv test installation to '{dirs.pseudo_install_dir}'", file=sys.stderr)
             raise
@@ -86,8 +115,17 @@ def test(session):
 
     cov_opts, cov_env = cov_options_env(apis, True)
     env.update(cov_env)
-    # env["COVERAGE_DEBUG"] = "config"
-    session.run("pytest", "--capture=sys", *cov_opts, *pytest_args, env=env)
+    # env["COVERAGE_DEBUG"] = "config,trace,pathmap"
+    session.run("pytest", "--capture=sys", '--cov', *cov_opts, *pytest_args, env=env)
+
+
+@nox.session(python=_PY_VERSIONS[0], reuse_venv=True)
+def build(session):
+    session.install("build>=1.0.3", "twine>=4.0.2")
+    for ff in glob.glob("dist/*"):
+        os.remove(ff)
+    session.run("python", "-m", "build")
+    session.run("python", "-m", "twine", "check", "dist/*")
 
 
 @nox.session(python=_PY_VERSIONS[0], reuse_venv=True)
