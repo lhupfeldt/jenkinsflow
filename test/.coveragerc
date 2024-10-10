@@ -19,10 +19,6 @@ exclude_lines =
     # This is hopefully covered by a subprocess call, but it won't be collected
     if __name__ == "__main__":
 
-    # The alternative (original) rest api is no longer tested
-    def _check_restkit_response
-    class RestkitRestApi
-
     # Don't complain if tests don't hit defensive assertion code:
     raise .*Internal error.*
     raise .*AbstractNotImplemented.*

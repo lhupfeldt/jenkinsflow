@@ -8,7 +8,6 @@ import os
 from pytest import xfail  # pylint: disable=no-name-in-module
 
 from jenkinsflow.flow import serial
-from jenkinsflow.rest_api_wrapper import RestkitRestApi
 
 from .framework import api_select
 
@@ -29,9 +28,6 @@ def test_unicode_params_call(api_type):
 def test_unicode_params_defaults(api_type):
     """Job load with unicode"""
     with api_select.api(__file__, api_type, login=True) as api:
-        if hasattr(api, 'rest_api') and isinstance(api.rest_api, RestkitRestApi):
-            xfail("TODO: this will not work with restkit.")
-
         api.flow_job()
         _params = (('password', 'æøå˝$¼@£³¹¶⅝÷«»°¿¦', 'Description: ÆØÅEˇé'),)
         api.job('job-1', max_fails=0, expect_invocations=1, expect_order=1, params=_params)
