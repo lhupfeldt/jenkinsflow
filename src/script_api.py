@@ -237,7 +237,6 @@ class ApiJob():
             WORKSPACE=self.workspace,
             JENKINS_HOME=self.jenkins.public_uri,
             JENKINS_URL=self.jenkins.public_uri,
-            HUDSON_URL=self.jenkins.public_uri,
             BUILD_URL=jp(self.public_uri, repr(build_number)),
             JOB_URL=self.public_uri,
         )

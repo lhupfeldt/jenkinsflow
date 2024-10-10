@@ -30,6 +30,5 @@ if __name__ == '__main__':
     # See demo_security.py
     import os
     from jenkinsflow.jenkins_api import Jenkins
-    jenkins = Jenkins(os.environ.get('JENKINS_URL') or os.environ.get('HUDSON_URL') or "http://localhost:8080",
-                      username=security.username, password=security.password)
+    jenkins = Jenkins(os.environ.get('JENKINS_URL') or "http://localhost:8080", username=security.username, password=security.password)
     main(jenkins)

@@ -168,8 +168,6 @@ def _set_jenkins_url_env_fixture(not_set_value, request):
         _set_env_fixture('JENKINS_URL', not_set_value, request)
         return
 
-    _set_env_fixture('HUDSON_URL', not_set_value, request)
-
 
 def _set_env_if_not_set_fixture(var_name, not_set_value, request):
     """
@@ -185,8 +183,7 @@ def _set_env_if_not_set_fixture(var_name, not_set_value, request):
 
 
 def _set_jenkins_url_env_if_not_set_fixture(not_set_value, request):
-    if not os.environ.get('HUDSON_URL'):
-        _set_env_if_not_set_fixture('JENKINS_URL', not_set_value, request)
+    _set_env_if_not_set_fixture('JENKINS_URL', not_set_value, request)
 
 
 def _unset_env_fixture(var_name, request):
@@ -224,7 +221,6 @@ def env_base_url_trailing_slashes(request, api_type, options):
 def env_no_base_url(request):
     # Make sure it looks as if we are we are running from outside jenkins job
     _unset_env_fixture('JENKINS_URL', request)
-    _unset_env_fixture('HUDSON_URL', request)
 
 
 @fixture

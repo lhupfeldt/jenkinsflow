@@ -8,7 +8,6 @@ Welcome to jenkinsflow's documentation!
 
 The jenkinsflow package is used for controlling the invocation of `Jenkins <http://jenkins-ci.org/>`_ jobs in complex parallel and serial "flows".
 This effectively replaces the upstream/downstream dependencies in Jenkins with a fully scripted flow.
-Despite the name, this package may possibly also be used with `Hudson <http://hudson-ci.org/>`_, although this is no longer being tested.
 Note: this version requires Python 3.9.0 or newer. Use an older version for Python 3.6+ support.
 
 Package contents

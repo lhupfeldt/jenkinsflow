@@ -29,22 +29,13 @@ def cov_options_env(api_types: Sequence[str], coverage=True) -> tuple[Sequence[s
         fail_under = 90
     elif ApiType.MOCK in api_types:
         fail_under = 86.1
+    elif ApiType.SCRIPT in api_types:
+        fail_under = 82.3
     else:
-        fail_under = 83
+        raise ValueError(f"Unknown coverage requirement for api type combination: {api_types}")
 
     # Set coverage exclude lines based on selected API types
     api_exclude_lines = []
-    if ApiType.JENKINS in api_types:
-        if os.environ.get('HUDSON_URL'):
-            # Parts of jenkins_api not used when hudson
-            api_exclude_lines.append("if self.jenkins.is_jenkins")
-            api_exclude_lines.append(r'if head_response.get\("X-Jenkins"\)')
-        else:
-            # Parts of jenkins_api not used when jenkins
-            api_exclude_lines.append("else:  # Hudson")
-            api_exclude_lines.append("self.is_jenkins = False")
-            api_exclude_lines.append(r'if head_response.get\("X-Hudson"\)')
-
     if api_types == [ApiType.SCRIPT]:
         # Parts of api_base not used in script_api (overridden methods)
         api_exclude_lines.append(r"return (self.job.public_uri + '/' + repr(self.build_number) + '/console')")

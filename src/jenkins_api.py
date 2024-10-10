@@ -31,8 +31,6 @@ class Jenkins(Speed, BaseApiMixin):
         direct_uri (str): Should be a non-proxied uri if possible (e.g. http://localhost:<port> if flow job is running on 'built-in' node)
             The public URI will be retrieved from Jenkins and used in output.
         job_prefix_filter (str): Jobs with names that don't start with this string, will be skpped when polling Jenkins.
-            If you are using Hudson and have many jobs, it might be a good idea to enable Team support and create a job-runner user,
-            which only has access to the jobs in the flow that it is executing. That way the job list will be filtered serverside.
         username (str): Name of user authorized to execute all jobs in flow.
         password (str): Password of user.
         invocation_class (class): Defaults to `Invocation`. You can subclass that to provide your own class.
@@ -55,7 +53,7 @@ class Jenkins(Speed, BaseApiMixin):
         self._public_uri = None
         self.jobs = None
         self.queue_items = {}
-        self.is_jenkins = None
+        self.is_jenkins = False
         self.csrf = csrf
         self._crumb = None
 
@@ -113,25 +111,13 @@ class Jenkins(Speed, BaseApiMixin):
         return self.public_uri + '/job/' + job_name
 
     def poll(self):
-        # Determine whether we are talking to Jenkins or Hudson
-        if self.is_jenkins is None:
-            # TODO: A lot of Nonsense here because Hudson does not respond reliably
-            for _ in (1, 2, 3):
-                try:
-                    head_response = self.headers()
-                    if head_response.get("X-Jenkins"):
-                        self.is_jenkins = True
-                        break
-                    if head_response.get("X-Hudson"):
-                        self.is_jenkins = False
-                        break
-                except AuthError:
-                    raise
-                except Exception as ex:
-                    head_response = "HEAD request failed: " + str(ex)
-                time.sleep(0.1)
+        if not self.is_jenkins:
+            # Determine whether we are talking to Jenkins
+            head_response = self.headers()
+            if head_response.get("X-Jenkins"):
+                self.is_jenkins = True
             else:
-                raise Exception("Not connected to Jenkins or Hudson (expected X-Jenkins or X-Hudson header, got: " + repr(head_response))
+                raise Exception("Not connected to Jenkins. Expected X-Jenkins header, got: " + repr(head_response))
 
         query = "jobs[name,lastBuild[number,result],queueItem[why],actions[parameterDefinitions[name,type]]],primaryView[url]"
         dct = self.get_json(tree=query)
@@ -278,36 +264,18 @@ class ApiJob():
     def poll(self):
         for invocation in self._invocations.values():
             if not invocation.build_number:
-                # Hudson does not return queue item from invoke, instead it returns the job URL :(
-                query = "executable[number],why" if self.jenkins.is_jenkins else "queueItem[why],lastBuild[number]"
+                query = "executable[number],why"
                 dct = self.jenkins.get_json(invocation.queued_item_path, tree=query)
 
-                if self.jenkins.is_jenkins:
-                    executable = dct.get('executable')
-                    if executable:
-                        invocation.build_number = executable['number']
-                        invocation.queued_why = None
-                        invocation.set_description()
-                    else:
-                        invocation.queued_why = dct['why']
-                        # If we still have invocations in the queue, wait until next poll to query again
-                        break
-                else:  # Hudson
-                    # Note, this is not guaranteed to be correct in case of simultaneously running flows!
-                    # Should handle multiple invocations in same flow
-                    qi = dct.get('queueItem')
-                    if qi:
-                        invocation.queued_why = qi['why']
-
-                    last_build = dct.get('lastBuild')
-                    if last_build:
-                        last_build_number = last_build['number']
-                        if last_build_number > self.old_build_number:
-                            invocation.build_number = last_build['number']
-                            self.old_build_number = invocation.build_number
-                            invocation.set_description()
-                        else:
-                            break
+                executable = dct.get('executable')
+                if executable:
+                    invocation.build_number = executable['number']
+                    invocation.queued_why = None
+                    invocation.set_description()
+                else:
+                    invocation.queued_why = dct['why']
+                    # If we still have invocations in the queue, wait until next poll to query again
+                    break
 
     def job_status(self):
         """Result, progress and latest buildnumber info for the JOB, NOT the invocation

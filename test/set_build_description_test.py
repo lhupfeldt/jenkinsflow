@@ -348,7 +348,7 @@ def test_set_build_description_cli_no_env_url(api_type, env_no_base_url, cli_run
         result = cli_runner.invoke(cli, cli_args)
         print(result.output)
         assert result.exception
-        assert "Could not get env variable JENKINS_URL or HUDSON_URL" in str(result.exception)
+        assert "Could not get env variable JENKINS_URL" in str(result.exception)
         assert "You must specify 'direct-url'" in result.output
 
 

@@ -53,7 +53,7 @@ def test_kill_all_unchecked(api_type, capsys):
         flow(api, True)
 
         if not capsys:
-            # Not called by pytest, but from flow hudson job
+            # Not called by pytest, but from flow jenkins job
             return
 
         sout, _ = capsys.readouterr()
@@ -85,11 +85,6 @@ def test_kill_all_unchecked(api_type, capsys):
 def test_kill_mini(api_type, capsys):
     """Cut down kill_current for debugging"""
     with api_select.api(__file__, api_type, login=True) as api:
-        is_hudson = os.environ.get('HUDSON_URL')
-        if is_hudson:  # TODO investigate why this test fails in Hudson
-            xfail("Doesn't pass in Hudson")
-            return
-
         api.flow_job()
         num_j6_invocations = 2
         api.job('j6', max_fails=0, expect_invocations=num_j6_invocations, expect_order=None, exec_time=50, kill=True,
@@ -127,11 +122,6 @@ def test_kill_mini(api_type, capsys):
 @pytest.mark.not_apis(ApiType.MOCK, ApiType.SCRIPT)  # TODO
 def test_kill_current(api_type, capsys):
     with api_select.api(__file__, api_type, login=True) as api:
-        is_hudson = os.environ.get('HUDSON_URL')
-        if is_hudson:  # TODO investigate why this test fails in Hudson
-            xfail("Doesn't pass in Hudson")
-            return
-
         api.flow_job()
         api.job('j1', max_fails=0, expect_invocations=1, expect_order=None, exec_time=50, kill=True)
         api.job('j2', max_fails=0, expect_invocations=1, expect_order=1)

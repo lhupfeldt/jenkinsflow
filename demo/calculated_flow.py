@@ -15,8 +15,8 @@ from jenkinsflow.unbuffered import UnBuffered
 import lib.get_jenkins_api
 
 
-# Unbuffered output does not work well in Jenkins/Hudson, so in case
-# this is run from a jenkins/hudson job, we want unbuffered output
+# Buffered output does not work well in Jenkins, so in case
+# this is run from a Jenkins job, we want unbuffered output.
 sys.stdout = UnBuffered(sys.stdout)
 
 
@@ -27,8 +27,7 @@ def main(api, securitytoken):
     print("Doing stuff before flow ...")
     demo_name = 'jenkinsflow_demo__calculated_flow'
 
-    hudson = os.environ.get('HUDSON_URL')
-    graph_output_dir = os.path.join(tempfile.gettempdir(), demo_name + ('_hudson' if hudson else '_jenkins'))
+    graph_output_dir = os.path.join(tempfile.gettempdir(), demo_name + '_jenkins')
     if not os.path.exists(graph_output_dir):
         os.makedirs(graph_output_dir)
 

@@ -5,23 +5,22 @@ import sys, os
 
 
 def env_base_url():
-    """Determines base_url when run from within a Jenkins/Hudson job
+    """Determines base_url when run from within a Jenkins job
 
     Returns:
-        base_url (str): If JENKINS_URL or HUDSON_URL is set, i.e. run from within job.
+        base_url (str): If JENKINS_URL is set, i.e. run from within job.
 
     Raises:
-        Exception if neither JENKINS_URL nor HUDSON_URL is set, i.e. NOT run from within job.
+        Exception if JENKINS_URL is not set, i.e. NOT run from within job.
     """
 
-    base_url = os.environ.get('JENKINS_URL') or os.environ.get('HUDSON_URL')
+    base_url = os.environ.get('JENKINS_URL')
     if base_url:
         return base_url.rstrip('/')
 
     if base_url is None:
-        raise Exception("Could not get env variable JENKINS_URL or HUDSON_URL. "
-                        "You must set 'Jenkins Location' in Jenkins setup for JENKINS_URL to be exported. "
-                        "You must set 'Hudson URL' in Hudson setup for HUDSON_URL to be exported.")
+        raise Exception(
+            "Could not get env variable JENKINS_URL. You must set 'Jenkins Location' in Jenkins setup for JENKINS_URL to be exported.")
 
 
 def base_url_and_api(direct_url):

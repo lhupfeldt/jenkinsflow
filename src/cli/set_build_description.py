@@ -18,7 +18,7 @@ from jenkinsflow.utils import set_build_description as usbd
 @click.option(
     '--direct-url',
     default=None,
-    help="Jenkins URL - preferably non-proxied. If not specified, the value of JENKINS_URL or HUDSON_URL environment variables will be used.")
+    help="Jenkins URL - preferably non-proxied. If not specified, the value of JENKINS_URL environment variables will be used.")
 def set_build_description(description, replace, separator, username, password, build_url, job_name, build_number, direct_url):
     """Utility to set/append build description on a job build.
 

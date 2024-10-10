@@ -1,7 +1,8 @@
 # Copyright (c) 2015 Lars Hupfeldt Nielsen, Hupfeldt IT
 # All rights reserved. This work is under a BSD license, see LICENSE.TXT.
 
-import os, multiprocessing
+from pathlib import Path
+import multiprocessing
 import time
 
 import bottle
@@ -16,17 +17,18 @@ from .framework.utils import lines_in
 from .framework.cfg import ApiType
 
 
-here = os.path.abspath(os.path.dirname(__file__))
+_HERE = Path(__file__).absolute().parent
+_STATIC_DIR = _HERE/"framework"
 
 
 @bottle.route('/')
 def _index():
-    return bottle.static_file('which_ci_server.html', root=here)
+    return bottle.static_file('which_ci_server.html', root=_STATIC_DIR)
 
 
 @bottle.route('/api/json')
 def _api():
-    return bottle.static_file('which_ci_server.html', root=here)
+    return bottle.static_file('which_ci_server.html', root=_STATIC_DIR)
 
 
 _host = 'localhost'
@@ -57,7 +59,7 @@ def test_which_ci_server_not_ci(api_type):
 
             assert lines_in(
                 api_type, str(exinfo.value),
-                 "Not connected to Jenkins or Hudson (expected X-Jenkins or X-Hudson header, got: "
+                 "Not connected to Jenkins. Expected X-Jenkins header, got: "
             )
 
     finally:

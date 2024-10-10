@@ -11,7 +11,7 @@ def set_build_description(
         direct_url: str = None):
     """Utility method to set/append build description on a job build.
 
-    If this is used from inside the hudson job you do not have to specify 'build_url' or 'job_name', 'build_number'. You do not have to specify 'direct_url' either
+    If this is used from inside the Jenkins job you do not have to specify 'build_url' or 'job_name', 'build_number'. You do not have to specify 'direct_url' either
     but may still want to do so if JENKINS_URL points to a proxy, so that rest calls can go directly to Jenkins.
     The 'build_url' is preferred over 'job_name' and 'build_number'.
 
@@ -24,7 +24,7 @@ def set_build_description(
         build_url: The URL of the jenkins build - preferably non-proxied. Default is os.environ['BUILD_URL'].
         job_name: Name of the job to modify a build on. Default is os.environ['JOB_NAME'].
         build_number: Build Number to modify. . Default is os.environ['BUILD_NUMBER'].
-        direct_url: Jenkins URL - preferably non-proxied. If not specified, the value of JENKINS_URL or HUDSON_URL environment variables will be used.
+        direct_url: Jenkins URL - preferably non-proxied. If not specified, the value of JENKINS_URL environment variables will be used.
     """
 
     base_url, api = base_url_and_api(direct_url)

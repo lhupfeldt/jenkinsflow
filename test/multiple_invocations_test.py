@@ -64,11 +64,6 @@ def test_multiple_invocations_new_flow_same_args(api_type):
 @pytest.mark.not_apis(ApiType.MOCK, ApiType.SCRIPT)
 def test_multiple_invocations_parallel_same_flow_queued(api_type, capsys):
     with api_select.api(__file__, api_type) as api:
-        is_hudson = os.environ.get('HUDSON_URL')
-        if is_hudson:  # TODO investigate why this test fails in Hudson
-            xfail("Doesn't pass when using Hudson")
-            return
-
         api.flow_job()
         _params = (('password', '', 'Some password'), ('s1', '', 'Some string argument'))
         api.job('j1', max_fails=0, expect_invocations=3, expect_order=1, exec_time=3, params=_params)
@@ -116,11 +111,6 @@ def test_multiple_invocations_parallel_same_flow_no_args_singlequeued(api_type, 
     """
 
     with api_select.api(__file__, api_type) as api:
-        is_hudson = os.environ.get('HUDSON_URL')
-        if is_hudson:  # TODO investigate why this test fails in Hudson
-            xfail("Doesn't pass in Hudson")
-            return
-
         api.flow_job()
         num_inv = 20
         api.job('j1', max_fails=0, expect_invocations=num_inv, expect_order=1, exec_time=30)
