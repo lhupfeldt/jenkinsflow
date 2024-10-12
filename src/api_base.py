@@ -39,6 +39,11 @@ class UnknownJobException(Exception):
         super().__init__("Job not found: " + job_url + (", " + repr(api_ex) if api_ex is not None else ""))
 
 
+class InvalidJobNameException(Exception):
+    def __init__(self, job_name):
+        super().__init__(f"Invalid job name '{job_name}'. Job name should be either '<name>' or '<github-organization>/<repo>/<branch>'.")
+
+
 class BaseApiMixin():
     def get_build_url(self, build_url: str = None, job_name: str = None, build_number: int = None):
         """Get the build_url either from arguments or environment.
@@ -62,6 +67,19 @@ class BaseApiMixin():
         job_name = job_name if job_name is not None else os.environ['JOB_NAME']
         build_number = build_number if build_number is not None else int(os.environ['BUILD_NUMBER'])
         return f"/job/{job_name}/{build_number}"
+
+    @staticmethod
+    def get_name_for_query(job_name_prefix: str, job_name: str) -> str:
+        job_name = job_name.strip("/")
+        parts = job_name.split("/")
+
+        if len(parts) == 1:
+            return job_name_prefix + job_name
+
+        if len(parts) == 3:
+            return parts[0] + "/job/" + job_name_prefix + parts[1] +  "/job/" + parts[2]
+
+        raise InvalidJobNameException(job_name)
 
 
 class ApiInvocationMixin():

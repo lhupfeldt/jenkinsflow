@@ -49,9 +49,12 @@ Note: I think jenkinsflow should work on Windows, but it has not been tested.
 Test
 ----
 
-0. The mocked and script_api test can be run using `nox`
+0. The test can be run using `nox`
 
         pip install nox
+
+    The mock and script api test do not require any Jenkins setup.
+    See the '--api' option below.
 
 1. Important Jenkins setup and test preparation:
    Configure security -
@@ -74,6 +77,8 @@ Test
 
    Your Jenkins needs to be on the host where you are running the test. If it is not, you will need to make jenkinsflow available to Jenkins. See
    *test/framework/tmp_install.sh*
+
+   Note: To run the GitHub folder job test a GitHub test repository is needed! TODO: Describe the setup.
 
 3. Run the tests:
 

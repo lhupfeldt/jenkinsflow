@@ -178,7 +178,7 @@ class _SingleJobInvocation(_JobControl):
         self.job = None
         self.job_invocation = None
         self.old_build_num = None
-        self.name = job_name_prefix + job_name
+        self.name = self.api.get_name_for_query(job_name_prefix, job_name)
         self.invocation_number = 0
         self.repr_str = ("unchecked " if self.propagation == Propagation.UNCHECKED else "") + "job: " + repr(self.name)
         self.jenkins_baseurl = None
@@ -541,8 +541,11 @@ class _Flow(_JobControl, metaclass=abc.ABCMeta):
         This does not create the job in Jenkins. It defines how the job will be invoked by ``jenkinsflow``.
 
         Args:
-            job_name (str): The last part of the name of the job in jenkins.
-                If the surrounding flow sets the :py:obj:`job_name_prefix` the actual name of the invoked job will be the parent flow job_name_prefix + job_name.
+            job_name (str): This can take two different formats:
+                For simple jobs: The the name of the job in jenkins, e.g.: 'aaa'. I.e. NOT 'job/aaa' which is how the URL path appears.
+                  If the surrounding flow sets the :py:obj:`job_name_prefix` the actual name of the invoked job will be the parent flow job_name_prefix + job_name.
+                For GitHub folder jobs: '<github-organization>/<repository>/<branch>', e.g.: 'aaa/bbb/main', NOT 'job/aaa/job/bbb/job/main' as in URL.
+                  For GitHub folder jobs 'job_name_prefix' is applied to the repositor name! Use with caution, semantics may change!
             **params (str, int, boolean): Arguments passed to Jenkins when invoking the job. Strings are passed as they are,
                 booleans are automatically converted to strings and lowercased, integers are automatically converted to strings.
         """

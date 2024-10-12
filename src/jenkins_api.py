@@ -5,6 +5,7 @@ import os, time
 import os.path
 from collections import OrderedDict
 import urllib.parse
+import json
 
 from .api_base import BuildResult, Progress, AuthError, ClientError, UnknownJobException, BaseApiMixin, ApiInvocationMixin
 from .speed import Speed
@@ -15,6 +16,24 @@ _superseded = -1
 _dequeued = -2
 
 _ct_url_enc = {'Content-Type': 'application/x-www-form-urlencoded'}
+
+
+# Quick poll query to get state after starting job,
+_QUICK_QUERY = "jobs[name,lastBuild[number,result],queueItem[why]]"
+
+# Query info and parameter definitions of a specific job
+_GIVEN_JOB_QUERY_WITH_PARAM_DEFS = "lastBuild[number,result],queueItem[why],actions[parameterDefinitions[name,type]]"
+
+# Initial query
+# Build a three level query to handle github organization folder jobs.
+# Note that 'name' in response does not contain first 'job/' from url, but does contain intermediate 'job/', so:
+# 'name': 'gh-org/job/jenkinsflow-gh-folder-test/job/main'
+# Corresponds:
+# 'url': 'http://<host>:<port>/job/gh-org/job/jenkinsflow-gh-folder-test/job/main'
+_ONE_LEVEL_JOBS_INFO_QUERY = f"jobs[name,{_GIVEN_JOB_QUERY_WITH_PARAM_DEFS}_RECURSE_]"
+_TWO_LEVELS_JOBS_INFO_QUERY = _ONE_LEVEL_JOBS_INFO_QUERY.replace("_RECURSE_", "," + _ONE_LEVEL_JOBS_INFO_QUERY)
+_THREE_LEVELS_JOBS_INFO_QUERY = _TWO_LEVELS_JOBS_INFO_QUERY.replace("_RECURSE_", "," + _ONE_LEVEL_JOBS_INFO_QUERY)
+_FULL_QUERY = f"{_THREE_LEVELS_JOBS_INFO_QUERY.replace('_RECURSE_', '')},primaryView[url]"
 
 
 def _result_and_progress(build_dct):
@@ -119,20 +138,46 @@ class Jenkins(Speed, BaseApiMixin):
             else:
                 raise Exception("Not connected to Jenkins. Expected X-Jenkins header, got: " + repr(head_response))
 
-        query = "jobs[name,lastBuild[number,result],queueItem[why],actions[parameterDefinitions[name,type]]],primaryView[url]"
-        dct = self.get_json(tree=query)
+        dct = self.get_json(tree=_FULL_QUERY)
         self._public_uri = dct['primaryView']['url'].rstrip('/')
 
         self.jobs = {}
         for job_dct in dct.get('jobs') or []:
+            # print("poll - job_dct:", json.dumps(job_dct, indent=2))
             job_name = str(job_dct['name'])
-            if self.job_prefix_filter and not job_name.startswith(self.job_prefix_filter):
+
+            child_job_dcts = job_dct.get("jobs", [])
+
+            if not child_job_dcts:
+                if self.job_prefix_filter and not job_name.startswith(self.job_prefix_filter):
+                    continue
+                self.jobs[job_name] = ApiJob(self, job_dct, job_name)
                 continue
-            self.jobs[job_name] = ApiJob(self, job_dct, job_name)
+
+            for child_job_dct in child_job_dcts:
+                child_job_name = f"{job_name}/job/{str(child_job_dct['name'])}"
+
+                grand_child_job_dcts = child_job_dct.get("jobs", [])
+
+                if not grand_child_job_dcts:
+                    if self.job_prefix_filter and not child_job_name.startswith(self.job_prefix_filter):
+                        continue
+                    self.jobs[child_job_name] = ApiJob(self, child_job_dct, child_job_name)
+                    continue
+
+                for grand_child_job_dct in grand_child_job_dcts:
+                    grand_child_job_name = f"{child_job_name}/job/{str(grand_child_job_dct['name'])}"
+                    if self.job_prefix_filter and not grand_child_job_name.startswith(self.job_prefix_filter):
+                        continue
+                    print("job_name:", grand_child_job_name)
+                    print(json.dumps(grand_child_job_dct, indent=2))
+                    self.jobs[grand_child_job_name] = ApiJob(self, grand_child_job_dct, grand_child_job_name)
+
+            #if job_dct["_class"] not in ("hudson.model.FreeStyleProject", "org.jenkinsci.plugins.workflow.job.WorkflowJob"):
+            #    print(json.dumps(self.get_json(depth=3), indent=2))
 
     def quick_poll(self):
-        query = "jobs[name,lastBuild[number,result],queueItem[why]]"
-        dct = self.get_json(tree=query)
+        dct = self.get_json(tree=_QUICK_QUERY)
 
         for job_dct in dct.get('jobs') or []:
             job_name = str(job_dct['name'])
@@ -145,8 +190,7 @@ class Jenkins(Speed, BaseApiMixin):
 
             # A new job was created while flow was running, get the remaining properties
             try:
-                query = "lastBuild[number,result],queueItem[why],actions[parameterDefinitions[name,type]]"
-                job_dct = self.get_json("/job/" + job_name, tree=query)
+                job_dct = self.get_json("/job/" + job_name, tree=_GIVEN_JOB_QUERY_WITH_PARAM_DEFS)
                 job = ApiJob(self, job_dct, job_name)
                 self.jobs[job_name] = job
             except ResourceNotFound:  # pragma: no cover
@@ -163,6 +207,7 @@ class Jenkins(Speed, BaseApiMixin):
             if self.job_prefix_filter and not job_name.startswith(self.job_prefix_filter):
                 continue
 
+            print("queue_item name:", job_name)
             queue_items.setdefault(job_name, []).append(qi_dct['id'])
         self.queue_items = queue_items
 
