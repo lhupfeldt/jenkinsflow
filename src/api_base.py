@@ -41,7 +41,7 @@ class UnknownJobException(Exception):
 
 class InvalidJobNameException(Exception):
     def __init__(self, job_name):
-        super().__init__(f"Invalid job name '{job_name}'. Job name should be either '<name>' or '<github-organization>/<repo>/<branch>'.")
+        super().__init__(f"Invalid job name '{job_name}'. Job name should be either '<name>' or '<github-organization>[/<repo>[/<branch>]]'.")
 
 
 class BaseApiMixin():
@@ -75,6 +75,9 @@ class BaseApiMixin():
 
         if len(parts) == 1:
             return job_name_prefix + job_name
+
+        if len(parts) == 2:
+            return parts[0] + "/job/" + job_name_prefix + parts[1]
 
         if len(parts) == 3:
             return parts[0] + "/job/" + job_name_prefix + parts[1] +  "/job/" + parts[2]

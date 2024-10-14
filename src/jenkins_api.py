@@ -129,6 +129,32 @@ class Jenkins(Speed, BaseApiMixin):
     def _public_job_url(self, job_name):
         return self.public_uri + '/job/' + job_name
 
+    def _resolve_job_levels(self, dct, parent_job_name):
+        """Resolve jobs for a poll. E.g. gh folder jobs have three levels <org>/<repo>/<branch>."""
+        has_children = False
+        for job_dct in dct.get('jobs') or []:
+            has_children = True
+
+            # print("poll - job_dct:", json.dumps(job_dct, indent=2))
+            job_name = str(job_dct['name'])
+            # print("job_name:", job_name)
+
+            if self.job_prefix_filter and not job_name.startswith(self.job_prefix_filter):
+                continue
+
+            if parent_job_name:
+                job_name = f"{parent_job_name}/job/{job_name}"
+            # print("full job_name:", job_name)
+            # print(json.dumps(job_dct, indent=2))
+            has_grand_children = self._resolve_job_levels(job_dct, job_name)
+            self.jobs[job_name] = ApiJob(self, job_dct, job_name, has_grand_children)
+
+
+            #if job_dct["_class"] not in ("hudson.model.FreeStyleProject", "org.jenkinsci.plugins.workflow.job.WorkflowJob"):
+            #    print(json.dumps(self.get_json(depth=3), indent=2))
+
+        return has_children
+
     def poll(self):
         if not self.is_jenkins:
             # Determine whether we are talking to Jenkins
@@ -142,42 +168,11 @@ class Jenkins(Speed, BaseApiMixin):
         self._public_uri = dct['primaryView']['url'].rstrip('/')
 
         self.jobs = {}
-        for job_dct in dct.get('jobs') or []:
-            # print("poll - job_dct:", json.dumps(job_dct, indent=2))
-            job_name = str(job_dct['name'])
-
-            child_job_dcts = job_dct.get("jobs", [])
-
-            if not child_job_dcts:
-                if self.job_prefix_filter and not job_name.startswith(self.job_prefix_filter):
-                    continue
-                self.jobs[job_name] = ApiJob(self, job_dct, job_name)
-                continue
-
-            for child_job_dct in child_job_dcts:
-                child_job_name = f"{job_name}/job/{str(child_job_dct['name'])}"
-
-                grand_child_job_dcts = child_job_dct.get("jobs", [])
-
-                if not grand_child_job_dcts:
-                    if self.job_prefix_filter and not child_job_name.startswith(self.job_prefix_filter):
-                        continue
-                    self.jobs[child_job_name] = ApiJob(self, child_job_dct, child_job_name)
-                    continue
-
-                for grand_child_job_dct in grand_child_job_dcts:
-                    grand_child_job_name = f"{child_job_name}/job/{str(grand_child_job_dct['name'])}"
-                    if self.job_prefix_filter and not grand_child_job_name.startswith(self.job_prefix_filter):
-                        continue
-                    print("job_name:", grand_child_job_name)
-                    print(json.dumps(grand_child_job_dct, indent=2))
-                    self.jobs[grand_child_job_name] = ApiJob(self, grand_child_job_dct, grand_child_job_name)
-
-            #if job_dct["_class"] not in ("hudson.model.FreeStyleProject", "org.jenkinsci.plugins.workflow.job.WorkflowJob"):
-            #    print(json.dumps(self.get_json(depth=3), indent=2))
+        self._resolve_job_levels(dct, None)
 
     def quick_poll(self):
         dct = self.get_json(tree=_QUICK_QUERY)
+        # print("dct:", json.dumps(dct, indent=2))
 
         for job_dct in dct.get('jobs') or []:
             job_name = str(job_dct['name'])
@@ -191,7 +186,8 @@ class Jenkins(Speed, BaseApiMixin):
             # A new job was created while flow was running, get the remaining properties
             try:
                 job_dct = self.get_json("/job/" + job_name, tree=_GIVEN_JOB_QUERY_WITH_PARAM_DEFS)
-                job = ApiJob(self, job_dct, job_name)
+                # print("new job:", job_dct)
+                job = ApiJob(self, job_dct, job_name, has_children=False)  # TODO _resolve...
                 self.jobs[job_name] = job
             except ResourceNotFound:  # pragma: no cover
                 # Ignore this, the job came and went
@@ -207,7 +203,7 @@ class Jenkins(Speed, BaseApiMixin):
             if self.job_prefix_filter and not job_name.startswith(self.job_prefix_filter):
                 continue
 
-            print("queue_item name:", job_name)
+            # print("queue_item name:", job_name)
             queue_items.setdefault(job_name, []).append(qi_dct['id'])
         self.queue_items = queue_items
 
@@ -215,6 +211,7 @@ class Jenkins(Speed, BaseApiMixin):
         try:
             return self.jobs[name]
         except KeyError as ex:
+            # print("self.jobs:", self.jobs.keys())
             raise UnknownJobException(self._public_job_url(name)) from ex
 
     def create_job(self, job_name, config_xml):
@@ -261,10 +258,11 @@ class Jenkins(Speed, BaseApiMixin):
 
 
 class ApiJob():
-    def __init__(self, jenkins, dct, name):
+    def __init__(self, jenkins, dct, name, has_children):
         self.jenkins = jenkins
         self.dct = dct.copy()
         self.name = name
+        self.has_children = has_children
         self.public_uri = self.jenkins._public_job_url(self.name)  # pylint: disable=protected-access
 
         actions = self.dct.get('actions') or []
@@ -304,13 +302,16 @@ class ApiJob():
             old_inv.build_number = _superseded
         inv = self.jenkins.invocation_class(self, location, description)
         self._invocations[location] = inv
+        # print("invoke:", location, inv)
         return inv
 
     def poll(self):
         for invocation in self._invocations.values():
+            # print("invocation:", invocation)
             if not invocation.build_number:
-                query = "executable[number],why"
+                query = "executable[number],why,*"
                 dct = self.jenkins.get_json(invocation.queued_item_path, tree=query)
+                # print("dct:", dct)
 
                 executable = dct.get('executable')
                 if executable:
@@ -318,9 +319,12 @@ class ApiJob():
                     invocation.queued_why = None
                     invocation.set_description()
                 else:
-                    invocation.queued_why = dct['why']
-                    # If we still have invocations in the queue, wait until next poll to query again
-                    break
+                    try:
+                        invocation.queued_why = dct['why']
+                        # If we still have invocations in the queue, wait until next poll to query again
+                        break
+                    except KeyError:
+                        """'scans' have no 'why'"""
 
     def job_status(self):
         """Result, progress and latest buildnumber info for the JOB, NOT the invocation
@@ -330,10 +334,11 @@ class ApiJob():
         """
         progress = None
 
-        qi = self.dct['queueItem']
-        if qi:
-            progress = Progress.QUEUED
-            self.queued_why = qi['why']
+        if not self.has_children:
+            qi = self.dct['queueItem']
+            if qi:
+                progress = Progress.QUEUED
+                self.queued_why = qi['why']
 
         dct = self.dct.get('lastBuild')
         if dct:

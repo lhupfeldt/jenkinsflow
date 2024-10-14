@@ -37,7 +37,8 @@ def test_gh_folder_build_slow_branch(api_type):
 def test_gh_folder_scan_organization(api_type):
     url = "http://localhost:8080"
     api = Jenkins(url, username=security.username, password=security.password) if security.default_use_login else Jenkins(url)
-    with serial(api, timeout=20, report_interval=1) as ctrl1:
+    # Scan time depends on the GitHub organization!
+    with serial(api, timeout=80, report_interval=1) as ctrl1:
         ctrl1.invoke("gh-org")
 
 
@@ -45,5 +46,6 @@ def test_gh_folder_scan_organization(api_type):
 def test_gh_folder_scan_repo(api_type):
     url = "http://localhost:8080"
     api = Jenkins(url, username=security.username, password=security.password) if security.default_use_login else Jenkins(url)
+    # Repo scan time depends on the GitHub repo, it does not take too long, but can be queued for a while!
     with serial(api, timeout=20, report_interval=1) as ctrl1:
         ctrl1.invoke("gh-org/jenkinsflow-gh-folder-test")

@@ -12,7 +12,7 @@ from .framework.cfg import ApiType
 @pytest.mark.not_apis(ApiType.MOCK, ApiType.SCRIPT)
 def test_api_class_repr_job(api_type):
     api = api_select.api(__file__, api_type, login=True)
-    job = jenkins_api.ApiJob(api, {}, 'my-job')
+    job = jenkins_api.ApiJob(api, {}, 'my-job', has_children=False)
 
     jrd = eval(repr(job))
     assert jrd == {'name': 'my-job', 'dct': {}}

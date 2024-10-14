@@ -257,10 +257,10 @@ class _SingleJobInvocation(_JobControl):
 
     def _status_message(self, progress, build_num, queued_why, latest=''):
         if progress == Progress.QUEUED:
-            msg = (queued_why) if queued_why else ''
+            msg = (" - " + queued_why) if queued_why else ""
         else:
-            msg = latest + "build: " + ('#' + str(build_num) if build_num else str(None))
-        return repr(self) + " Status " + progress.name + " - " + msg
+            msg = " - " + latest + "build: " + ('#' + str(build_num) if build_num else str(None))
+        return repr(self) + " Status " + progress.name + msg
 
     def _prepare_to_invoke(self, reset_tried_times=False):
         super()._prepare_to_invoke(reset_tried_times)
@@ -544,8 +544,10 @@ class _Flow(_JobControl, metaclass=abc.ABCMeta):
             job_name (str): This can take two different formats:
                 For simple jobs: The the name of the job in jenkins, e.g.: 'aaa'. I.e. NOT 'job/aaa' which is how the URL path appears.
                   If the surrounding flow sets the :py:obj:`job_name_prefix` the actual name of the invoked job will be the parent flow job_name_prefix + job_name.
-                For GitHub folder jobs: '<github-organization>/<repository>/<branch>', e.g.: 'aaa/bbb/main', NOT 'job/aaa/job/bbb/job/main' as in URL.
-                  For GitHub folder jobs 'job_name_prefix' is applied to the repositor name! Use with caution, semantics may change!
+                For GitHub folder jobs: '<github-organization>[/<repository>[/<branch>]]', e.g.: 'aaa/bbb/main', NOT 'job/aaa/job/bbb/job/main' as in URL.
+                  Support fo GitHub folder jobs is experimental!
+                  For GitHub folder jobs 'job_name_prefix' is applied to the each part of the name! Probably not useful! Semantics may change!
+                  Note that invoking '<github-organization>[/<repository>]' without <branch> triggers a 'scan'. May change!
             **params (str, int, boolean): Arguments passed to Jenkins when invoking the job. Strings are passed as they are,
                 booleans are automatically converted to strings and lowercased, integers are automatically converted to strings.
         """

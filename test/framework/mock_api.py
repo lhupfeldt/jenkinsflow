@@ -50,6 +50,10 @@ class MockApi(TestJenkins, HyperSpeed):
 
     # --- Mock API ---
 
+    @staticmethod
+    def get_name_for_query(job_name_prefix: str, job_name: str) -> str:
+        return job_name_prefix + job_name
+
     def poll(self):
         pass
 
