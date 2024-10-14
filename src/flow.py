@@ -5,6 +5,7 @@ import os, re, abc, signal
 from os.path import join as jp
 from collections import OrderedDict
 from itertools import chain
+from datetime import datetime
 
 from .api_base import BuildResult, Progress, UnknownJobException
 from .flow_exceptions import (
@@ -28,7 +29,7 @@ class Killed(Exception):
 
 
 class _JobControl(metaclass=abc.ABCMeta):
-    def __init__(self, parent_flow, securitytoken, max_tries, propagation, secret_params_re, allow_missing_jobs):
+    def __init__(self, parent_flow, securitytoken, max_tries, propagation, secret_params_re, allow_missing_jobs, *, assume_finished_after):
         self.parent_flow = parent_flow
         self.top_flow = parent_flow.top_flow
 
@@ -43,6 +44,7 @@ class _JobControl(metaclass=abc.ABCMeta):
         self.propagation = propagation
         self.secret_params_re = secret_params_re or self.parent_flow.secret_params_re
         self.allow_missing_jobs = allow_missing_jobs if allow_missing_jobs is not None else self.parent_flow.allow_missing_jobs
+        self.assume_finished_after = assume_finished_after
 
         self.checking_status = Checking.MUST_CHECK
         self.result = BuildResult.UNKNOWN
@@ -84,6 +86,7 @@ class _JobControl(metaclass=abc.ABCMeta):
             controller_type_name, self._invocation_id(), self.tried_times, self.max_tries, self.total_tried_times, self.total_max_tries, invocation_repr))
 
     def _must_invoke_set_invocation_time(self):
+        """Return False if already invoked"""
         if self.invocation_time:
             return False
 
@@ -114,6 +117,8 @@ class _JobControl(metaclass=abc.ABCMeta):
     def propagate_result(self):
         if self.result in (BuildResult.SUCCESS, BuildResult.SUPERSEDED) or self.propagation == Propagation.UNCHECKED:
             return BuildResult.SUCCESS
+        if self.result == BuildResult.UNKNOWN and self.assume_finished_after:
+            return BuildResult.SUCCESS            
         if self.result == BuildResult.UNSTABLE or self.propagation == Propagation.FAILURE_TO_UNSTABLE:
             return BuildResult.UNSTABLE
         return BuildResult.FAILURE
@@ -166,13 +171,15 @@ class _SingleJobInvocation(_JobControl):
     Retries are handled by the same instance of this class, but distinct invocations are handled by different instances.
     """
 
-    def __init__(self, parent_flow, securitytoken, job_name_prefix, max_tries, job_name, params, propagation, secret_params_re, allow_missing_jobs):
+    def __init__(
+            self, parent_flow, securitytoken, job_name_prefix, max_tries, job_name, assume_finished_after: int, params,
+            propagation, secret_params_re, allow_missing_jobs):
         for key, value in params.items():
             # Handle parameters passed as int or bool. Booleans will be lowercased!
             if isinstance(value, (bool, int)):
                 params[key] = str(value).lower()
         self.params = params
-        super().__init__(parent_flow, securitytoken, max_tries, propagation, secret_params_re, allow_missing_jobs)
+        super().__init__(parent_flow, securitytoken, max_tries, propagation, secret_params_re, allow_missing_jobs, assume_finished_after=assume_finished_after)
         # There is no separate retry for individual jobs, so set self.total_max_tries to the same as parent flow!
         self.total_max_tries = self.parent_flow.total_max_tries
         self.job = None
@@ -291,7 +298,13 @@ class _SingleJobInvocation(_JobControl):
                 self._invoked_message()
             self._reported_invoked = True
 
-        if result == BuildResult.UNKNOWN:
+        now = self.api.time()
+        assumed_finished = False
+        if self.assume_finished_after and (now - self.invocation_time) >= self.assume_finished_after:
+            assumed_finished = True
+            result = BuildResult.UNKNOWN
+
+        elif result == BuildResult.UNKNOWN:
             if report_now:
                 build_num = self.job_invocation.build_number if self.job_invocation.build_number else self.old_build_num
                 print(self._status_message(progress, build_num, self.job_invocation.queued_why))
@@ -306,7 +319,7 @@ class _SingleJobInvocation(_JobControl):
 
         inv_id_msg = (' ' + self._invocation_id()) if self.invocation_number else ''
         if result != BuildResult.SUPERSEDED:
-            print(self, "stopped running")
+            print(self, f"{'assumed ' if assumed_finished else ''}stopped running")
             print(self._status_message(progress, self.job_invocation.build_number, self.job_invocation.queued_why))
             # Pylint does not like Enum pylint: disable=maybe-no-member
             print(unchecked + self.result.name + ":", repr(self.job.name) + inv_id_msg, "- build:", self.job_invocation.console_url(), self._time_msg())
@@ -436,7 +449,7 @@ class _Flow(_JobControl, metaclass=abc.ABCMeta):
 
     def __init__(self, parent_flow, timeout, securitytoken, job_name_prefix, max_tries, propagation, report_interval, secret_params, allow_missing_jobs):
         secret_params_re = re.compile(secret_params) if isinstance(secret_params, str) else secret_params
-        super().__init__(parent_flow, securitytoken, max_tries, propagation, secret_params_re, allow_missing_jobs)
+        super().__init__(parent_flow, securitytoken, max_tries, propagation, secret_params_re, allow_missing_jobs, assume_finished_after=0)
         self.timeout = timeout
         self.job_name_prefix = self.parent_flow.job_name_prefix + job_name_prefix if job_name_prefix is not None else ""
         self.report_interval = report_interval or self.parent_flow.report_interval
@@ -535,28 +548,34 @@ class _Flow(_JobControl, metaclass=abc.ABCMeta):
         assert isinstance(propagation, Propagation)
         return _Serial(self, timeout, securitytoken, job_name_prefix, max_tries, propagation, report_interval, secret_params, allow_missing_jobs)
 
-    def invoke(self, job_name, **params):
+    def invoke(self, job_name, assume_finished_after: int = 0, **params):
         """Define a Jenkins job invocation that will be invoked under control of the surrounding flow.
 
         This does not create the job in Jenkins. It defines how the job will be invoked by ``jenkinsflow``.
 
         Args:
             job_name (str): This can take two different formats:
-                For simple jobs: The the name of the job in jenkins, e.g.: 'aaa'. I.e. NOT 'job/aaa' which is how the URL path appears.
+                For simple jobs: The the name of the job in Jenkins, e.g.: 'aaa'. I.e. NOT 'job/aaa' which is how the URL path appears.
                   If the surrounding flow sets the :py:obj:`job_name_prefix` the actual name of the invoked job will be the parent flow job_name_prefix + job_name.
                 For GitHub folder jobs: '<github-organization>[/<repository>[/<branch>]]', e.g.: 'aaa/bbb/main', NOT 'job/aaa/job/bbb/job/main' as in URL.
-                  Support fo GitHub folder jobs is experimental!
+                  Support for GitHub folder jobs is experimental!
                   For GitHub folder jobs 'job_name_prefix' is applied to the each part of the name! Probably not useful! Semantics may change!
                   Note that invoking '<github-organization>[/<repository>]' without <branch> triggers a 'scan'. May change!
+            assume_finished_after:Seconds. If the job has not finished after this amount of time, then assume it is finished and continue.
+                  Note: This is a hack to support organization and repository scan for GitHub folder jobs. There is no way to determine when a scan is finished.
+                  This may change!
+                  If you expect specific jobs or branches after a scan, then you should check for the existence of those or maybe try to build and use the retry feature.
             **params (str, int, boolean): Arguments passed to Jenkins when invoking the job. Strings are passed as they are,
-                booleans are automatically converted to strings and lowercased, integers are automatically converted to strings.
+                booleans are automatically converted to strings and down-cased, integers are automatically converted to strings.
         """
 
-        inv = _SingleJobInvocation(self, self.securitytoken, self.job_name_prefix, self.max_tries, job_name, params, self.propagation, self.secret_params_re, self.allow_missing_jobs)
+        inv = _SingleJobInvocation(
+            self, self.securitytoken, self.job_name_prefix, self.max_tries, job_name, assume_finished_after, params,
+            self.propagation, self.secret_params_re, self.allow_missing_jobs)
         self.invocations.append(inv)
         return inv
 
-    def invoke_unchecked(self, job_name, **params):
+    def invoke_unchecked(self, job_name, assume_finished_after: int = 0, **params):
         """Define a Jenkins job invocation that will be invoked under control of the surrounding flow, but will never cause the flow to fail.
 
         The job is always run in parallel with other jobs in the flow, even when invoked in a serial flow.
@@ -568,7 +587,9 @@ class _Flow(_JobControl, metaclass=abc.ABCMeta):
         See :py:meth:`invoke` for parameter description.
         """
 
-        inv = _SingleJobInvocation(self, self.securitytoken, self.job_name_prefix, self.max_tries, job_name, params, Propagation.UNCHECKED, self.secret_params_re, self.allow_missing_jobs)
+        inv = _SingleJobInvocation(
+            self, self.securitytoken, self.job_name_prefix, self.max_tries, job_name, assume_finished_after, params,
+            Propagation.UNCHECKED, self.secret_params_re, self.allow_missing_jobs)
         self.invocations.append(inv)
         return inv
 
