@@ -9,6 +9,7 @@ import errno
 import glob
 from pathlib import Path
 import subprocess
+from typing import Sequence
 
 import nox
 
@@ -21,7 +22,6 @@ _DOC_DIR = _HERE/"doc"
 sys.path.extend((str(_HERE), str(_DEMO_DIR)))
 
 from test.framework.cfg import ApiType, str_to_apis, dirs
-from test.framework.nox_utils import cov_options_env, parallel_options
 from test.framework.pytest_options import add_options
 
 
@@ -30,6 +30,60 @@ _PY_VERSIONS = ["3.12", "3.11", "3.10", "3.9"] if not os.environ.get("TRAVIS_PYT
 _IS_CI = os.environ.get("CI", "false").lower() == "true"
 
 nox.options.error_on_missing_interpreters = True
+
+
+def _cov_options_env(api_types: Sequence[ApiType], env: dict[str, str], fail_under: int = 0) -> Sequence[str]:
+    """Setup coverage options.
+
+    Return pytest coverage options, and env variables dict.
+    """
+
+    if not fail_under:
+        if len(api_types) == 3:
+            fail_under = 93.9
+        elif ApiType.JENKINS in api_types:
+            fail_under = 95
+        elif ApiType.MOCK in api_types and ApiType.SCRIPT in api_types:
+            fail_under = 90
+        elif ApiType.MOCK in api_types:
+            fail_under = 84.77
+        elif ApiType.SCRIPT in api_types:
+            fail_under = 81.66
+        else:
+            raise ValueError(f"Unknown coverage requirement for api type combination: {api_types}")
+
+    # Set coverage exclude lines based on selected API types
+    api_exclude_lines = []
+    if api_types == [ApiType.SCRIPT]:
+        # Parts of api_base not used in script_api (overridden methods)
+        api_exclude_lines.append(r"return (self.job.public_uri + '/' + repr(self.build_number) + '/console')")
+
+    # Set coverage exclude files based on selected API type
+    api_exclude_files = []
+    if ApiType.JENKINS not in api_types:
+        api_exclude_files.append("jenkins_api.py")
+    if ApiType.SCRIPT not in api_types:
+        api_exclude_files.append("script_api.py")
+
+    env["COV_API_EXCLUDE_LINES"] = "\n".join(api_exclude_lines)
+    env["COV_API_EXCLUDE_FILES"] = "\n".join(api_exclude_files)
+
+    return ['--cov', '--cov-report=term-missing', f'--cov-fail-under={fail_under}', f'--cov-config={_TEST_DIR/".coveragerc"}']
+
+
+def _pytest_parallel_options(parallel, api_types):
+    args = []
+
+    if api_types != [ApiType.MOCK]:
+        # Note: 'forked' is required for the kill/abort_current test not to abort other tests
+        args.append('--forked')
+
+        # Note: parallel actually significantly slows down the test when only running mock
+        if parallel:
+            args.extend(['-n', '16'])
+
+    return args
+
 
 # @nox.session(python=_PY_VERSIONS, reuse_venv=True)
 # def typecheck(session):
@@ -78,13 +132,27 @@ def unit(session):
 
     parser = argparse.ArgumentParser(description="Process pytest options")
     add_options(parser)
-    parsed_args = parser.parse_known_args(session.posargs)[0]
+    parsed_args = parser.parse_known_args(session.posargs)
     # print("parsed_args:", parsed_args)
-    apis = str_to_apis(parsed_args.api)
+    special_args = parsed_args[0]
+    unknown_pytest_args = parsed_args[1]
+
+    apis = str_to_apis(special_args.api)
     # print("noxfile, apis:", apis)
 
-    parallel = parsed_args.job_load or parsed_args.job_delete
-    pytest_args.extend(parallel_options(parallel, apis))
+    cov_file = _HERE/".coverage"
+    if os.path.exists(cov_file):
+        os.remove(cov_file)
+
+    env = {}
+
+    # If we have unknow pytest options we don't know what the coverage would be
+    fail_under = 1 if unknown_pytest_args else 0
+    cov_opts = _cov_options_env(apis, env, fail_under)
+    # env["COVERAGE_DEBUG"] = "config,trace,pathmap"
+
+    parallel = special_args.job_load or special_args.job_delete
+    pytest_args.extend(_pytest_parallel_options(parallel, apis))
     pytest_args.extend(["--capture=sys", "--instafail", "-p", "no:warnings" "--failed-first"])
     pytest_args.extend(session.posargs)
 
@@ -94,7 +162,6 @@ def unit(session):
         if ex.errno != errno.EEXIST:
             raise
 
-    env = {}
     if apis != [ApiType.MOCK]:
         print(f"Creating venv test installation in '{dirs.pseudo_install_dir}' to make files available to Jenkins.")
         try:
@@ -109,14 +176,7 @@ def unit(session):
             print(f"Failed venv test installation to '{dirs.pseudo_install_dir}'", file=sys.stderr)
             raise
 
-    cov_file = _HERE/".coverage"
-    if os.path.exists(cov_file):
-        os.remove(cov_file)
-
-    cov_opts, cov_env = cov_options_env(apis, True)
-    env.update(cov_env)
-    # env["COVERAGE_DEBUG"] = "config,trace,pathmap"
-    session.run("pytest", "--capture=sys", '--cov', *cov_opts, *pytest_args, env=env)
+    session.run("pytest", "--capture=sys", *cov_opts, *pytest_args, env=env)
 
 
 @nox.session(python=_PY_VERSIONS[0], reuse_venv=True)
