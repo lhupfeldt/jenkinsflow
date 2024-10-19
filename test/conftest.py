@@ -3,7 +3,6 @@
 import sys
 import os
 import re
-from itertools import chain
 from pathlib import Path
 import shutil
 
@@ -12,7 +11,7 @@ from pytest import fixture
 from click.testing import CliRunner
 
 from .framework import pytest_options
-from .framework.cfg import ApiType, AllCfg, opts_to_test_cfg
+from .framework.cfg import ApiType, opts_to_test_cfg
 
 # Note: You can't (indirectly) import stuff from jenkinsflow here, it messes up the coverage
 

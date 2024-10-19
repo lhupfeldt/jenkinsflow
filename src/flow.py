@@ -5,7 +5,6 @@ import os, re, abc, signal
 from os.path import join as jp
 from collections import OrderedDict
 from itertools import chain
-from datetime import datetime
 
 from .api_base import BuildResult, Progress, UnknownJobException
 from .flow_exceptions import (

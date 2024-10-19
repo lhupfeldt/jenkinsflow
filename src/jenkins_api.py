@@ -5,9 +5,9 @@ import os, time
 import os.path
 from collections import OrderedDict
 import urllib.parse
-import json
+# import json
 
-from .api_base import BuildResult, Progress, AuthError, ClientError, UnknownJobException, BaseApiMixin, ApiInvocationMixin
+from .api_base import BuildResult, Progress, ClientError, UnknownJobException, BaseApiMixin, ApiInvocationMixin
 from .speed import Speed
 from .rest_api_wrapper import ResourceNotFound, RequestsRestApi
 

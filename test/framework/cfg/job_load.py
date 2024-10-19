@@ -1,5 +1,3 @@
-import os
-
 class JobLoad():
     def __init__(self, load_jobs: bool, delete_jobs: bool):
         self.load_jobs = load_jobs

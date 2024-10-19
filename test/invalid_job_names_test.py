@@ -8,7 +8,7 @@ from jenkinsflow.jenkins_api import Jenkins
 from jenkinsflow.api_base import InvalidJobNameException
 
 
-from .framework.cfg import jenkins_security as security, ApiType
+from .framework.cfg import ApiType
 
 
 @pytest.mark.apis(ApiType.JENKINS)

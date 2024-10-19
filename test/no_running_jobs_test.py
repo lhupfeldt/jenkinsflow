@@ -3,7 +3,6 @@
 
 from datetime import datetime
 from pytest import raises
-import psutil
 
 from jenkinsflow.flow import serial, JobNotIdleException
 

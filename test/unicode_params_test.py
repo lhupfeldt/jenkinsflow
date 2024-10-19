@@ -5,8 +5,6 @@
 
 import os
 
-from pytest import xfail  # pylint: disable=no-name-in-module
-
 from jenkinsflow.flow import serial
 
 from .framework import api_select

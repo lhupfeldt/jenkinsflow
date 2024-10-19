@@ -4,7 +4,7 @@
 import os, re
 
 import pytest
-from pytest import raises, xfail
+from pytest import raises
 
 from jenkinsflow.flow import serial, FailedChildJobException, FinalResultException, BuildResult
 
