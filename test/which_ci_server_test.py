@@ -55,7 +55,7 @@ def test_which_ci_server_not_ci(api_type):
                     except requests.exceptions.ConnectionError as ex:
                         # Wait for bottle to start
                         print(ex)
-                        time.sleep(0.1)
+                        time.sleep(0.3)
 
             assert lines_in(
                 api_type, str(exinfo.value),
