@@ -17,14 +17,17 @@ _file_name_subst = re.compile(r'(_jobs|_test)?\.py')
 
 
 def api(file_name, api_type, login=None, fixed_prefix=None, url_or_dir=None, fake_public_uri=None, invocation_class=None,
-        username=None, password=None, *, options: AllCfg = None):
+        username=None, password=None, *, options: AllCfg = None, existing_jobs: bool = False):
     """Factory to create either Mock or Wrap api"""
     options = options or get_cfg()
     base_name = os.path.basename(file_name).replace('.pyc', '.py')
     job_name_prefix = _file_name_subst.sub('', base_name)
     func_name = None
     func_num_params = 0
-    if fixed_prefix:
+    if existing_jobs:
+        job_name_prefix = ""
+        file_name = base_name
+    elif fixed_prefix:
         job_name_prefix = fixed_prefix
         file_name = base_name
     elif '_test' in file_name:
@@ -48,7 +51,7 @@ def api(file_name, api_type, login=None, fixed_prefix=None, url_or_dir=None, fak
     print('Using:', api_type)
 
     url_or_dir = url_or_dir or options.urls.direct_url(api_type)
-    reload_jobs = not options.job_load.skip_job_load() and not fixed_prefix
+    reload_jobs = not options.job_load.skip_job_load() and not fixed_prefix and not existing_jobs
     pre_delete_jobs = not options.job_load.skip_job_delete()
 
     from .cfg import jenkins_security
@@ -68,7 +71,8 @@ def api(file_name, api_type, login=None, fixed_prefix=None, url_or_dir=None, fak
         from .api_wrapper import JenkinsTestWrapperApi
         return JenkinsTestWrapperApi(file_name, func_name, func_num_params, job_name_prefix, reload_jobs, pre_delete_jobs,
                                      url_or_dir, fake_public_uri, username, password, jenkins_security.securitytoken, login=login,
-                                     invocation_class=invocation_class, python_executable=os.environ["JEKINSFLOW_TEST_JENKINS_API_PYTHON_EXECUTABLE"])
+                                     invocation_class=invocation_class, python_executable=os.environ["JEKINSFLOW_TEST_JENKINS_API_PYTHON_EXECUTABLE"],
+                                     existing_jobs=existing_jobs)
     if api_type == ApiType.SCRIPT:
         from .api_wrapper import ScriptTestWrapperApi
         return ScriptTestWrapperApi(file_name, func_name, func_num_params, job_name_prefix, reload_jobs, pre_delete_jobs,

@@ -127,8 +127,9 @@ class _TestWrapperApi():
             script=None, unknown_result=False, final_result=None, serial=False, print_env=False, flow_created=False, create_job=None, disappearing=False,
             non_existing=False, kill=False, num_builds_to_keep=4, allow_running=False, final_result_use_cli=False,
             set_build_descriptions=()):
+        query_job_name = self.get_name_for_query(self.job_name_prefix, name)
+        assert not self.test_jobs.get(query_job_name)
         job_name = self.job_name_prefix + name
-        assert not self.test_jobs.get(job_name)
         assert isinstance(max_fails, int)
 
         if create_job or flow_created:
@@ -147,7 +148,7 @@ class _TestWrapperApi():
         if flow_created or non_existing:
             try:
                 print("Deleting job:", job_name)
-                self.job_loader_jenkins.delete_job(job_name)
+                self.job_loader_jenkins.delete_job(query_job_name)
             except UnknownJobException:
                 pass
         elif not self.using_job_creator and not non_existing:
@@ -161,7 +162,7 @@ class _TestWrapperApi():
                       serial=serial, params=params, flow_created=flow_created, create_job=create_job, disappearing=disappearing,
                       non_existing=non_existing, kill=kill, allow_running=allow_running, api=self, final_result_use_cli=final_result_use_cli,
                       set_build_descriptions=set_build_descriptions, python_executable=self.python_executable)
-        self.test_jobs[job_name] = job
+        self.test_jobs[query_job_name] = job
 
     def flow_job(self, name=None, params=None):
         """Creates a flow job.
@@ -247,8 +248,8 @@ class JenkinsTestWrapperApi(_TestWrapperApi, jenkins_api.Jenkins, TestJenkins):
     job_xml_template = jp(here, 'job.xml.tenjin')
 
     def __init__(self, file_name, func_name, func_num_params, job_name_prefix, reload_jobs, pre_delete_jobs, direct_url, fake_public_uri,
-                 username, password, securitytoken, login, invocation_class, python_executable):
-        TestJenkins.__init__(self, job_name_prefix=job_name_prefix)
+                 username, password, securitytoken, login, invocation_class, python_executable, existing_jobs: bool):
+        TestJenkins.__init__(self, job_name_prefix=job_name_prefix, existing_jobs=existing_jobs)
         if login:
             jenkins_api.Jenkins.__init__(
                 self, direct_uri=direct_url, job_prefix_filter=job_name_prefix, username=username, password=password, invocation_class=invocation_class)
@@ -265,7 +266,7 @@ class ScriptTestWrapperApi(_TestWrapperApi, script_api.Jenkins, TestJenkins):
 
     def __init__(self, file_name, func_name, func_num_params, job_name_prefix, reload_jobs, pre_delete_jobs, direct_url, fake_public_uri,
                  username, password, securitytoken, login, invocation_class):
-        TestJenkins.__init__(self, job_name_prefix=job_name_prefix)
+        TestJenkins.__init__(self, job_name_prefix=job_name_prefix, existing_jobs=False)
         if login:
             script_api.Jenkins.__init__(
                 self, direct_uri=direct_url, job_prefix_filter=job_name_prefix, username=username, password=password, invocation_class=invocation_class)

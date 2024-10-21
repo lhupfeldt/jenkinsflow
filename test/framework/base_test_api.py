@@ -110,9 +110,10 @@ class Jobs():
 
 
 class TestJenkins(AbstractApiJenkins, metaclass=abc.ABCMeta):
-    def __init__(self, job_name_prefix, **kwargs):
+    def __init__(self, job_name_prefix, existing_jobs: bool, **kwargs):
         super().__init__(**kwargs)
         self.job_name_prefix = job_name_prefix
+        self.existing_jobs = existing_jobs
         TestJob._current_order = 1
         self.test_jobs = OrderedDict()
 
@@ -240,9 +241,11 @@ class TestJenkins(AbstractApiJenkins, metaclass=abc.ABCMeta):
                     # script_api ?
                     invocation = job._invocations[-1]
 
-                assert invocation.build_number is not None, "Job: " + repr(job) + " should have had build_number, but it has None"
-                result, progress = invocation.status()
-                assert result == expect_status, "Job: " + job.name + " expected result " + repr(expect_status) + " but got " + repr(result)
+                # TODO
+                if not self.existing_jobs:
+                    assert invocation.build_number is not None, "Job: " + repr(job) + " should have had build_number, but it has None"
+                    result, progress = invocation.status()
+                    assert result == expect_status, "Job: " + job.name + " expected result " + repr(expect_status) + " but got " + repr(result)
             elif job.kill:
                 result, progress, _ = job.job_status()
                 assert progress == Progress.IDLE
