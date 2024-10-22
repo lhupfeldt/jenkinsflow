@@ -69,17 +69,46 @@ def api(file_name, api_type, login=None, fixed_prefix=None, url_or_dir=None, fak
 
     if api_type == ApiType.JENKINS:
         from .api_wrapper import JenkinsTestWrapperApi
-        return JenkinsTestWrapperApi(file_name, func_name, func_num_params, job_name_prefix, reload_jobs, pre_delete_jobs,
-                                     url_or_dir, fake_public_uri, username, password, jenkins_security.securitytoken, login=login,
-                                     invocation_class=invocation_class, python_executable=os.environ["JEKINSFLOW_TEST_JENKINS_API_PYTHON_EXECUTABLE"],
-                                     existing_jobs=existing_jobs)
+        return JenkinsTestWrapperApi(
+            file_name=file_name,
+            func_name=func_name,
+            func_num_params=func_num_params,
+            job_name_prefix=job_name_prefix,
+            reload_jobs=reload_jobs,
+            pre_delete_jobs=pre_delete_jobs,
+            direct_url=url_or_dir,
+            fake_public_uri=fake_public_uri,
+            username=username,
+            password=password,
+            securitytoken=jenkins_security.securitytoken,
+            login=login,
+            invocation_class=invocation_class,
+            python_executable=os.environ["JEKINSFLOW_TEST_JENKINS_API_PYTHON_EXECUTABLE"],
+            existing_jobs=existing_jobs)
+
     if api_type == ApiType.SCRIPT:
         from .api_wrapper import ScriptTestWrapperApi
-        return ScriptTestWrapperApi(file_name, func_name, func_num_params, job_name_prefix, reload_jobs, pre_delete_jobs,
-                                    url_or_dir, fake_public_uri, username, password, jenkins_security.securitytoken, login=login,
-                                    invocation_class=invocation_class)
+        return ScriptTestWrapperApi(
+            file_name=file_name,
+            func_name=func_name,
+            func_num_params=func_num_params,
+            job_name_prefix=job_name_prefix,
+            reload_jobs=reload_jobs,
+            pre_delete_jobs=pre_delete_jobs,
+            direct_url=url_or_dir,
+            fake_public_uri=fake_public_uri,
+            username=username,
+            password=password,
+            securitytoken=jenkins_security.securitytoken,
+            login=login,
+            invocation_class=invocation_class)
+
     if api_type == ApiType.MOCK:
         from .mock_api import MockApi
-        return MockApi(job_name_prefix, speedup(), options.urls.direct_url(api_type), python_executable=sys.executable)
+        return MockApi(
+            job_name_prefix=job_name_prefix,
+            speedup=speedup(),
+            public_uri=options.urls.direct_url(api_type),
+            python_executable=sys.executable)
 
     raise Exception(f"Unhandled api_type: {repr(api_type)} - {api_type.__class__.__module__} was compared to {ApiType.MOCK.__class__.__module__}")

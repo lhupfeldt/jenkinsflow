@@ -22,7 +22,7 @@ def _mkdir(path):
 class TestJob(AbstractApiJob, metaclass=abc.ABCMeta):
     _current_order = 1
 
-    def __init__(self, exec_time, max_fails, expect_invocations, expect_order, initial_buildno, invocation_delay,
+    def __init__(self, *, exec_time, max_fails, expect_invocations, expect_order, initial_buildno, invocation_delay,
                  unknown_result, final_result, serial, print_env, flow_created, create_job, disappearing, non_existing, kill):
         """
         Set unknown_result to True if the result is indeterminate (timeout or invoke_unchecked)
@@ -110,7 +110,7 @@ class Jobs():
 
 
 class TestJenkins(AbstractApiJenkins, metaclass=abc.ABCMeta):
-    def __init__(self, job_name_prefix, existing_jobs: bool, **kwargs):
+    def __init__(self, *, job_name_prefix, existing_jobs: bool, **kwargs):
         super().__init__(**kwargs)
         self.job_name_prefix = job_name_prefix
         self.existing_jobs = existing_jobs

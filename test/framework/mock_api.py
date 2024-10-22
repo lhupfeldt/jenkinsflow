@@ -18,8 +18,8 @@ class MockApi(TestJenkins, HyperSpeed):
     job_xml_template = jp(here, 'job.xml.tenjin')
     api_type = ApiType.MOCK
 
-    def __init__(self, job_name_prefix, speedup, public_uri, python_executable=None):
-        super().__init__(job_name_prefix=job_name_prefix, speedup=speedup)
+    def __init__(self, *, job_name_prefix, existing_jobs: bool = False, speedup, public_uri, python_executable=None):
+        super().__init__(job_name_prefix=job_name_prefix, existing_jobs=existing_jobs, speedup=speedup)
         self.public_uri = public_uri
         self.username = 'dummy'
         self.password = 'dummy'
@@ -77,7 +77,7 @@ class MockApi(TestJenkins, HyperSpeed):
 
 
 class MockJob(TestJob):
-    def __init__(self, name, exec_time, max_fails, expect_invocations, expect_order, initial_buildno, invocation_delay, unknown_result,
+    def __init__(self, *, name, exec_time, max_fails, expect_invocations, expect_order, initial_buildno, invocation_delay, unknown_result,
                  final_result, serial, params, flow_created, create_job, disappearing, non_existing, kill, allow_running, api, final_result_use_cli,
                  set_build_descriptions, python_executable):
         super().__init__(exec_time=exec_time, max_fails=max_fails, expect_invocations=expect_invocations, expect_order=expect_order,

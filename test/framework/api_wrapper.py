@@ -44,7 +44,7 @@ class WrapperJob(TestJob, ObjectWrapper):
     end_time = None
     actual_order = None
 
-    def __init__(self, jenkins_job, mock_job):
+    def __init__(self, *, jenkins_job, mock_job):
         ObjectWrapper.__init__(self, jenkins_job)
         TestJob.__init__(self, exec_time=mock_job.exec_time, max_fails=mock_job.max_fails,
                          expect_invocations=mock_job.expect_invocations, expect_order=mock_job.expect_order,
@@ -87,7 +87,7 @@ class Jobs(TestJobs):
 
 
 class _TestWrapperApi():
-    def __init__(self, file_name, func_name, func_num_params, reload_jobs, pre_delete_jobs, securitytoken, direct_url, fake_public_uri, python_executable):
+    def __init__(self, *, file_name, func_name, func_num_params, reload_jobs, pre_delete_jobs, securitytoken, direct_url, fake_public_uri, python_executable):
         self.file_name = file_name
         self.func_name = func_name
         self.func_num_params = func_num_params
@@ -225,7 +225,7 @@ class _TestWrapperApi():
                 raise Exception(msg)
 
             if isinstance(job, MockJob):
-                self.test_jobs[name] = job = WrapperJob(jenkins_job, job)
+                self.test_jobs[name] = job = WrapperJob(jenkins_job=jenkins_job, mock_job=job)
             assert isinstance(job, WrapperJob)
             job.__subject__ = jenkins_job
             return job
@@ -247,7 +247,7 @@ class JenkinsTestWrapperApi(_TestWrapperApi, jenkins_api.Jenkins, TestJenkins):
     api_type = ApiType.JENKINS
     job_xml_template = jp(here, 'job.xml.tenjin')
 
-    def __init__(self, file_name, func_name, func_num_params, job_name_prefix, reload_jobs, pre_delete_jobs, direct_url, fake_public_uri,
+    def __init__(self, *, file_name, func_name, func_num_params, job_name_prefix, reload_jobs, pre_delete_jobs, direct_url, fake_public_uri,
                  username, password, securitytoken, login, invocation_class, python_executable, existing_jobs: bool):
         TestJenkins.__init__(self, job_name_prefix=job_name_prefix, existing_jobs=existing_jobs)
         if login:
@@ -256,15 +256,25 @@ class JenkinsTestWrapperApi(_TestWrapperApi, jenkins_api.Jenkins, TestJenkins):
         else:
             jenkins_api.Jenkins.__init__(self, direct_uri=direct_url, job_prefix_filter=job_name_prefix, invocation_class=invocation_class)
         self.job_loader_jenkins = jenkins_api.Jenkins(direct_uri=direct_url, job_prefix_filter=job_name_prefix, username=username, password=password)
+
         _TestWrapperApi.__init__(
-            self, file_name, func_name, func_num_params, reload_jobs, pre_delete_jobs, securitytoken, direct_url, fake_public_uri, python_executable)
+            self,
+            file_name=file_name,
+            func_name=func_name,
+            func_num_params=func_num_params,
+            reload_jobs=reload_jobs,
+            pre_delete_jobs=pre_delete_jobs,
+            securitytoken=securitytoken,
+            direct_url=direct_url,
+            fake_public_uri=fake_public_uri,
+            python_executable=python_executable)
 
 
 class ScriptTestWrapperApi(_TestWrapperApi, script_api.Jenkins, TestJenkins):
     api_type = ApiType.SCRIPT
     job_xml_template = jp(here, 'job_script.py.tenjin')
 
-    def __init__(self, file_name, func_name, func_num_params, job_name_prefix, reload_jobs, pre_delete_jobs, direct_url, fake_public_uri,
+    def __init__(self, *, file_name, func_name, func_num_params, job_name_prefix, reload_jobs, pre_delete_jobs, direct_url, fake_public_uri,
                  username, password, securitytoken, login, invocation_class):
         TestJenkins.__init__(self, job_name_prefix=job_name_prefix, existing_jobs=False)
         if login:
@@ -274,5 +284,13 @@ class ScriptTestWrapperApi(_TestWrapperApi, script_api.Jenkins, TestJenkins):
             script_api.Jenkins.__init__(self, direct_uri=direct_url, job_prefix_filter=job_name_prefix, invocation_class=invocation_class)
         self.job_loader_jenkins = script_api.Jenkins(direct_uri=direct_url, job_prefix_filter=job_name_prefix, username=username, password=password)
         _TestWrapperApi.__init__(
-            self, file_name, func_name, func_num_params, reload_jobs, pre_delete_jobs, securitytoken, direct_url, fake_public_uri,
-            str(Path(sys.executable).resolve()))
+            self,
+            file_name=file_name,
+            func_name=func_name,
+            func_num_params=func_num_params,
+            reload_jobs=reload_jobs,
+            pre_delete_jobs=pre_delete_jobs,
+            securitytoken=securitytoken,
+            direct_url=direct_url,
+            fake_public_uri=fake_public_uri,
+            python_executable=str(Path(sys.executable).resolve()))
