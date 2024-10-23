@@ -34,22 +34,6 @@ def stylesheets(filename):
 
 @post('/jenkinsflow/builds')
 def builds():
-    # TODO: change this to jenkins_api call because this url
-    # returns html table, and we only need job names and state of the build
-    # api = Jenkins(jenkins_url)
-    # simple_queue = []
-    # if len(api.get_queue()):
-    #     for item in api.get_queue().values():
-    #         print 'queue item: %s %s' % (type(item), item)
-    #         job = api[item.task['name']]
-    #         print 'job: %s %s' % (type(job), job)
-    #         build = job.get_last_build_or_none()
-    #         simple_queue.append({'job': job.name,
-    #                              'running': job.is_running(),
-    #                              'job_id': build.get_number()
-    #                              if build is not None else '???'})
-
-    # print 'DEBUG: simple_queue=', simple_queue
     rsp = requests.get(jenkins_url + 'queue/api/json')
     response.content_type = 'application/json'
     return json.dumps(rsp.json())

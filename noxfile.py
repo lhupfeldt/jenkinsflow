@@ -9,6 +9,7 @@ import errno
 import glob
 from pathlib import Path
 import subprocess
+import shutil
 from typing import Sequence
 
 import nox
@@ -181,9 +182,9 @@ def unit(session):
 
 @nox.session(python=_PY_VERSIONS[0], reuse_venv=True)
 def build(session):
+    if Path("dist").is_dir():
+        shutil.rmtree("dist")
     session.install("build>=1.0.3", "twine>=4.0.2")
-    for ff in glob.glob("dist/*"):
-        os.remove(ff)
     session.run("python", "-m", "build")
     session.run("python", "-m", "twine", "check", "dist/*")
 
