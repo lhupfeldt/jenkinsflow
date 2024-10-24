@@ -18,4 +18,4 @@ build
 test/out
 
 # Sphinx
-doc/_build/*
+docs/_build/*

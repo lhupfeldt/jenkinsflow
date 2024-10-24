@@ -18,7 +18,7 @@ import nox
 _HERE = Path(__file__).absolute().parent
 _TEST_DIR = _HERE/"test"
 _DEMO_DIR = _HERE/"demo"
-_DOC_DIR = _HERE/"doc"
+_DOC_DIR = _HERE/"docs"
 
 sys.path.extend((str(_HERE), str(_DEMO_DIR)))
 
@@ -192,7 +192,7 @@ def build(session):
 @nox.session(python=_PY_VERSIONS[0], reuse_venv=True)
 def docs(session):
     session.install("--upgrade", ".", "-r", str(_DOC_DIR/"requirements.txt"))
-    session.run("make", "-C", "doc/source", "html")
+    session.run("make", "-C", "docs/source", "html")
 
 
 @nox.session(python=_PY_VERSIONS[0], reuse_venv=True)

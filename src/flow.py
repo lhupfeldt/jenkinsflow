@@ -117,7 +117,7 @@ class _JobControl(metaclass=abc.ABCMeta):
         if self.result in (BuildResult.SUCCESS, BuildResult.SUPERSEDED) or self.propagation == Propagation.UNCHECKED:
             return BuildResult.SUCCESS
         if self.result == BuildResult.UNKNOWN and self.assume_finished_after:
-            return BuildResult.SUCCESS            
+            return BuildResult.SUCCESS
         if self.result == BuildResult.UNSTABLE or self.propagation == Propagation.FAILURE_TO_UNSTABLE:
             return BuildResult.UNSTABLE
         return BuildResult.FAILURE
@@ -555,15 +555,18 @@ class _Flow(_JobControl, metaclass=abc.ABCMeta):
         Args:
             job_name (str): This can take two different formats:
                 For simple jobs: The the name of the job in Jenkins, e.g.: 'aaa'. I.e. NOT 'job/aaa' which is how the URL path appears.
-                  If the surrounding flow sets the :py:obj:`job_name_prefix` the actual name of the invoked job will be the parent flow job_name_prefix + job_name.
+                If the surrounding flow sets the :py:obj:`job_name_prefix` the actual name of the invoked job will be the parent flow job_name_prefix + job_name.
+
                 For GitHub folder jobs: '<github-organization>[/<repository>[/<branch>]]', e.g.: 'aaa/bbb/main', NOT 'job/aaa/job/bbb/job/main' as in URL.
-                  Support for GitHub folder jobs is experimental!
-                  For GitHub folder jobs 'job_name_prefix' is applied to the each part of the name! Probably not useful! Semantics may change!
-                  Note that invoking '<github-organization>[/<repository>]' without <branch> triggers a 'scan'. May change!
+                Support for GitHub folder jobs is experimental!
+                For GitHub folder jobs 'job_name_prefix' is applied to the each part of the name! Probably not useful! Semantics may change!
+                Note that invoking '<github-organization>[/<repository>]' without <branch> triggers a 'scan'. May change!
+
             assume_finished_after:Seconds. If the job has not finished after this amount of time, then assume it is finished and continue.
-                  Note: This is a hack to support organization and repository scan for GitHub folder jobs. There is no way to determine when a scan is finished.
-                  This may change!
-                  If you expect specific jobs or branches after a scan, then you should check for the existence of those or maybe try to build and use the retry feature.
+                Note: This is a hack to support organization and repository scan for GitHub folder jobs. There is no way to determine when a scan is finished.
+                This may change!
+                If you expect specific jobs or branches after a scan, then you should check for the existence of those or maybe try to build and use the retry feature.
+
             **params (str, int, boolean): Arguments passed to Jenkins when invoking the job. Strings are passed as they are,
                 booleans are automatically converted to strings and down-cased, integers are automatically converted to strings.
         """

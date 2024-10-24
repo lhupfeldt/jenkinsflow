@@ -149,5 +149,5 @@ Documentation
 
 2. Build documentation:
 
-        cd doc/source
+        cd docs/source
         make html (or some other format supported by sphinx)
