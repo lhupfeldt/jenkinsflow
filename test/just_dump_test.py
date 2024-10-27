@@ -1,8 +1,7 @@
-# Copyright (c) 2012 - 2015 Lars Hupfeldt Nielsen, Hupfeldt IT
+# Copyright (c) 2012 - 2024 Lars Hupfeldt Nielsen, Hupfeldt IT
 # All rights reserved. This work is under a BSD license, see LICENSE.TXT.
 
-import os
-from os.path import join as jp
+from pathlib import Path
 
 from jenkinsflow.flow import serial
 
@@ -10,16 +9,17 @@ from .json_test import _assert_json
 from .framework import api_select
 from .framework.utils import flow_graph_dir
 
-here = os.path.abspath(os.path.dirname(__file__))
+
+_REF_DIR = Path(__file__).parent/Path(__file__).stem.replace("_test", "")
 
 
-with open(jp(here, "just_dump_test_compact.json")) as _jf:
-    _compact_json = _jf.read().strip()
+with open(_REF_DIR/"just_dump_test_compact.json") as _jf:
+    _COMPACT_JSON = _jf.read().strip()
 
 
-def _flow(api, json_dir):
-    if json_dir and not os.path.exists(json_dir):
-        os.makedirs(json_dir)
+def _flow(api, json_dir: Path):
+    if json_dir:
+        json_dir.mkdir(parents=True, exist_ok=True)
 
     with serial(api, timeout=1, job_name_prefix=api.job_name_prefix, json_dir=json_dir, json_strip_top_level_prefix=True, just_dump=True) as ctrl1:
         ctrl1.invoke('j1')
@@ -63,4 +63,4 @@ def test_just_dump_with_json(api_type):
 
         # Test json
         json = ctrl1.json(None)
-        _assert_json(json, _compact_json, api.api_type)
+        _assert_json(json, _COMPACT_JSON, api.api_type)

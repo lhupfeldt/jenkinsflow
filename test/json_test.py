@@ -1,9 +1,9 @@
-# Copyright (c) 2012 - 2015 Lars Hupfeldt Nielsen, Hupfeldt IT
+# Copyright (c) 2012 - 2024 Lars Hupfeldt Nielsen, Hupfeldt IT
 # All rights reserved. This work is under a BSD license, see LICENSE.TXT.
 
 import os
-from os.path import join as jp
 import re
+from pathlib import Path
 
 from jenkinsflow.flow import serial
 
@@ -11,18 +11,19 @@ from .framework import api_select, utils
 from .framework.utils import flow_graph_dir
 from .framework.cfg import ApiType
 
-here = os.path.abspath(os.path.dirname(__file__))
+
+_REF_DIR = Path(__file__).parent/Path(__file__).stem.replace("_test", "")
 
 
 _timestamp_re = re.compile(r't": [0-9]+.[0-9]+')
 
 
-with open(jp(here, "json_test_compact.json")) as _jf:
-    _compact_json = _jf.read().strip()
+with open(_REF_DIR/"json_test_compact.json") as _jf:
+    _COMPACT_JSON = _jf.read().strip()
 
 
-with open(jp(here, "json_test_pretty.json")) as _jf:
-    _pretty_json = _jf.read().strip()
+with open(_REF_DIR/"json_test_pretty.json") as _jf:
+    _PRETTY_JSON = _jf.read().strip()
 
 
 def _assert_json(got_json, expected_json, api_type):
@@ -41,9 +42,8 @@ def _assert_json(got_json, expected_json, api_type):
         assert got_json.strip() == expected_json
 
 
-def _flow(api, strip_prefix, json_dir):
-    if not os.path.exists(json_dir):
-        os.makedirs(json_dir)
+def _flow(api, strip_prefix, json_dir: Path):
+    json_dir.mkdir(parents=True, exist_ok=True)
 
     with serial(api, timeout=70, job_name_prefix=api.job_name_prefix, report_interval=1, json_dir=json_dir, json_strip_top_level_prefix=strip_prefix) as ctrl1:
         ctrl1.invoke('j1')
@@ -81,18 +81,18 @@ def test_json_strip_prefix(api_type):
         ctrl1 = _flow(api, True, flow_graph_dir(flow_name))
 
         # Test pretty printing
-        json_file = jp(flow_graph_dir(flow_name), "pretty.json")
+        json_file = flow_graph_dir(flow_name)/"pretty.json"
         ctrl1.json(json_file, indent=4)
         with open(json_file) as jf:
-            _assert_json(jf.read().strip(), _pretty_json, api.api_type)
+            _assert_json(jf.read().strip(), _PRETTY_JSON, api.api_type)
 
         # Test default compact json
         with open(ctrl1.json_file) as jf:
-            _assert_json(jf.read().strip(), _compact_json, api.api_type)
+            _assert_json(jf.read().strip(), _COMPACT_JSON, api.api_type)
 
         # Test return json
         json = ctrl1.json(None)
-        _assert_json(json, _compact_json, api.api_type)
+        _assert_json(json, _COMPACT_JSON, api.api_type)
 
 
 def test_json_no_strip_prefix(api_type):
@@ -111,11 +111,11 @@ def test_json_no_strip_prefix(api_type):
         ctrl1 = _flow(api, False, flow_graph_dir(flow_name))
 
         # Test pretty printing with no stripping of top level prefix
-        json_file = jp(flow_graph_dir(flow_name), "verbose_pretty.json")
+        json_file = flow_graph_dir(flow_name)/"verbose_pretty.json"
         ctrl1.json(json_file, indent=4)
         with open(json_file) as jf:
             got_json = jf.read().strip()
-            expect_json = _pretty_json.replace('strip_prefix', 'no_strip_prefix').replace('name": "', 'name": "jenkinsflow_test__json_no_strip_prefix__')
+            expect_json = _PRETTY_JSON.replace('strip_prefix', 'no_strip_prefix').replace('name": "', 'name": "jenkinsflow_test__json_no_strip_prefix__')
             _assert_json(got_json, expect_json, api.api_type)
 
 
@@ -131,8 +131,7 @@ def test_json_unchecked_only_in_flows(api_type):
         api.job('j7', max_fails=0, expect_invocations=1, expect_order=2, exec_time=5)
 
         json_dir = flow_graph_dir(flow_name)
-        if not os.path.exists(json_dir):
-            os.makedirs(json_dir)
+        json_dir.mkdir(parents=True, exist_ok=True)
 
         with serial(api, timeout=70, job_name_prefix=api.job_name_prefix, report_interval=1, json_dir=json_dir) as ctrl1:
             ctrl1.invoke_unchecked('j1_unchecked')
@@ -150,5 +149,5 @@ def test_json_unchecked_only_in_flows(api_type):
             ctrl1.invoke('j7')
 
         # Test default compact json
-        with open(ctrl1.json_file) as got_jf, open(jp(here, "json_test_unchecked_compact.json")) as expected_jf:
+        with open(ctrl1.json_file) as got_jf, open(_REF_DIR/"json_test_unchecked_compact.json") as expected_jf:
             _assert_json(got_jf.read().strip(), expected_jf.read().strip(), api.api_type)
