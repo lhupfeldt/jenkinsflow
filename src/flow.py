@@ -505,7 +505,8 @@ class _Flow(_JobControl, metaclass=abc.ABCMeta):
 
                     with parallel(..., max_tries=2) as pf:
                         with pf.serial(..., max_tries=3) as sf:
-                            sf.invoke('a', ...)  # If job 'a' fails it could be invoked up to 6 times
+                            # If job 'a' fails it could be invoked up to 6 times!
+                            sf.invoke('a', ...)
 
             propagation (Propagation): How to propagate errors from failed Jenkins jobs.
                 This can be used to downgrade a 'FAILURE' result to 'UNSTABLE'.
@@ -513,18 +514,30 @@ class _Flow(_JobControl, metaclass=abc.ABCMeta):
 
                     with parallel(...) as pf:
                         with pf.serial(..., propagation=Propagation.UNSTABLE) as sf1:
-                            sf1.invoke('a', ...)  # If job 'a' fails the result propagated to sf1 will be 'UNSTABLE' and sf1 will propagate
-                                                  #  'UNSTABLE' on to pf
+                            # If job 'a' fails the result propagated to `sf1` will be
+                            # 'UNSTABLE' and `sf1` will propagate 'UNSTABLE' on to `pf`.
+                            sf1.invoke('a', ...)
+
 
                         with pf.serial(...) as sf2:
-                            sf2.invoke('b', ...)  # If job 'b' fails the result propagated to sf2 and pf will be 'FAILURE'
+                            # If job 'b' fails the result propagated to `sf2` and
+                            # `pf` will be 'FAILURE'
+                            sf2.invoke('b', ...)
 
                     sys.exit(77 if pf.result == Propagation.UNSTABLE else 0)
-                    # Assuming the Jenkins job was configured with 'Exit code to set build unstable==77'
 
-                NOTE: You must make sure that the jobs are configured correctly and that the correct exit code is used in the shell step, otherwise
-                the propagation value will have no effect on the final job status.
-                NOTE: Also see the raise_if_unsuccessful argument to the top level `serial` and `parallel` flows.
+                This assumes the Jenkins job was configured with::
+
+                    'Exit code to set build unstable==77'
+
+                .. note::
+
+                   You must make sure that the jobs are configured correctly and that the correct exit code is used in the shell step, otherwise
+                   the propagation value will have no effect on the final job status.
+
+                .. note::
+
+                   Also see the raise_if_unsuccessful argument to the top level `serial` and `parallel` flows.
 
             report_interval (float): The interval in seconds between reporting the status of polled Jenkins jobs.
                 If None the parent flow report_interval is used.
@@ -1045,7 +1058,7 @@ class parallel(_Parallel, _TopLevelControllerMixin):
 
 
 class serial(_Serial, _TopLevelControllerMixin):
-    r"""Defines a serial flow where nested jobs or flows are executed in order.
+    """Defines a serial flow where nested jobs or flows are executed in order.
 
     Only differences to  :py:meth:`_Flow.serial` are described.
 
@@ -1082,8 +1095,8 @@ class serial(_Serial, _TopLevelControllerMixin):
         just_dump (boolean): If True, the flow is just printed, no jobs are invoked.
 
         params_display_order (list): List of job parameter names used for ordering the parameters in the output.
-            The format is [first1, ..., firstN, '\*', last1, ..., lastN], where first..., last... are names that will be matched against the
-            invoke \*\*param names.
+            The format is [first1, ..., firstN, '*', last1, ..., lastN], where first..., last... are names that will be matched against the
+            invoke param names.
             Any of first..., '*', last... may be omitted
             Any parameters that are not matched will be displayes at the place of the '*', if specified, otherwise they will be displayed last.
 
