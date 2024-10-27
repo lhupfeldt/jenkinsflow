@@ -108,7 +108,7 @@ class _TestWrapperApi():
                 exec_time=exec_time,
                 params=params or (),
                 script=script,
-                pseudo_install_dir=pseudo_install_dir,
+                activate_script=str(Path(self.python_executable).parent/"activate"),
                 securitytoken=self.securitytoken,
                 username=jenkins_security.username,
                 password=jenkins_security.password,

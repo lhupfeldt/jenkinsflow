@@ -31,6 +31,7 @@ _PY_VERSIONS = ["3.12", "3.11", "3.10", "3.9"] if not os.environ.get("TRAVIS_PYT
 _IS_CI = os.environ.get("CI", "false").lower() == "true"
 
 nox.options.error_on_missing_interpreters = True
+nox.options.envdir = dirs.pseudo_install_dir
 
 
 def _cov_options_env(api_types: Sequence[ApiType], env: dict[str, str], fail_under: int = 0) -> Sequence[str]:
@@ -157,25 +158,12 @@ def unit(session):
     pytest_args.extend(["--capture=sys", "--instafail", "-p", "no:warnings" "--failed-first"])
     pytest_args.extend(session.posargs)
 
-    try:
-        os.makedirs(dirs.pseudo_install_dir)
-    except OSError as ex:
-        if ex.errno != errno.EEXIST:
-            raise
-
     if apis != [ApiType.MOCK]:
-        print(f"Creating venv test installation in '{dirs.pseudo_install_dir}' to make files available to Jenkins.")
-        try:
-            session.run(f"{session.bin}/python", "-m", "venv", "--symlinks", "--prompt=jenkinsflow-test-venv", dirs.pseudo_install_dir)
-            python_executable = f"{dirs.pseudo_install_dir}/bin/python"
-            session.run(python_executable, "-m", "pip", "install", "--upgrade", ".")
-            env["JEKINSFLOW_TEST_JENKINS_API_PYTHON_EXECUTABLE"] = python_executable
-            tmp_inst_script = _HERE/"test/framework/tmp_install.sh"
-            subprocess.check_call([tmp_inst_script, _TEST_DIR, f"{dirs.test_tmp_dir}/test"])
-            subprocess.check_call([tmp_inst_script, _DEMO_DIR, f"{dirs.test_tmp_dir}/demo"])
-        except:
-            print(f"Failed venv test installation to '{dirs.pseudo_install_dir}'", file=sys.stderr)
-            raise
+        env["JEKINSFLOW_TEST_JENKINS_API_PYTHON_EXECUTABLE"] = f"{session.bin}/python"
+        tmp_inst_script = _HERE/"test/framework/tmp_install.sh"
+        site_packages_dir = Path(session.bin, f"../lib/python{session.python}/site-packages/jenkinsflow").resolve()
+        subprocess.check_call([tmp_inst_script, _TEST_DIR, str(site_packages_dir/"test")])
+        subprocess.check_call([tmp_inst_script, _DEMO_DIR, f"{dirs.pseudo_install_dir}/demo"])
 
     session.run("pytest", "--capture=sys", *cov_opts, *pytest_args, env=env)
 

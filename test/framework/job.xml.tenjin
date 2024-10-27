@@ -154,7 +154,7 @@ set_build_description("{==description==}", {==replace==}, "{==separator==}", use
 set -u
 date --rfc-3339=ns
 <?py if script is not None: ?>
-source {==pseudo_install_dir==}/bin/activate
+source {==activate_script==}
 {==script==}
 <?py else: ?>
 date

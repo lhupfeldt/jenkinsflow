@@ -36,5 +36,7 @@ omit =
     experiments
     *_flymake.py
     visual/server.py
+    **/test/*
+    **/demo/*
 
     ${COV_API_EXCLUDE_FILES?}
