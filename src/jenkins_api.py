@@ -22,7 +22,7 @@ _ct_url_enc = {'Content-Type': 'application/x-www-form-urlencoded'}
 _QUICK_QUERY = "jobs[name,lastBuild[number,result],queueItem[why]]"
 
 # Query info and parameter definitions of a specific job
-_GIVEN_JOB_QUERY_WITH_PARAM_DEFS = "lastBuild[number,result],queueItem[why],actions[parameterDefinitions[name,type]]"
+_GIVEN_JOB_QUERY_WITH_PARAM_DEFS = "lastBuild[number,result],queueItem[why],actions[parameterDefinitions[name,type]],property[parameterDefinitions[name,type]]"
 
 # Initial query
 # Build a three level query to handle github organization folder jobs.
@@ -264,20 +264,25 @@ class ApiJob():
         self.name = name
         self.has_children = has_children
         self.public_uri = self.jenkins._public_job_url(self.name)  # pylint: disable=protected-access
-
-        actions = self.dct.get('actions') or []
-        self._path = "/job/" + self.name
-        for action in actions:
-            if action is None:
-                continue
-            if action.get('parameterDefinitions'):
-                self._build_trigger_path = self._path + "/buildWithParameters"
-                break
-        else:
-            self._build_trigger_path = self._path + "/build"
         self.old_build_number = None
         self._invocations = OrderedDict()
         self.queued_why = None
+
+        self._path = "/job/" + self.name
+
+        properties = self.dct.get("property", [])
+        for property in properties:
+            if property and property.get('parameterDefinitions'):
+                self._build_trigger_path = self._path + "/buildWithParameters"
+                return
+
+        actions = self.dct.get("action", [])
+        for action in actions:
+            if action and action.get('parameterDefinitions'):
+                self._build_trigger_path = self._path + "/buildWithParameters"
+                return
+
+        self._build_trigger_path = self._path + "/build"
 
     def invoke(self, securitytoken, build_params, cause, description):
         try:

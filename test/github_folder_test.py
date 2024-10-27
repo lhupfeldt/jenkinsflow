@@ -38,6 +38,16 @@ def test_gh_folder_build_slow_branch(api_type):
 
 
 @pytest.mark.apis(ApiType.JENKINS)
+def test_gh_folder_build_with_parameters(api_type):
+    with api_select.api(__file__, api_type, existing_jobs=True) as api:
+        api.flow_job()
+        api.job("gh-org/jenkinsflow-gh-folder-test/parameters", max_fails=0, expect_invocations=1, expect_order=1)
+
+        with serial(api, timeout=70, report_interval=1) as ctrl1:
+            ctrl1.invoke("gh-org/jenkinsflow-gh-folder-test/parameters", GREETING="Hi")
+
+
+@pytest.mark.apis(ApiType.JENKINS)
 def test_gh_folder_scan_organization(api_type):
     with api_select.api(__file__, api_type, existing_jobs=True) as api:
         api.flow_job()
