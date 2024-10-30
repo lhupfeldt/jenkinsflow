@@ -48,7 +48,7 @@ def _cov_options_env(api_types: Sequence[ApiType], env: dict[str, str], fail_und
         elif ApiType.MOCK in api_types:
             fail_under = 84.74
         elif ApiType.SCRIPT in api_types:
-            fail_under = 70.87
+            fail_under = 81.66
         else:
             raise ValueError(f"Unknown coverage requirement for api type combination: {api_types}")
 

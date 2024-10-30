@@ -1,7 +1,7 @@
 # Copyright (c) 2012 - 2015 Lars Hupfeldt Nielsen, Hupfeldt IT
 # All rights reserved. This work is under a BSD license, see LICENSE.TXT.
 
-import sys, os, shutil, importlib, datetime, tempfile, signal, errno
+import sys, os, shutil, importlib, datetime, tempfile, signal
 from os.path import join as jp
 import multiprocessing
 import urllib.parse
@@ -13,14 +13,6 @@ from .speed import Speed
 
 
 here = os.path.abspath(os.path.dirname(__file__))
-
-
-def _mkdir(path):
-    try:
-        os.mkdir(path)
-    except OSError as ex:
-        if ex.errno != errno.EEXIST:
-            raise
 
 
 def _pgrep(proc_name):
@@ -154,7 +146,7 @@ class Jenkins(Speed, BaseApiMixin):
 
     def create_job(self, job_name, config_xml):
         script_file = self._script_file(job_name)
-        _mkdir(os.path.dirname(script_file))
+        os.makedirs(os.path.dirname(script_file), exist_ok=True)
         with open(script_file, 'w') as ff:
             ff.write(config_xml)
 
@@ -217,8 +209,8 @@ class ApiJob():
         self.old_build_number = None
 
     def invoke(self, securitytoken, build_params, cause, description):
-        _mkdir(self.jenkins.log_dir)
-        _mkdir(self.workspace)
+        os.makedirs(self.jenkins.log_dir, exist_ok=True)
+        os.makedirs(self.workspace, exist_ok=True)
         build_number = (self.build_num or 0) + 1
         self.build_num = build_number
 
@@ -268,7 +260,7 @@ class ApiJob():
             self.build.proc.terminate()
 
     def update_config(self, config_xml):
-        _mkdir(os.path.dirname(self.public_uri))
+        os.makedirs(os.path.dirname(self.public_uri), exist_ok=True)
         with open(self.public_uri, 'w') as ff:
             ff.write(config_xml)
 
