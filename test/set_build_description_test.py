@@ -40,7 +40,12 @@ def _get_description(api, job, build_number):
             return ff.read()
 
     if api.api_type == ApiType.MOCK:
-        raise Exception(repr(ApiType.MOCK) + " 'description' not supported by test framework")
+        raise ValueError(repr(ApiType.MOCK) + " 'description' not supported by test framework")
+
+    exp_mod = type(ApiType.JENKINS).__module__
+    t_got = type(api.api_type)
+    got_type = ".".join([t_got.__module__, t_got.__qualname__])
+    raise ValueError(f"{got_type} test framework error, expected module {exp_mod}")
 
 
 @pytest.mark.not_apis(ApiType.MOCK)

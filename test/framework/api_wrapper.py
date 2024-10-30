@@ -15,7 +15,7 @@ from jenkinsflow.jobload import update_job_from_template
 from .base_test_api import TestJob, TestJenkins, Jobs as TestJobs
 from .mock_api import MockJob
 from .cfg import ApiType
-from .cfg.dirs import test_tmp_dir, pseudo_install_dir
+from .cfg.dirs import test_tmp_dir
 from .cfg import jenkins_security
 
 
@@ -116,7 +116,8 @@ class _TestWrapperApi():
                 print_env=print_env,
                 create_job=create_job,
                 test_file_name=self.file_name,
-                test_tmp_dir=test_tmp_dir, api_type=self.api_type,
+                test_tmp_dir=test_tmp_dir,
+                api_type=self.api_type,
                 num_builds_to_keep=num_builds_to_keep,
                 final_result_use_cli=final_result_use_cli,
                 set_build_descriptions=set_build_descriptions,

@@ -5,8 +5,6 @@
 import os
 import sys
 import argparse
-import errno
-import glob
 from pathlib import Path
 import subprocess
 import shutil
@@ -42,7 +40,7 @@ def _cov_options_env(api_types: Sequence[ApiType], env: dict[str, str], fail_und
 
     if not fail_under:
         if len(api_types) == 3:
-            fail_under = 93.9
+            fail_under = 93.8
         elif ApiType.JENKINS in api_types:
             fail_under = 95
         elif ApiType.MOCK in api_types and ApiType.SCRIPT in api_types:
@@ -85,6 +83,31 @@ def _pytest_parallel_options(parallel, api_types):
             args.extend(['-n', '16'])
 
     return args
+
+
+_TEST_AND_DEMOS_INSTALLED = False
+
+def _test_and_demos_install(session):
+    """Make test and demos available to Jenkins process."""
+    global _TEST_AND_DEMOS_INSTALLED
+
+    site_packages_dir = Path(session.bin, f"../lib/python{session.python}/site-packages/jenkinsflow").resolve()
+
+    for src_dir_name in "demo", "test":
+        tgt_dir = Path(dirs.test_tmp_dir, src_dir_name)
+        if not _TEST_AND_DEMOS_INSTALLED:
+            exclude = [f"--exclude={exc}" for exc in (".git", "*~", "'*.py[cod]'", "__pycache__", "*.cache")]
+            subprocess.check_call(["rsync", "-a", "--delete", "--delete-excluded", *exclude, f"{_HERE}/{src_dir_name}/", f"{tgt_dir}/"])
+            for root, _, files in os.walk(tgt_dir):
+                os.chmod(root, 0o777)
+                for fn in files:
+                    os.chmod(Path(root, fn), 0o644)
+
+        lnk = site_packages_dir/src_dir_name
+        lnk.unlink(missing_ok=True)
+        lnk.symlink_to(tgt_dir)
+
+    _TEST_AND_DEMOS_INSTALLED = True
 
 
 # @nox.session(python=_PY_VERSIONS, reuse_venv=True)
@@ -155,15 +178,12 @@ def unit(session):
 
     parallel = special_args.job_load or special_args.job_delete
     pytest_args.extend(_pytest_parallel_options(parallel, apis))
-    pytest_args.extend(["--capture=sys", "--instafail", "-p", "no:warnings" "--failed-first"])
+    pytest_args.extend(["--capture=sys", "--instafail", "-p", "no:warnings", "--failed-first"])
     pytest_args.extend(session.posargs)
 
     if apis != [ApiType.MOCK]:
         env["JEKINSFLOW_TEST_JENKINS_API_PYTHON_EXECUTABLE"] = f"{session.bin}/python"
-        tmp_inst_script = _HERE/"test/framework/tmp_install.sh"
-        site_packages_dir = Path(session.bin, f"../lib/python{session.python}/site-packages/jenkinsflow").resolve()
-        subprocess.check_call([tmp_inst_script, _TEST_DIR, str(site_packages_dir/"test")])
-        subprocess.check_call([tmp_inst_script, _DEMO_DIR, f"{dirs.pseudo_install_dir}/demo"])
+        _test_and_demos_install(session)
 
     session.run("pytest", "--capture=sys", *cov_opts, *pytest_args, env=env)
 

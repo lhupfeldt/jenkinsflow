@@ -19,3 +19,6 @@ test/out
 
 # Sphinx
 docs/_build/*
+
+classes_jenkinsflow.png
+packages_jenkinsflow.png

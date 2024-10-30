@@ -73,20 +73,16 @@
 <?py if create_job is not None: ?>
   <?py assert create_job.flow_created ?>
     <hudson.tasks.Shell>
-      <?py import sys ?>
       <command>#!{==python_executable==} -B
-import sys
-sys.path.append("{==test_tmp_dir==}")
 from jenkinsflow.jobload import update_job_from_template
-from test.framework.cfg import ApiType
+from jenkinsflow.test.framework.cfg import ApiType
 
-<?py sys.path.append(test_tmp_dir) ?>
-
-<?py from test.framework.cfg import ApiType ?>
-<?py if api_type == ApiType.JENKINS: ?>
+<?py if api_type == type(api_type).JENKINS: ?>
 from jenkinsflow import jenkins_api as jenkins
 <?py else: ?>
-<?py raise Exception("Unknown/Unsupported api_type: " + api_type) ?>
+<?py t_exp = type(type(api_type).JENKINS); exp_type = ".".join([t_exp.__module__, t_exp.__qualname__]) ?>
+<?py t_got = type(api_type); got_type = ".".join([t_got.__module__, t_got.__qualname__]) ?>
+<?py raise Exception(f"Unknown/Unsupported api_type: {got_type} != {exp_type}") ?>
 <?py #endif ?>
 
 <?py if create_job.create_job: ?>
@@ -132,7 +128,6 @@ update_job_from_template(job_loader_jenkins, "{==create_job.name==}", config_xml
     </hudson.tasks.Shell>
 <?py #endif ?>
 <?py if set_build_descriptions: ?>
-    <?py import sys ?>
     <hudson.tasks.Shell>
       <command>#!{==python_executable==} -B
 import time
