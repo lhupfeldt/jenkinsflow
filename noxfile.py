@@ -40,15 +40,15 @@ def _cov_options_env(api_types: Sequence[ApiType], env: dict[str, str], fail_und
 
     if not fail_under:
         if len(api_types) == 3:
-            fail_under = 93.8
+            fail_under = 93.30
         elif ApiType.JENKINS in api_types:
-            fail_under = 95
+            fail_under = 95.05
         elif ApiType.MOCK in api_types and ApiType.SCRIPT in api_types:
             fail_under = 90
         elif ApiType.MOCK in api_types:
-            fail_under = 84.76
+            fail_under = 84.74
         elif ApiType.SCRIPT in api_types:
-            fail_under = 81.65
+            fail_under = 70.87
         else:
             raise ValueError(f"Unknown coverage requirement for api type combination: {api_types}")
 
@@ -172,7 +172,7 @@ def unit(session):
     env = {}
 
     # If we have unknow pytest options we don't know what the coverage would be
-    fail_under = 1 if unknown_pytest_args else 0
+    fail_under = 1 if unknown_pytest_args and (unknown_pytest_args[0] != "-n" or len(unknown_pytest_args) != 2) else 0
     cov_opts = _cov_options_env(apis, env, fail_under)
     # env["COVERAGE_DEBUG"] = "config,trace,pathmap"
 

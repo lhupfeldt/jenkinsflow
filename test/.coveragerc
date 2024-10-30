@@ -35,7 +35,7 @@ omit =
     test/*
     experiments
     *_flymake.py
-    visual/server.py
+    flycheck_*.py
     **/test/*
     **/demo/*
 

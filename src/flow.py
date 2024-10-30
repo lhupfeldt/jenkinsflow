@@ -691,10 +691,8 @@ class _Flow(_JobControl, metaclass=abc.ABCMeta):
 
     def json(self, file_path, indent=None):
         node_to_id = lambda job: job.node_id
-        separators=None
         if indent:
             node_to_id = lambda job: job.name
-            separators=(',', ': ')
 
         nodes = self.nodes(node_to_id)
         links = self.links([], node_to_id)
@@ -704,11 +702,9 @@ class _Flow(_JobControl, metaclass=abc.ABCMeta):
         from atomicfile import AtomicFile
         if file_path is not None:
             with AtomicFile(file_path, 'w+') as out_file:
-                # python3 doesn't need  separators=(',', ': ')
-                json.dump(graph, out_file, indent=indent, separators=separators)
+                json.dump(graph, out_file, indent=indent)
         else:
-            # python3 doesn't need  separators=(',', ': ')
-            return json.dumps(graph, indent=indent, separators=separators)
+            return json.dumps(graph, indent=indent)
 
 
 class _Parallel(_Flow):
