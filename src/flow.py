@@ -5,6 +5,9 @@ import os, re, abc, signal
 from os.path import join as jp
 from collections import OrderedDict
 from itertools import chain
+import json
+
+from atomicfile import AtomicFile
 
 from .api_base import BuildResult, Progress, UnknownJobException
 from .flow_exceptions import (
@@ -698,8 +701,6 @@ class _Flow(_JobControl, metaclass=abc.ABCMeta):
         links = self.links([], node_to_id)
         graph = OrderedDict((('nodes', nodes), ('links', links)))
 
-        import json
-        from atomicfile import AtomicFile
         if file_path is not None:
             with AtomicFile(file_path, 'w+') as out_file:
                 json.dump(graph, out_file, indent=indent)
