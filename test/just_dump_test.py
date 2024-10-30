@@ -13,7 +13,7 @@ from .framework.utils import flow_graph_dir
 _REF_DIR = Path(__file__).parent/Path(__file__).stem.replace("_test", "")
 
 
-with open(_REF_DIR/"just_dump_test_compact.json") as _jf:
+with open(_REF_DIR/"just_dump_test_compact.json", encoding="utf-8") as _jf:
     _COMPACT_JSON = _jf.read().strip()
 
 

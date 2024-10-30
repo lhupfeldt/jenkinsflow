@@ -34,7 +34,7 @@ def _abort(log_file, test_file_name, api_type, fixed_prefix, job_name, sleep_tim
 
 if __name__ == '__main__':
     job_name = sys.argv[4]
-    with open(job_name + '.log', 'a+') as log_file:
+    with open(job_name + '.log', 'a+', encoding="utf-8") as log_file:
         try:
             _abort(
                 log_file, sys.argv[1], ApiType[sys.argv[2]], sys.argv[3], job_name, int(sys.argv[5]),
@@ -53,7 +53,7 @@ def abort(api, job_name, sleep_time, test_cfg: AllCfg):
     args = [sys.executable, "-m", f"jenkinsflow.test.framework.{Path(__file__).stem}",
             api.file_name, api.api_type.name, api.func_name.replace('test_', ''), job_name, str(sleep_time),
             *test_cfg_to_opt_strs(test_cfg, api.api_type)]
-    with open(job_name + '.log', 'w') as log_file:
+    with open(job_name + '.log', 'w', encoding="utf-8") as log_file:
         logt(log_file, "Current dir:", Path.cwd())
         logt(log_file, "Invoking abort subprocess.", args)
     subprocess.Popen(args, start_new_session=True)

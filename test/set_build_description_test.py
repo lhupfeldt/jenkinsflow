@@ -36,7 +36,7 @@ def _get_description(api, job, build_number):
         return dct['description']
 
     if api.api_type == ApiType.SCRIPT:
-        with open(jp(job.workspace, 'description.txt')) as ff:
+        with open(jp(job.workspace, 'description.txt'), encoding="utf-8") as ff:
             return ff.read()
 
     if api.api_type == ApiType.MOCK:

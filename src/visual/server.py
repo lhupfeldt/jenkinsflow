@@ -49,7 +49,7 @@ def job(name):
 @route('/jenkinsflow/flow_graph.json')
 def graph_json():
     response.content_type = 'text'
-    return open(jp(_json_dir, 'flow_graph.json'), 'r')
+    return open(jp(_json_dir, 'flow_graph.json'), 'r', encoding="utf-8")
     # return static_file('flow_graph.json', root=_json_dir)
 
 

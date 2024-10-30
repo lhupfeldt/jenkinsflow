@@ -63,7 +63,7 @@ class LoggingProcess(multiprocessing.Process):
         sys.exit(rc)
 
     def run(self):
-        sys.stdout = sys.stderr = open(self.output_file_name, 'w', buffering=1)
+        sys.stdout = sys.stderr = open(self.output_file_name, 'w', buffering=1, encoding="utf-8")
         super().run()
 
 
@@ -147,7 +147,7 @@ class Jenkins(Speed, BaseApiMixin):
     def create_job(self, job_name, config_xml):
         script_file = self._script_file(job_name)
         os.makedirs(os.path.dirname(script_file), exist_ok=True)
-        with open(script_file, 'w') as ff:
+        with open(script_file, 'w', encoding="utf-8") as ff:
             ff.write(config_xml)
 
     def delete_job(self, job_name):
@@ -186,7 +186,7 @@ class Jenkins(Speed, BaseApiMixin):
         fname = jp(workspace, 'description.txt')
         if not replace and os.path.exists(fname) and os.stat(fname).st_size:
             description = separator + description
-        with open(fname, mode) as ff:
+        with open(fname, mode, encoding="utf-8") as ff:
             try:
                 ff.write(description)
             except UnicodeEncodeError:
@@ -261,7 +261,7 @@ class ApiJob():
 
     def update_config(self, config_xml):
         os.makedirs(os.path.dirname(self.public_uri), exist_ok=True)
-        with open(self.public_uri, 'w') as ff:
+        with open(self.public_uri, 'w', encoding="utf-8") as ff:
             ff.write(config_xml)
 
     def __repr__(self):

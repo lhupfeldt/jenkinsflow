@@ -23,7 +23,7 @@ def _killer(log_file, pid, sleep_time, num_kills):
 
 if __name__ == '__main__':
     log_file_name = sys.argv[4]
-    with open(log_file_name, 'a+') as log_file:
+    with open(log_file_name, 'a+', encoding="utf-8") as log_file:
         try:
             _killer(log_file, int(sys.argv[1]), float(sys.argv[2]), int(sys.argv[3]))
         except Exception as ex:
@@ -37,7 +37,7 @@ def kill(api, sleep_time, num_kills):
     log_file_name = api.func_name.replace('test_', '') + ".log"
     args = [sys.executable, "-m", f"jenkinsflow.test.framework.{Path(__file__).stem}",
             repr(pid), repr(sleep_time), repr(num_kills), log_file_name]
-    with open(log_file_name, 'w') as log_file:
+    with open(log_file_name, 'w', encoding="utf-8") as log_file:
         logt(log_file, "Invoking kill subprocess.", args)
 
     subprocess.Popen(args, start_new_session=True)

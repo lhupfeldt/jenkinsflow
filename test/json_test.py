@@ -18,11 +18,11 @@ _REF_DIR = Path(__file__).parent/Path(__file__).stem.replace("_test", "")
 _timestamp_re = re.compile(r't": [0-9]+.[0-9]+')
 
 
-with open(_REF_DIR/"json_test_compact.json") as _jf:
+with open(_REF_DIR/"json_test_compact.json", encoding="utf-8") as _jf:
     _COMPACT_JSON = _jf.read().strip()
 
 
-with open(_REF_DIR/"json_test_pretty.json") as _jf:
+with open(_REF_DIR/"json_test_pretty.json", encoding="utf-8") as _jf:
     _PRETTY_JSON = _jf.read().strip()
 
 
@@ -83,11 +83,11 @@ def test_json_strip_prefix(api_type):
         # Test pretty printing
         json_file = flow_graph_dir(flow_name)/"pretty.json"
         ctrl1.json(json_file, indent=4)
-        with open(json_file) as jf:
+        with open(json_file, encoding="utf-8") as jf:
             _assert_json(jf.read().strip(), _PRETTY_JSON, api.api_type)
 
         # Test default compact json
-        with open(ctrl1.json_file) as jf:
+        with open(ctrl1.json_file, encoding="utf-8") as jf:
             _assert_json(jf.read().strip(), _COMPACT_JSON, api.api_type)
 
         # Test return json
@@ -113,7 +113,7 @@ def test_json_no_strip_prefix(api_type):
         # Test pretty printing with no stripping of top level prefix
         json_file = flow_graph_dir(flow_name)/"verbose_pretty.json"
         ctrl1.json(json_file, indent=4)
-        with open(json_file) as jf:
+        with open(json_file, encoding="utf-8") as jf:
             got_json = jf.read().strip()
             expect_json = _PRETTY_JSON.replace('strip_prefix', 'no_strip_prefix').replace('name": "', 'name": "jenkinsflow_test__json_no_strip_prefix__')
             _assert_json(got_json, expect_json, api.api_type)
@@ -149,5 +149,5 @@ def test_json_unchecked_only_in_flows(api_type):
             ctrl1.invoke('j7')
 
         # Test default compact json
-        with open(ctrl1.json_file) as got_jf, open(_REF_DIR/"json_test_unchecked_compact.json") as expected_jf:
+        with open(ctrl1.json_file) as got_jf, open(_REF_DIR/"json_test_unchecked_compact.json", encoding="utf-8") as expected_jf:
             _assert_json(got_jf.read().strip(), expected_jf.read().strip(), api.api_type)
