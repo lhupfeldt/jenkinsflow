@@ -1,4 +1,4 @@
-# Copyright (c) 2012 - 2015 Lars Hupfeldt Nielsen, Hupfeldt IT
+# Copyright (c) 2012 - 2024 Lars Hupfeldt Nielsen, Hupfeldt IT
 # All rights reserved. This work is under a BSD license, see LICENSE.TXT.
 
 import os
@@ -9,7 +9,6 @@ from .ordered_enum import OrderedEnum
 
 
 class BuildResult(OrderedEnum):
-    # pylint: disable=no-init
     FAILURE = 0
     ABORTED = 1
     UNSTABLE = 2
@@ -20,7 +19,6 @@ class BuildResult(OrderedEnum):
 
 
 class Progress(Enum):
-    # pylint: disable=no-init
     RUNNING = 1
     QUEUED = 2
     IDLE = 3
