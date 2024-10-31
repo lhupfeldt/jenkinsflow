@@ -45,12 +45,12 @@ def build_queued_msg(api, job_name, num):
     return re.compile("^job: '" + job_name + "' Status QUEUED - " + queued_why)
 
 
-_http_re = re.compile(r'https?://.*?/job/([^/" ]*)(/?)')
+_HTTP_RE = re.compile(r'https?://.*?/job/([^/" ]*)(/?)')
 def replace_host_port(api_type, contains_url):
     if api_type != ApiType.SCRIPT:
-        return _http_re.sub(r'http://x.x/job/\1\2', contains_url)
-    else:
-        return _http_re.sub(r'/tmp/jenkinsflow-test/job/\1.py', contains_url)
+        return _HTTP_RE.sub(r'http://x.x/job/\1\2', contains_url)
+
+    return _HTTP_RE.sub(r'/tmp/jenkinsflow-test/job/\1.py', contains_url)
 
 
 def lines_in(api_type, text, *expected_lines):

@@ -1,5 +1,7 @@
 import os.path
 
+import requests
+
 from .api_base import AuthError, ClientError
 
 
@@ -14,7 +16,6 @@ class ResourceNotFound(Exception):
 class RequestsRestApi():
     def __init__(self, direct_uri, username, password):
         super().__init__()
-        import requests
         self.session = requests.Session()
         if username or password:
             self.session.auth = requests.auth.HTTPBasicAuth(username, password.encode("utf-8"))
@@ -45,7 +46,6 @@ class RequestsRestApi():
         return response
 
     def _get(self, url, params):
-        import requests
         try:
             return self._check_response(self.session.get(_join_url(self.direct_uri, url), params=params))
         except requests.ConnectionError as ex:

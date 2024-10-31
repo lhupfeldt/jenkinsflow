@@ -31,8 +31,8 @@ def opts_to_test_cfg(direct_url: str, load_jobs: bool, delete_jobs: bool, mock_s
 def opt_strs_to_test_cfg(direct_url: str, load_jobs: str, delete_jobs: str, mock_speedup: str, apis_str: str) -> AllCfg:
     return opts_to_test_cfg(
         direct_url = direct_url,
-        load_jobs = True if load_jobs.lower() == "true" else False,
-        delete_jobs = True if delete_jobs.lower() == "true" else False,
+        load_jobs = load_jobs.lower() == "true",
+        delete_jobs = delete_jobs.lower() == "true",
         mock_speedup = int(mock_speedup),
         apis_str = apis_str)
 

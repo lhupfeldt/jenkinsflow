@@ -1,8 +1,11 @@
 # Copyright (c) 2012 - 2015 Lars Hupfeldt Nielsen, Hupfeldt IT
 # All rights reserved. This work is under a BSD license, see LICENSE.TXT.
 
-import os, re, abc, signal
+import os
 from os.path import join as jp
+import re
+import abc
+import signal
 from collections import OrderedDict
 from itertools import chain
 import json
@@ -18,10 +21,10 @@ from .checking_state import Checking
 from .kill_type import KillType
 
 
-_default_poll_interval = 0.5
-_default_report_interval = 5
-_default_secret_params = '.*passw.*|.*PASSW.*'
-_default_secret_params_re = re.compile(_default_secret_params)
+_DEFAULT_POLL_INTERVAL = 0.5
+_DEFAULT_REPORT_INTERVAL = 5
+_DEFAULT_SECRET_PARAMS = '.*passw.*|.*PASSW.*'
+_DEFAULT_SECRET_PARAMS_RE = re.compile(_DEFAULT_SECRET_PARAMS)
 
 _build_result_failures = (BuildResult.FAILURE, BuildResult.ABORTED)
 
@@ -786,7 +789,7 @@ class _Serial(_Flow):
     _exit_str = "]\n"
 
     def __init__(self, parent_flow, securitytoken, timeout, job_name_prefix='', max_tries=1, propagation=Propagation.NORMAL,
-                 report_interval=None, secret_params=_default_secret_params_re, allow_missing_jobs=None):
+                 report_interval=None, secret_params=_DEFAULT_SECRET_PARAMS_RE, allow_missing_jobs=None):
         super().__init__(parent_flow, securitytoken, timeout, job_name_prefix, max_tries, propagation,
                                       report_interval, secret_params, allow_missing_jobs)
         self.job_index = 0
@@ -897,8 +900,8 @@ class _TopLevelControllerMixin(metaclass=abc.ABCMeta):
         self.total_max_tries = 1
         self.nesting_level = -1
         self.current_nesting_level = -1
-        self.report_interval = _default_report_interval
-        self.secret_params_re = _default_secret_params_re
+        self.report_interval = _DEFAULT_REPORT_INTERVAL
+        self.secret_params_re = _DEFAULT_SECRET_PARAMS_RE
         self.allow_missing_jobs = None
         self.next_node_id = 0
         self.just_dump = just_dump
@@ -1029,14 +1032,14 @@ class _TopLevelControllerMixin(metaclass=abc.ABCMeta):
                 self.json(self.json_file, self.json_indent)
 
 
-class parallel(_Parallel, _TopLevelControllerMixin):
+class parallel(_Parallel, _TopLevelControllerMixin):  # invalid-name
     """Defines a parallel flow where nested jobs or flows are executed simultaneously.
 
     See :py:class:`serial` and :py:meth:`_Flow.parallel` for a description.
     """
 
     def __init__(self, jenkins_api, timeout, securitytoken=None, username=None, password=None, job_name_prefix='', max_tries=1, propagation=Propagation.NORMAL,
-                 report_interval=_default_report_interval, poll_interval=_default_poll_interval, secret_params=_default_secret_params_re, allow_missing_jobs=False,
+                 report_interval=_DEFAULT_REPORT_INTERVAL, poll_interval=_DEFAULT_POLL_INTERVAL, secret_params=_DEFAULT_SECRET_PARAMS_RE, allow_missing_jobs=False,
                  json_dir=None, json_indent=None, json_strip_top_level_prefix=True, direct_url=None, require_idle=True, just_dump=False, params_display_order=(),
                  kill_all=False, description=None, raise_if_unsuccessful=True):
         assert isinstance(propagation, Propagation)
@@ -1054,7 +1057,7 @@ class parallel(_Parallel, _TopLevelControllerMixin):
         self.wait_for_jobs()
 
 
-class serial(_Serial, _TopLevelControllerMixin):
+class serial(_Serial, _TopLevelControllerMixin):  # invalid-name
     """Defines a serial flow where nested jobs or flows are executed in order.
 
     Only differences to  :py:meth:`_Flow.serial` are described.
@@ -1132,7 +1135,7 @@ class serial(_Serial, _TopLevelControllerMixin):
     """
 
     def __init__(self, jenkins_api, timeout, securitytoken=None, username=None, password=None, job_name_prefix='', max_tries=1, propagation=Propagation.NORMAL,
-                 report_interval=_default_report_interval, poll_interval=_default_poll_interval, secret_params=_default_secret_params_re, allow_missing_jobs=False,
+                 report_interval=_DEFAULT_REPORT_INTERVAL, poll_interval=_DEFAULT_POLL_INTERVAL, secret_params=_DEFAULT_SECRET_PARAMS_RE, allow_missing_jobs=False,
                  json_dir=None, json_indent=None, json_strip_top_level_prefix=True, direct_url=None, require_idle=True, just_dump=False, params_display_order=(),
                  kill_all=False, description=None, raise_if_unsuccessful=True):
         assert isinstance(propagation, Propagation)

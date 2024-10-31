@@ -360,7 +360,7 @@ def test_set_build_description_cli_no_env_url(api_type, env_no_base_url, cli_run
 def test_set_build_description_call_script_help(capfd):
     # Invoke this in a subprocess to ensure that calling the script works
     # This will not give coverage as it not not traced through the subprocess call
-    rc = subprocess.call([sys.executable, jp(_here, '../src/cli/cli.py'), 'set-build-description', '--help'])
+    rc = subprocess.call(['jenkinsflow', 'set-build-description', '--help'])
     assert rc == 0
 
     sout, _ = capfd.readouterr()

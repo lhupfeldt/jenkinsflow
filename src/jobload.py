@@ -1,14 +1,14 @@
-# Copyright (c) 2012 - 2015 Lars Hupfeldt Nielsen, Hupfeldt IT
+# Copyright (c) 2012 - 2024 Lars Hupfeldt Nielsen, Hupfeldt IT
 # All rights reserved. This work is under a BSD license, see LICENSE.TXT.
 
 from .jenkins_api import UnknownJobException
 
 try:
     import tenjin
-    from tenjin.helpers import *
-    engine = tenjin.Engine()
+    from tenjin.helpers import *  # pylint: disable=wildcard-import
+    _ENGINE = tenjin.Engine()
 except ImportError:  # pragma: no cover
-    engine = None
+    _ENGINE = None
 
 
 def update_job(jenkins, job_name, config_xml, pre_delete=False, background=False):
@@ -50,6 +50,6 @@ def update_job_from_template(jenkins, job_name, config_xml_template, pre_delete=
     See :py:func:`.update_job` for other parameters.
     """
 
-    assert engine, "You must install tenjin (e.g.: pip install tenjin)"
-    config_xml = engine.render(config_xml_template, context or {})
+    assert _ENGINE, "You must install tenjin (e.g.: pip install tenjin)"
+    config_xml = _ENGINE.render(config_xml_template, context or {})
     update_job(jenkins, job_name, config_xml, pre_delete, background)

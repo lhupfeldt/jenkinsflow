@@ -28,7 +28,7 @@ if __name__ == '__main__':
             _killer(log_file, int(sys.argv[1]), float(sys.argv[2]), int(sys.argv[3]))
         except Exception as ex:
             print(ex, file=log_file)
-            raise            
+            raise
 
 
 def kill(api, sleep_time, num_kills):

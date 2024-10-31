@@ -1,8 +1,9 @@
 # Copyright (c) 2012 - 2015 Lars Hupfeldt Nielsen, Hupfeldt IT
 # All rights reserved. This work is under a BSD license, see LICENSE.TXT.
 
-import os, time
+import os
 import os.path
+import time
 from collections import OrderedDict
 import urllib.parse
 # import json
@@ -12,8 +13,8 @@ from .speed import Speed
 from .rest_api_wrapper import ResourceNotFound, RequestsRestApi
 
 
-_superseded = -1
-_dequeued = -2
+_SUPERSEDED_PSEUDO_BUILD_NUM = -1
+_DEQUEUED_PSEUDO_BUILD_NUM = -2
 
 _ct_url_enc = {'Content-Type': 'application/x-www-form-urlencoded'}
 
@@ -81,11 +82,10 @@ class Jenkins(Speed, BaseApiMixin):
         try:
             crumb = self.rest_api.get_content('/crumbIssuer/api/xml', xpath='concat(//crumbRequestField,":",//crumb)').split(b':')
             self._crumb = {crumb[0]: crumb[1]}
-            return self._crumb
         except ResourceNotFound:
             self.csrf = False
 
-    def get_json(self, url="", **params):
+    def get_json(self, url="", **params):  # pylint: disable=inconsistent-return-statements
         # Sometimes (but rarely) Jenkins will Abort the connection when jobs are being aborted!
         for ii in (1, 2, 3):
             try:
@@ -96,7 +96,7 @@ class Jenkins(Speed, BaseApiMixin):
                 print("WARNING: Retrying failed 'poll':", ex)
                 time.sleep(0.1)
 
-    def post(self, url, payload=None, headers=None, **params):
+    def post(self, url, payload=None, headers=None, **params):  # pylint: disable=inconsistent-return-statements
         for crumb_attempt in (0, 1):
             if self._crumb:
                 if headers:
@@ -304,7 +304,7 @@ class ApiJob():
 
         old_inv = self._invocations.get(location)
         if old_inv:
-            old_inv.build_number = _superseded
+            old_inv.build_number = _SUPERSEDED_PSEUDO_BUILD_NUM
         inv = self.jenkins.invocation_class(self, location, description)
         self._invocations[location] = inv
         # print("invoke:", location, inv)
@@ -329,7 +329,8 @@ class ApiJob():
                         # If we still have invocations in the queue, wait until next poll to query again
                         break
                     except KeyError:
-                        """'scans' have no 'why'"""
+                        # 'scans' have no 'why'
+                        pass
 
     def job_status(self):
         """Result, progress and latest buildnumber info for the JOB, NOT the invocation
@@ -419,10 +420,10 @@ class Invocation(ApiInvocationMixin):
         if self.build_number is None:
             return (BuildResult.UNKNOWN, Progress.QUEUED)
 
-        if self.build_number == _superseded:
+        if self.build_number == _SUPERSEDED_PSEUDO_BUILD_NUM:
             return (BuildResult.SUPERSEDED, Progress.IDLE)
 
-        if self.build_number == _dequeued:
+        if self.build_number == _DEQUEUED_PSEUDO_BUILD_NUM:
             return (BuildResult.DEQUEUED, Progress.IDLE)
 
         # It seems that even after the executor has been assigned a number in the queue item, the lastBuild might not yet exist
@@ -469,7 +470,7 @@ class Invocation(ApiInvocationMixin):
                 # Job is queued
                 qid = self.queued_item_path.strip('/').split('/')[2]
                 self.job.jenkins.post('/queue/cancelItem', id=qid)
-                self.build_number = _dequeued
+                self.build_number = _DEQUEUED_PSEUDO_BUILD_NUM
         except ResourceNotFound:  # pragma: no cover
             # Job is no longer queued or running, except that it may have just changed from queued to running
             # We leave it up to the flow logic to handle that

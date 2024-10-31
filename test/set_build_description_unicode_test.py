@@ -49,11 +49,11 @@ def test_set_build_description_unicode_set_build_description_util(api_type):
             job = api.get_job(api.job_name_prefix + job_name)
         _, _, build_num = job.job_status()
 
-        api.set_build_description(u'ÆØÅ', job_name=job.name, build_number=build_num)
-        api.set_build_description(u'æøå', replace=False, job_name=job.name, build_number=build_num)
-        _verify_description(api, job, build_num, u'«©º\nÆØÅ\næøå')
+        api.set_build_description('ÆØÅ', job_name=job.name, build_number=build_num)
+        api.set_build_description('æøå', replace=False, job_name=job.name, build_number=build_num)
+        _verify_description(api, job, build_num, '«©º\nÆØÅ\næøå')
 
-        api.set_build_description(u'¶¹²', replace=True, job_name=job.name, build_number=build_num)
-        api.set_build_description(u'³¼¢', replace=False, separator='#', job_name=job.name, build_number=build_num)
-        api.set_build_description(u'¬<>©‘’Nº', separator='!!', job_name=job.name, build_number=build_num)
-        _verify_description(api, job, build_num, u'¶¹²#³¼¢!!¬<>©‘’Nº')
+        api.set_build_description('¶¹²', replace=True, job_name=job.name, build_number=build_num)
+        api.set_build_description('³¼¢', replace=False, separator='#', job_name=job.name, build_number=build_num)
+        api.set_build_description('¬<>©‘’Nº', separator='!!', job_name=job.name, build_number=build_num)
+        _verify_description(api, job, build_num, '¶¹²#³¼¢!!¬<>©‘’Nº')

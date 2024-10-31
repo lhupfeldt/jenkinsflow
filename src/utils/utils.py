@@ -1,7 +1,8 @@
-# Copyright (c) 2012 - 2015 Lars Hupfeldt Nielsen, Hupfeldt IT
+# Copyright (c) 2012 - 2024 Lars Hupfeldt Nielsen, Hupfeldt IT
 # All rights reserved. This work is under a BSD license, see LICENSE.TXT.
 
-import sys, os
+import sys
+import os
 
 
 def env_base_url():

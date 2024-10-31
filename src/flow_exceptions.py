@@ -7,6 +7,7 @@ from .propagation_types import  Propagation
 
 
 class JobControlException(Exception):
+    """Base for all Exceptions that may be raised by `jenkinsflow`."""
     def __init__(self, message, propagation=Propagation.NORMAL):
         super().__init__(message)
         self.propagation = propagation
@@ -33,6 +34,7 @@ class JobControlFailException(JobControlException, metaclass=abc.ABCMeta):
 
 
 class FailedSingleJobException(JobControlFailException):
+    """Base for all Exceptions that may be raised by `jenkinsflow` because of failed job invocation or `build`."""
     def __init__(self, job, propagation):
         msg = "Failed job: " + repr(job) + ", propagation:" + str(propagation)
         super().__init__(msg, propagation)

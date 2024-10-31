@@ -3,6 +3,7 @@
 import sys
 import os
 import re
+import errno
 from pathlib import Path
 import shutil
 
@@ -165,7 +166,6 @@ def _set_env_fixture(var_name, value, request):
 def _set_jenkins_url_env_fixture(not_set_value, request):
     if os.environ.get('JENKINS_URL'):
         _set_env_fixture('JENKINS_URL', not_set_value, request)
-        return
 
 
 def _set_env_if_not_set_fixture(var_name, not_set_value, request):

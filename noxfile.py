@@ -40,13 +40,13 @@ def _cov_options_env(api_types: Sequence[ApiType], env: dict[str, str], fail_und
 
     if not fail_under:
         if len(api_types) == 3:
-            fail_under = 93.30
+            fail_under = 93.93
         elif ApiType.JENKINS in api_types:
             fail_under = 95.05
         elif ApiType.MOCK in api_types and ApiType.SCRIPT in api_types:
             fail_under = 86.97
         elif ApiType.MOCK in api_types:
-            fail_under = 84.74
+            fail_under = 85.33
         elif ApiType.SCRIPT in api_types:
             fail_under = 81.66
         else:
@@ -122,13 +122,13 @@ def pylint(session):
     session.install(".", "pylint>=3.3.1", "pylint-pytest>=1.1.8")
 
     print("\nPylint src")
-    session.run("pylint", "--fail-under", "8.1", str(_HERE/"src"))
+    session.run("pylint", "--fail-under", "8.5", str(_HERE/"src"))
 
     print("\nPylint test sources")
     disable_checks = "missing-module-docstring,missing-class-docstring,missing-function-docstring"
     disable_checks += ",multiple-imports,invalid-name,duplicate-code"
     session.run(
-        "pylint", "--fail-under", "9.1", "--variable-rgx", r"[a-z_][a-z0-9_]{1,30}$", "--disable", disable_checks,
+        "pylint", "--fail-under", "9.2", "--variable-rgx", r"[a-z_][a-z0-9_]{1,30}$", "--disable", disable_checks,
         "--ignore", "jenkins_security.py,demos_test.py", str(_TEST_DIR))
 
 

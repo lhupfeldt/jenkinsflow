@@ -1,4 +1,4 @@
-# Copyright (c) 2012 - 2015 Lars Hupfeldt Nielsen, Hupfeldt IT
+# Copyright (c) 2024 Lars Hupfeldt Nielsen, Hupfeldt IT
 # All rights reserved. This work is under a BSD license, see LICENSE.TXT.
 
 from datetime import datetime
@@ -6,10 +6,9 @@ from datetime import datetime
 import pytest
 
 from jenkinsflow.flow import serial
-from jenkinsflow.jenkins_api import Jenkins
 
 
-from .framework.cfg import jenkins_security as security, ApiType
+from .framework.cfg import ApiType
 from .framework import api_select
 
 
