@@ -34,7 +34,8 @@ class Killed(Exception):
 
 
 class _JobControl(metaclass=abc.ABCMeta):
-    def __init__(self, parent_flow, securitytoken, max_tries, propagation, secret_params_re, allow_missing_jobs, *, assume_finished_after):
+    def __init__(
+            self, *, parent_flow, securitytoken, max_tries, propagation, secret_params_re, allow_missing_jobs, assume_finished_after: int):
         self.parent_flow = parent_flow
         self.top_flow = parent_flow.top_flow
 
@@ -177,14 +178,21 @@ class _SingleJobInvocation(_JobControl):
     """
 
     def __init__(
-            self, parent_flow, securitytoken, job_name_prefix, max_tries, job_name, assume_finished_after: int, params,
-            propagation, secret_params_re, allow_missing_jobs):
+            self, *, parent_flow, securitytoken, job_name_prefix, max_tries, job_name, assume_finished_after: int,
+            params, propagation, secret_params_re, allow_missing_jobs):
         for key, value in params.items():
             # Handle parameters passed as int or bool. Booleans will be lowercased!
             if isinstance(value, (bool, int)):
                 params[key] = str(value).lower()
         self.params = params
-        super().__init__(parent_flow, securitytoken, max_tries, propagation, secret_params_re, allow_missing_jobs, assume_finished_after=assume_finished_after)
+        super().__init__(
+            parent_flow=parent_flow,
+            securitytoken=securitytoken,
+            max_tries=max_tries,
+            propagation=propagation,
+            secret_params_re=secret_params_re,
+            allow_missing_jobs=allow_missing_jobs,
+            assume_finished_after=assume_finished_after)
         # There is no separate retry for individual jobs, so set self.total_max_tries to the same as parent flow!
         self.total_max_tries = self.parent_flow.total_max_tries
         self.job = None
@@ -452,9 +460,17 @@ class _Flow(_JobControl, metaclass=abc.ABCMeta):
     _enter_str = None
     _exit_str = None
 
-    def __init__(self, parent_flow, timeout, securitytoken, job_name_prefix, max_tries, propagation, report_interval, secret_params, allow_missing_jobs):
+    def __init__(
+            self, *, parent_flow, timeout, securitytoken, job_name_prefix, max_tries, propagation, report_interval, secret_params, allow_missing_jobs):
         secret_params_re = re.compile(secret_params) if isinstance(secret_params, str) else secret_params
-        super().__init__(parent_flow, securitytoken, max_tries, propagation, secret_params_re, allow_missing_jobs, assume_finished_after=0)
+        super().__init__(
+            parent_flow=parent_flow,
+            securitytoken=securitytoken,
+            max_tries=max_tries,
+            propagation=propagation,
+            secret_params_re=secret_params_re,
+            allow_missing_jobs=allow_missing_jobs,
+            assume_finished_after=0)
         self.timeout = timeout
         self.job_name_prefix = self.parent_flow.job_name_prefix + job_name_prefix if job_name_prefix is not None else ""
         self.report_interval = report_interval or self.parent_flow.report_interval
@@ -484,7 +500,16 @@ class _Flow(_JobControl, metaclass=abc.ABCMeta):
         """
 
         assert isinstance(propagation, Propagation)
-        return _Parallel(self, timeout, securitytoken, job_name_prefix, max_tries, propagation, report_interval, secret_params, allow_missing_jobs)
+        return _Parallel(
+            parent_flow=self,
+            timeout=timeout,
+            securitytoken=securitytoken,
+            job_name_prefix=job_name_prefix,
+            max_tries=max_tries,
+            propagation=propagation,
+            report_interval=report_interval,
+            secret_params=secret_params,
+            allow_missing_jobs=allow_missing_jobs)
 
     def serial(self, timeout=0, securitytoken=None, job_name_prefix='', max_tries=1, propagation=Propagation.NORMAL, report_interval=None, secret_params=None, allow_missing_jobs=None):
         """Defines a serial flow where nested jobs or flows are executed in order.
@@ -564,7 +589,16 @@ class _Flow(_JobControl, metaclass=abc.ABCMeta):
         """
 
         assert isinstance(propagation, Propagation)
-        return _Serial(self, timeout, securitytoken, job_name_prefix, max_tries, propagation, report_interval, secret_params, allow_missing_jobs)
+        return _Serial(
+            parent_flow=self,
+            timeout=timeout,
+            securitytoken=securitytoken,
+            job_name_prefix=job_name_prefix,
+            max_tries=max_tries,
+            propagation=propagation,
+            report_interval=report_interval,
+            secret_params=secret_params,
+            allow_missing_jobs=allow_missing_jobs)
 
     def invoke(self, job_name, assume_finished_after: int = 0, **params):
         """Define a Jenkins job invocation that will be invoked under control of the surrounding flow.
@@ -591,8 +625,16 @@ class _Flow(_JobControl, metaclass=abc.ABCMeta):
         """
 
         inv = _SingleJobInvocation(
-            self, self.securitytoken, self.job_name_prefix, self.max_tries, job_name, assume_finished_after, params,
-            self.propagation, self.secret_params_re, self.allow_missing_jobs)
+            parent_flow=self,
+            securitytoken=self.securitytoken,
+            job_name_prefix=self.job_name_prefix,
+            max_tries=self.max_tries,
+            job_name=job_name,
+            assume_finished_after=assume_finished_after,
+            params=params,
+            propagation=self.propagation,
+            secret_params_re=self.secret_params_re,
+            allow_missing_jobs=self.allow_missing_jobs)
         self.invocations.append(inv)
         return inv
 
@@ -609,8 +651,16 @@ class _Flow(_JobControl, metaclass=abc.ABCMeta):
         """
 
         inv = _SingleJobInvocation(
-            self, self.securitytoken, self.job_name_prefix, self.max_tries, job_name, assume_finished_after, params,
-            Propagation.UNCHECKED, self.secret_params_re, self.allow_missing_jobs)
+            parent_flow=self,
+            securitytoken=self.securitytoken,
+            job_name_prefix=self.job_name_prefix,
+            max_tries=self.max_tries,
+            job_name=job_name,
+            assume_finished_after=assume_finished_after,
+            params=params,
+            propagation=Propagation.UNCHECKED,
+            secret_params_re=self.secret_params_re,
+            allow_missing_jobs=self.allow_missing_jobs)
         self.invocations.append(inv)
         return inv
 
@@ -788,10 +838,19 @@ class _Serial(_Flow):
     _enter_str = "serial flow: ["
     _exit_str = "]\n"
 
-    def __init__(self, parent_flow, securitytoken, timeout, job_name_prefix='', max_tries=1, propagation=Propagation.NORMAL,
-                 report_interval=None, secret_params=_DEFAULT_SECRET_PARAMS_RE, allow_missing_jobs=None):
-        super().__init__(parent_flow, securitytoken, timeout, job_name_prefix, max_tries, propagation,
-                                      report_interval, secret_params, allow_missing_jobs)
+    def __init__(
+            self, *, parent_flow, timeout, securitytoken, job_name_prefix='', max_tries=1, propagation=Propagation.NORMAL,
+            report_interval=None, secret_params=_DEFAULT_SECRET_PARAMS_RE, allow_missing_jobs=None):
+        super().__init__(
+            parent_flow=parent_flow,
+            timeout=timeout,
+            securitytoken=securitytoken,
+            job_name_prefix=job_name_prefix,
+            max_tries=max_tries,
+            propagation=propagation,
+            report_interval=report_interval,
+            secret_params=secret_params,
+            allow_missing_jobs=allow_missing_jobs)
         self.job_index = 0
 
     def _prepare_to_invoke(self, reset_tried_times=False):
@@ -1038,15 +1097,26 @@ class parallel(_Parallel, _TopLevelControllerMixin):  # invalid-name
     See :py:class:`serial` and :py:meth:`_Flow.parallel` for a description.
     """
 
-    def __init__(self, jenkins_api, timeout, securitytoken=None, username=None, password=None, job_name_prefix='', max_tries=1, propagation=Propagation.NORMAL,
-                 report_interval=_DEFAULT_REPORT_INTERVAL, poll_interval=_DEFAULT_POLL_INTERVAL, secret_params=_DEFAULT_SECRET_PARAMS_RE, allow_missing_jobs=False,
-                 json_dir=None, json_indent=None, json_strip_top_level_prefix=True, direct_url=None, require_idle=True, just_dump=False, params_display_order=(),
-                 kill_all=False, description=None, raise_if_unsuccessful=True):
+    def __init__(
+            self, jenkins_api, timeout, securitytoken=None, username=None, password=None, job_name_prefix='', max_tries=1, propagation=Propagation.NORMAL,
+            report_interval=_DEFAULT_REPORT_INTERVAL, poll_interval=_DEFAULT_POLL_INTERVAL, secret_params=_DEFAULT_SECRET_PARAMS_RE, allow_missing_jobs=False,
+            json_dir=None, json_indent=None, json_strip_top_level_prefix=True, direct_url=None, require_idle=True, just_dump=False, params_display_order=(),
+            kill_all=False, description=None, raise_if_unsuccessful=True):
         assert isinstance(propagation, Propagation)
-        securitytoken = self.toplevel_init(jenkins_api, securitytoken, username, password, job_name_prefix, poll_interval, direct_url, require_idle,
-                                           json_dir, json_indent, json_strip_top_level_prefix, params_display_order, just_dump, kill_all, description=description,
-                                           raise_if_unsuccessful=raise_if_unsuccessful)
-        super().__init__(self, timeout, securitytoken, job_name_prefix, max_tries, propagation, report_interval, secret_params, allow_missing_jobs)
+        securitytoken = self.toplevel_init(
+            jenkins_api, securitytoken, username, password, job_name_prefix, poll_interval, direct_url, require_idle,
+            json_dir, json_indent, json_strip_top_level_prefix, params_display_order, just_dump, kill_all, description=description,
+            raise_if_unsuccessful=raise_if_unsuccessful)
+        super().__init__(
+            parent_flow=self,
+            timeout=timeout,
+            securitytoken=securitytoken,
+            job_name_prefix=job_name_prefix,
+            max_tries=max_tries,
+            propagation=propagation,
+            report_interval=report_interval,
+            secret_params=secret_params,
+            allow_missing_jobs=allow_missing_jobs)
         self.parent_flow = None
 
     def __exit__(self, exc_type, exc_value, traceback):
@@ -1134,15 +1204,26 @@ class serial(_Serial, _TopLevelControllerMixin):  # invalid-name
         JobControlException
     """
 
-    def __init__(self, jenkins_api, timeout, securitytoken=None, username=None, password=None, job_name_prefix='', max_tries=1, propagation=Propagation.NORMAL,
-                 report_interval=_DEFAULT_REPORT_INTERVAL, poll_interval=_DEFAULT_POLL_INTERVAL, secret_params=_DEFAULT_SECRET_PARAMS_RE, allow_missing_jobs=False,
-                 json_dir=None, json_indent=None, json_strip_top_level_prefix=True, direct_url=None, require_idle=True, just_dump=False, params_display_order=(),
-                 kill_all=False, description=None, raise_if_unsuccessful=True):
+    def __init__(
+            self, jenkins_api, timeout, securitytoken=None, username=None, password=None, job_name_prefix='', max_tries=1, propagation=Propagation.NORMAL,
+            report_interval=_DEFAULT_REPORT_INTERVAL, poll_interval=_DEFAULT_POLL_INTERVAL, secret_params=_DEFAULT_SECRET_PARAMS_RE, allow_missing_jobs=False,
+            json_dir=None, json_indent=None, json_strip_top_level_prefix=True, direct_url=None, require_idle=True, just_dump=False, params_display_order=(),
+            kill_all=False, description=None, raise_if_unsuccessful=True):
         assert isinstance(propagation, Propagation)
-        securitytoken = self.toplevel_init(jenkins_api, securitytoken, username, password, job_name_prefix, poll_interval, direct_url, require_idle,
-                                           json_dir, json_indent, json_strip_top_level_prefix, params_display_order, just_dump, kill_all, description=description,
-                                           raise_if_unsuccessful=raise_if_unsuccessful)
-        super().__init__(self, timeout, securitytoken, job_name_prefix, max_tries, propagation, report_interval, secret_params, allow_missing_jobs)
+        securitytoken = self.toplevel_init(
+            jenkins_api, securitytoken, username, password, job_name_prefix, poll_interval, direct_url, require_idle,
+            json_dir, json_indent, json_strip_top_level_prefix, params_display_order, just_dump, kill_all, description=description,
+            raise_if_unsuccessful=raise_if_unsuccessful)
+        super().__init__(
+            parent_flow=self,
+            timeout=timeout,
+            securitytoken=securitytoken,
+            job_name_prefix=job_name_prefix,
+            max_tries=max_tries,
+            propagation=propagation,
+            report_interval=report_interval,
+            secret_params=secret_params,
+            allow_missing_jobs=allow_missing_jobs)
         self.parent_flow = None
 
     def __exit__(self, exc_type, exc_value, traceback):
