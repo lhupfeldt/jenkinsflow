@@ -63,7 +63,7 @@ def _cov_options_env(api_types: Sequence[ApiType], env: dict[str, str], fail_und
     if ApiType.JENKINS not in api_types:
         api_exclude_files.append("jenkins_api.py")
     if ApiType.SCRIPT not in api_types:
-        api_exclude_files.append("script_api.py")
+        api_exclude_files.extend(["script_api.py", "logging_process.py"])
 
     env["COV_API_EXCLUDE_LINES"] = "\n".join(api_exclude_lines)
     env["COV_API_EXCLUDE_FILES"] = "\n".join(api_exclude_files)
