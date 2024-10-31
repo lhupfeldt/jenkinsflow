@@ -11,11 +11,11 @@ from .base_test_api import TestJob, TestJenkins
 from .hyperspeed import HyperSpeed
 from .cfg import ApiType
 
-here = os.path.abspath(os.path.dirname(__file__))
+_HERE = os.path.abspath(os.path.dirname(__file__))
 
 
 class MockApi(TestJenkins, HyperSpeed):
-    job_xml_template = jp(here, 'job.xml.tenjin')
+    job_xml_template = jp(_HERE, 'job.xml.tenjin')
     api_type = ApiType.MOCK
 
     def __init__(self, *, job_name_prefix, existing_jobs: bool = False, speedup, public_uri, python_executable=None):

@@ -12,9 +12,6 @@ from .api_base import BuildResult, Progress, UnknownJobException, BaseApiMixin, 
 from .speed import Speed
 
 
-here = os.path.abspath(os.path.dirname(__file__))
-
-
 def _pgrep(proc_name):
     """Returns True if a process with name 'proc_name' is running, else False"""
     for proc in psutil.process_iter():

@@ -58,8 +58,8 @@ def test_just_dump_with_json(api_type):
         api.job('j4', max_fails=0, expect_invocations=0, expect_order=None, exec_time=5)
         api.job('j5', max_fails=0, expect_invocations=0, expect_order=None, exec_time=5)
 
-        fgd = flow_graph_dir(flow_name)
-        ctrl1 = _flow(api, fgd)
+        fg_dir = flow_graph_dir(flow_name, api.api_type)
+        ctrl1 = _flow(api, fg_dir)
 
         # Test json
         json = ctrl1.json(None)

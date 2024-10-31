@@ -1,14 +1,12 @@
 # Copyright (c) 2012 - 2015 Lars Hupfeldt Nielsen, Hupfeldt IT
 # All rights reserved. This work is under a BSD license, see LICENSE.TXT.
 
-import os, random
+import random
 
 from jenkinsflow import jobload
 
 from .framework import api_select
 
-
-here = os.path.abspath(os.path.dirname(__file__))
 
 _context = dict(
     exec_time=1,

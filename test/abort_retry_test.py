@@ -1,8 +1,6 @@
 # Copyright (c) 2012 - 2015 Lars Hupfeldt Nielsen, Hupfeldt IT
 # All rights reserved. This work is under a BSD license, see LICENSE.TXT.
 
-import os
-
 import pytest
 from pytest import raises
 
@@ -11,8 +9,6 @@ from jenkinsflow.flow import parallel, serial, FailedChildJobException, FailedCh
 from .framework.cfg import ApiType
 from .framework import api_select
 from .framework.abort_job import abort
-
-here = os.path.abspath(os.path.dirname(__file__))
 
 
 @pytest.mark.not_apis(ApiType.SCRIPT)

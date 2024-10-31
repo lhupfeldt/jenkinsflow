@@ -11,7 +11,7 @@ import argparse
 import requests
 from bottle import route, run, static_file, post, response
 
-here = os.path.abspath(os.path.dirname(__file__))
+_HERE = os.path.abspath(os.path.dirname(__file__))
 
 _json_dir = '/var/www/jenkinsflow/'
 jenkins_url = 'http://localhost:8080/'
@@ -19,17 +19,17 @@ jenkins_url = 'http://localhost:8080/'
 
 @route('/jenkinsflow/graph')
 def index():
-    return static_file('flow_vis.html', root=here)
+    return static_file('flow_vis.html', root=_HERE)
 
 
 @route('/jenkinsflow/js/<filename>')
 def js(filename):
-    return static_file(filename, root=jp(here, 'js'))
+    return static_file(filename, root=jp(_HERE, 'js'))
 
 
 @route('/jenkinsflow/stylesheets/<filename>')
 def stylesheets(filename):
-    return static_file(filename, root=jp(here, 'stylesheets'))
+    return static_file(filename, root=jp(_HERE, 'stylesheets'))
 
 
 @post('/jenkinsflow/builds')

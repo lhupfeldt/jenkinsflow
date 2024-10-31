@@ -19,7 +19,7 @@ from .cfg.dirs import test_tmp_dir
 from .cfg import jenkins_security
 
 
-here = os.path.abspath(os.path.dirname(__file__))
+_HERE = os.path.abspath(os.path.dirname(__file__))
 
 
 class WrapperJob(TestJob, ObjectWrapper):
@@ -246,7 +246,7 @@ class _TestWrapperApi():
 
 class JenkinsTestWrapperApi(_TestWrapperApi, jenkins_api.Jenkins, TestJenkins):
     api_type = ApiType.JENKINS
-    job_xml_template = jp(here, 'job.xml.tenjin')
+    job_xml_template = jp(_HERE, 'job.xml.tenjin')
 
     def __init__(self, *, file_name, func_name, func_num_params, job_name_prefix, reload_jobs, pre_delete_jobs, direct_url, fake_public_uri,
                  username, password, securitytoken, login, invocation_class, python_executable, existing_jobs: bool):
@@ -273,7 +273,7 @@ class JenkinsTestWrapperApi(_TestWrapperApi, jenkins_api.Jenkins, TestJenkins):
 
 class ScriptTestWrapperApi(_TestWrapperApi, script_api.Jenkins, TestJenkins):
     api_type = ApiType.SCRIPT
-    job_xml_template = jp(here, 'job_script.py.tenjin')
+    job_xml_template = jp(_HERE, 'job_script.py.tenjin')
 
     def __init__(self, *, file_name, func_name, func_num_params, job_name_prefix, reload_jobs, pre_delete_jobs, direct_url, fake_public_uri,
                  username, password, securitytoken, login, invocation_class):

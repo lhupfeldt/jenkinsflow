@@ -78,10 +78,11 @@ def test_json_strip_prefix(api_type):
         api.job('j8_unchecked', max_fails=0, expect_invocations=1, invocation_delay=0, exec_time=40, expect_order=None, unknown_result=True)
         api.job('j9', max_fails=0, expect_invocations=1, expect_order=4, exec_time=5)
 
-        ctrl1 = _flow(api, True, flow_graph_dir(flow_name))
+        fg_dir = flow_graph_dir(flow_name, api.api_type)
+        ctrl1 = _flow(api, True, fg_dir)
 
         # Test pretty printing
-        json_file = flow_graph_dir(flow_name)/"pretty.json"
+        json_file = fg_dir/"pretty.json"
         ctrl1.json(json_file, indent=4)
         with open(json_file, encoding="utf-8") as jf:
             _assert_json(jf.read().strip(), _PRETTY_JSON, api.api_type)
@@ -108,10 +109,11 @@ def test_json_no_strip_prefix(api_type):
         api.job('j8_unchecked', max_fails=0, expect_invocations=1, invocation_delay=0, exec_time=40, expect_order=None, unknown_result=True)
         api.job('j9', max_fails=0, expect_invocations=1, expect_order=4, exec_time=5)
 
-        ctrl1 = _flow(api, False, flow_graph_dir(flow_name))
+        fg_dir = flow_graph_dir(flow_name, api.api_type)
+        ctrl1 = _flow(api, False, fg_dir)
 
         # Test pretty printing with no stripping of top level prefix
-        json_file = flow_graph_dir(flow_name)/"verbose_pretty.json"
+        json_file = fg_dir/"verbose_pretty.json"
         ctrl1.json(json_file, indent=4)
         with open(json_file, encoding="utf-8") as jf:
             got_json = jf.read().strip()
@@ -130,7 +132,7 @@ def test_json_unchecked_only_in_flows(api_type):
         api.job('j6', max_fails=0, expect_invocations=1, expect_order=1)
         api.job('j7', max_fails=0, expect_invocations=1, expect_order=2, exec_time=5)
 
-        json_dir = flow_graph_dir(flow_name)
+        json_dir = flow_graph_dir(flow_name, api.api_type)
         json_dir.mkdir(parents=True, exist_ok=True)
 
         with serial(api, timeout=70, job_name_prefix=api.job_name_prefix, report_interval=1, json_dir=json_dir) as ctrl1:

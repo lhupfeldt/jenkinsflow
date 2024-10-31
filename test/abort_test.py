@@ -1,7 +1,7 @@
 # Copyright (c) 2012 - 2015 Lars Hupfeldt Nielsen, Hupfeldt IT
 # All rights reserved. This work is under a BSD license, see LICENSE.TXT.
 
-import os, re
+import re
 
 import pytest
 from pytest import raises
@@ -12,8 +12,6 @@ from .framework import api_select
 from .framework.utils import lines_in
 from .framework.abort_job import abort
 from .framework.cfg import ApiType
-
-here = os.path.abspath(os.path.dirname(__file__))
 
 
 @pytest.mark.not_apis(ApiType.SCRIPT)

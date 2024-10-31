@@ -70,7 +70,7 @@ def lines_in(api_type, text, *expected_lines):
     return generic_lines_in(text, partial(replace_host_port, api_type), *expected_lines)
 
 
-def flow_graph_dir(flow_name: str) -> Path:
+def flow_graph_dir(flow_name: str, api_type: ApiType) -> Path:
     """Control which directory to put flow graph in.
 
     Put the generated graph in the workspace root if running from Jenkins.
@@ -78,4 +78,4 @@ def flow_graph_dir(flow_name: str) -> Path:
 
     Return: dir-name
     """
-    return Path.cwd() if os.environ.get('JOB_NAME') else Path(flow_graph_root_dir, flow_name)
+    return Path.cwd() if os.environ.get('JOB_NAME') else Path(flow_graph_root_dir, flow_name + "-" + api_type.name.lower())
