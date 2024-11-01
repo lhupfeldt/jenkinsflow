@@ -948,7 +948,7 @@ class _Serial(_Flow):
 
 
 class _TopLevelControllerMixin(metaclass=abc.ABCMeta):
-    def toplevel_init(self, jenkins_api, securitytoken, username, password, top_level_job_name_prefix, poll_interval, direct_url, require_idle,
+    def toplevel_init(self, jenkins_api, securitytoken, top_level_job_name_prefix, poll_interval, direct_url, require_idle,
                       json_dir, json_indent, json_strip_top_level_prefix, params_display_order, just_dump, kill_all, description, raise_if_unsuccessful):
         self._start_msg()
         # pylint: disable=attribute-defined-outside-init
@@ -977,8 +977,6 @@ class _TopLevelControllerMixin(metaclass=abc.ABCMeta):
 
         self._api = jenkins_api
         self.securitytoken = securitytoken
-        self.username = username or self._api.username
-        self.password = password or self._api.password
         self.poll_interval = poll_interval
         self.direct_url = direct_url.rstrip('/') if direct_url is not None else direct_url
         self.require_idle = require_idle
@@ -1098,13 +1096,13 @@ class parallel(_Parallel, _TopLevelControllerMixin):  # invalid-name
     """
 
     def __init__(
-            self, jenkins_api, timeout, securitytoken=None, username=None, password=None, job_name_prefix='', max_tries=1, propagation=Propagation.NORMAL,
+            self, jenkins_api, timeout, securitytoken=None, job_name_prefix='', max_tries=1, propagation=Propagation.NORMAL,
             report_interval=_DEFAULT_REPORT_INTERVAL, poll_interval=_DEFAULT_POLL_INTERVAL, secret_params=_DEFAULT_SECRET_PARAMS_RE, allow_missing_jobs=False,
             json_dir=None, json_indent=None, json_strip_top_level_prefix=True, direct_url=None, require_idle=True, just_dump=False, params_display_order=(),
             kill_all=False, description=None, raise_if_unsuccessful=True):
         assert isinstance(propagation, Propagation)
         securitytoken = self.toplevel_init(
-            jenkins_api, securitytoken, username, password, job_name_prefix, poll_interval, direct_url, require_idle,
+            jenkins_api, securitytoken, job_name_prefix, poll_interval, direct_url, require_idle,
             json_dir, json_indent, json_strip_top_level_prefix, params_display_order, just_dump, kill_all, description=description,
             raise_if_unsuccessful=raise_if_unsuccessful)
         super().__init__(
@@ -1134,15 +1132,8 @@ class serial(_Serial, _TopLevelControllerMixin):  # invalid-name
 
     Args:
         jenkins_api (:py:class:`.jenkins_api.Jenkins` or :py:class:`.script_api.Jenkins`): Jenkins Api instance used for accessing jenkins.
-            If jenkins_api is instantiated with username/password you do not need to specify username/password to the flow (see below).
 
         securitytoken (str): Token to use on security enabled Jenkins instead of username/password. The Jenkins job must have the token configured.
-
-        username (str): Name of user authorized to run Jenkins 'cli' and change job status.
-
-        password (str): Password of user.
-            The username/password here is are not used for running the jobs. See jenkins_api for that.
-            If username/password is specified for jenkins_api, they will be used unless they are also specified on the flow.
 
         job_name_prefix (str): All jobs defined in flow will automatically be prefixed with this string before invoking Jenkins job.
 
@@ -1205,13 +1196,13 @@ class serial(_Serial, _TopLevelControllerMixin):  # invalid-name
     """
 
     def __init__(
-            self, jenkins_api, timeout, securitytoken=None, username=None, password=None, job_name_prefix='', max_tries=1, propagation=Propagation.NORMAL,
+            self, jenkins_api, timeout, securitytoken=None, job_name_prefix='', max_tries=1, propagation=Propagation.NORMAL,
             report_interval=_DEFAULT_REPORT_INTERVAL, poll_interval=_DEFAULT_POLL_INTERVAL, secret_params=_DEFAULT_SECRET_PARAMS_RE, allow_missing_jobs=False,
             json_dir=None, json_indent=None, json_strip_top_level_prefix=True, direct_url=None, require_idle=True, just_dump=False, params_display_order=(),
             kill_all=False, description=None, raise_if_unsuccessful=True):
         assert isinstance(propagation, Propagation)
         securitytoken = self.toplevel_init(
-            jenkins_api, securitytoken, username, password, job_name_prefix, poll_interval, direct_url, require_idle,
+            jenkins_api, securitytoken, job_name_prefix, poll_interval, direct_url, require_idle,
             json_dir, json_indent, json_strip_top_level_prefix, params_display_order, just_dump, kill_all, description=description,
             raise_if_unsuccessful=raise_if_unsuccessful)
         super().__init__(

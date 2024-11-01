@@ -21,20 +21,6 @@ def test_propagate_unstable_serial_single_unstable(api_type):
         return 77
 
 
-def test_propagate_unstable_serial_single_unstable_user_pass(api_type):
-    with api_select.api(__file__, api_type) as api:
-        api.flow_job()
-        api.job('j11_unstable', max_fails=0, expect_invocations=1, expect_order=1, final_result='unstable')
-
-        with serial(
-                api, timeout=70, username=jenkins_security.username, password=jenkins_security.password,
-                job_name_prefix=api.job_name_prefix, raise_if_unsuccessful=False) as ctrl1:
-            ctrl1.invoke('j11_unstable')
-
-        assert ctrl1.result == BuildResult.UNSTABLE
-        return 77
-
-
 def test_propagate_unstable_parallel_single_unstable(api_type):
     with api_select.api(__file__, api_type, login=True) as api:
         api.flow_job()
