@@ -188,7 +188,6 @@ The demo jobs can be loaded by running tests, see below.
 Installation
 ------------
 
-Python 3.9 or later is required.
 A recent Jenkins is required.
 
 #. Install *python-devel* (required by the *psutil* dependency of the *script_api*)
