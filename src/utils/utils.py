@@ -20,7 +20,7 @@ def env_base_url():
         return base_url.rstrip('/')
 
     if base_url is None:
-        raise Exception(
+        raise ValueError(
             "Could not get env variable JENKINS_URL. You must set 'Jenkins Location' in Jenkins setup for JENKINS_URL to be exported.")
 
 

@@ -26,7 +26,7 @@ _DEFAULT_REPORT_INTERVAL = 5
 _DEFAULT_SECRET_PARAMS = '.*passw.*|.*PASSW.*'
 _DEFAULT_SECRET_PARAMS_RE = re.compile(_DEFAULT_SECRET_PARAMS)
 
-_build_result_failures = (BuildResult.FAILURE, BuildResult.ABORTED)
+_BUILD_RESULT_FAILURES = (BuildResult.FAILURE, BuildResult.ABORTED)
 
 
 class Killed(Exception):
@@ -339,7 +339,7 @@ class _SingleJobInvocation(_JobControl):
             # Pylint does not like Enum pylint: disable=maybe-no-member
             print(unchecked + self.result.name + ":", repr(self.job.name) + inv_id_msg, "- build:", self.job_invocation.console_url(), self._time_msg())
 
-            if self.result in _build_result_failures:
+            if self.result in _BUILD_RESULT_FAILURES:
                 raise FailedSingleJobException(self.job, self.propagation)
             return
 
@@ -834,7 +834,7 @@ class _Parallel(_Flow):
                 self.result = min(self.result, inv.propagate_result)
             self.report_result()
 
-            if self.result in _build_result_failures:
+            if self.result in _BUILD_RESULT_FAILURES:
                 raise FailedChildJobsException(self, self._failed_child_jobs.values(), self.propagation)
         else:
             self._check_timeout()
@@ -936,7 +936,7 @@ class _Serial(_Flow):
             for inv in self.invocations[0:self.job_index + 1]:
                 self.result = min(self.result, inv.propagate_result)
 
-            if self.result in _build_result_failures:
+            if self.result in _BUILD_RESULT_FAILURES:
                 self.report_result()
                 raise FailedChildJobException(self, inv, self.propagation)
 

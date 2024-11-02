@@ -16,7 +16,7 @@ from .rest_api_wrapper import ResourceNotFound, RequestsRestApi
 _SUPERSEDED_PSEUDO_BUILD_NUM = -1
 _DEQUEUED_PSEUDO_BUILD_NUM = -2
 
-_ct_url_enc = {'Content-Type': 'application/x-www-form-urlencoded'}
+_CT_URL_ENC = {'Content-Type': 'application/x-www-form-urlencoded'}
 
 
 # Quick poll query to get state after starting job,
@@ -61,7 +61,7 @@ class Jenkins(Speed, BaseApiMixin):
     def __init__(self, direct_uri, job_prefix_filter=None, username=None, password=None, invocation_class=None, rest_access_provider=RequestsRestApi, csrf=True):
         if username or password:
             if not (username and password):
-                raise Exception("You must specify both username and password or neither")
+                raise ValueError("You must specify both username and password or neither")
         self.rest_api = rest_access_provider(direct_uri, username, password)
 
         self.direct_uri = direct_uri
@@ -233,7 +233,7 @@ class Jenkins(Speed, BaseApiMixin):
             if existing_description:
                 description = existing_description + separator + description
 
-        self.post(build_url + '/submitDescription', headers=_ct_url_enc, payload={'description': description})
+        self.post(build_url + '/submitDescription', headers=_CT_URL_ENC, payload={'description': description})
 
     def set_build_description(
             self, description: str, replace: bool = False, separator: str = '\n',
@@ -254,7 +254,7 @@ class Jenkins(Speed, BaseApiMixin):
         try:
             self._set_description(description, build_url, replace, separator)
         except ResourceNotFound as ex:
-            raise Exception("Build not found " + repr(build_url), ex) from ex
+            raise ValueError(f"Build not found {repr(build_url)}", ex) from ex
 
 
 class ApiJob():
@@ -270,14 +270,12 @@ class ApiJob():
 
         self._path = "/job/" + self.name
 
-        properties = self.dct.get("property", [])
-        for property in properties:
-            if property and property.get('parameterDefinitions'):
+        for prop in self.dct.get("property", []):
+            if prop and prop.get('parameterDefinitions'):
                 self._build_trigger_path = self._path + "/buildWithParameters"
                 return
 
-        actions = self.dct.get("action", [])
-        for action in actions:
+        for action in self.dct.get("action", []):
             if action and action.get('parameterDefinitions'):
                 self._build_trigger_path = self._path + "/buildWithParameters"
                 return
@@ -289,7 +287,7 @@ class ApiJob():
             if cause:
                 build_params = build_params or {}
                 build_params['cause'] = cause
-            headers = _ct_url_enc if build_params else None
+            headers = _CT_URL_ENC if build_params else None
             params = {}
             if securitytoken:
                 params['token'] = securitytoken

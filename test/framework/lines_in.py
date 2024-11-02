@@ -55,8 +55,9 @@ def lines_in(text, mfunc, *expected_lines):
             lines = []
             for line, mline in matched_lines:
                 lines.append((line + ' (' + mline + ')') if line != mline else line)
-            matched = "Matched {num} lines{mfunc_info}:\n\n{lines}".format(
-                num=num_matched, mfunc_info=" ('mfunc' modified line in '()')" if mfunc else "", lines='\n'.join(lines))
+            mfunc_info = " ('mfunc' modified line in '()')" if mfunc else ""
+            lines_msg = '\n'.join(lines)
+            matched = f"Matched {num_matched} lines{mfunc_info}:\n\n{lines_msg}"
         else:
             matched = 'No lines matched.' + " (Empty text)" if not text else ''
 

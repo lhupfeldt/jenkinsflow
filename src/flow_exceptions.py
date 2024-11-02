@@ -36,7 +36,7 @@ class JobControlFailException(JobControlException, metaclass=abc.ABCMeta):
 class FailedSingleJobException(JobControlFailException):
     """Base for all Exceptions that may be raised by `jenkinsflow` because of failed job invocation or `build`."""
     def __init__(self, job, propagation):
-        msg = "Failed job: " + repr(job) + ", propagation:" + str(propagation)
+        msg = f"Failed job: {repr(job)}, propagation: {propagation}."
         super().__init__(msg, propagation)
 
 
@@ -47,18 +47,18 @@ class MissingJobsException(JobControlFailException):
 
 class FailedChildJobException(JobControlFailException):
     def __init__(self, flow_job, failed_child_job, propagation):
-        msg = "Failed child job in: " + repr(flow_job) + ", child job:" + repr(failed_child_job) + ", propagation:" + str(propagation)
+        msg = f"Failed child job in: {repr(flow_job)}, child job: {repr(failed_child_job)}, propagation: {propagation}."
         super().__init__(msg, propagation)
 
 
 class FailedChildJobsException(JobControlFailException):
     def __init__(self, flow_job, failed_child_jobs, propagation):
-        msg = "Failed child jobs in: " + repr(flow_job) + ", child jobs:" + repr(failed_child_jobs) + ", propagation:" + str(propagation)
+        msg = f"Failed child jobs in: {repr(flow_job)}, child jobs: {repr(failed_child_jobs)}, propagation: {propagation}."
         super().__init__(msg, propagation)
 
 
 class FinalResultException(JobControlFailException):
     def __init__(self, build_result):
-        msg = "Flow Unsuccessful: {}".format(build_result)
+        msg = f"Flow Unsuccessful: {build_result}"
         super().__init__(msg)
         self.result = build_result
