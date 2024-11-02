@@ -604,7 +604,7 @@ class _Flow(_JobControl, metaclass=abc.ABCMeta):
                 It is assumed that the missing jobs are created by jobs in the flow, prior to the missing jobs being invoked.
                 If None the parent flow allow_missing_jobs is used.
 
-            api (:py:class:`.jenkins_api.Jenkins` or :py:class:`.script_api.Jenkins`): Jenkins Api instance used for accessing jenkins.
+            api (:py:class:`.jenkins_api.JenkinsApi` or :py:class:`.script_api.ScriptApi`): JenkinsApi instance used for accessing jenkins.
                 If not set then the parent flow api is used, i.e. the same Jenkins or Script instance as the parent is used.
         
         Returns:
@@ -1170,7 +1170,7 @@ class serial(_Serial, _TopLevelControllerMixin):  # invalid-name
     Only differences to  :py:meth:`_Flow.serial` are described.
 
     Args:
-        api (:py:class:`.jenkins_api.Jenkins` or :py:class:`.script_api.Jenkins`): Jenkins Api instance used for accessing jenkins.
+        api (:py:class:`.jenkins_api.JenkinsApi` or :py:class:`.script_api.ScriptApi`): Api instance used for accessing jenkins.
 
         securitytoken (str): Token to use on security enabled Jenkins instead of username/password. The Jenkins job must have the token configured.
 

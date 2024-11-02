@@ -44,7 +44,7 @@ def _result_and_progress(build_dct):
     return (result, progress)
 
 
-class Jenkins(Speed, BaseApiMixin):
+class JenkinsApi(Speed, BaseApiMixin):
     """Optimized minimal set of methods needed for jenkinsflow to access Jenkins jobs.
 
     Args:

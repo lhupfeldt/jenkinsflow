@@ -30,7 +30,7 @@ def _pgrep(proc_name):
     return False
 
 
-class Jenkins(Speed, BaseApiMixin):
+class ScriptApi(Speed, BaseApiMixin):
     """Optimized minimal set of methods needed for jenkinsflow to directly execute python code instead of invoking Jenkins jobs.
 
     THIS DOES NOT SUPPORT CONCURRENT INVOCATIONS OF FLOW

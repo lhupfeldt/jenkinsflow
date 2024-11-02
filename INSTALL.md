@@ -1,7 +1,7 @@
 Installation
 ------------
 
-Python 3.6 or later is required.
+Python 3.9 or later is required.
 A recent Jenkins is required.
 
 1. The easy way:

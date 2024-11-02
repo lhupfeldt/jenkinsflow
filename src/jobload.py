@@ -15,7 +15,7 @@ def update_job(jenkins, job_name, config_xml, pre_delete=False, background=False
     """Update or create a job in Jenkins.
 
     Args:
-        jenkins (jenkins_api.Jenkins): Jenkins Api instance used for accessing jenkins.
+        jenkins (jenkins_api.JenkinsApi): JenkinsApi instance used for accessing jenkins.
         job_name (str): The name of the job.
         config_xml (str): The Jenkins job config xml.
         pre_delete (boolean): I the job exists it will be deleted and re-created instead of being updated.

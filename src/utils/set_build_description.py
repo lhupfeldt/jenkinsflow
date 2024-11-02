@@ -28,5 +28,5 @@ def set_build_description(
     """
 
     base_url, api = base_url_and_api(direct_url)
-    jenkins = api.Jenkins(direct_uri=base_url, username=username, password=password)
+    jenkins = api(direct_uri=base_url, username=username, password=password)
     jenkins.set_build_description(description, replace, separator, build_url, job_name, build_number)

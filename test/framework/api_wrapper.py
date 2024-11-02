@@ -244,7 +244,7 @@ class _TestWrapperApi():
             self._public_uri = self.fake_public_uri
 
 
-class JenkinsTestWrapperApi(_TestWrapperApi, jenkins_api.Jenkins, TestJenkins):
+class JenkinsTestWrapperApi(_TestWrapperApi, jenkins_api.JenkinsApi, TestJenkins):
     api_type = ApiType.JENKINS
     job_xml_template = jp(_HERE, 'job.xml.tenjin')
 
@@ -252,11 +252,11 @@ class JenkinsTestWrapperApi(_TestWrapperApi, jenkins_api.Jenkins, TestJenkins):
                  username, password, securitytoken, login, invocation_class, python_executable, existing_jobs: bool):
         TestJenkins.__init__(self, job_name_prefix=job_name_prefix, existing_jobs=existing_jobs)
         if login:
-            jenkins_api.Jenkins.__init__(
+            jenkins_api.JenkinsApi.__init__(
                 self, direct_uri=direct_url, job_prefix_filter=job_name_prefix, username=username, password=password, invocation_class=invocation_class)
         else:
-            jenkins_api.Jenkins.__init__(self, direct_uri=direct_url, job_prefix_filter=job_name_prefix, invocation_class=invocation_class)
-        self.job_loader_jenkins = jenkins_api.Jenkins(direct_uri=direct_url, job_prefix_filter=job_name_prefix, username=username, password=password)
+            jenkins_api.JenkinsApi.__init__(self, direct_uri=direct_url, job_prefix_filter=job_name_prefix, invocation_class=invocation_class)
+        self.job_loader_jenkins = jenkins_api.JenkinsApi(direct_uri=direct_url, job_prefix_filter=job_name_prefix, username=username, password=password)
 
         _TestWrapperApi.__init__(
             self,
@@ -271,7 +271,7 @@ class JenkinsTestWrapperApi(_TestWrapperApi, jenkins_api.Jenkins, TestJenkins):
             python_executable=python_executable)
 
 
-class ScriptTestWrapperApi(_TestWrapperApi, script_api.Jenkins, TestJenkins):
+class ScriptTestWrapperApi(_TestWrapperApi, script_api.ScriptApi, TestJenkins):
     api_type = ApiType.SCRIPT
     job_xml_template = jp(_HERE, 'job_script.py.tenjin')
 
@@ -279,11 +279,11 @@ class ScriptTestWrapperApi(_TestWrapperApi, script_api.Jenkins, TestJenkins):
                  username, password, securitytoken, login, invocation_class):
         TestJenkins.__init__(self, job_name_prefix=job_name_prefix, existing_jobs=False)
         if login:
-            script_api.Jenkins.__init__(
+            script_api.ScriptApi.__init__(
                 self, direct_uri=direct_url, job_prefix_filter=job_name_prefix, username=username, password=password, invocation_class=invocation_class)
         else:
-            script_api.Jenkins.__init__(self, direct_uri=direct_url, job_prefix_filter=job_name_prefix, invocation_class=invocation_class)
-        self.job_loader_jenkins = script_api.Jenkins(direct_uri=direct_url, job_prefix_filter=job_name_prefix, username=username, password=password)
+            script_api.ScriptApi.__init__(self, direct_uri=direct_url, job_prefix_filter=job_name_prefix, invocation_class=invocation_class)
+        self.job_loader_jenkins = script_api.ScriptApi(direct_uri=direct_url, job_prefix_filter=job_name_prefix, username=username, password=password)
         _TestWrapperApi.__init__(
             self,
             file_name=file_name,

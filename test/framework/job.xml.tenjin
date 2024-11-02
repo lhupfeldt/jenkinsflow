@@ -121,7 +121,7 @@ context = dict(
     set_build_descriptions=(),
 )
 
-job_loader_jenkins = jenkins.Jenkins(direct_uri="{==direct_url==}", job_prefix_filter=None, username="{==username==}", password="{==password==}")
+job_loader_jenkins = jenkins.JenkinsApi(direct_uri="{==direct_url==}", job_prefix_filter=None, username="{==username==}", password="{==password==}")
 update_job_from_template(job_loader_jenkins, "{==create_job.name==}", config_xml_template, context=context)
       </command>
       <unstableReturn>77</unstableReturn>

@@ -51,7 +51,7 @@ def test_which_ci_server_not_ci(api_type):
                 for _ in range(0, 10):
                     ex = None
                     try:
-                        jenkins_api.Jenkins("http://" + _host + ':' + repr(_port), "dummy").poll()
+                        jenkins_api.JenkinsApi("http://" + _host + ':' + repr(_port), "dummy").poll()
                     except requests.exceptions.ConnectionError as ex:
                         # Wait for bottle to start
                         print(ex)

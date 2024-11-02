@@ -33,9 +33,9 @@ def base_url_and_api(direct_url):
 
     if base_url.startswith('http:') or base_url.startswith('https:'):
         # Using jenkins_api
-        from .. import jenkins_api as api
+        from ..jenkins_api import JenkinsApi as api
     else:
         # Using script_api
-        from .. import script_api as api
+        from ..script_api import  ScriptApi as api
 
     return base_url, api
