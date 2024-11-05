@@ -124,7 +124,7 @@ def test_json_no_strip_prefix(api_type):
 
 def test_json_unchecked_only_in_flows(api_type):
     with api_select.api(__file__, api_type, login=True) as api:
-        tmul = 10 if api.api_type == ApiType.MOCK else 1        
+        tmul = 10 if api.api_type == ApiType.MOCK else 1
         flow_name = api.flow_job()
         api.job('j1_unchecked', max_fails=0, expect_invocations=1, invocation_delay=0, exec_time=40 * tmul, expect_order=None, unknown_result=True)
         api.job('j2_unchecked', max_fails=0, expect_invocations=1, expect_order=None)

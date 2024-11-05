@@ -7,7 +7,6 @@
 
 import sys, os, tempfile
 import logging
-from collections import OrderedDict
 
 from jenkinsflow.flow import serial
 from jenkinsflow.unbuffered import UnBuffered
@@ -34,7 +33,11 @@ def main(api, securitytoken):
     g1_components = range(1)
     g2_components = range(2)
     g3_components = range(2)
-    component_groups = OrderedDict((('g1', g1_components), ('g2', g2_components), ('g3', g3_components)))
+    component_groups = {
+        "g1": g1_components,
+        "g2": g2_components,
+        "g3": g3_components,
+    }
 
     # Flow
     with serial(api, timeout=70, securitytoken=securitytoken, job_name_prefix=demo_name + '__', report_interval=3,

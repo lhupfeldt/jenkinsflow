@@ -2,7 +2,6 @@
 # All rights reserved. This work is under a BSD license, see LICENSE.TXT.
 
 import abc
-from collections import OrderedDict
 import os
 from os.path import join as jp
 
@@ -115,7 +114,7 @@ class TestJenkins(AbstractApiJenkins, metaclass=abc.ABCMeta):
         self.job_name_prefix = job_name_prefix
         self.existing_jobs = existing_jobs
         TestJob._current_order = 1
-        self.test_jobs = OrderedDict()
+        self.test_jobs = {}
 
     @abc.abstractmethod
     def job(self, name, max_fails, expect_invocations, expect_order, exec_time=None, initial_buildno=None, invocation_delay=0.1, params=None,

@@ -6,7 +6,6 @@ from os.path import join as jp
 import re
 import abc
 import signal
-from collections import OrderedDict
 from itertools import chain
 import json
 
@@ -245,8 +244,8 @@ class _SingleJobInvocation(_JobControl):
             print(self.indentation + self._status_message(progress, self.old_build_num, None, 'latest '))
 
     def _set_display_params(self):
-        first = current = OrderedDict()
-        last = OrderedDict()
+        first = current = {}
+        last = {}
 
         display_params = dict((key, (value if not self.secret_params_re.search(key) else '******')) for key, value in self.params.items())
         for name in self.top_flow.params_display_order:
@@ -432,26 +431,21 @@ class _SingleJobInvocation(_JobControl):
         url = self.job.public_uri if self.job is not None else None
 
         # For performance reasons use abbreviations
-        return [
-            OrderedDict(
-                (
-                    ("id", node_to_id(self)),
-                    ("name", node_name),
-                    ("url", url),
-                    ("tr", [self.max_tries, self.tried_times, self.total_max_tries, self.total_tried_times]),
-                    ("nl", self.nesting_level),
-                    ("pr", self.propagation.name),
-                    # Pylint does not like Enum pylint: disable=maybe-no-member
-                    ("cs", self.checking_status.name),
-                    ("res", self.result.name),
-                    ("it", self.invocation_time),
-                    ("params", self._display_params),
-                )
-            )
-        ]
+        return [{
+            "id": node_to_id(self),
+            "name": node_name,
+            "url": url,
+            "tr": [self.max_tries, self.tried_times, self.total_max_tries, self.total_tried_times],
+            "nl": self.nesting_level,
+            "pr": self.propagation.name,
+            "cs": self.checking_status.name,
+            "res": self.result.name,
+            "it": self.invocation_time,
+            "params": self._display_params,
+        }]
 
     def links(self, prev_jobs, node_to_id):
-        return [OrderedDict((("source", node_to_id(job)), ("target", node_to_id(self)))) for job in prev_jobs]
+        return [{"source": node_to_id(job), "target": node_to_id(self)} for job in prev_jobs]
 
 
 # Retries are handled in the _Flow classes instead of _SingleJobInvocation since the individual jobs don't know
@@ -781,7 +775,7 @@ class _Flow(_JobControl, metaclass=abc.ABCMeta):
 
         nodes = self.nodes(node_to_id)
         links = self.links([], node_to_id)
-        graph = OrderedDict((('nodes', nodes), ('links', links)))
+        graph = { "nodes": nodes, "links": links }
 
         if file_path is not None:
             with AtomicFile(file_path, 'w+') as out_file:

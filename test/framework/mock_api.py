@@ -3,7 +3,6 @@
 
 import os
 from os.path import join as jp
-from collections import OrderedDict
 
 from jenkinsflow.api_base import BuildResult, Progress, UnknownJobException, ApiInvocationMixin
 
@@ -97,7 +96,7 @@ class MockJob(TestJob):
 
         self.just_invoked = False
         self._invocation_url = 0
-        self._invocations = OrderedDict()
+        self._invocations = {}
         self.queued_why = "Why am I queued?"
         self._killed = False
         self._just_killed = False

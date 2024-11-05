@@ -1,16 +1,15 @@
-# Copyright (c) 2012 - 2015 Lars Hupfeldt Nielsen, Hupfeldt IT
+# Copyright (c) 2012 - 2024 Lars Hupfeldt Nielsen, Hupfeldt IT
 # All rights reserved. This work is under a BSD license, see LICENSE.TXT.
-
-from collections import OrderedDict
 
 from ...framework import api_select
 
 
 def create_jobs(api_type):
-    g1_components = range(1)
-    g2_components = range(2)
-    g3_components = range(2)
-    component_groups = OrderedDict((('g1', g1_components), ('g2', g2_components), ('g3', g3_components)))
+    component_groups = {
+        'g1': range(1),
+        'g2': range(2),
+        'g3': range(2),
+    }
 
     api = api_select.api(__file__, api_type)
     def job(name, expect_order, params=None):

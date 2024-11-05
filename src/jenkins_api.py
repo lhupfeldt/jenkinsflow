@@ -4,7 +4,6 @@
 import os
 import os.path
 import time
-from collections import OrderedDict
 import urllib.parse
 # import json
 
@@ -265,7 +264,7 @@ class ApiJob():
         self.has_children = has_children
         self.public_uri = self.jenkins._public_job_url(self.name)  # pylint: disable=protected-access
         self.old_build_number = None
-        self._invocations = OrderedDict()
+        self._invocations = {}
         self.queued_why = None
 
         self._path = "/job/" + self.name
