@@ -1,5 +1,5 @@
 *~
-*.pyc
+*.py[cod]
 __pycache__
 .cache
 .coverage
@@ -13,7 +13,8 @@ dist
 .tox
 .nox
 .mypy_cache
-*.tenjin.cache
+*_flymake.py
+flycheck_*.py
 build
 test/out
 
@@ -22,3 +23,4 @@ docs/_build/*
 
 classes_jenkinsflow.png
 packages_jenkinsflow.png
+*.tenjin.cache
