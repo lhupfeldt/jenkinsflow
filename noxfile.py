@@ -25,7 +25,7 @@ from test.framework.pytest_options import add_options
 
 
 # Locally we have nox handle the different versions, but in each travis run there is only a single python which can always be found as just 'python'
-_PY_VERSIONS = ["3.12", "3.11", "3.10"] if not os.environ.get("TRAVIS_PYTHON_VERSION") else ["python"]
+_PY_VERSIONS = ["3.13", "3.12", "3.11", "3.10"] if not os.environ.get("TRAVIS_PYTHON_VERSION") else ["python"]
 _IS_CI = os.environ.get("CI", "false").lower() == "true"
 
 nox.options.error_on_missing_interpreters = True
