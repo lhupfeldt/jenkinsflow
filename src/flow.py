@@ -352,20 +352,25 @@ class _SingleJobInvocation(_JobControl):
             return
 
         self.job.poll()
+
         if not self._killed:
             self._killed = not dequeue
             if self.top_flow.kill == KillType.ALL:
-                if not dequeue:
+                if dequeue:
+                    # First loop, report now, we may not get her again
                     print("Killing all running builds for:", repr(self.name))
                 self.job.stop_all()
             elif self.job_invocation:
                 if not dequeue:
+                    # Don't report before the queue has been emptied, or URL may be wrong?
                     print("Killing build:", repr(self.name), '-', self.job_invocation.console_url())
                 self.job_invocation.stop(dequeue)
             else:
                 print("Not invoked:", repr(self.name))
 
         if self.top_flow.kill == KillType.ALL:
+            self.api.quick_poll()
+
             self.result, progress, current_build_num = self.job.job_status()
             if progress != Progress.IDLE and self.old_build_num == current_build_num:
                 if report_now and not dequeue:
@@ -600,7 +605,7 @@ class _Flow(_JobControl, metaclass=abc.ABCMeta):
 
             api (:py:class:`.jenkins_api.JenkinsApi` or :py:class:`.script_api.ScriptApi`): JenkinsApi instance used for accessing jenkins.
                 If not set then the parent flow api is used, i.e. the same Jenkins or Script instance as the parent is used.
-        
+
         Returns:
             serial flow object
 

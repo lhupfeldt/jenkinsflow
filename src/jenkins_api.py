@@ -346,6 +346,15 @@ class ApiJob():
         dct = self.dct.get('lastBuild')
         if dct:
             self.old_build_number = dct['number']
+            if dct["result"] is None:
+                # Latest build dct does not have result, get it from builds list.
+                query = "builds[number,result]"
+                builds = self.jenkins.get_json(self._path, tree=query)
+                for build_dct in builds['builds']:
+                    if build_dct['number'] == self.old_build_number:
+                        dct = build_dct
+                        break
+
             result, latest_progress = _result_and_progress(dct)
             return (result, progress or latest_progress, self.old_build_number)
 
@@ -364,7 +373,7 @@ class ApiJob():
 
         # Abort running builds
         query = "builds[number,result]"
-        dct = self.jenkins.get_json("/job/" + self.name, tree=query)
+        dct = self.jenkins.get_json(self._path, tree=query)
         for build in dct['builds']:
             _result, progress = _result_and_progress(build)
             if progress != Progress.IDLE:
@@ -376,7 +385,7 @@ class ApiJob():
                     pass
 
     def update_config(self, config_xml):
-        self.jenkins.post("/job/" + self.name + "/config.xml",
+        self.jenkins.post(self._path + "/config.xml",
                           headers={'Content-Type': 'application/xml header;charset=utf-8'},
                           payload=config_xml.encode('utf-8'))
 
@@ -438,7 +447,7 @@ class Invocation(ApiInvocationMixin):
 
         # Latest build is not ours, get the correct build
         query = "builds[number,result]"
-        dct = self.job.jenkins.get_json("/job/" + self.job.name, tree=query)
+        dct = self.job.jenkins.get_json(self.job._path, tree=query)
         for build in dct['builds']:
             if build['number'] == self.build_number:
                 return _result_and_progress(build)
