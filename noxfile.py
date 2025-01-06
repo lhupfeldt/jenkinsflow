@@ -116,8 +116,7 @@ def _test_and_demos_install(session):
 #     session.run("mypy", str(_HERE/"src"))
 
 
-# TODO: pylint-pytest does not support 3.12
-@nox.session(python="3.11", reuse_venv=True)
+@nox.session(python=_PY_VERSIONS[0], reuse_venv=True)
 def pylint(session):
     session.install(".", "pylint>=3.3.1", "pylint-pytest>=1.1.8")
 
