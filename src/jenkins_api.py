@@ -338,10 +338,14 @@ class ApiJob():
         progress = None
 
         if not self.has_children:
-            qi = self.dct['queueItem']
-            if qi:
-                progress = Progress.QUEUED
-                self.queued_why = qi['why']
+            try:
+                qi = self.dct['queueItem']
+                if qi:
+                    progress = Progress.QUEUED
+                    self.queued_why = qi['why']
+            except KeyError:
+                # 'scans' have no 'queueItem'/'why' and they may not have children if scan has not run/finished
+                pass
 
         dct = self.dct.get('lastBuild')
         if dct:

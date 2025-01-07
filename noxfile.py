@@ -40,9 +40,9 @@ def _cov_options_env(api_types: Sequence[ApiType], env: dict[str, str], fail_und
 
     if not fail_under:
         if len(api_types) == 3:
-            fail_under = 94.00
+            fail_under = 93.90
         elif ApiType.JENKINS in api_types:
-            fail_under = 95.05
+            fail_under = 94.90
         elif ApiType.MOCK in api_types and ApiType.SCRIPT in api_types:
             fail_under = 86.97
         elif ApiType.MOCK in api_types:

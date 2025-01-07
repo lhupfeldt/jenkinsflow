@@ -223,12 +223,21 @@ class _SingleJobInvocation(_JobControl):
 
         try:
             self.job = self.api.get_job(self.name)
+        except UnknownJobException:
+            # This can happen if job was created in flow.
+            # Poll to get the job
+            self.api.poll()
+
+        try:
+            if not self.job:
+                self.job = self.api.get_job(self.name)
         except UnknownJobException as ex:
             # TODO? stack trace
             if require_job or not self.allow_missing_jobs and not self.top_flow.kill:
                 self.checking_status = Checking.FINISHED
                 self.result = BuildResult.FAILURE
                 raise MissingJobsException(ex) from ex
+
             print(self.indentation + repr(self), "- MISSING JOB")
             super()._prepare_to_invoke(reset_tried_times=False)
             return
