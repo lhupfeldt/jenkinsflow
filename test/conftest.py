@@ -96,7 +96,8 @@ def pytest_collection_modifyitems(items: list[pytest.Item], config) -> None:
             return
 
         # We must have an ApiType in name now, since api_type fixture was used
-        current_item_api = ApiType[item_api_type_regex.match(item.name).groups()[0]]
+        api_type_name, _, _ = (item_api_type_regex.match(item.name).groups()[0]).partition("-")  # TODO, this cannot be the way to get api_type
+        current_item_api = ApiType[api_type_name]
         if current_item_api not in selected_api_types:
             print(f"{':'.join(str(place) for place in item.location)} DESELECTED ({current_item_api} not in {selected_api_types})")
             deselected.append(item)

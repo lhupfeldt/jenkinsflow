@@ -251,7 +251,23 @@ Test
 
    .. note::
 
-      To run the GitHub folder job test a GitHub test repository is needed! TODO: Describe the setup.
+      To run the Codeberg folder job test a `Codeberg <https://codeberg.org/>`_ test and Jenkins configuration repository is needed!
+
+      Fork `codeberg test repo <https://codeberg.org/lhupfeldt/jenkinsflow-org-job-test>`_ to your own organization/user account.
+      Add the `Gitea plugin <https://plugins.jenkins.io/gitea/>`_ to Jenkins. In system config add a Gitea server name `Codeberg`, URL `https://codeberg.org/`.
+      Add an `Organization Folder` job named `codeberg-org`, with server `Codeberg`. Set `owner` to your organization/account and
+      `Script path` to `Jenkinsfile.jenkinsflow-test`.
+
+   .. note::
+
+      To run the GitHub folder job test a `GitHub <https://github.com/>`_ test and Jenkins configuration repository is needed!
+
+      Fork `github test repo <https://github.com/lhupfeldt/jenkinsflow-org-job-test>`_ to your own organization/user account.
+      Add a GitHub App in your organization and install it on the repo.
+      Create the corresponfig GitHubApp credentilal in Jennkins, id `cred-github-jenkinsflow-test`.
+      Add the `Gitea plugin <https://plugins.jenkins.io/gitea/>`_ to Jenkins. In system config add a Gitea server name `GitHub`, URL `https://github.com/`.
+      Add an `Organization Folder` job named `github-org`, with server `GitHub`. Set `owner` to your organization/account, credential
+      to `cred-github-jenkinsflow-test` and `Script path` to `Jenkinsfile.jenkinsflow-test`.
 
 #. Run the tests using ``nox``::
 

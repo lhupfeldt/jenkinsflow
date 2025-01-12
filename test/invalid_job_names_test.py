@@ -12,9 +12,11 @@ from .framework.cfg import ApiType
 
 
 @pytest.mark.apis(ApiType.JENKINS)
-def test_invalid_job_in_gh_folder_name(api_type):
+@pytest.mark.parametrize("org_name", ["codeberg-org-jenkinsflow-test", "github-org-jenkinsflow-test"])
+def test_invalid_job_in_org_folder_name(api_type, org_name):
     url = "http://localhost:8080"
     api = JenkinsApi(url)
     with pytest.raises(InvalidJobNameException):
         with serial(api, timeout=20, report_interval=1) as ctrl1:
-            ctrl1.invoke("gh-org/job/jenkinsflow-gh-folder-test/job/main")
+            # Name must not contain '/job/'
+            ctrl1.invoke(f"{org_name}/job/jenkinsflow-gh-folder-test/job/main")

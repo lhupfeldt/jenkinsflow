@@ -27,9 +27,9 @@ _GIVEN_JOB_QUERY_WITH_PARAM_DEFS = "lastBuild[number,result],queueItem[why],acti
 # Initial query
 # Build a three level query to handle github organization folder jobs.
 # Note that 'name' in response does not contain first 'job/' from url, but does contain intermediate 'job/', so:
-# 'name': 'gh-org/job/jenkinsflow-gh-folder-test/job/main'
+# 'name': 'github-org-jenkinsflow-test/job/jenkinsflow-gh-folder-test/job/main'
 # Corresponds:
-# 'url': 'http://<host>:<port>/job/gh-org/job/jenkinsflow-gh-folder-test/job/main'
+# 'url': 'http://<host>:<port>/job/github-org-jenkinsflow-test/job/jenkinsflow-gh-folder-test/job/main'
 _ONE_LEVEL_JOBS_INFO_QUERY = f"jobs[name,{_GIVEN_JOB_QUERY_WITH_PARAM_DEFS}_RECURSE_]"
 _TWO_LEVELS_JOBS_INFO_QUERY = _ONE_LEVEL_JOBS_INFO_QUERY.replace("_RECURSE_", "," + _ONE_LEVEL_JOBS_INFO_QUERY)
 _THREE_LEVELS_JOBS_INFO_QUERY = _TWO_LEVELS_JOBS_INFO_QUERY.replace("_RECURSE_", "," + _ONE_LEVEL_JOBS_INFO_QUERY)
