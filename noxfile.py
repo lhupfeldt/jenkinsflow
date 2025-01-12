@@ -126,8 +126,13 @@ def pylint(session):
     print("\nPylint test sources")
     disable_checks = "missing-module-docstring,missing-class-docstring,missing-function-docstring"
     disable_checks += ",multiple-imports,invalid-name,duplicate-code"
+
+    test_wrapper_api_members = "api_type,get_job,get_name_for_query,job_loader_jenkins,job_name_prefix,job_xml_template,test_jobs,poll"
+    generated_members = ",".join(f"test.framework.api_wrapper._TestWrapperApi.{member}" for member in test_wrapper_api_members.split(","))
+
     session.run(
         "pylint", "--fail-under", "9.2", "--variable-rgx", r"[a-z_][a-z0-9_]{1,30}$", "--disable", disable_checks,
+        "--generated-member", generated_members,
         "--ignore", "jenkins_security.py,demos_test.py", str(_TEST_DIR))
 
 
