@@ -17,10 +17,6 @@ _DEQUEUED_PSEUDO_BUILD_NUM = -2
 
 _CT_URL_ENC = {'Content-Type': 'application/x-www-form-urlencoded'}
 
-
-# Quick poll query to get state after starting job,
-_QUICK_QUERY = "jobs[name,lastBuild[number,result],queueItem[why]]"
-
 # Query info and parameter definitions of a specific job
 _GIVEN_JOB_QUERY_WITH_PARAM_DEFS = "lastBuild[number,result],queueItem[why],actions[parameterDefinitions[name,type]],property[parameterDefinitions[name,type]]"
 
@@ -35,6 +31,16 @@ _TWO_LEVELS_JOBS_INFO_QUERY = _ONE_LEVEL_JOBS_INFO_QUERY.replace("_RECURSE_", ",
 _THREE_LEVELS_JOBS_INFO_QUERY = _TWO_LEVELS_JOBS_INFO_QUERY.replace("_RECURSE_", "," + _ONE_LEVEL_JOBS_INFO_QUERY)
 _FULL_QUERY = f"{_THREE_LEVELS_JOBS_INFO_QUERY.replace('_RECURSE_', '')},primaryView[url]"
 
+
+# Query status only of a specific job
+_GIVEN_JOB_QUICK_QUERY = "lastBuild[number,result],queueItem[why]"
+
+# Quick query
+# Build a three level query to handle github organization folder job status.
+_ONE_LEVEL_JOBS_STATUS_QUERY = f"jobs[name,{_GIVEN_JOB_QUICK_QUERY}_RECURSE_]"
+_TWO_LEVELS_JOBS_STATUS_QUERY = _ONE_LEVEL_JOBS_STATUS_QUERY.replace("_RECURSE_", "," + _ONE_LEVEL_JOBS_STATUS_QUERY)
+_THREE_LEVELS_JOBS_STATUS_QUERY = _TWO_LEVELS_JOBS_STATUS_QUERY.replace("_RECURSE_", "," + _ONE_LEVEL_JOBS_STATUS_QUERY)
+_QUICK_QUERY = _THREE_LEVELS_JOBS_STATUS_QUERY.replace('_RECURSE_', '')
 
 def _result_and_progress(build_dct):
     result = build_dct['result']
@@ -128,27 +134,39 @@ class JenkinsApi(Speed, BaseApiMixin):
     def _public_job_url(self, job_name):
         return self.public_uri + '/job/' + job_name
 
-    def _resolve_job_levels(self, dct, parent_job_name):
+    def _resolve_job_levels(self, dct, parent_job_name, quick: bool):
         """Resolve jobs for a poll. E.g. gh folder jobs have three levels <org>/<repo>/<branch>."""
         has_children = False
         for job_dct in dct.get('jobs') or []:
             has_children = True
 
-            # print("poll - job_dct:", json.dumps(job_dct, indent=2))
             job_name = str(job_dct['name'])
-            # print("job_name:", job_name)
-
             if self.job_prefix_filter and not job_name.startswith(self.job_prefix_filter):
                 continue
 
             if parent_job_name:
                 job_name = f"{parent_job_name}/job/{job_name}"
-            # print("full job_name:", job_name)
-            # print(json.dumps(job_dct, indent=2))
-            has_grand_children = self._resolve_job_levels(job_dct, job_name)
+            has_grand_children = self._resolve_job_levels(job_dct, job_name, quick)
+
+            if quick:
+                job = self.jobs.get(job_name)
+                if job:
+                    job.dct = job_dct
+                    continue
+
+                # A new job was created while flow was running, get the remaining properties
+                try:
+                    job_dct = self.get_json("/job/" + job_name, tree=_GIVEN_JOB_QUERY_WITH_PARAM_DEFS)
+                    # print("new job:", job_dct)
+                    job = ApiJob(self, job_dct, job_name, has_children=has_grand_children)
+                    self.jobs[job_name] = job
+                except ResourceNotFound:  # pragma: no cover
+                    # Ignore this, the job came and went
+                    continue
+
+                continue
+
             self.jobs[job_name] = ApiJob(self, job_dct, job_name, has_grand_children)
-
-
             #if job_dct["_class"] not in ("hudson.model.FreeStyleProject", "org.jenkinsci.plugins.workflow.job.WorkflowJob"):
             #    print(json.dumps(self.get_json(depth=3), indent=2))
 
@@ -167,30 +185,12 @@ class JenkinsApi(Speed, BaseApiMixin):
         self._public_uri = dct['primaryView']['url'].rstrip('/')
 
         self.jobs = {}
-        self._resolve_job_levels(dct, None)
+        self._resolve_job_levels(dct, None, quick=False)
 
     def quick_poll(self):
         dct = self.get_json(tree=_QUICK_QUERY)
         # print("dct:", json.dumps(dct, indent=2))
-
-        for job_dct in dct.get('jobs') or []:
-            job_name = str(job_dct['name'])
-            if self.job_prefix_filter and not job_name.startswith(self.job_prefix_filter):
-                continue
-            job = self.jobs.get(job_name)
-            if job:
-                job.dct = job_dct
-                continue
-
-            # A new job was created while flow was running, get the remaining properties
-            try:
-                job_dct = self.get_json("/job/" + job_name, tree=_GIVEN_JOB_QUERY_WITH_PARAM_DEFS)
-                # print("new job:", job_dct)
-                job = ApiJob(self, job_dct, job_name, has_children=False)  # TODO _resolve...
-                self.jobs[job_name] = job
-            except ResourceNotFound:  # pragma: no cover
-                # Ignore this, the job came and went
-                pass
+        self._resolve_job_levels(dct, None, quick=True)
 
     def queue_poll(self):
         query = "items[task[name],id]"
