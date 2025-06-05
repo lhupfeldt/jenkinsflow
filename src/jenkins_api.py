@@ -18,7 +18,7 @@ _DEQUEUED_PSEUDO_BUILD_NUM = -2
 _CT_URL_ENC = {'Content-Type': 'application/x-www-form-urlencoded'}
 
 # Query info and parameter definitions of a specific job
-_GIVEN_JOB_QUERY_WITH_PARAM_DEFS = "lastBuild[number,result],queueItem[why],actions[parameterDefinitions[name,type]],property[parameterDefinitions[name,type]]"
+_GIVEN_JOB_QUERY_WITH_PARAM_DEFS = "lastBuild[number,result,building],queueItem[why],actions[parameterDefinitions[name,type]],property[parameterDefinitions[name,type]]"
 
 # Initial query
 # Build a three level query to handle github organization folder jobs.
@@ -33,7 +33,7 @@ _FULL_QUERY = f"{_THREE_LEVELS_JOBS_INFO_QUERY.replace('_RECURSE_', '')},primary
 
 
 # Query status only of a specific job
-_GIVEN_JOB_QUICK_QUERY = "lastBuild[number,result],queueItem[why]"
+_GIVEN_JOB_QUICK_QUERY = "lastBuild[number,result,building],queueItem[why]"
 
 # Quick query
 # Build a three level query to handle github organization folder job status.
@@ -42,9 +42,11 @@ _TWO_LEVELS_JOBS_STATUS_QUERY = _ONE_LEVEL_JOBS_STATUS_QUERY.replace("_RECURSE_"
 _THREE_LEVELS_JOBS_STATUS_QUERY = _TWO_LEVELS_JOBS_STATUS_QUERY.replace("_RECURSE_", "," + _ONE_LEVEL_JOBS_STATUS_QUERY)
 _QUICK_QUERY = _THREE_LEVELS_JOBS_STATUS_QUERY.replace('_RECURSE_', '')
 
+
 def _result_and_progress(build_dct):
-    result = build_dct['result']
-    progress = Progress.RUNNING if result is None else Progress.IDLE
+    building = build_dct.get("building")
+    result = build_dct["result"]
+    progress = Progress.RUNNING if (building or result is None) else Progress.IDLE
     result = BuildResult.UNKNOWN if result is None else BuildResult[result]
     return (result, progress)
 

@@ -246,6 +246,8 @@ Test
 
      The URL should **not** use **localhost**.
 
+   - Install "Pipeline: Stage" plugin.
+
    Your Jenkins needs to be on the host where you are running the test. If it is not, you will need to make jenkinsflow available to Jenkins. See
    *test/framework/tmp_install.sh*
 

@@ -1,6 +1,8 @@
 # Copyright (c) 2012 - 2024 Lars Hupfeldt Nielsen, Hupfeldt IT
 # All rights reserved. This work is under a BSD license, see LICENSE.TXT.
 
+from pathlib import Path
+
 from .jenkins_api import UnknownJobException
 
 try:
@@ -40,16 +42,16 @@ def update_job(jenkins, job_name, config_xml, pre_delete=False, background=False
         jenkins.poll()
 
 
-def update_job_from_template(jenkins, job_name, config_xml_template, pre_delete=False, background=False, context=None):
+def update_job_from_template(jenkins, job_name, config_xml_template: Path|str, pre_delete=False, background=False, context: dict|None = None):
     """Create or update a job based on a `Tenjin` http://www.kuwata-lab.com/tenjin/ config.xml template.
 
     Args:
-        config_xml_template (str): Filename of tenjin config.xml template.
-        context (dict): Values to be used for template substitution.
+        config_xml_template: Filename of tenjin config.xml template.
+        context: Values to be used for template substitution.
 
     See :py:func:`.update_job` for other parameters.
     """
 
     assert _ENGINE, "You must install tenjin (e.g.: pip install tenjin)"
-    config_xml = _ENGINE.render(config_xml_template, context or {})
+    config_xml = _ENGINE.render(str(config_xml_template), context or {})
     update_job(jenkins, job_name, config_xml, pre_delete, background)

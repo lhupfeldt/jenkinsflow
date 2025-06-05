@@ -333,6 +333,9 @@ class _SingleJobInvocation(_JobControl):
                 print(self._status_message(progress, build_num, self.job_invocation.queued_why))
             return
 
+        if progress == Progress.RUNNING:
+            return
+
         # The job has stopped running
         self.checking_status = Checking.FINISHED
         self.result = result

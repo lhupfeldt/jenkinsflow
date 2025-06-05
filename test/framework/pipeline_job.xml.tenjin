@@ -1,0 +1,30 @@
+<?xml version='1.1' encoding='UTF-8'?>
+<flow-definition plugin="workflow-job@1476.v90f02a_225559">
+  <description></description>
+  <keepDependencies>false</keepDependencies>
+  <properties/>
+  <definition class="org.jenkinsci.plugins.workflow.cps.CpsFlowDefinition" plugin="workflow-cps@4007.vd705fc76a_34e">
+    <script>node {
+    int sleeping = {==exec_time==} / 3
+    stage(&apos;Sleep $sleeping&apos;) {
+        sleep(sleeping)
+    }
+    stage(&apos;Set Initial Result&apos;) {
+        currentBuild.result = &quot;UNSTABLE&quot;
+        currentBuild.description = &quot;Set UNSTABLE&quot;
+    }
+    sleeping = sleeping * 2
+    stage(&apos;Sleep $sleeping&apos;) {
+        sleep(sleeping)
+    }
+    stage(&apos;Set Final Result&apos;) {
+        currentBuild.result = &quot;FAILED&quot;
+        currentBuild.description = &quot;Set FAILED&quot;
+    }
+}
+</script>
+    <sandbox>true</sandbox>
+  </definition>
+  <triggers/>
+  <disabled>false</disabled>
+</flow-definition>

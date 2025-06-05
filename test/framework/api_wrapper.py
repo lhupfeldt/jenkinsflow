@@ -100,7 +100,7 @@ class _TestWrapperApi():
         self.python_executable = python_executable
 
     def _jenkins_job(self, name, exec_time, params, script, print_env, create_job, always_load, num_builds_to_keep,
-                     final_result_use_cli, set_build_descriptions):
+                     final_result_use_cli, set_build_descriptions, *, job_xml_template=None):
         # Create job in Jenkins
         if self.reload_jobs or always_load:
             context = dict(
@@ -122,12 +122,12 @@ class _TestWrapperApi():
                 final_result_use_cli=final_result_use_cli,
                 set_build_descriptions=set_build_descriptions,
             )
-            update_job_from_template(self.job_loader_jenkins, name, self.job_xml_template, pre_delete=self.pre_delete_jobs, context=context)
+            update_job_from_template(self.job_loader_jenkins, name, job_xml_template or self.job_xml_template, pre_delete=self.pre_delete_jobs, context=context)
 
     def job(self, name, max_fails, expect_invocations, expect_order, exec_time=None, initial_buildno=None, invocation_delay=0.1, params=None,
             script=None, unknown_result=False, final_result=None, serial=False, print_env=False, flow_created=False, create_job=None, disappearing=False,
             non_existing=False, kill=False, num_builds_to_keep=4, allow_running=False, final_result_use_cli=False,
-            set_build_descriptions=()):
+            set_build_descriptions=(), job_xml_template: str|None = None):
         query_job_name = self.get_name_for_query(self.job_name_prefix, name)
         assert not self.test_jobs.get(query_job_name)
         job_name = self.job_name_prefix + name
@@ -156,7 +156,7 @@ class _TestWrapperApi():
             # TODO: Remove and convert all to use job_creator?
             self._jenkins_job(job_name, exec_time, params, script, print_env, create_job=create_job, always_load=disappearing,
                               num_builds_to_keep=num_builds_to_keep, final_result_use_cli=final_result_use_cli,
-                              set_build_descriptions=set_build_descriptions)
+                              set_build_descriptions=set_build_descriptions, job_xml_template=job_xml_template)
 
         job = MockJob(name=job_name, exec_time=exec_time, max_fails=max_fails, expect_invocations=expect_invocations, expect_order=expect_order,
                       initial_buildno=initial_buildno, invocation_delay=invocation_delay, unknown_result=unknown_result, final_result=final_result,
