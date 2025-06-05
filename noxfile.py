@@ -118,7 +118,7 @@ def _test_and_demos_install(session):
 
 @nox.session(python=_PY_VERSIONS[0], reuse_venv=True)
 def pylint(session):
-    session.install(".", "pylint>=3.3.1", "pylint-pytest>=1.1.8")
+    session.install(".", "pylint>=3.3.1", "pylint-pytest>=1.1.8", "objproxies>=0.9.4")
 
     print("\nPylint src")
     session.run("pylint", "--fail-under", "8.5", str(_HERE/"src"))

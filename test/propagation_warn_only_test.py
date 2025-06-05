@@ -23,7 +23,6 @@ def test_propagation_warn_only_serial(api_type):
 
         assert exinfo.value.result == BuildResult.UNSTABLE
         assert ctrl1.result == exinfo.value.result
-        return 77
 
 
 def test_propagation_warn_only_parallel(api_type):
@@ -38,7 +37,6 @@ def test_propagation_warn_only_parallel(api_type):
                 ctrl1.invoke('j2')
 
         assert exinfo.value.result == BuildResult.UNSTABLE
-        return 77
 
 
 def test_propagation_warn_only_nested_serial_parallel(api_type):
@@ -59,7 +57,6 @@ def test_propagation_warn_only_nested_serial_parallel(api_type):
                     ctrl2.invoke('j23')
 
         assert exinfo.value.result == BuildResult.UNSTABLE
-        return 77
 
 
 def test_propagation_warn_only_nested_parallel_serial(api_type):
@@ -80,7 +77,6 @@ def test_propagation_warn_only_nested_parallel_serial(api_type):
                     ctrl2.invoke('j23')
 
         assert exinfo.value.result == BuildResult.UNSTABLE
-        return 77
 
 
 def test_propagation_warn_only_nested_serial_serial(api_type):
@@ -101,7 +97,6 @@ def test_propagation_warn_only_nested_serial_serial(api_type):
                     ctrl2.invoke('j23')
 
         assert exinfo.value.result == BuildResult.UNSTABLE
-        return 77
 
 
 def test_propagation_warn_only_nested_parallel_parallel(api_type):
@@ -122,7 +117,6 @@ def test_propagation_warn_only_nested_parallel_parallel(api_type):
                     ctrl2.invoke('j23')
 
         assert exinfo.value.result == BuildResult.UNSTABLE
-        return 77
 
 
 def test_propagation_warn_only_nested_serial_serial_continue(api_type):
@@ -144,7 +138,6 @@ def test_propagation_warn_only_nested_serial_serial_continue(api_type):
                     ctrl2.invoke('j23')
 
         assert exinfo.value.result == BuildResult.UNSTABLE
-        return 77
 
 
 def test_propagation_warn_only_nested_parallel_serial_continue(api_type):
@@ -166,7 +159,6 @@ def test_propagation_warn_only_nested_parallel_serial_continue(api_type):
                     ctrl2.invoke('j23')
 
         assert exinfo.value.result == BuildResult.UNSTABLE
-        return 77
 
 
 def test_propagation_warn_only_nested_serial_serial_continue_fail(api_type):

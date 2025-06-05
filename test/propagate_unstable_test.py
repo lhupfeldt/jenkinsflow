@@ -18,7 +18,6 @@ def test_propagate_unstable_serial_single_unstable(api_type):
             ctrl1.invoke('j11_unstable')
 
         assert ctrl1.result == BuildResult.UNSTABLE
-        return 77
 
 
 def test_propagate_unstable_parallel_single_unstable(api_type):
@@ -30,7 +29,6 @@ def test_propagate_unstable_parallel_single_unstable(api_type):
             ctrl1.invoke('j11_unstable')
 
         assert ctrl1.result == BuildResult.UNSTABLE
-        return 77
 
 
 def test_propagate_unstable_serial_toplevel(api_type):
@@ -46,7 +44,6 @@ def test_propagate_unstable_serial_toplevel(api_type):
             ctrl1.invoke('j13')
 
         assert ctrl1.result == BuildResult.UNSTABLE
-        return 77
 
 
 def test_propagate_unstable_parallel_toplevel(api_type):
@@ -62,7 +59,6 @@ def test_propagate_unstable_parallel_toplevel(api_type):
             ctrl1.invoke('j13')
 
         assert ctrl1.result == BuildResult.UNSTABLE
-        return 77
 
 
 def test_propagate_unstable_serial_inner(api_type):
@@ -82,7 +78,6 @@ def test_propagate_unstable_serial_inner(api_type):
 
         assert ctrl2.result == BuildResult.UNSTABLE
         assert ctrl1.result == BuildResult.UNSTABLE
-        return 77
 
 
 def test_propagate_unstable_parallel_inner(api_type):
@@ -102,7 +97,6 @@ def test_propagate_unstable_parallel_inner(api_type):
 
         assert ctrl2.result == BuildResult.UNSTABLE
         assert ctrl1.result == BuildResult.UNSTABLE
-        return 77
 
 
 def test_propagate_unstable_parallel_inner_raise_if_unsuccessful_true(api_type):
@@ -124,7 +118,6 @@ def test_propagate_unstable_parallel_inner_raise_if_unsuccessful_true(api_type):
         assert exinfo.value.result == BuildResult.UNSTABLE
         assert ctrl2.result == BuildResult.UNSTABLE
         assert ctrl1.result == BuildResult.UNSTABLE
-        return 77
 
 
 def test_propagate_unstable_serial_inner_fail_after(api_type):
