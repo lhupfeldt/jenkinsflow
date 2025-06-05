@@ -1,6 +1,7 @@
 # Copyright (c) 2012 - 2024 Lars Hupfeldt Nielsen, Hupfeldt IT
 # All rights reserved. This work is under a BSD license, see LICENSE.TXT.
 
+import sys
 from . import ApiType, str_to_apis, apis_to_str, Urls, JobLoad, dirs, speedup
 
 
