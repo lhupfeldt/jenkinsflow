@@ -644,14 +644,37 @@ class _Flow(_JobControl, metaclass=abc.ABCMeta):
         This does not create the job in Jenkins. It defines how the job will be invoked by ``jenkinsflow``.
 
         Args:
-            job_name (str): This can take two different formats:
-                For simple jobs: The the name of the job in Jenkins, e.g.: 'aaa'. I.e. NOT 'job/aaa' which is how the URL path appears.
+            job_name (str): This can take different formats:
+              Simple jobs:
+
+                  <name>
+
+                Normally the name of the job in Jenkins UI, e.g.: 'aaa'. I.e. NOT 'job/aaa' which is how the URL path appears.
+                NOTE: The UI display name may be different from <name>.
                 If the surrounding flow sets the :py:obj:`job_name_prefix` the actual name of the invoked job will be the parent flow job_name_prefix + job_name.
 
-                For GitHub folder jobs: '<github-organization>[/<repository>[/<branch>]]', e.g.: 'aaa/bbb/main', NOT 'job/aaa/job/bbb/job/main' as in URL.
+              Organization Folder jobs, (E.g. Forgejo/Codeberg, GitHub, Gitea):
+
+                  <github-organization>[/<repository>[/<branch>]]
+
+                Normally the name of the job as displayed in UI e.g.: 'aaa/bbb/main'. NOT 'job/aaa/job/bbb/job/main' as in URL.
+                NOTE: The UI display of github-organization may be different from actual github-organization name.
                 Support for GitHub folder jobs is experimental!
                 For GitHub folder jobs 'job_name_prefix' is applied to the each part of the name! Probably not useful! Semantics may change!
                 Note that invoking '<github-organization>[/<repository>]' without <branch> triggers a 'scan'. May change!
+
+              Multibranch Pipeline jobs, (E.g. Forgejo/Codeberg, GitHub, Gitea, ...):
+
+                  <job-name>[/<branch>]]
+
+                Normally name of the job as display in UI, except that for branches with '/', e.g.: 'nnn/main', 'nnn/feat%2Fxxx'. NOT 'job/nnn/job/main' as in URL.
+                NOTE: For a Multibranch Pipeline job with a slash ('/') in the branch name you must replace the '/' with '%2F'. This is necessary to disambiguate it
+                      from Organization Folder jobs.
+                NOTE: The <job-name> may be different from the repo name, it will be the name given when creating the job.
+                Support for Multibranch Pipeline jobs is experimental!
+
+              For GitHub folder and Multibranch Pipeline jobs 'job_name_prefix' is applied to the each part of the name! Probably not useful! Semantics may change!
+              Note that invoking '<github-organization>[/<repository>]' without <branch> triggers a 'scan'. May change!
 
             assume_finished_after:Seconds. If the job has not finished after this amount of time, then assume it is finished and continue.
                 Note: This is a hack to support organization and repository scan for GitHub folder jobs. There is no way to determine when a scan is finished.

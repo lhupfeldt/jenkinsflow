@@ -77,8 +77,9 @@ class BaseApiMixin():
         if len(parts) == 2:
             return parts[0] + "/job/" + job_name_prefix + parts[1]
 
-        if len(parts) == 3:
-            return parts[0] + "/job/" + job_name_prefix + parts[1] +  "/job/" + parts[2]
+        if len(parts) >= 3:
+            # If the last part contains '/' then it is a branchname with a '/', This must be encoded as %2F.
+            return parts[0] + "/job/" + job_name_prefix + parts[1] +  "/job/" + "%2F".join(parts[2:])
 
         raise InvalidJobNameException(job_name)
 
