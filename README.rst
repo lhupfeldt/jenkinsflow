@@ -1,3 +1,5 @@
+Moved here: https://codeberg.org/lhupfeldt/jenkinsflow
+
 |Build Status| |Coverage| |Documentation Status| |PyPi Package| |License|
 
 jenkinsflow
