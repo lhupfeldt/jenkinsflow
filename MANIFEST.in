@@ -1,3 +1,0 @@
-include *.rst *.md *.txt
-recursive-include src/visual *.css *.js *.html *.md
-recursive-include test *.tenjin *.py
