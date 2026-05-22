@@ -113,12 +113,12 @@ def _test_and_demos_install(session):
 # @nox.session(python=_PY_VERSIONS, reuse_venv=True)
 # def typecheck(session):
 #     session.install("-e", ".", "mypy>=1.5.1")
-#     session.run("mypy", str(_HERE/"src"))
+#     session.run("mypy", "--strict", "--check-untyped", "--implicit-optional", str(_HERE/"src"))
 
 
 @nox.session(python=_PY_VERSIONS[0], reuse_venv=True)
 def pylint(session):
-    session.install(".", "pylint>=3.3.1", "pylint-pytest>=1.1.8", "objproxies>=0.9.4")
+    session.install(".", "pylint>=4.0.3", "pylint-pytest>=1.1.8", "objproxies>=0.9.4")
 
     print("\nPylint src")
     session.run("pylint", "--fail-under", "8.5", str(_HERE/"src"))
